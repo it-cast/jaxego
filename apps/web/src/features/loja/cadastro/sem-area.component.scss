@@ -1,0 +1,49 @@
+.jx-sem-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  padding: var(--jx-space-6) 0;
+}
+
+.jx-sem-area__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-sem-area__consent {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-sem-area__consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-2);
+  cursor: pointer;
+}
+
+.jx-sem-area__consent input {
+  margin-top: 2px;
+  min-width: 18px;
+  min-height: 18px;
+  accent-color: var(--brand);
+}
+
+.jx-sem-area__cta {
+  min-height: 44px;
+  padding: var(--jx-space-3) var(--jx-space-4);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border: 0;
+  border-radius: var(--jx-radius-lg);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-sem-area__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

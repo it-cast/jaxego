@@ -10,6 +10,11 @@ import {
 
 let _uid = 0;
 
+/** Shared no-op for the CVA callbacks before Angular registers the real ones. */
+function noop(): void {
+  /* intentional no-op (CVA default before registration) */
+}
+
 /**
  * jx-field — input + label + error + mask wrapper (UI-SPEC §3).
  *
@@ -77,8 +82,8 @@ export class FieldComponent implements ControlValueAccessor {
   protected value = '';
   protected disabled = false;
 
-  private _onChange: (v: string) => void = () => {};
-  protected onTouched: () => void = () => {};
+  private _onChange: (v: string) => void = noop;
+  protected onTouched: () => void = noop;
 
   protected onInput(event: Event): void {
     this.value = (event.target as HTMLInputElement).value;

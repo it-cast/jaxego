@@ -1,0 +1,255 @@
+<main class="jx-cadastro" [attr.aria-busy]="loading()">
+  <header class="jx-cadastro__header">
+    <h1 class="jx-h1">Cadastre sua loja. É <em>rapidinho.</em></h1>
+  </header>
+
+  <jx-wizard-stepper [steps]="steps" [current]="current()" (goTo)="goToStep($event)" />
+
+  @if (stepError()) {
+    <div class="jx-cadastro__alert" tabindex="-1">
+      <jx-error-state [message]="stepError()!" />
+    </div>
+  }
+
+  <form class="jx-cadastro__form" [formGroup]="form" (ngSubmit)="next()" novalidate>
+    <!-- Passo 1 — Identificação -->
+    @if (current() === 0) {
+      <fieldset class="jx-cadastro__step">
+        <legend class="jx-sr-only">Identificação</legend>
+        <div class="jx-cadastro__toggle" role="radiogroup" aria-label="Tipo de conta">
+          <button
+            type="button"
+            class="jx-toggle"
+            [class.jx-toggle--on]="form.controls.account_type.value === 'cnpj'"
+            [attr.aria-pressed]="form.controls.account_type.value === 'cnpj'"
+            (click)="toggleAccountType('cnpj')"
+          >
+            Tenho CNPJ
+          </button>
+          <button
+            type="button"
+            class="jx-toggle"
+            [class.jx-toggle--on]="form.controls.account_type.value === 'cpf'"
+            [attr.aria-pressed]="form.controls.account_type.value === 'cpf'"
+            (click)="toggleAccountType('cpf')"
+          >
+            Sou autônomo (CPF)
+          </button>
+        </div>
+
+        <div class="jx-field">
+          <label class="jx-label" for="document">
+            {{ form.controls.account_type.value === 'cnpj' ? 'CNPJ' : 'CPF' }}
+          </label>
+          <input
+            id="document"
+            class="jx-input jx-mono"
+            inputmode="numeric"
+            autocomplete="off"
+            [attr.aria-describedby]="docError() ? 'doc-error' : null"
+            [attr.aria-invalid]="docError() ? 'true' : null"
+            [value]="form.controls.document.value"
+            (input)="onDocInput($any($event.target).value)"
+            placeholder="00.000.000/0001-00"
+          />
+          @if (docError()) {
+            <p class="jx-field__error" id="doc-error">{{ docError() }}</p>
+          }
+          <p class="jx-field__hint">
+            Pedimos o {{ form.controls.account_type.value === 'cnpj' ? 'CNPJ' : 'CPF' }}
+            para validar sua loja e emitir nota.
+          </p>
+        </div>
+
+        <div class="jx-field">
+          <label class="jx-label" for="trade_name">Nome da loja</label>
+          <input
+            id="trade_name"
+            class="jx-input"
+            autocomplete="organization"
+            formControlName="trade_name"
+            maxlength="120"
+          />
+        </div>
+
+        <div class="jx-field">
+          <label class="jx-label" for="category">Categoria</label>
+          <select id="category" class="jx-input" formControlName="category">
+            <option value="" disabled>Selecione…</option>
+            <option value="restaurante">Restaurante/Lanchonete</option>
+            <option value="comercio">Comércio</option>
+            <option value="farmacia">Farmácia</option>
+            <option value="mercado">Mercado</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </fieldset>
+    }
+
+    <!-- Passo 2 — Contato e acesso -->
+    @if (current() === 1) {
+      <fieldset class="jx-cadastro__step">
+        <legend class="jx-sr-only">Contato e acesso</legend>
+        <div class="jx-field">
+          <label class="jx-label" for="phone">Telefone (WhatsApp)</label>
+          <input
+            id="phone"
+            class="jx-input jx-mono"
+            type="tel"
+            inputmode="numeric"
+            autocomplete="tel"
+            [attr.aria-describedby]="phoneError() ? 'phone-error' : null"
+            [attr.aria-invalid]="phoneError() ? 'true' : null"
+            [value]="form.controls.phone.value"
+            (input)="onPhoneInput($any($event.target).value)"
+            placeholder="(22) 99999-1234"
+          />
+          @if (phoneError()) {
+            <p class="jx-field__error" id="phone-error">{{ phoneError() }}</p>
+          }
+        </div>
+
+        <div class="jx-field">
+          <label class="jx-label" for="email">E-mail</label>
+          <input
+            id="email"
+            class="jx-input"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            formControlName="email"
+            [attr.aria-describedby]="emailError() ? 'email-error' : null"
+          />
+          @if (emailError()) {
+            <p class="jx-field__error" id="email-error">{{ emailError() }}</p>
+          }
+        </div>
+
+        <div class="jx-field">
+          <label class="jx-label" for="password">Senha</label>
+          <div class="jx-input-wrap">
+            <input
+              id="password"
+              class="jx-input"
+              [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="new-password"
+              formControlName="password"
+              minlength="10"
+              [attr.aria-describedby]="passwordError() ? 'pwd-error' : null"
+            />
+            <button
+              type="button"
+              class="jx-input-toggle"
+              [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+              (click)="togglePassword()"
+            >
+              {{ showPassword() ? '🙈' : '👁' }}
+            </button>
+          </div>
+          @if (passwordError()) {
+            <p class="jx-field__error" id="pwd-error">{{ passwordError() }}</p>
+          }
+        </div>
+      </fieldset>
+    }
+
+    <!-- Passo 3 — Endereço -->
+    @if (current() === 2) {
+      <fieldset class="jx-cadastro__step">
+        <legend class="jx-sr-only">Endereço</legend>
+        @if (!noArea()) {
+          <div class="jx-field">
+            <label class="jx-label" for="cep">CEP</label>
+            <input
+              id="cep"
+              class="jx-input jx-mono"
+              inputmode="numeric"
+              autocomplete="postal-code"
+              maxlength="9"
+              [value]="form.controls.cep.value"
+              (input)="onCepInput($any($event.target).value)"
+              placeholder="28470-000"
+            />
+          </div>
+
+          @if (cepWarn()) {
+            <jx-warn-banner [message]="cepWarn()!" />
+          }
+          @if (loading()) {
+            <jx-loading-skeleton variant="block" height="44px" />
+          }
+
+          <div class="jx-field">
+            <label class="jx-label" for="rua">Rua e número</label>
+            <input id="rua" class="jx-input" autocomplete="address-line1" formControlName="rua" />
+          </div>
+          <div class="jx-cadastro__row">
+            <div class="jx-field">
+              <label class="jx-label" for="numero">Número</label>
+              <input id="numero" class="jx-input" formControlName="numero" />
+            </div>
+            <div class="jx-field">
+              <label class="jx-label" for="bairro">Bairro</label>
+              <input
+                id="bairro"
+                class="jx-input"
+                autocomplete="address-level3"
+                formControlName="bairro"
+              />
+            </div>
+          </div>
+          <div class="jx-cadastro__row">
+            <div class="jx-field">
+              <label class="jx-label" for="cidade">Cidade</label>
+              <input id="cidade" class="jx-input" formControlName="cidade" readonly />
+            </div>
+            <div class="jx-field">
+              <label class="jx-label" for="uf">UF</label>
+              <input id="uf" class="jx-input jx-mono" formControlName="uf" readonly />
+            </div>
+          </div>
+        } @else {
+          <jx-sem-area
+            [cidade]="form.controls.cidade.value"
+            (interest)="onInterest($event.email, $event.cidade)"
+          />
+        }
+      </fieldset>
+    }
+
+    <!-- Passo 4 — Plano -->
+    @if (current() === 3) {
+      <fieldset class="jx-cadastro__step">
+        <legend class="jx-sr-only">Escolha do plano</legend>
+        <section class="jx-cadastro__plans" aria-label="Planos disponíveis">
+          @for (plan of plans(); track plan.codename) {
+            <jx-plan-card
+              [plan]="plan"
+              [selected]="plan.codename === selectedPlan()"
+              (choose)="choosePlan($event)"
+            />
+          } @empty {
+            <jx-loading-skeleton variant="block" height="160px" />
+          }
+        </section>
+
+        <div class="jx-cadastro__consent">
+          <label>
+            <input type="checkbox" formControlName="consent" />
+            Concordo com os
+            <a href="/termos" class="jx-link">Termos</a> e a
+            <a href="/privacidade" class="jx-link">Política de Privacidade</a>.
+          </label>
+        </div>
+      </fieldset>
+    }
+
+    @if (!noArea()) {
+      <button type="submit" class="jx-cadastro__submit" [disabled]="loading()">
+        {{ isLastStep() ? 'Ativar loja' : 'Continuar' }}
+      </button>
+    }
+  </form>
+
+  <footer class="jx-cadastro__footer">jaxego.com.br · Grupo Itcast</footer>
+</main>

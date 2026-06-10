@@ -1,0 +1,36 @@
+.jx-plano {
+  display: block;
+  max-width: 860px;
+  margin: var(--jx-space-6) auto;
+  padding: 0 var(--jx-space-4);
+}
+
+.jx-plano__header h1 {
+  font-size: var(--jx-text-2xl);
+  letter-spacing: -0.02em;
+}
+
+.jx-plano__lead {
+  margin: var(--jx-space-2) 0 0;
+  font-size: var(--jx-text-base);
+  color: var(--text-muted);
+}
+
+.jx-plano__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--jx-space-3);
+  margin-top: var(--jx-space-5);
+}
+
+@media (min-width: 560px) {
+  .jx-plano__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 880px) {
+  .jx-plano__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

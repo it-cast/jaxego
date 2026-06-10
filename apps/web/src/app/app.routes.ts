@@ -59,6 +59,21 @@ export const routes: Routes = [
       },
     ],
   },
+  // Public store onboarding (F-01): cadastro + plano are lazy and unauthenticated
+  // — a new store owner has no account yet (Phase 4). Mounted under `loja/` but
+  // OUTSIDE the auth-protected shell below.
+  {
+    path: 'loja/cadastro',
+    loadComponent: () =>
+      import('../features/loja/cadastro/cadastro.page').then(
+        (m) => m.CadastroLojaPage
+      ),
+  },
+  {
+    path: 'loja/plano',
+    loadComponent: () =>
+      import('../features/loja/plano/plano.page').then((m) => m.PlanoPage),
+  },
   {
     path: 'loja',
     canActivate: [authGuard],
