@@ -1,0 +1,153 @@
+.jx-doc-up {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+}
+
+// Idle dropzone — dashed, sunken, editorial (anti-slop: no glow/gradient).
+.jx-doc-up__zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-1);
+  padding: var(--jx-space-5);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-sunken);
+  text-align: center;
+}
+
+.jx-doc-up__icon {
+  font-size: var(--jx-text-xl);
+  color: var(--text-subtle);
+}
+
+.jx-doc-up__hint {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-doc-up__preview {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+  }
+}
+
+.jx-doc-up__preview--dim img {
+  opacity: 0.55;
+}
+
+.jx-doc-up__preview:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+// Progress bar — brand fill over sunken track, fully rounded.
+.jx-doc-up__bar {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.jx-doc-up__bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--brand);
+  border-radius: var(--jx-radius-full);
+  transition: width var(--jx-motion-fast, 140ms) ease-out;
+}
+
+.jx-doc-up__status {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-doc-up__status--mono {
+  font-family: var(--jx-font-mono);
+}
+
+.jx-doc-up__status--ok {
+  color: var(--success);
+}
+
+.jx-doc-up__status--err {
+  color: var(--error);
+}
+
+.jx-doc-up--error .jx-doc-up__preview {
+  border-color: var(--error);
+}
+
+.jx-doc-up__actions {
+  display: flex;
+  gap: var(--jx-space-2);
+  flex-wrap: wrap;
+}
+
+.jx-doc-up__btn {
+  flex: 1 1 auto;
+  min-height: 44px; // touch target (gesture-touch)
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--brand);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--brand);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+  transition: transform var(--jx-motion-fast, 140ms) ease-out;
+}
+
+.jx-doc-up__btn--fill {
+  background: var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-doc-up__btn:active {
+  transform: scale(0.97); // touch feedback (gesture-touch)
+}
+
+.jx-doc-up__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+// Visually-hidden native file inputs (the buttons trigger them).
+.jx-doc-up__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-doc-up__btn,
+  .jx-doc-up__bar-fill {
+    transition: none;
+  }
+  .jx-doc-up__btn:active {
+    transform: none;
+  }
+}

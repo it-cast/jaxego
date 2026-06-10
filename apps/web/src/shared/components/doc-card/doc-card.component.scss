@@ -1,0 +1,114 @@
+.jx-doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-elevated);
+}
+
+.jx-doc-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-2);
+}
+
+.jx-doc-card__title {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+// Badge: text + icon + colour. In DARK, the live semantic colour reads over the
+// elevated surface (dark-mode-theming) — no flat `_bg` fill that washes out.
+.jx-doc-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--jx-space-2);
+  border-radius: var(--jx-radius-full);
+  border: 1px solid currentColor;
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.jx-doc-card__badge--muted {
+  color: var(--text-subtle);
+}
+.jx-doc-card__badge--info {
+  color: var(--info);
+}
+.jx-doc-card__badge--warning {
+  color: var(--warning);
+}
+.jx-doc-card__badge--success {
+  color: var(--success);
+}
+.jx-doc-card__badge--error {
+  color: var(--error);
+}
+
+.jx-doc-card__purpose {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-doc-card__meta {
+  margin: 0;
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-doc-card__thumb {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-sunken);
+  cursor: pointer;
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+  }
+}
+
+.jx-doc-card__thumb:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-doc-card__reject {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--error);
+}
+
+.jx-doc-card__resend {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--brand);
+  border-radius: var(--jx-radius-md);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+}
+
+.jx-doc-card__resend:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

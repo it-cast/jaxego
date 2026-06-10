@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DocCardComponent } from './doc-card/doc-card.component';
+import { DocUploadComponent } from './doc-upload/doc-upload.component';
 import { FieldComponent } from './field/field.component';
 import { PlanCardComponent, type Plan } from './plan-card/plan-card.component';
 import {
@@ -120,5 +122,83 @@ describe('PlanCardComponent', () => {
     };
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('ilimitado');
+  });
+});
+
+describe('DocUploadComponent', () => {
+  let fixture: ComponentFixture<DocUploadComponent>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [DocUploadComponent] });
+    fixture = TestBed.createComponent(DocUploadComponent);
+    fixture.componentInstance.label = 'CNH';
+  });
+
+  it('announces upload progress in a live region (not colour alone)', () => {
+    fixture.componentInstance.state = 'uploading';
+    fixture.componentInstance.progress = 60;
+    fixture.detectChanges();
+    const live = fixture.nativeElement.querySelector('[aria-live="polite"]');
+    expect(live.textContent).toContain('Enviando 60%');
+    const bar = fixture.nativeElement.querySelector('[role="progressbar"]');
+    expect(bar.getAttribute('aria-valuenow')).toBe('60');
+  });
+
+  it('shows an actionable error with role="alert" on failure', () => {
+    fixture.componentInstance.state = 'error';
+    fixture.componentInstance.error = 'Sem conexão. Tente de novo.';
+    fixture.detectChanges();
+    const alert = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert.textContent).toContain('Sem conexão');
+    // The retry button is present (≥44px enforced by CSS).
+    expect(fixture.nativeElement.textContent).toContain('Tentar de novo');
+  });
+
+  it('emits the picked file', () => {
+    const spy = jasmine.createSpy('fileSelected');
+    fixture.componentInstance.fileSelected.subscribe(spy);
+    fixture.detectChanges();
+    const input: HTMLInputElement =
+      fixture.nativeElement.querySelector('input[type="file"]');
+    const file = new File(['x'], 'cnh.jpg', { type: 'image/jpeg' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+    expect(spy).toHaveBeenCalledWith(file);
+  });
+});
+
+describe('DocCardComponent', () => {
+  let fixture: ComponentFixture<DocCardComponent>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [DocCardComponent] });
+    fixture = TestBed.createComponent(DocCardComponent);
+    fixture.componentInstance.title = 'CNH com EAR';
+  });
+
+  it('renders the status badge with text + icon (never colour alone)', () => {
+    fixture.componentInstance.status = 'approved';
+    fixture.detectChanges();
+    const badge = fixture.nativeElement.querySelector('.jx-doc-card__badge');
+    expect(badge.textContent).toContain('Aprovado');
+    expect(badge.querySelector('[aria-hidden="true"]')).toBeTruthy(); // icon
+  });
+
+  it('E4: a rejected item shows the reason and a re-upload CTA (read mode)', () => {
+    fixture.componentInstance.mode = 'read';
+    fixture.componentInstance.status = 'rejected';
+    fixture.componentInstance.rejectReason = 'Sem EAR na CNH.';
+    fixture.detectChanges();
+    const reject = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(reject.textContent).toContain('Sem EAR');
+    expect(fixture.nativeElement.textContent).toContain('Reenviar CNH com EAR');
+  });
+
+  it('edit mode composes jx-doc-upload', () => {
+    fixture.componentInstance.mode = 'edit';
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('jx-doc-upload')).toBeTruthy();
   });
 });
