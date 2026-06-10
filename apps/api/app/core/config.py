@@ -72,6 +72,21 @@ class Settings(BaseSettings):
     geocoding_base_url: str = Field(default="https://nominatim.openstreetmap.org")
     geocoding_allowlist_hosts: str = Field(default="nominatim.openstreetmap.org")
 
+    # --- Backblaze B2 storage (Phase 5) — KYC documents, PRIVATE bucket ---
+    # B2 is S3-compatible; we drive it with boto3 (S3v4). The KEY/APP_KEY are
+    # SECRETS provided ONLY via env (Field default None — Gate 8 FAIL-BLOCK if a
+    # real value lands in the repo). In dev/test the factory returns the Stub
+    # adapter (filesystem temp, no network), so these are unused there.
+    # If a secret is ever committed: ROTATE it in the B2 console immediately.
+    b2_key_id: str | None = Field(default=None)
+    b2_app_key: str | None = Field(default=None)
+    b2_endpoint_url: str = Field(default="https://s3.us-west-004.backblazeb2.com")
+    b2_region: str = Field(default="us-west-004")
+    b2_kyc_bucket: str = Field(default="jaxego-kyc-prod")
+    # Comma-separated host allowlist for the SSRF guard on the internal download
+    # of the just-uploaded object (TH-04). Only the B2 S3 endpoint host.
+    b2_allowlist_hosts: str = Field(default="s3.us-west-004.backblazeb2.com")
+
 
 @lru_cache
 def get_settings() -> Settings:
