@@ -1,0 +1,53 @@
+<header class="jx-entregas__head">
+  <a routerLink="/loja" class="jx-entregas__back">← Painel</a>
+  <h1 class="jx-entregas__title">Entregas</h1>
+  <button type="button" class="jx-entregas__new" (click)="goNova()">+ Nova entrega</button>
+</header>
+
+<form class="jx-entregas__filters" (submit)="$event.preventDefault(); load()">
+  <label class="jx-entregas__filter">
+    <span>Estado</span>
+    <select [(ngModel)]="stateFilter" name="state" (change)="load()">
+      <option value="">Todos</option>
+      <option value="CRIADA">Procurando</option>
+      <option value="ACEITA">Aceita</option>
+      <option value="COLETADA">A caminho</option>
+      <option value="ENTREGUE">Entregue</option>
+      <option value="FINALIZADA">Finalizada</option>
+      <option value="RECUSADA_NO_DESTINO">Recusada no destino</option>
+      <option value="CANCELADA">Cancelada</option>
+    </select>
+  </label>
+  <label class="jx-entregas__filter">
+    <span>Pagamento</span>
+    <select [(ngModel)]="paymentFilter" name="payment" (change)="load()">
+      <option value="">Todos</option>
+      <option value="direct">Direto</option>
+      <option value="pix">PIX</option>
+      <option value="card">Cartão</option>
+    </select>
+  </label>
+</form>
+
+<jx-data-table
+  [columns]="columns"
+  [rows]="rows()"
+  [state]="tableState()"
+  [hasActions]="true"
+  [trackBy]="trackById"
+  caption="Entregas da loja"
+  [emptyTitle]="hasFilters() ? 'Nenhuma entrega com esses filtros.' : 'Nenhuma entrega ainda.'"
+  [emptyMessage]="hasFilters() ? undefined : 'Crie sua primeira entrega.'"
+  [emptyCtaLabel]="hasFilters() ? 'Limpar filtros' : 'Nova entrega'"
+  (emptyCta)="hasFilters() ? clearFilters() : goNova()"
+  errorMessage="Não foi possível carregar suas entregas."
+  (retry)="load()"
+>
+  <ng-template #row let-item>
+    <jx-delivery-row
+      [delivery]="item"
+      (cancelDelivery)="onCancel($event)"
+      (view)="onView($event)"
+    ></jx-delivery-row>
+  </ng-template>
+</jx-data-table>

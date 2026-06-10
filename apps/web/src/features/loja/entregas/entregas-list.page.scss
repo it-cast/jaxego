@@ -1,0 +1,87 @@
+// Tela 14 — store delivery list (UI-SPEC §4.1). Tokens only.
+
+:host {
+  display: block;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.jx-entregas__head {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  margin-bottom: var(--jx-space-4);
+}
+
+.jx-entregas__back {
+  color: var(--info);
+  font-size: var(--jx-text-sm);
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--jx-radius-lg);
+  }
+}
+
+.jx-entregas__title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-entregas__new {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border: none;
+  border-radius: var(--jx-radius-lg);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-entregas__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jx-space-3);
+  margin-bottom: var(--jx-space-3);
+}
+
+.jx-entregas__filter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+
+  select {
+    min-height: 40px;
+    padding: 0 var(--jx-space-2);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--jx-radius-lg);
+    color: var(--text);
+    font-size: var(--jx-text-base);
+    font-family: var(--jx-font-display);
+    text-transform: none;
+    letter-spacing: 0;
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+  }
+}

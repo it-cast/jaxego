@@ -1,0 +1,47 @@
+// jx-delivery-row — mono data cells + row actions (UI-SPEC §4.1). Tokens only.
+
+:host {
+  display: contents;
+}
+
+.jx-delivery-row__num,
+.jx-delivery-row__date,
+.jx-delivery-row__freight {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-base);
+  white-space: nowrap;
+}
+
+.jx-delivery-row__actions {
+  display: flex;
+  gap: var(--jx-space-2);
+  justify-content: flex-end;
+}
+
+.jx-delivery-row__cancel,
+.jx-delivery-row__view {
+  min-height: 44px;
+  padding: 0 var(--jx-space-2);
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-delivery-row__cancel {
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+
+.jx-delivery-row__view {
+  border: none;
+  color: var(--info);
+  text-decoration: underline;
+}
