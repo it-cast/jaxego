@@ -1,0 +1,118 @@
+// Tela 21B — Catálogo de bairros (UI-SPEC §3.2). Only semantic vars; AA light+dark.
+
+.jx-nbhd {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--jx-space-6) var(--jx-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-nbhd__title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  color: var(--text);
+}
+
+.jx-nbhd__title em {
+  font-family: var(--jx-font-serif-accent);
+  font-style: italic;
+  color: var(--brand);
+}
+
+.jx-nbhd__add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-elevated);
+}
+
+.jx-nbhd__add-title {
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-nbhd__add-row {
+  display: flex;
+  gap: var(--jx-space-3);
+}
+
+.jx-nbhd__add-name {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--jx-text-base);
+}
+
+.jx-nbhd__add-name:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+// Sober neutral button (NOT persimmon — ui-ux-pro-max).
+.jx-nbhd__add-btn {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-sunken);
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-nbhd__add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-nbhd__add-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jx-nbhd__geojson-label {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-nbhd__geojson {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  min-height: 72px;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  color: var(--text);
+  resize: vertical;
+}
+
+.jx-nbhd__geojson[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.jx-nbhd__geojson:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jx-nbhd__error {
+  color: var(--error);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-nbhd__hint {
+  color: var(--text-subtle);
+  font-size: var(--jx-text-xs);
+}

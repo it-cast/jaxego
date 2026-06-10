@@ -1,0 +1,69 @@
+<main class="jx-nbhd">
+  <h1 class="jx-nbhd__title">Catálogo de <em>bairros</em></h1>
+
+  @if (removeError()) {
+    <jx-error-state [message]="removeError()!" />
+  }
+
+  <!-- Add a neighborhood -->
+  <section class="jx-nbhd__add">
+    <h2 class="jx-nbhd__add-title">Adicionar bairro</h2>
+    <div class="jx-nbhd__add-row">
+      <input
+        class="jx-nbhd__add-name"
+        type="text"
+        placeholder="Nome do bairro"
+        [(ngModel)]="newName"
+        aria-label="Nome do bairro"
+      />
+      <button
+        type="button"
+        class="jx-nbhd__add-btn"
+        [disabled]="adding() || newName.trim() === ''"
+        (click)="add()"
+      >
+        Adicionar
+      </button>
+    </div>
+
+    <label class="jx-nbhd__geojson-label" for="geojson">
+      Polígono (GeoJSON ou coordenadas) — opcional
+    </label>
+    <textarea
+      id="geojson"
+      class="jx-nbhd__geojson"
+      rows="3"
+      placeholder='{"type":"Polygon","coordinates":[[[lng,lat],...]]}'
+      [(ngModel)]="geojsonText"
+      (blur)="validateGeojson()"
+      [attr.aria-invalid]="geojsonError() ? 'true' : null"
+      [attr.aria-describedby]="geojsonError() ? 'geojson-error' : null"
+    ></textarea>
+    @if (geojsonError(); as err) {
+      <p class="jx-nbhd__error" id="geojson-error" role="alert">{{ err }}</p>
+    }
+    <small class="jx-nbhd__hint">
+      Bairro sem polígono funciona por nome. Remover bairro com entregas ativas não
+      é permitido — arquive primeiro.
+    </small>
+  </section>
+
+  <!-- Catalog table -->
+  <jx-data-table
+    [columns]="columns"
+    [rows]="rows()"
+    [state]="tableState()"
+    [hasActions]="true"
+    [trackBy]="trackById"
+    caption="Bairros da área"
+    emptyIcon="◌"
+    emptyTitle="Nenhum bairro cadastrado ainda."
+    emptyMessage="Adicione o primeiro bairro da área no campo acima."
+    errorMessage="Não conseguimos carregar os bairros. Tente de novo."
+    (retry)="ngOnInit()"
+  >
+    <ng-template #row let-item>
+      <jx-neighborhood-row [item]="item" (remove)="remove($event)" />
+    </ng-template>
+  </jx-data-table>
+</main>

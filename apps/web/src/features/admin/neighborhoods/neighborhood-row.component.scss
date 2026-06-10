@@ -1,0 +1,47 @@
+// jx-neighborhood-row — catalog row cells. Only semantic vars; AA light+dark.
+
+.jx-nbhd-row__name {
+  color: var(--text);
+  font-weight: var(--jx-weight-medium);
+}
+
+.jx-nbhd-row__informal {
+  color: var(--text-muted);
+  font-size: var(--jx-text-xs);
+  margin-left: var(--jx-space-1);
+}
+
+.jx-nbhd-row__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--jx-text-xs);
+}
+
+.jx-nbhd-row__badge--defined {
+  color: var(--success);
+}
+
+.jx-nbhd-row__badge--byname {
+  color: var(--text-muted);
+}
+
+.jx-nbhd-row__actions {
+  text-align: right;
+}
+
+.jx-nbhd-row__remove {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--error);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--error);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+}
+
+.jx-nbhd-row__remove:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
