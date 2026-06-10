@@ -16,14 +16,25 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import AreaScopeDep, CurrentUser, require_role
+from app.auth.models import User
+from app.core.exceptions import NotFoundError
 from app.core.ratelimit import signup_rate_limit
+from app.couriers import availability as availability_svc
+from app.couriers import coverage as coverage_svc
+from app.couriers import pricing as pricing_svc
 from app.couriers import service
+from app.couriers.models import Courier
 from app.couriers.schemas import (
+    AvailabilityBody,
+    AvailabilityResponse,
     CourierSignupBody,
     CourierSignupResponse,
+    CoverageBody,
+    CoverageRowRead,
     DocumentPresignBody,
     DocumentPresignResponse,
     DocumentReadResponse,
@@ -31,6 +42,8 @@ from app.couriers.schemas import (
     DocumentReviewResponse,
     MeiBody,
     MeiResponse,
+    PricingBody,
+    PricingRowRead,
     ViewUrlResponse,
 )
 from app.couriers.view import view_document_url
@@ -133,6 +146,107 @@ async def submit_mei(
     )
     await session.commit()
     return MeiResponse(mei_pending=pending)
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — the courier manages their OWN coverage / pricing / availability.
+# Self-only: the courier id in the path must belong to the authenticated user AND
+# (for non-platform users) be inside the token's area scope. Any mismatch → 404
+# (no existence leak — TH-03/item 2 of the Security Notes).
+# ---------------------------------------------------------------------------
+async def _own_courier(
+    session: AsyncSession, *, courier_id: int, user: User, scope: int | None
+) -> Courier:
+    stmt = select(Courier).where(Courier.id == courier_id, Courier.user_id == user.id)
+    if scope is not None:
+        stmt = stmt.where(Courier.area_id == scope)
+    courier = (await session.execute(stmt)).scalar_one_or_none()
+    if courier is None or courier.deleted_at is not None:
+        raise NotFoundError("Entregador não encontrado.")
+    return courier
+
+
+@router.put("/{courier_id}/coverage", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+async def set_coverage(
+    courier_id: int,
+    body: CoverageBody,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> None:
+    """The courier sets the neighborhoods they serve / refuse (RN-003, self-only)."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    await coverage_svc.set_coverage(
+        session,
+        area_id=courier.area_id,
+        courier_id=courier.id,
+        includes=body.includes,
+        excludes=body.excludes,
+    )
+    await session.commit()
+
+
+@router.get("/{courier_id}/coverage", response_model=list[CoverageRowRead])
+async def get_coverage(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> list[CoverageRowRead]:
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    rows = await coverage_svc.list_coverage(session, area_id=courier.area_id, courier_id=courier.id)
+    return [CoverageRowRead.model_validate(r) for r in rows]
+
+
+@router.put("/{courier_id}/pricing", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+async def set_pricing(
+    courier_id: int,
+    body: PricingBody,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> None:
+    """The courier sets the freight table; below the floor → 422 (RN-015, self-only)."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    await pricing_svc.set_pricing(
+        session,
+        area_id=courier.area_id,
+        courier_id=courier.id,
+        mode=body.mode,
+        rows=body.rows,
+    )
+    await session.commit()
+
+
+@router.get("/{courier_id}/pricing", response_model=list[PricingRowRead])
+async def get_pricing(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> list[PricingRowRead]:
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    rows = await pricing_svc.list_pricing(session, area_id=courier.area_id, courier_id=courier.id)
+    return [PricingRowRead.model_validate(r) for r in rows]
+
+
+@router.patch("/{courier_id}/availability", response_model=AvailabilityResponse)
+async def set_availability(
+    courier_id: int,
+    body: AvailabilityBody,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> AvailabilityResponse:
+    """Toggle online/offline; only an `active` courier may go online (REQ-018)."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    updated = await availability_svc.set_availability(
+        session, area_id=courier.area_id, courier_id=courier.id, online=body.online
+    )
+    await session.commit()
+    # busy is DERIVED; the real active-delivery count arrives in Phase 7/8 (0 here).
+    busy = availability_svc.compute_busy(active_deliveries=0, max_concurrent=updated.max_concurrent)
+    return AvailabilityResponse(is_online=updated.is_online, busy=busy)
 
 
 # ---------------------------------------------------------------------------
