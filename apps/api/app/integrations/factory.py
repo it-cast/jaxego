@@ -11,13 +11,25 @@ from pathlib import Path
 from tempfile import gettempdir
 
 from app.core.config import settings
-from app.integrations.base import EmailPort, GeocodingPort, ReceitaPort, SmsPort, StoragePort
+from app.integrations.base import (
+    EmailPort,
+    GeocodingPort,
+    PushPort,
+    ReceitaPort,
+    RoutingPort,
+    SmsPort,
+    StoragePort,
+)
 from app.integrations.email import EmailSesAdapter
 from app.integrations.email_stub import EmailStubAdapter
 from app.integrations.geocoding import GeocodingHttpAdapter
 from app.integrations.geocoding_stub import GeocodingStubAdapter
+from app.integrations.push import PushVapidAdapter
+from app.integrations.push_stub import PushStubAdapter
 from app.integrations.receita import ReceitaHttpAdapter
 from app.integrations.receita_stub import ReceitaStubAdapter
+from app.integrations.routing import RoutingHttpAdapter
+from app.integrations.routing_stub import RoutingStubAdapter
 from app.integrations.sms import SmsHttpAdapter
 from app.integrations.sms_stub import SmsStubAdapter
 from app.integrations.storage import StorageB2Adapter
@@ -97,4 +109,26 @@ def get_storage_adapter() -> StoragePort:
         app_key=settings.b2_app_key or "",
         bucket=settings.b2_kyc_bucket,
         allowlist=_hosts(settings.b2_allowlist_hosts),
+    )
+
+
+def get_routing_adapter() -> RoutingPort:
+    """OSRM routing: haversine Stub in dev/test, OSRM httpx otherwise (degrades)."""
+    if _use_stub():
+        return RoutingStubAdapter()
+    return RoutingHttpAdapter(
+        base_url=settings.osrm_base_url,
+        profile=settings.osrm_profile,
+        allowlist=_hosts(settings.osrm_allowlist_hosts),
+    )
+
+
+def get_push_adapter() -> PushPort:
+    """Web Push: in-memory Stub in dev/test, VAPID (pywebpush) otherwise."""
+    if _use_stub():
+        return PushStubAdapter()
+    return PushVapidAdapter(
+        private_key=settings.vapid_private_key,
+        public_key=settings.vapid_public_key,
+        claim_sub=settings.vapid_claim_sub,
     )

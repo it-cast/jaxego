@@ -87,6 +87,24 @@ class Settings(BaseSettings):
     # of the just-uploaded object (TH-04). Only the B2 S3 endpoint host.
     b2_allowlist_hosts: str = Field(default="s3.us-west-004.backblazeb2.com")
 
+    # --- OSRM routing (Phase 8) — ETA/distance for the dispatch ranking ---
+    # In dev/test the factory returns the haversine Stub (no network). The real
+    # httpx adapter is wired in staging/production; it degrades to haversine ×1.4
+    # (eta_degraded) on any error — it NEVER blocks the cascade (TH-8). The host
+    # allowlist closes SSRF (TH-9 / A10) the same way as the other adapters.
+    osrm_base_url: str = Field(default="https://router.project-osrm.org")
+    osrm_profile: str = Field(default="driving")
+    osrm_allowlist_hosts: str = Field(default="router.project-osrm.org")
+
+    # --- Web Push VAPID (Phase 8) — offer/accept notifications ---
+    # The VAPID PRIVATE key is a SECRET provided ONLY via env (Field default None —
+    # Gate 8 FAIL-BLOCK if a real value lands in the repo; if committed, ROTATE).
+    # In dev/test the factory returns the Push Stub (no network), so these are
+    # unused there. The public key + claim subject are not secret.
+    vapid_private_key: str | None = Field(default=None)
+    vapid_public_key: str | None = Field(default=None)
+    vapid_claim_sub: str = Field(default="mailto:ops@jaxego.com.br")
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -97,3 +97,53 @@ class StoragePort(Protocol):
     async def presign_get(self, key: str, *, expires_in: int) -> PresignResult: ...
     async def fetch(self, key: str) -> bytes: ...
     async def put_bytes(self, key: str, data: bytes, *, content_type: str) -> None: ...
+
+
+# ---------------------------------------------------------------------------
+# Routing (OSRM) — ETA/distance for the dispatch ranking (Phase 8, REQ-054).
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class RouteResult:
+    """A road route between two points.
+
+    `distance_m` (metres) and `duration_s` (seconds) come from OSRM `/route/v1`
+    (which returns float metres/seconds). `degraded=True` means the value came
+    from the haversine ×1.4 fallback because OSRM was unavailable — the dispatch
+    logs `eta_degraded` but NEVER blocks (TH-8 / Pitfall 4).
+    """
+
+    distance_m: int
+    duration_s: int
+    degraded: bool = False
+
+
+class RoutingPort(Protocol):
+    """Road ETA/distance. NEVER raises to the caller — it degrades (D-08)."""
+
+    async def route(
+        self, *, origin: tuple[float, float], dest: tuple[float, float]
+    ) -> RouteResult: ...
+
+
+# ---------------------------------------------------------------------------
+# Web Push (VAPID) — offer/accept notifications (Phase 8). Enqueued, never
+# synchronous in the request (skill push). Payload carries ZERO PII (LOW-5).
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class PushMessage:
+    """A push payload — `delivery_id` + deep link + title ONLY (no PII, LOW-5).
+
+    `subscription` is the browser Push subscription dict (endpoint + keys). The
+    payload NEVER includes address/phone/name (RN-013 / TH-7).
+    """
+
+    subscription: dict[str, object]
+    delivery_id: int
+    deep_link: str
+    title: str = "Nova oferta"
+
+
+class PushPort(Protocol):
+    """Send a Web Push message. Degrades silently when unavailable (skill push)."""
+
+    async def send(self, message: PushMessage) -> bool: ...
