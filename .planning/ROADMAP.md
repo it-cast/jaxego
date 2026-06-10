@@ -72,7 +72,7 @@
 
 ## Phase 3: Shell frontend + design system (3 superfícies)
 
-**Milestone:** MS-01 · **Tipo:** ui · **Status:** not_started · **Estimativa:** M (3-5d)
+**Milestone:** MS-01 · **Tipo:** ui · **Status:** complete (2026-06-10) · **Estimativa:** M (3-5d)
 
 ### REQs cobertos
 - REQ-056: tokens/voz/vocabulário (claro + escuro — DEC-001) · REQ-055 (fundação): componentes de estado (empty/error/loading/warn) · REQ-005 (UI): tela 01-login
