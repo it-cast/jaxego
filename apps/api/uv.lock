@@ -360,6 +360,7 @@ dependencies = [
     { name = "cryptography" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
@@ -369,6 +370,7 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "structlog" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "validate-docbr" },
 ]
 
 [package.dev-dependencies]
@@ -390,6 +392,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=43,<46" },
     { name = "email-validator", specifier = ">=2,<3" },
     { name = "fastapi", specifier = "==0.115.*" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pydantic", specifier = ">=2.7,<3" },
     { name = "pydantic-settings", specifier = ">=2.3,<3" },
     { name = "pyjwt", specifier = ">=2.10,<3" },
@@ -399,6 +402,7 @@ requires-dist = [
     { name = "sqlalchemy", specifier = ">=2,<3" },
     { name = "structlog", specifier = ">=24.1,<26" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30,<0.40" },
+    { name = "validate-docbr", specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -805,6 +809,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/15/c0/0be24758891ef825f2065cd5db8741aaddabe3e248ee6acc5e8a80f04005/uvloop-0.22.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0530a5fbad9c9e4ee3f2b33b148c6a64d47bbad8000ea63704fa8260f4cf728e", size = 4366890, upload-time = "2025-10-16T22:16:40.547Z" },
     { url = "https://files.pythonhosted.org/packages/d2/53/8369e5219a5855869bcee5f4d317f6da0e2c669aecf0ef7d371e3d084449/uvloop-0.22.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:bc5ef13bbc10b5335792360623cc378d52d7e62c2de64660616478c32cd0598e", size = 4119472, upload-time = "2025-10-16T22:16:41.694Z" },
     { url = "https://files.pythonhosted.org/packages/f8/ba/d69adbe699b768f6b29a5eec7b47dd610bd17a69de51b251126a801369ea/uvloop-0.22.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:1f38ec5e3f18c8a10ded09742f7fb8de0108796eb673f30ce7762ce1b8550cad", size = 4239051, upload-time = "2025-10-16T22:16:43.224Z" },
+]
+
+[[package]]
+name = "validate-docbr"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/43/822521a1c0c826d0a5224fede4ab3f5885b0485f94ac20af1b46c384be52/validate_docbr-2.0.0.tar.gz", hash = "sha256:c7693783718c7c3d90bdb759a6b41eca647fb297d74a50e0bcdc6244690a8545", size = 46249, upload-time = "2026-04-04T17:53:38.124Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/98/45/e6a064f1ac0c9eab72943573554c5c4e0380587a5a907f25a3242114b782/validate_docbr-2.0.0-py3-none-any.whl", hash = "sha256:08b4a7c49ea1018179151dad94b7192425925b0b23fed0045f3261831a4ae43c", size = 16811, upload-time = "2026-04-04T17:53:36.546Z" },
 ]
 
 [[package]]
