@@ -1,0 +1,13 @@
+{
+  "cnpj": "11222333000181",
+  "razao_social": "EMPRESA EXEMPLO LTDA",
+  "nome_fantasia": "LOJA EXEMPLO",
+  "situacao_cadastral": 2,
+  "descricao_situacao_cadastral": "ATIVA",
+  "cnae_fiscal": 4712100,
+  "cnaes_secundarios": [
+    { "codigo": 4729699, "descricao": "Comércio varejista de produtos alimentícios" }
+  ],
+  "uf": "RJ",
+  "municipio": "SANTO ANTONIO DE PADUA"
+}
