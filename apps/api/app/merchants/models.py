@@ -24,6 +24,7 @@ from sqlalchemy import (
     Boolean,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -123,3 +124,93 @@ class MerchantSubscription(Base, AreaScopedMixin, TimestampMixin):
     )
     # active (Free or paid confirmed) | pending (paid not yet confirmed) | canceled
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+
+
+class MerchantCourierFavorite(Base, AreaScopedMixin, TimestampMixin):
+    """A store's favorite courier (RN-014 / D-06 — SEPARATE from blocks).
+
+    Favorites enter the dispatch cascade FIRST, one at a time, ordered by
+    `priority` (the store reorders ↑/↓ — D-01). Area-scoped pair (store↔courier);
+    UNIQUE(area_id, merchant_id, courier_id) blocks a duplicate favorite. The
+    composite index on (area_id, merchant_id) backs the candidate-build query so
+    favorites load without a table scan (Gate 8 — no N+1). FK RESTRICT (DRV-002).
+    """
+
+    __tablename__ = "merchant_courier_favorites"
+    __table_args__ = (
+        UniqueConstraint(
+            "area_id",
+            "merchant_id",
+            "courier_id",
+            name="uq_merchant_courier_favorites_area_merchant_courier",
+        ),
+        # Candidate build: load a store's favorites by (area_id, merchant_id).
+        Index(
+            "ix_merchant_courier_favorites_area_id_merchant_id",
+            "area_id",
+            "merchant_id",
+        ),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    merchant_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("merchants.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    courier_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("couriers.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    # Cascade order within the favorites tier (D-01) — lower is offered first.
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
+class MerchantCourierBlock(Base, AreaScopedMixin, TimestampMixin):
+    """A store's blocked courier (RN-014 / D-06 — SEPARATE from favorites).
+
+    A blocked courier NEVER receives an offer from this store (neither favorites
+    nor ranking). The block is PRIVATE to the store, valid only for THAT store,
+    and does NOT affect the courier's score (RN-014). `reason` is the store's
+    private note — never exposed to the courier. Area-scoped pair; UNIQUE per pair
+    (a courier is blocked at most once). The (area_id, merchant_id) index backs the
+    set-difference that removes blocked couriers before the cascade (TH-5).
+    FK RESTRICT (DRV-002).
+    """
+
+    __tablename__ = "merchant_courier_blocks"
+    __table_args__ = (
+        UniqueConstraint(
+            "area_id",
+            "merchant_id",
+            "courier_id",
+            name="uq_merchant_courier_blocks_area_merchant_courier",
+        ),
+        # Candidate build: load a store's blocks by (area_id, merchant_id).
+        Index(
+            "ix_merchant_courier_blocks_area_id_merchant_id",
+            "area_id",
+            "merchant_id",
+        ),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    merchant_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("merchants.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    courier_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("couriers.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    # Private store-only note (RN-014) — NEVER exposed to the courier.
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
