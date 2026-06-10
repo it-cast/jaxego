@@ -161,7 +161,7 @@
 
 ## Phase 6: Área operável — bairros, config, cobertura e tabela de frete
 
-**Milestone:** MS-02 · **Tipo:** core · **Status:** not_started · **Estimativa:** M (3-5d) · **Plans:** 5 plans
+**Milestone:** MS-02 · **Tipo:** core · **Status:** complete (2026-06-10) · **Estimativa:** M (3-5d) · **Plans:** 5 plans
 
 ### Plans
 - [x] 06-01-PLAN.md — Migration 0005 (3 tabelas espaciais/relacionais) + AreaConfig tipada com audit + test scaffold (Wave 1)

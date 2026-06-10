@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: MS-02
 milestone_name: Cadastros + área operável
-status: in_progress
-last_updated: "2026-06-10T22:10:00.000Z"
-last_activity: "2026-06-10 — Phase 6 EXECUTADA (área operável: migration 0005 espacial + AreaConfig tipada/audit + catálogo de bairros ST_Contains + cobertura/piso/disponibilidade + admin web jx-data-table + entregador mobile)."
+status: complete
+last_updated: "2026-06-10T22:30:00.000Z"
+last_activity: "2026-06-10 — MS-02 (Cadastros + área operável) COMPLETO. Phase 6 fechada e verificada ao vivo (migration 0005 reversível + ST_Contains ponto-em-polígono em MySQL real: dentro→elegível, fora→não; 2 testes espaciais asseverando). Próximo: MS-03 (Phase 7 — criação de entrega + máquina de estados)."
 progress:
   total_phases: 14
   completed_phases: 6
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 6
+  completed_plans: 6
   percent: 43
 ---
 
