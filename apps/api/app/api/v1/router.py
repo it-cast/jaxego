@@ -8,8 +8,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.auth.router import router as auth_router
+
 api_router = APIRouter()
 
-# Domain sub-routers are included here from Phase 2 onward, e.g.:
-#   from app.api.v1 import users
-#   api_router.include_router(users.router)
+# Phase 2 domain sub-routers.
+api_router.include_router(auth_router)
