@@ -1,0 +1,94 @@
+// jx-availability-toggle — online/offline switch (UI-SPEC §5). Tokens only; ≥44px.
+
+.jx-availability {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-availability__switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-elevated);
+  cursor: pointer;
+}
+
+.jx-availability__switch:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-availability__switch:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jx-availability__track {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  transition: background var(--jx-motion-normal) var(--jx-motion-easing);
+}
+
+.jx-availability__switch--on .jx-availability__track {
+  background: var(--success);
+}
+
+.jx-availability__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--jx-radius-full);
+  background: var(--surface);
+  transition: transform var(--jx-motion-normal) var(--jx-motion-easing);
+}
+
+.jx-availability__switch--on .jx-availability__thumb {
+  transform: translateX(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-availability__track,
+  .jx-availability__thumb {
+    transition: none;
+  }
+}
+
+.jx-availability__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-medium);
+  color: var(--text);
+}
+
+.jx-availability__switch--on .jx-availability__label {
+  color: var(--text);
+}
+
+.jx-availability__cta {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--info);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--info);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+}
+
+.jx-availability__cta:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
