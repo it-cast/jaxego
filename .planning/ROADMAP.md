@@ -42,7 +42,7 @@
 
 ## Phase 2: Núcleo multi-área + autenticação + RBAC
 
-**Milestone:** MS-01 · **Tipo:** foundation · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-01 · **Tipo:** foundation · **Status:** complete (2026-06-10) · **Estimativa:** L (1-2sem)
 
 ### REQs cobertos
 - REQ-001: multi-área `area_id` em tudo · REQ-002: entidade Área · REQ-004: append-only audit/transições · REQ-005: JWT+TOTP · REQ-006: anti-duplicidade · REQ-007: papéis e permissões
