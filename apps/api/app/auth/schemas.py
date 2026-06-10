@@ -8,6 +8,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+# Password policy: minimum 10 chars, no arbitrary composition rules
+# (NIST 800-63B / OWASP A07). Applied wherever a password is presented/set.
+PASSWORD_MIN_LENGTH = 10
+PASSWORD_MAX_LENGTH = 256
+
 
 class LoginBody(BaseModel):
     """Login request. `totp` is optional (required only when enrolled)."""
@@ -15,7 +20,7 @@ class LoginBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
-    password: str = Field(min_length=1, max_length=256)
+    password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
     totp: str | None = Field(default=None, max_length=10)
 
 
