@@ -1,0 +1,99 @@
+// jx-upgrade-modal — anti-dark-pattern plan-limit modal (UI-SPEC §5). Tokens only.
+
+.jx-upgrade-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(24 20 16 / 48%); // warm scrim derived from neutral-800
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--jx-space-4);
+  z-index: 100;
+}
+
+.jx-upgrade {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--jx-space-6);
+}
+
+.jx-upgrade__close {
+  position: absolute;
+  top: var(--jx-space-3);
+  right: var(--jx-space-3);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--jx-radius-lg);
+  color: var(--text-muted);
+  font-size: var(--jx-text-xl);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-upgrade__title {
+  margin: 0 var(--jx-space-6) var(--jx-space-2) 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.jx-upgrade__subtext {
+  margin: 0 0 var(--jx-space-4);
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-upgrade__plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--jx-space-3);
+  margin-bottom: var(--jx-space-4);
+}
+
+.jx-upgrade__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// "Agora não" — EQUAL visual weight: legible text button, ≥44px, never faded.
+.jx-upgrade__later {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-medium);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-upgrade {
+    transition: none;
+  }
+}
