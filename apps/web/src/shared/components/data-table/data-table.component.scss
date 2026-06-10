@@ -1,0 +1,92 @@
+// jx-data-table — governed table primitive (UI-SPEC §3.1).
+// Only semantic vars; no hex, no new var. Light + dark via the inherited tokens.
+
+.jx-data-table {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  overflow: hidden;
+}
+
+.jx-data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--jx-text-sm);
+}
+
+.jx-data-table caption {
+  text-align: left;
+  padding: var(--jx-space-3) var(--jx-space-3) 0;
+  color: var(--text-muted);
+  font-size: var(--jx-text-2xs);
+}
+
+// Sticky header on a sunken surface (data-tables-ux).
+.jx-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  text-align: left;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+
+.jx-data-table__num {
+  text-align: right;
+}
+
+.jx-data-table tbody td {
+  padding: var(--jx-space-3);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.jx-data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.jx-data-table tbody tr:hover {
+  background: var(--brand-wash);
+}
+
+// Optional zebra striping.
+.jx-data-table--zebra tbody tr:nth-child(even) {
+  background: var(--surface-sunken);
+}
+
+.jx-data-table--zebra tbody tr:nth-child(even):hover {
+  background: var(--brand-wash);
+}
+
+// Real sort button (accessibility-pro): inherits header type, focus ring.
+.jx-data-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.jx-data-table__sort:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--jx-radius-sm);
+}
+
+// Embedded states replace the body region.
+.jx-data-table__state {
+  padding: var(--jx-space-4);
+}
