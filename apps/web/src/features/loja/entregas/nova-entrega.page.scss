@@ -1,0 +1,178 @@
+// Tela 12 — new delivery form (UI-SPEC §2). Tokens only.
+
+:host {
+  display: block;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.jx-nova__back {
+  display: inline-block;
+  margin-bottom: var(--jx-space-2);
+  color: var(--info);
+  font-size: var(--jx-text-sm);
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--jx-radius-lg);
+  }
+}
+
+.jx-nova__title {
+  margin: 0 0 var(--jx-space-4);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-nova__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-nova__section {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+
+  legend {
+    padding: 0;
+    font-size: var(--jx-text-2xs);
+    font-weight: var(--jx-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+}
+
+.jx-nova__select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+
+  select {
+    min-height: 44px;
+    padding: 0 var(--jx-space-2);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--jx-radius-lg);
+    color: var(--text);
+    font-size: var(--jx-text-base);
+    font-family: var(--jx-font-display);
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+  }
+}
+
+.jx-nova__e1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+  padding: var(--jx-space-3);
+  background: var(--error-bg);
+  border-left: 3px solid var(--error);
+  border-radius: var(--jx-radius-lg);
+  color: var(--error);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-nova__interest {
+  color: var(--info);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-nova__radios {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--jx-space-2);
+}
+
+@media (max-width: 560px) {
+  .jx-nova__radios {
+    grid-template-columns: 1fr;
+  }
+}
+
+.jx-nova__radio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-2);
+  min-height: 44px;
+  padding: var(--jx-space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  cursor: pointer;
+
+  small {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--jx-text-2xs);
+  }
+
+  &:focus-within {
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-nova__radio--sel {
+  border-color: var(--brand);
+  background: var(--brand-wash);
+}
+
+.jx-nova__radio--off {
+  opacity: 0.6;
+  cursor: not-allowed;
+  color: var(--text-subtle);
+}
+
+.jx-nova__soon {
+  display: inline-block;
+  padding: 0 var(--jx-space-1);
+  background: var(--surface-sunken);
+  border-radius: var(--jx-radius-full);
+  color: var(--text-muted);
+}
+
+.jx-nova__paymicro {
+  margin: 0;
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+.jx-nova__cta {
+  min-height: 48px;
+  width: 100%;
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border: none;
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}

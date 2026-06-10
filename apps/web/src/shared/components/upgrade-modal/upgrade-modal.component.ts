@@ -30,7 +30,7 @@ import { Plan, PlanCardComponent } from '../plan-card/plan-card.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PlanCardComponent],
   template: `
-    <div class="jx-upgrade-overlay" (click)="onOverlay($event)">
+    <div class="jx-upgrade-overlay">
       <div
         class="jx-upgrade"
         role="dialog"
@@ -101,8 +101,11 @@ export class UpgradeModalComponent implements AfterViewInit {
     this.dismiss.emit();
   }
 
-  @HostListener('document:keydown.tab', ['$event'])
+  @HostListener('document:keydown', ['$event'])
   protected trapFocus(event: KeyboardEvent): void {
+    if (event.key !== 'Tab') {
+      return;
+    }
     const panel = this.panelRef?.nativeElement;
     if (!panel) {
       return;
@@ -122,13 +125,6 @@ export class UpgradeModalComponent implements AfterViewInit {
     } else if (!event.shiftKey && active === last) {
       event.preventDefault();
       first.focus();
-    }
-  }
-
-  protected onOverlay(event: MouseEvent): void {
-    // Click on the backdrop (not the panel) dismisses — equivalent to "Agora não".
-    if (event.target === event.currentTarget) {
-      this.dismiss.emit();
     }
   }
 }

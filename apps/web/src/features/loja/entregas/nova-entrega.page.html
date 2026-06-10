@@ -1,0 +1,176 @@
+<a routerLink="/loja" class="jx-nova__back">← Painel</a>
+<h1 class="jx-nova__title">Nova entrega</h1>
+
+<form class="jx-nova__form" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+  <!-- Coleta -->
+  <fieldset class="jx-nova__section">
+    <legend>Coleta</legend>
+    <jx-field
+      label="Endereço de coleta"
+      formControlName="pickup_address"
+      placeholder="Rua, número"
+      hint="Pré-preenchido com o endereço da sua loja. Edite se a coleta for em outro lugar."
+    />
+  </fieldset>
+
+  <!-- Entrega -->
+  <fieldset class="jx-nova__section">
+    <legend>Entrega</legend>
+    <jx-field
+      label="Endereço de entrega"
+      formControlName="dropoff_address"
+      placeholder="Rua, número"
+    />
+    <jx-field
+      label="Número"
+      formControlName="dropoff_number"
+      inputmode="numeric"
+      [mono]="true"
+    />
+    <jx-field
+      label="CEP"
+      formControlName="cep"
+      inputmode="numeric"
+      [mono]="true"
+      placeholder="00000-000"
+    />
+    <label class="jx-nova__select">
+      <span>Bairro de entrega</span>
+      <select formControlName="dropoff_neighborhood_id">
+        <option [ngValue]="null" disabled>Selecione o bairro</option>
+        @for (n of neighborhoods(); track n.id) {
+          <option [ngValue]="n.id">{{ n.name }}</option>
+        }
+      </select>
+    </label>
+
+    @if (outOfArea()) {
+      <div role="alert" class="jx-nova__e1">
+        Endereço fora da nossa área de cobertura. Confira o bairro.
+        <a class="jx-nova__interest" href="#">Avisar quando atendermos esse bairro</a>
+      </div>
+    }
+  </fieldset>
+
+  <!-- Destinatário -->
+  <fieldset class="jx-nova__section">
+    <legend>Destinatário</legend>
+    <jx-field label="Nome do destinatário" formControlName="recipient_name" />
+    <jx-field
+      label="Telefone do destinatário"
+      type="tel"
+      inputmode="numeric"
+      [mono]="true"
+      placeholder="(DD) 9XXXX-XXXX"
+      formControlName="recipient_phone"
+      [error]="phoneError()"
+    />
+  </fieldset>
+
+  <!-- Itens -->
+  <fieldset class="jx-nova__section">
+    <legend>Itens</legend>
+    <jx-field
+      label="O que vai ser entregue"
+      formControlName="items_description"
+      placeholder="1 pizza grande, 1 refrigerante 2L"
+    />
+    <jx-field
+      label="Quantidade"
+      formControlName="items_quantity"
+      inputmode="numeric"
+      [mono]="true"
+    />
+    <jx-field
+      label="Valor declarado (opcional)"
+      inputmode="decimal"
+      [mono]="true"
+      placeholder="R$ 0,00"
+      formControlName="declared_value"
+    />
+    <jx-field
+      label="Nº do pedido (opcional)"
+      formControlName="reference_number"
+      [mono]="true"
+      placeholder="2851"
+    />
+    <jx-field
+      label="Observações para o entregador (opcional)"
+      formControlName="notes"
+      placeholder="Cuidado, não virar a caixa"
+    />
+  </fieldset>
+
+  <!-- Comprovação -->
+  <fieldset class="jx-nova__section">
+    <legend>Comprovação</legend>
+    <div role="radiogroup" aria-label="Método de comprovação" class="jx-nova__radios">
+      <label class="jx-nova__radio jx-nova__radio--sel">
+        <input type="radio" formControlName="proof_method" value="photo" />
+        <span>Foto na entrega <small>padrão</small></span>
+      </label>
+      <label class="jx-nova__radio">
+        <input type="radio" formControlName="proof_method" value="photo_reference" />
+        <span>Foto + nº do pedido</span>
+      </label>
+      <label class="jx-nova__radio jx-nova__radio--off">
+        <input type="radio" disabled aria-disabled="true" />
+        <span>Foto + código <small class="jx-nova__soon">em breve</small></span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- Pagamento -->
+  <fieldset class="jx-nova__section">
+    <legend>Pagamento da corrida</legend>
+    <div role="radiogroup" aria-label="Forma de pagamento" class="jx-nova__radios">
+      <label class="jx-nova__radio jx-nova__radio--sel">
+        <input type="radio" formControlName="payment_method" value="direct" />
+        <span>Direto ao entregador <small>dinheiro ou seu PIX</small></span>
+      </label>
+      <label class="jx-nova__radio jx-nova__radio--off">
+        <input type="radio" disabled aria-disabled="true" />
+        <span>PIX <small class="jx-nova__soon">em breve</small></span>
+      </label>
+      <label class="jx-nova__radio jx-nova__radio--off">
+        <input type="radio" disabled aria-disabled="true" />
+        <span>Cartão <small class="jx-nova__soon">em breve</small></span>
+      </label>
+    </div>
+    <p class="jx-nova__paymicro">
+      No direto, você acerta a corrida com o entregador. A taxa da plataforma entra na sua
+      fatura do mês.
+    </p>
+  </fieldset>
+
+  @if (noCouriersWarning()) {
+    <jx-warn-banner
+      message="0 entregadores online agora para esse trecho — sua entrega pode demorar."
+    />
+  }
+
+  <jx-estimate-box
+    [estimateMinCents]="estimateMin()"
+    [estimateMaxCents]="estimateMax()"
+    [courierCount]="courierCount()"
+    [loading]="estimating()"
+  />
+
+  @if (submitError()) {
+    <jx-error-state [message]="submitError()!" retryLabel="Tentar de novo" (retry)="submit()" />
+  }
+
+  <button type="submit" class="jx-nova__cta" [disabled]="!canSubmit()" [attr.aria-busy]="submitting() ? 'true' : null">
+    {{ submitting() ? 'Criando…' : 'Chamar entregador' }}
+  </button>
+</form>
+
+@if (showUpgrade()) {
+  <jx-upgrade-modal
+    [plans]="upgradePlans()"
+    currentPlanName="Free"
+    [limit]="2"
+    (choose)="onChoosePlan()"
+    (dismiss)="onUpgradeDismiss()"
+  />
+}
