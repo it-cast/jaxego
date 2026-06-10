@@ -59,6 +59,22 @@ export const routes: Routes = [
       },
     ],
   },
+  // Public courier onboarding (F-02): the wizard + post-submit "em análise" are
+  // lazy and unauthenticated — a new courier has no account yet (Phase 5).
+  {
+    path: 'entregador/cadastro',
+    loadComponent: () =>
+      import('../features/entregador/cadastro/cadastro.page').then(
+        (m) => m.CadastroEntregadorPage
+      ),
+  },
+  {
+    path: 'entregador/cadastro/em-analise',
+    loadComponent: () =>
+      import('../features/entregador/cadastro/em-analise.component').then(
+        (m) => m.EntregadorEmAnalisePage
+      ),
+  },
   // Public store onboarding (F-01): cadastro + plano are lazy and unauthenticated
   // — a new store owner has no account yet (Phase 4). Mounted under `loja/` but
   // OUTSIDE the auth-protected shell below.
@@ -101,6 +117,13 @@ export const routes: Routes = [
         path: 'inicio',
         loadComponent: () =>
           import('../features/admin/inicio.page').then((m) => m.AdminInicioPage),
+      },
+      {
+        path: 'kyc/:courierId',
+        loadComponent: () =>
+          import('../features/admin/kyc/kyc-detalhe.page').then(
+            (m) => m.AdminKycDetalhePage
+          ),
       },
     ],
   },

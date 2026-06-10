@@ -1,0 +1,127 @@
+.jx-cad {
+  --background: var(--surface);
+}
+
+.jx-cad__wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--jx-space-4);
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-cad__h1 {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+  letter-spacing: -0.02em;
+
+  em {
+    font-family: var(--jx-font-serif-accent);
+    font-style: italic;
+    font-weight: var(--jx-weight-medium);
+    color: var(--brand);
+  }
+}
+
+.jx-cad__step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+}
+
+.jx-cad__label {
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text-muted);
+}
+
+.jx-cad__input,
+.jx-cad__select {
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--jx-text-base);
+}
+
+.jx-cad__input--mono {
+  font-family: var(--jx-font-mono);
+}
+
+.jx-cad__input:focus-visible,
+.jx-cad__select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-cad__err {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--error);
+}
+
+.jx-cad__hint {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--text-subtle);
+}
+
+.jx-cad__trust {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-cad__consent {
+  display: flex;
+  gap: var(--jx-space-2);
+  align-items: flex-start;
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+
+  input {
+    min-width: 20px;
+    min-height: 20px;
+    margin-top: 2px;
+  }
+}
+
+.jx-cad__footer {
+  position: sticky;
+  bottom: 0;
+  padding: var(--jx-space-3) var(--jx-space-4)
+    calc(var(--jx-space-3) + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.jx-cad__cta {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--jx-radius-md);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-base);
+  cursor: pointer;
+}
+
+.jx-cad__cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-cad__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

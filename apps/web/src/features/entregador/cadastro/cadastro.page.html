@@ -1,0 +1,158 @@
+<ion-content class="jx-cad">
+  <div class="jx-cad__wrap">
+    <h1 class="jx-cad__h1">
+      Entregue na sua cidade. Comece <em>hoje.</em>
+    </h1>
+
+    <jx-wizard-stepper [steps]="steps()" [current]="current()" (goTo)="goToStep($event)" />
+
+    @if (stepError()) {
+      <jx-error-state [message]="stepError()!" />
+    }
+
+    <!-- Step 1 — área + dados -->
+    @if (current() === 0) {
+      <section class="jx-cad__step" [formGroup]="form">
+        <label class="jx-cad__label" for="area">Cidade onde vai entregar</label>
+        <select
+          id="area"
+          class="jx-cad__select"
+          (change)="onAreaChange($any($event.target).value)"
+        >
+          <option [value]="0" disabled selected>Selecione a cidade</option>
+          @for (a of areas(); track a.id) {
+            <option [value]="a.id">{{ a.name }}</option>
+          }
+        </select>
+
+        <label class="jx-cad__label" for="name">Nome completo</label>
+        <input id="name" class="jx-cad__input" type="text" autocomplete="name" formControlName="full_name" />
+
+        <label class="jx-cad__label" for="cpf">CPF</label>
+        <input
+          id="cpf"
+          class="jx-cad__input jx-cad__input--mono"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          [value]="form.controls.cpf.value"
+          (input)="onCpfInput($any($event.target).value)"
+          [attr.aria-invalid]="cpfError() ? 'true' : null"
+          [attr.aria-describedby]="cpfError() ? 'cpf-error' : null"
+        />
+        @if (cpfError()) {
+          <p id="cpf-error" class="jx-cad__err">{{ cpfError() }}</p>
+        }
+
+        <label class="jx-cad__label" for="phone">Telefone</label>
+        <input
+          id="phone"
+          class="jx-cad__input jx-cad__input--mono"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="(22) 99999-1234"
+          [value]="form.controls.phone.value"
+          (input)="onPhoneInput($any($event.target).value)"
+        />
+        @if (phoneError()) {
+          <p class="jx-cad__err">{{ phoneError() }}</p>
+        }
+
+        <label class="jx-cad__label" for="email">E-mail</label>
+        <input id="email" class="jx-cad__input" type="email" inputmode="email" autocomplete="email" formControlName="email" />
+
+        <label class="jx-cad__label" for="pwd">Senha</label>
+        <input id="pwd" class="jx-cad__input" type="password" minlength="10" autocomplete="new-password" formControlName="password" />
+
+        <label class="jx-cad__consent">
+          <input type="checkbox" formControlName="consent" />
+          <span>Concordo com o uso dos meus dados e documentos para validação.</span>
+        </label>
+      </section>
+    }
+
+    <!-- Step 2 — selfie -->
+    @if (current() === 1) {
+      <section class="jx-cad__step">
+        <p class="jx-cad__trust">
+          Sua foto vai criptografada e só o admin da sua cidade vê. A gente nunca publica.
+        </p>
+        @for (doc of docs(); track doc.kind) {
+          @if (doc.kind === 'selfie') {
+            <jx-doc-card
+              [title]="doc.title"
+              mode="edit"
+              [status]="doc.status"
+              [captureMode]="doc.capture"
+              [purpose]="doc.purpose"
+              [uploadState]="doc.status === 'uploading' ? 'uploading' : 'idle'"
+              (fileSelected)="onFile(doc, $event)"
+            />
+          }
+        }
+      </section>
+    }
+
+    <!-- Step 3 — veículo -->
+    @if (current() === 2) {
+      <section class="jx-cad__step" [formGroup]="form">
+        <label class="jx-cad__label" for="vtype">Tipo de veículo</label>
+        <select id="vtype" class="jx-cad__select" formControlName="vehicle_type">
+          <option value="moto">Moto</option>
+          <option value="bicicleta">Bicicleta</option>
+          <option value="carro">Carro</option>
+          <option value="a_pe">A pé</option>
+        </select>
+
+        @if (motorized) {
+          <label class="jx-cad__label" for="plate">Placa</label>
+          <input
+            id="plate"
+            class="jx-cad__input jx-cad__input--mono"
+            type="text"
+            placeholder="ABC1D23"
+            maxlength="8"
+            formControlName="vehicle_plate"
+          />
+        }
+      </section>
+    }
+
+    <!-- Step 4 — documentos completos (condicional) -->
+    @if (current() === 3 && level() === 'completa') {
+      <section class="jx-cad__step" [formGroup]="form">
+        <jx-warn-banner
+          message="Sua cidade pede validação completa: CNH com EAR, CRLV e MEI. Sem MEI você ainda entrega recebendo direto da loja."
+        />
+        @for (doc of docs(); track doc.kind) {
+          @if (doc.kind !== 'selfie') {
+            <jx-doc-card
+              [title]="doc.title"
+              mode="edit"
+              [status]="doc.status"
+              [captureMode]="doc.capture"
+              [purpose]="doc.purpose"
+              [uploadState]="doc.status === 'uploading' ? 'uploading' : 'idle'"
+              (fileSelected)="onFile(doc, $event)"
+            />
+          }
+        }
+
+        <label class="jx-cad__label" for="mei">MEI (CNPJ) — opcional</label>
+        <input id="mei" class="jx-cad__input jx-cad__input--mono" type="text" inputmode="numeric" formControlName="mei_cnpj" />
+        <p class="jx-cad__hint">Necessário só para você receber pela plataforma.</p>
+      </section>
+    }
+
+    @if (offlineWarn()) {
+      <jx-warn-banner [message]="offlineWarn()!" />
+    }
+  </div>
+
+  <footer class="jx-cad__footer">
+    <button type="button" class="jx-cad__cta" [disabled]="loading()" (click)="next()">
+      {{ isLastStep() ? 'Enviar para análise' : 'Continuar' }}
+    </button>
+  </footer>
+</ion-content>
