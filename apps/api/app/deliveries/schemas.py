@@ -1,0 +1,161 @@
+"""Delivery API contracts (Pydantic v2, extra='forbid' — A03 / TH-06).
+
+`CreateDeliveryBody` is the F-03 create contract: `extra='forbid'` blocks mass
+assignment, and the SERVER-DERIVED fields (`state`, `area_id`, `fee_cents`,
+`courier_id`, estimates) are NOT in the body. `payment_method` is a narrow enum
+accepting `direct`/`card`/`pix`, but only `direct` passes the rule (card/pix →
+422 "em breve", D-02). `DeliveryOut` masks the recipient phone (TH-04). The store
+surface (`DeliveryOut`) MAY carry the full dropoff address (the store owns the
+data it typed); the Phase 8 courier-offer serializer must NOT (RN-013 — see
+README.md).
+"""
+
+from __future__ import annotations
+
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+def mask_phone_display(phone: str) -> str:
+    """Mask an E.164 phone for display: keep DDI/DDD prefix + last 4.
+
+    `+5522988887777` → `+5522 9••••-7777`. Never reveal the middle digits in the
+    list/dashboard (TH-04 / LGPD). The full phone is only reachable in the
+    ACEITA→FINALIZADA window (RN-022, Phases 8/9) — never while CRIADA.
+    """
+    if len(phone) < 8:
+        return "•" * len(phone)
+    return f"{phone[:5]} 9••••-{phone[-4:]}"
+
+
+class PaymentMethod(str, Enum):
+    """Per-delivery payment (RN-023 / D-02). Only `direct` enabled in Phase 7."""
+
+    direct = "direct"
+    card = "card"  # "em breve" (Phase 10) — accepted by the enum, rejected by the rule
+    pix = "pix"  # idem
+
+
+class ProofMethod(str, Enum):
+    """Proof of delivery (D-01). Only `photo` active; `otp` is "em breve"."""
+
+    photo = "photo"
+    photo_reference = "photo_reference"
+    otp = "otp"
+
+
+class CreateDeliveryBody(BaseModel):
+    """F-03 create contract. `extra='forbid'` blocks mass assignment (A03)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # --- Pickup (store address — editable, pre-filled in the UI) ---
+    pickup_address: str = Field(min_length=3, max_length=255)
+    pickup_neighborhood: str | None = Field(default=None, max_length=120)
+
+    # --- Dropoff (RN-013: full address persisted; neighborhood resolved in catalog) ---
+    dropoff_neighborhood_id: int
+    dropoff_address: str = Field(min_length=3, max_length=255)
+    dropoff_number: str | None = Field(default=None, max_length=20)
+    dropoff_complement: str | None = Field(default=None, max_length=120)
+    # Trip distance in metres (the UI may estimate it; server uses it for km bands).
+    distance_m: int | None = Field(default=None, ge=0)
+
+    # --- Recipient (minimisation: name + phone mandatory; email/CPF optional) ---
+    recipient_name: str = Field(min_length=2, max_length=120)
+    recipient_phone_e164: str = Field(min_length=12, max_length=20, pattern=r"^\+\d{11,15}$")
+    recipient_email: EmailStr | None = None
+    # Raw CPF (digits or masked) — hashed by the service; NEVER persisted raw.
+    recipient_cpf: str | None = Field(default=None, max_length=14)
+
+    # --- Items / reference ---
+    items_description: str | None = Field(default=None, max_length=500)
+    items_quantity: int = Field(default=1, ge=1, le=999)
+    declared_value_cents: int | None = Field(default=None, ge=0)
+    reference_number: str | None = Field(default=None, max_length=64)
+    notes: str | None = Field(default=None, max_length=500)
+
+    # --- Choices ---
+    proof_method: ProofMethod = ProofMethod.photo
+    payment_method: PaymentMethod
+
+
+class DeliveryOut(BaseModel):
+    """Store-facing delivery view. Recipient phone is MASKED (TH-04).
+
+    The store owns the dropoff address it typed, so it is exposed here. The Phase 8
+    courier-offer serializer must expose ONLY neighborhood + distance (RN-013).
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    public_token: str
+    state: str
+    payment_method: str
+    proof_method: str
+    # Dropoff — store surface (full address allowed here; NOT in the courier offer).
+    dropoff_address: str
+    dropoff_number: str | None
+    dropoff_complement: str | None
+    dropoff_neighborhood_id: int
+    distance_m: int | None
+    # Money (integer cents).
+    estimate_min_cents: int | None
+    estimate_max_cents: int | None
+    fee_cents: int
+    reference_number: str | None
+    # Recipient — name + MASKED phone only (TH-04 / LGPD).
+    recipient_name: str | None = None
+    recipient_phone_masked: str | None = None
+    courier_id: int | None = None
+    created_at: str | None = None
+
+
+class DeliveryListItem(BaseModel):
+    """A row of the store delivery list (screen 14). Phone masked (TH-04)."""
+
+    id: int
+    public_token: str
+    state: str
+    payment_method: str
+    dropoff_neighborhood_id: int
+    estimate_min_cents: int | None
+    estimate_max_cents: int | None
+    fee_cents: int
+    reference_number: str | None
+    recipient_name: str | None
+    recipient_phone_masked: str | None
+    courier_id: int | None
+    created_at: str | None
+
+
+class DeliveryListOut(BaseModel):
+    """Paginated store delivery list (single query + COUNT — no N+1)."""
+
+    items: list[DeliveryListItem]
+    total: int
+    limit: int
+    offset: int
+
+
+class CancelDeliveryBody(BaseModel):
+    """Cancel a delivery (store, pre-acceptance). `extra='forbid'` (A03)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=255)
+
+
+class CreateDeliveryResponse(BaseModel):
+    """Create result returned to the store (E2 warning surfaced here)."""
+
+    delivery_id: int
+    public_token: str
+    state: str
+    estimate_min_cents: int | None
+    estimate_max_cents: int | None
+    fee_cents: int
+    # E2 (D-06): 0 eligible online couriers — non-blocking warning.
+    no_couriers_warning: bool
