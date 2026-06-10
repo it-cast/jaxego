@@ -12,17 +12,30 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer
 from sqlalchemy.dialects.mysql import DATETIME as MYSQL_DATETIME
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 
 # DATETIME(6) on MySQL (microsecond precision); plain DateTime elsewhere (SQLite).
 UTC_DATETIME = DateTime(timezone=True).with_variant(MYSQL_DATETIME(fsp=6), "mysql")
 
+# BIGINT on MySQL; INTEGER on SQLite (SQLite only auto-increments INTEGER PK).
+BIG_ID = BigInteger().with_variant(Integer, "sqlite")
+
 
 def _utcnow() -> datetime:
     """Aware UTC now (TD-010: never naive)."""
     return datetime.now(UTC)
+
+
+def ensure_aware_utc(value: datetime) -> datetime:
+    """Coerce a DB-read datetime to aware UTC (TD-010 read boundary).
+
+    Some drivers (SQLite/aiosqlite, and MySQL DATETIME) return naive datetimes
+    even for `DateTime(timezone=True)` columns. We store UTC, so a naive value
+    read back IS UTC — attach the tzinfo so comparisons never mix naive/aware.
+    """
+    return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
 
 
 class TimestampMixin:
@@ -53,7 +66,7 @@ class AreaScopedMixin:
     @declared_attr
     def area_id(cls) -> Mapped[int]:  # noqa: N805 (SQLAlchemy declared_attr API)
         return mapped_column(
-            BigInteger,
+            BIG_ID,
             ForeignKey("areas.id", ondelete="RESTRICT", onupdate="RESTRICT"),
             nullable=False,
             index=True,

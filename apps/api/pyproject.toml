@@ -84,3 +84,6 @@ pythonpath = ["."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "-q"
+markers = [
+    "mysql: requires a live MySQL 8 server (append-only trigger). Run with -m mysql against real MySQL; skipped in dev via -m 'not mysql'.",
+]

@@ -27,6 +27,7 @@ from app.core.security import (
     verify_password,
     verify_totp,
 )
+from app.db.mixins import ensure_aware_utc
 
 logger = structlog.get_logger("auth")
 
@@ -94,13 +95,13 @@ class InvalidRefreshError(AppError):
 # ---------------------------------------------------------------------------
 def is_locked(user: User) -> bool:
     """True while the account is within an active lock window."""
-    return user.locked_until is not None and datetime.now(UTC) < user.locked_until
+    return user.locked_until is not None and datetime.now(UTC) < ensure_aware_utc(user.locked_until)
 
 
 def register_failed_attempt(user: User) -> None:
     """Increment the failure counter; lock at the threshold (aware UTC)."""
     now = datetime.now(UTC)
-    if user.first_failed_at is None or now - user.first_failed_at > LOCK_WINDOW:
+    if user.first_failed_at is None or now - ensure_aware_utc(user.first_failed_at) > LOCK_WINDOW:
         user.first_failed_at = now
         user.failed_attempts = 1
     else:
@@ -194,7 +195,9 @@ async def authenticate(
     ok, new_hash = verify_password(user.password_hash, password)
     if not ok:
         register_failed_attempt(user)
-        await session.flush()
+        # COMMIT now: the failure counter / lock must persist even though we
+        # raise (the router does not commit on the error path).
+        await session.commit()
         logger.info("login_fail", user_id=user.id, reason="bad_password")
         if is_locked(user):
             raise AccountLockedError()
@@ -208,7 +211,7 @@ async def authenticate(
     if user.totp_enrolled and user.totp_secret is not None:
         if not totp or not verify_totp(user.totp_secret, totp):
             register_failed_attempt(user)
-            await session.flush()
+            await session.commit()
             logger.info("login_fail", user_id=user.id, reason="bad_totp")
             raise TotpRequiredError()
         # Anti-replay: reject a code reused within the same window (TH-08).
@@ -259,19 +262,17 @@ async def rotate_refresh(session: AsyncSession, raw: str) -> TokenPair:
     if token is None:
         raise InvalidRefreshError()
 
-    if token.revoked_at is not None:
-        # Token belongs to a revoked family — treat as reuse, revoke again.
+    if token.revoked_at is not None or token.rotated_at is not None:
+        # A revoked or already-rotated (spent) token reused => session
+        # compromised. Revoke the whole family and COMMIT now — the revocation
+        # must persist even though we raise (the router does not commit on the
+        # error path). Re-login is required (TH-03).
         await _revoke_family(session, token.family_id)
+        await session.commit()
         logger.warning("refresh_reuse_detected", user_id=token.user_id)
         raise RefreshReuseError()
 
-    if token.rotated_at is not None:
-        # A spent (already-rotated) token reused => session compromised.
-        await _revoke_family(session, token.family_id)
-        logger.warning("refresh_reuse_detected", user_id=token.user_id)
-        raise RefreshReuseError()
-
-    if datetime.now(UTC) >= token.expires_at:
+    if datetime.now(UTC) >= ensure_aware_utc(token.expires_at):
         raise InvalidRefreshError()
 
     user = await session.get(User, token.user_id)

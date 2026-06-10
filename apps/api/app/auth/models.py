@@ -17,7 +17,7 @@ from sqlalchemy import BigInteger, Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.db.mixins import UTC_DATETIME, TimestampMixin
+from app.db.mixins import BIG_ID, UTC_DATETIME, TimestampMixin
 
 # Platform-level role stored on the user (area roles live in area_admins).
 PLATFORM_ADMIN_ROLE = "admin_plataforma"
@@ -29,7 +29,7 @@ class User(Base, TimestampMixin):
 
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
 
     # --- PII [LGPD] (RN-021): never logged; masked in non-essential outputs ---
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)  # [LGPD]
@@ -65,8 +65,8 @@ class RefreshToken(Base, TimestampMixin):
 
     __tablename__ = "refresh_tokens"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BIG_ID, nullable=False, index=True)
     # Family id ties together a rotation chain so reuse revokes all siblings.
     family_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)

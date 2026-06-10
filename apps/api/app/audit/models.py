@@ -17,7 +17,7 @@ from sqlalchemy import JSON, BigInteger, Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.db.mixins import UTC_DATETIME
+from app.db.mixins import BIG_ID, UTC_DATETIME
 
 
 class AuditLog(Base):
@@ -25,7 +25,7 @@ class AuditLog(Base):
 
     __tablename__ = "audit_log"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
     actor_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
     action: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     # Nullable: global table, but attribute to an area when one applies.
