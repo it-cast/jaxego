@@ -48,9 +48,5 @@ def test_price_at_or_above_floor_accepted() -> None:
     """A price >= the floor passes (platform never fixes; only floors)."""
     pricing = pytest.importorskip("app.couriers.pricing")
     # Exactly at the floor and above both pass (no exception).
-    pricing.assert_above_floor(
-        price=8.00, floor_km=2.00, floor_entrega=8.00, mode="neighborhood"
-    )
-    pricing.assert_above_floor(
-        price=3.00, floor_km=2.50, floor_entrega=8.00, mode="km"
-    )
+    pricing.assert_above_floor(price=8.00, floor_km=2.00, floor_entrega=8.00, mode="neighborhood")
+    pricing.assert_above_floor(price=3.00, floor_km=2.50, floor_entrega=8.00, mode="km")

@@ -72,8 +72,6 @@ async def test_set_coverage_area_scoped(db_session, courier_seed) -> None:
         includes=[n1.id, n2.id],
         excludes=[],
     )
-    rows = await coverage.list_coverage(
-        db_session, area_id=courier.area_id, courier_id=courier.id
-    )
+    rows = await coverage.list_coverage(db_session, area_id=courier.area_id, courier_id=courier.id)
     included = {r.neighborhood_id for r in rows if r.kind == "include"}
     assert included == {n1.id, n2.id}

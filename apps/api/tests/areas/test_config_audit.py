@@ -130,9 +130,7 @@ async def test_sensitive_config_change_writes_audit(db_session, seed) -> None:
         "timeout_favoritos_s": 60,
         "politica_retorno_pct": 0,
     }
-    _, diff = await service.update_area(
-        db_session, area_id, AreaUpdate(config=new_config)
-    )
+    _, diff = await service.update_area(db_session, area_id, AreaUpdate(config=new_config))
     assert diff is not None  # service returns the sensitive diff for the router
 
     diff_before, diff_after = diff
@@ -147,10 +145,10 @@ async def test_sensitive_config_change_writes_audit(db_session, seed) -> None:
         after=diff_after,
     )
     rows = (
-        await db_session.execute(
-            select(AuditLog).where(AuditLog.action == "area.config.update")
-        )
-    ).scalars().all()
+        (await db_session.execute(select(AuditLog).where(AuditLog.action == "area.config.update")))
+        .scalars()
+        .all()
+    )
     assert len(rows) == 1
     assert rows[0].before == {"piso_km": "2.00"}
     assert rows[0].after == {"piso_km": "3.50"}
@@ -163,9 +161,7 @@ async def test_non_sensitive_change_no_config_diff(db_session, seed) -> None:
     from app.areas.schemas import AreaUpdate
 
     area_id = seed.area_a.id
-    _, diff = await service.update_area(
-        db_session, area_id, AreaUpdate(name="Pádua Centro")
-    )
+    _, diff = await service.update_area(db_session, area_id, AreaUpdate(name="Pádua Centro"))
     assert diff is None
 
 
