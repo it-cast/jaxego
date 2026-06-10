@@ -13,8 +13,12 @@ Sources:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+import hashlib
+import secrets
+import uuid
+from datetime import UTC, datetime, timedelta
 
+import jwt
 import pyotp
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
@@ -110,3 +114,68 @@ def current_totp_window(secret: str) -> int:
     """Return the current TOTP counter (timecode) for replay tracking."""
     totp = pyotp.TOTP(secret)
     return totp.timecode(datetime.now(UTC))
+
+
+# ---------------------------------------------------------------------------
+# JWT access token — HS256, claims pinned, algorithm pinned on decode (Pattern 3).
+#
+# HS256 is locked by ADR-005 and correct here: a single FastAPI process both
+# issues AND validates the token, so a symmetric secret is appropriate (OWASP
+# A02 decision table). NOTE: if validation ever moves to a second process
+# (gateway/worker), migrating to RS256/ES256 (asymmetric, multi-validator —
+# e.g. Menu Certo) should be a FUTURE ADR, not a blocker now (LOW-2 resolved:
+# PyJWT pinned).
+#
+# decode pins algorithms=["HS256"] (defeats alg:none) AND requires the critical
+# claims, so a stripped token is rejected.
+# ---------------------------------------------------------------------------
+_REQUIRED_CLAIMS = ["exp", "iat", "iss", "aud", "sub", "jti"]
+
+
+def encode_access(user_id: int, area_scope: int | None, role: str) -> str:
+    """Issue a 15-minute HS256 access token with pinned claims (aware UTC)."""
+    now = datetime.now(UTC)  # AWARE — TD-010
+    payload: dict[str, object] = {
+        "sub": str(user_id),
+        "area_scope": area_scope,  # None for platform admin (audited bypass)
+        "role": role,
+        "iat": now,
+        "exp": now + timedelta(minutes=settings.access_token_minutes),
+        "iss": settings.jwt_issuer,
+        "aud": settings.jwt_audience,
+        "jti": str(uuid.uuid4()),
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
+def decode_access(token: str) -> dict[str, object]:
+    """Decode + validate an access token. Raises jwt.PyJWTError on any failure."""
+    return jwt.decode(
+        token,
+        settings.jwt_secret,
+        algorithms=[settings.jwt_algorithm],  # PINNED — mitigates alg:none
+        audience=settings.jwt_audience,
+        issuer=settings.jwt_issuer,
+        options={"require": _REQUIRED_CLAIMS},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Opaque refresh token (Pattern 4). The client holds a 256-bit opaque value;
+# only its SHA-256 is stored in DB. Rotation + reuse-detection live in the auth
+# service (they need the DB row + token family).
+# ---------------------------------------------------------------------------
+def new_refresh_token() -> tuple[str, str]:
+    """Return (raw_value_for_client, sha256_hex_for_db)."""
+    raw = secrets.token_urlsafe(32)  # 256 bits
+    return raw, hash_refresh_token(raw)
+
+
+def hash_refresh_token(raw: str) -> str:
+    """SHA-256 hex of a refresh token (deterministic; for DB lookup)."""
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def compare_secret(a: str, b: str) -> bool:
+    """Timing-safe comparison of two secrets (A02/A08)."""
+    return secrets.compare_digest(a, b)
