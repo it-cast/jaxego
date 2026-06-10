@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import func, select
-
 from app.areas.models import Area
 from app.auth.models import User
 from app.plans.models import SubscriptionPlan
+from sqlalchemy import func, select
+
 from tools.seed import run_seed
 
 
@@ -20,12 +20,16 @@ async def test_seed_is_idempotent(db_session) -> None:
 
     # Exactly one Pádua area.
     padua = (
-        await db_session.execute(select(func.count()).select_from(Area).where(Area.codename == "padua"))
+        await db_session.execute(
+            select(func.count()).select_from(Area).where(Area.codename == "padua")
+        )
     ).scalar_one()
     assert padua == 1
 
     # Exactly 4 plans.
-    plans = (await db_session.execute(select(func.count()).select_from(SubscriptionPlan))).scalar_one()
+    plans = (
+        await db_session.execute(select(func.count()).select_from(SubscriptionPlan))
+    ).scalar_one()
     assert plans == 4
 
     # Platform admin + area admin de-duplicated by email.
@@ -53,8 +57,5 @@ async def test_seed_plan_values_are_data_not_hardcoded(db_session) -> None:
     """All four plan codes exist with seedable values (DRV-009)."""
     await run_seed(db_session)
     await db_session.commit()
-    codes = {
-        p.code
-        for p in (await db_session.execute(select(SubscriptionPlan))).scalars().all()
-    }
+    codes = {p.code for p in (await db_session.execute(select(SubscriptionPlan))).scalars().all()}
     assert codes == {"free", "inicio", "profissional", "sem_limite"}
