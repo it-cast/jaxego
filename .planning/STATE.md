@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase 2 executada (auth + multi-área + RBAC). Trigger append-only @mysql pendente de verificação ao vivo.
-last_updated: "2026-06-10T14:30:00.000Z"
-last_activity: "2026-06-10 — Executada a Phase 2 (16 tasks T-01..T-16). Gates locais verdes; @pytest.mark.mysql pendente de run ao vivo."
+status: Phase 3 executada (shell frontend + design system, 3 superfícies). Build/lint/testes verdes; verificação visual ao vivo (serve + axe) pendente.
+last_updated: "2026-06-10T15:46:07.000Z"
+last_activity: "2026-06-10 — Executada a Phase 3 (6 tasks T-01..T-06): apps/web Angular 19 + Ionic 8, tokens claro/dark, componentes de estado, login /v1/auth/login, shell 3 superfícies. 25/25 testes, lint limpo, zero hardcode, sem token em localStorage. EXECUTION-LOG gravado; SUMMARY/reconcile/verify pendentes."
 progress:
   total_phases: 14
   completed_phases: 2
-  total_plans: 1
-  completed_plans: 1
-  percent: 14
+  total_plans: 2
+  completed_plans: 2
+  percent: 21
 ---
 
 # STATE — Current Execution State
