@@ -5,12 +5,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-
 from app.integrations.receita_stub import ReceitaStubAdapter
 from app.merchants import service
 from app.merchants.schemas import MerchantSignupBody
 from app.plans.service import seed_plans_if_missing
 from app.workers.revalidate import RETRY_WINDOWS_HOURS, next_retry_delay
+
 from tests.helpers import Seed
 
 BASE = {
