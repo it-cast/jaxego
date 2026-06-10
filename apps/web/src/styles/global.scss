@@ -1,0 +1,11 @@
+// Global styles. Token layers (_tokens.scss generated, _semantic.scss) are
+// wired in T-02; typography in T-03. Minimal reset for the scaffold.
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}

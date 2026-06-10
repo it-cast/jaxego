@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Jaxegô</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#FAF6EE" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!--
+      Anti-FOUC: resolve and apply the theme BEFORE the first paint, before any
+      component CSS and before the Angular bootstrap (UI-SPEC §1.2 / DEC-001).
+      Precedence: localStorage('jx-theme') -> prefers-color-scheme -> light.
+      Keep this synchronous and inline — never move it to an external file.
+    -->
+    <script>
+      (function () {
+        try {
+          var s = localStorage.getItem('jx-theme');
+          var t = s || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <jx-root></jx-root>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "jaxego-web",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
