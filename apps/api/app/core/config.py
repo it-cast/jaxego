@@ -39,6 +39,18 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = Field(default="INFO")
 
+    # --- Auth / JWT (Phase 2) ---
+    # JWT_SECRET is a secret (>=256 bits). It is provided ONLY via env; the repo
+    # ships a placeholder in .env.example and never a real value (Gate 8 FAIL-BLOCK).
+    # The dev/test default below is NOT a real secret and must be overridden in
+    # staging/production via the JWT_SECRET env var.
+    jwt_secret: str = Field(default="dev-insecure-change-me-32bytes-minimum-0000")
+    jwt_algorithm: Literal["HS256"] = Field(default="HS256")
+    jwt_issuer: str = Field(default="jaxego")
+    jwt_audience: str = Field(default="jaxego-api")
+    access_token_minutes: int = Field(default=15)
+    refresh_token_days: int = Field(default=30)
+
 
 @lru_cache
 def get_settings() -> Settings:
