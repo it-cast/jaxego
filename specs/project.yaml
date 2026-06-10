@@ -1,0 +1,47 @@
+# specs/project.yaml — identidade e configuração estrutural do projeto
+# Lido por /gsd-bootstrap. Campos críticos para o framework funcionar.
+
+project:
+  name: "{Nome formal do projeto}"
+  codename: "{slug-em-kebab-case}"
+  description_pt_br: |
+    {1 parágrafo descrevendo o projeto, proposta de valor, usuário primário.}
+  type: "{saas | b2b-saas | b2c-app | internal-tool | marketplace | api-product}"
+  locale: "pt-BR"
+  domain_prod: "{exemplo.com.br ou null}"
+  domain_staging: "{staging.exemplo.com.br ou null}"
+
+  # Estrutura monorepo (default v0.5.0+)
+  # Framework cria automaticamente apps/api, apps/web, apps/mobile no /gsd-bootstrap
+  monorepo: true
+  apps:
+    - { name: "api", description: "Backend API (FastAPI/Python ou similar)" }
+    - { name: "web", description: "Frontend web (Angular ou similar)" }
+    - { name: "mobile", description: "App mobile (Ionic/Capacitor ou similar)" }
+  # Para projetos só backend: monorepo: false; remover apps[]
+  # Para projetos só web: remover entry "mobile"
+  # Para projetos só mobile: remover entry "web"
+
+  # Cálculo de produtividade (skill: meta/productivity-estimation)
+  # Capturado no /gsd-bootstrap, usado no /gsd-milestone-summary
+  estimated_solo_dev_weeks: "{ex: 24-30 ou número fixo, baseado em complexidade}"
+  hours_per_week_assumed: 40
+
+owner:
+  name: "{Nome}"
+  email: "{email}"
+  org: "{empresa ou null}"
+
+team:
+  size: 1
+  roles: ["dev", "designer"]
+  hours_per_week: 20
+
+timeline:
+  mvp_target_months: 4
+  hard_deadline: null
+
+compliance:
+  - "LGPD"
+
+created: "{YYYY-MM-DD}"

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Entregadores · Pádua</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:980px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;letter-spacing:-.02em}
+form.filters{display:flex;gap:8px;margin:12px 0}
+select,input[type=search]{padding:9px;border:1px solid #C8BAA5;border-radius:6px;font-size:13px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid #E5DBCC;border-radius:10px;overflow:hidden}
+td,th{padding:10px 8px;border-bottom:1px solid #F2EBE0;text-align:left}
+.mono{font-family:'JetBrains Mono',monospace}
+.st{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.st.active{background:#D6F1ED;color:#1B998B}
+.st.pending{background:#FFF1D2;color:#8B5A05}
+.st.suspended{background:#F9DCDC;color:#C71D1D}
+.lvl{font-size:11px;color:#6B5F50}
+.empty-state{text-align:center;color:#6B5F50;padding:40px;display:none}
+</style></head>
+<body>
+<main>
+  <a href="/admin/padua">← Painel</a>
+  <h1>Entregadores · Pádua</h1>
+  <form class="filters" action="/admin/padua/entregadores" method="get">
+    <select name="status"><option value="">Todos</option><option value="pending_kyc">Validação pendente</option><option value="active">Ativos</option><option value="suspended">Suspensos</option></select>
+    <select name="validation"><option value="">Qualquer validação</option><option value="simple">Simples</option><option value="complete">Completa</option></select>
+    <select name="online"><option value="">On/offline</option><option value="online">Online agora</option></select>
+    <input type="search" name="q" placeholder="Nome ou CPF">
+    <button type="submit" style="padding:9px 16px;background:#181410;color:#fff;border:0;border-radius:6px;font-weight:600;cursor:pointer">Filtrar</button>
+  </form>
+  <table>
+    <thead><tr><th>Nome</th><th>Validação</th><th>Score</th><th>Entregas 30d</th><th>MEI</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><strong>Roberto Paula</strong><br><span class="lvl mono">cou_01HYR9KX</span></td><td class="lvl">completa · 2/4 itens</td><td class="mono">—</td><td class="mono">0</td><td>pendente</td><td><span class="st pending">VALIDAÇÃO</span></td><td><a href="/admin/padua/entregadores/cou_01HYR9KX">revisar</a></td></tr>
+      <tr><td><strong>João Silva</strong><br><span class="lvl mono">cou_01HXAQ11</span></td><td class="lvl">completa ✓</td><td class="mono" style="color:#D4A017">87,4</td><td class="mono">214</td><td>ativo</td><td><span class="st active">ATIVO · online</span></td><td><a href="/admin/padua/entregadores/cou_01HXAQ11">ver</a></td></tr>
+      <tr><td><strong>Ana Costa</strong><br><span class="lvl mono">cou_01HXAQ22</span></td><td class="lvl">simples ✓ · sem MEI</td><td class="mono" style="color:#1B998B">91,2</td><td class="mono">189</td><td>— (só direto)</td><td><span class="st active">ATIVA · online</span></td><td><a href="/admin/padua/entregadores/cou_01HXAQ22">ver</a></td></tr>
+      <tr><td><strong>Carlos Mota</strong><br><span class="lvl mono">cou_01HXAQ33</span></td><td class="lvl">completa ✓</td><td class="mono">58,1</td><td class="mono">12</td><td>ativo</td><td><span class="st suspended">SUSPENSO · recurso aberto</span></td><td><a href="/admin/padua/entregadores/cou_01HXAQ33">ver</a></td></tr>
+    </tbody>
+  </table>
+  <div class="empty-state">Nenhum entregador com esses filtros.</div>
+</main>
+</body></html>

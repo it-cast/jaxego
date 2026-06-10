@@ -1,0 +1,8 @@
+name: design-token-architecture
+category: quality
+required_for:
+  - phase_type: bootstrap
+  - flag: has_ui
+  - keyword_any: ["design tokens", "tokens.json", "design system", "naming convention"]
+recommended_for:
+  - phase_type: refactor-ui

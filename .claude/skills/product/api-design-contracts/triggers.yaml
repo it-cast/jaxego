@@ -1,0 +1,8 @@
+name: api-design-contracts
+category: product
+required_for:
+  - feature: api_endpoint
+  - keyword_any: ["REST API", "OpenAPI", "swagger", "endpoint", "POST /", "GET /", "DELETE /", "PUT /", "PATCH /", "API contract", "DTO"]
+  - path_pattern: ["**/api/**", "**/routers/**", "**/controllers/**"]
+recommended_for:
+  - keyword_any: ["graphql", "tRPC"]

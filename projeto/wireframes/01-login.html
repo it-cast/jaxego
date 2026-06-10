@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Entrar</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:400px;margin:48px auto;padding:0 16px}
+h1{font-size:28px;letter-spacing:-.02em}
+h1 em{font-family:'Fraunces',serif;font-style:italic;color:#E84E1B;font-weight:500}
+label{display:block;font-size:13px;font-weight:600;margin:16px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid #C8BAA5;border-radius:6px;font-size:14px;box-sizing:border-box}
+button{width:100%;padding:14px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:600;margin-top:20px;cursor:pointer}
+a{color:#0A66C2;font-size:13px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:12px}
+.loading.skeleton{display:none;height:44px;background:#E5DBCC;border-radius:8px;margin-top:20px;animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.5}}
+footer{text-align:center;font-size:12px;color:#6B5F50;margin-top:32px}
+</style></head>
+<body>
+<main>
+  <header><h1>Jaxegô. Chegou <em>rapidinho.</em></h1></header>
+  <form action="/auth/login" method="post">
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="email" required placeholder="voce@exemplo.com.br">
+    <label for="password">Senha</label>
+    <input type="password" id="password" name="password" required minlength="10">
+    <div class="error-state" role="alert">E-mail ou senha incorretos. Tente de novo ou recupere a senha.</div>
+    <button type="submit">Entrar</button>
+    <div class="loading skeleton" aria-hidden="true"></div>
+  </form>
+  <nav style="margin-top:16px;display:flex;justify-content:space-between">
+    <a href="/auth/recuperar-senha">Esqueci a senha</a>
+    <a href="/cadastro">Criar conta</a>
+  </nav>
+  <section style="margin-top:32px;border-top:1px solid #E5DBCC;padding-top:16px">
+    <a href="/cadastro/loja">Cadastrar minha loja →</a><br><br>
+    <a href="/cadastro/entregador">Quero entregar →</a>
+  </section>
+</main>
+<footer>jaxego.com.br · Grupo Itcast</footer>
+</body></html>

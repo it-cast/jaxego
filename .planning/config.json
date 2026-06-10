@@ -1,0 +1,122 @@
+{
+  "mode": "interactive",
+  "granularity": "standard",
+  "response_language": "pt-BR",
+
+  "slicing_strategy": "vertical_value",
+  "visual_tokens_mode": "final",
+  "sprint_planning": {
+    "min_duration_days": 3,
+    "max_duration_days": 10,
+    "max_tasks_per_sprint": 12,
+    "min_tasks_per_sprint": 3,
+    "max_dod_items": 6,
+    "min_dod_items": 3,
+    "require_visual_contract_when_ui": true,
+    "require_tokens_from_design_system": true
+  },
+
+  "workflow": {
+    "ui_phase_blocking": true,
+    "skills_enforcement": true,
+    "integration_check": true,
+    "security_baseline": true,
+    "reconcile_before_close": true,
+    "auto_advance": false,
+    "commit_docs": true,
+    "plan_check": true,
+    "verifier": true
+  },
+
+  "gates": {
+    "bootstrap_required": true,
+    "ui_spec_required_when_ui_true": true,
+    "skills_enforcement_threshold_block": 2,
+    "skills_enforcement_threshold_flag": 1,
+    "security_baseline_when_risk": true,
+    "integration_check_when_declared": true,
+    "reconciliation_before_phase_close": true,
+    "tests_lint_before_plan_close": true
+  },
+
+  "performance_budget": {
+    "lcp_ms": 2500,
+    "inp_ms": 200,
+    "cls": 0.1,
+    "bundle_main_kb_gzip": 400,
+    "bundle_vendor_kb_gzip": 800,
+    "first_paint_ms": 1500
+  },
+
+  "observability": {
+    "required_log_fields": ["request_id", "user_id", "endpoint", "method", "status_code", "duration_ms"],
+    "pii_fields_forbidden_in_logs": ["cpf", "cnpj", "email", "password", "token", "jwt", "card_number", "cvv"],
+    "slow_query_threshold_ms": 100
+  },
+
+  "ci_gates": {
+    "test_required": true,
+    "lint_required": true,
+    "a11y_axe_required": true,
+    "bundlesize_required": true,
+    "lighthouse_required": true,
+    "visual_regression_required": false,
+    "coverage_target_pct": 80
+  },
+
+  "parallelization": {
+    "enabled": true,
+    "plan_level": true,
+    "task_level": false,
+    "max_concurrent_agents": 3,
+    "min_plans_for_parallel": 2
+  },
+
+  "safety": {
+    "always_confirm_destructive": true,
+    "always_confirm_external_services": true,
+    "always_confirm_roadmap_changes": true
+  },
+
+  "agent_skills": {
+    "gsd-phase-researcher": ["owasp-security", "api-design-contracts", "observability-production"],
+    "gsd-ui-researcher": ["ui-ux-pro-max", "design-to-code", "accessibility-pro", "error-ux-patterns", "ux-copywriting-ptbr"],
+    "gsd-planner": ["skills-enforcement"],
+    "gsd-plan-checker": ["skills-enforcement"],
+    "gsd-ui-checker": ["accessibility-pro", "visual-regression-testing"],
+    "backend-architect": ["api-design-contracts", "observability-production", "error-ux-patterns"],
+    "backend-developer": ["api-design-contracts", "observability-production", "owasp-security"],
+    "frontend-developer": ["component-library-governance", "accessibility-pro", "error-ux-patterns", "ux-copywriting-ptbr", "micro-animations-delight"],
+    "mobile-developer": ["offline-first", "accessibility-pro", "push-notifications-architecture", "error-ux-patterns"],
+    "ui-ux-designer": ["accessibility-pro", "ux-copywriting-ptbr", "error-ux-patterns", "micro-animations-delight"],
+    "test-writer": ["visual-regression-testing"],
+    "security-reviewer": ["owasp-security", "lgpd-compliance", "observability-production"],
+    "performance-analyst": ["performance-web-vitals"]
+  },
+
+  "orchestrator": {
+    "enabled": true,
+    "available_agents": [
+      "backend-architect",
+      "backend-developer",
+      "frontend-developer",
+      "mobile-developer",
+      "ui-ux-designer",
+      "test-writer",
+      "security-reviewer",
+      "performance-analyst"
+    ],
+    "fallback_mode": "inline",
+    "parallelization_when_possible": true,
+    "max_context_per_agent_tokens": 50000
+  },
+
+  "docs": {
+    "require_index_md": true,
+    "auto_convert_binaries": true,
+    "supported_binary_formats": ["xlsx", "xls", "docx", "doc", "pptx", "ppt"]
+  },
+
+  "project_code": null,
+  "claude_md_path": "./CLAUDE.md"
+}

@@ -1,0 +1,10 @@
+name: lgpd-compliance
+category: br
+required_for:
+  - locale: pt-BR
+    when_handles_pii: true
+  - keyword_any: ["LGPD", "dados pessoais", "anonimização", "exclusão de conta", "consentimento", "termo de uso", "política de privacidade"]
+  - feature: pii_collection
+  - feature: account_deletion
+recommended_for:
+  - locale: pt-BR

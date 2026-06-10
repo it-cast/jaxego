@@ -1,0 +1,7 @@
+name: visual-regression-testing
+category: product
+required_for:
+  - flag: touches_shared_components
+  - keyword_any: ["chromatic", "percy", "visual regression", "screenshot test", "playwright snapshot"]
+recommended_for:
+  - flag: has_ui

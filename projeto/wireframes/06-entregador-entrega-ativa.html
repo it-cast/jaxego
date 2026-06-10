@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Entrega em andamento</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:420px;margin:auto}
+.map{height:300px;background:#F2EBE0;display:grid;place-items:center;color:#9D8E7A;font-size:13px;position:relative}
+.state{position:absolute;top:12px;left:12px;background:#DDEBFA;color:#0A66C2;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
+.mono{font-family:'JetBrains Mono',monospace}
+main{padding:16px}
+h1{font-size:20px;letter-spacing:-.02em;margin:0}
+.addr{font-size:14px;color:#4A4136;margin:4px 0 12px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.actions a{padding:12px;text-align:center;border:1px solid #C8BAA5;border-radius:8px;color:#4A4136;text-decoration:none;font-weight:600;font-size:13px}
+button.primary{width:100%;padding:16px;background:#181410;color:#fff;border:0;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+button.problem{width:100%;padding:10px;background:transparent;color:#C71D1D;border:0;font-size:13px;margin-top:8px;cursor:pointer;text-decoration:underline}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+.steps{font-size:12px;color:#6B5F50;margin-top:12px}
+.steps li.done{color:#1B998B}
+.steps li.current{color:#E84E1B;font-weight:700}
+</style></head>
+<body>
+<section class="map" aria-label="Mapa da rota">
+  <span class="state">ACEITA</span>
+  [mapa: você → ponto de coleta]
+  <span class="mono" style="position:absolute;bottom:12px;right:12px;background:#fff;padding:4px 10px;border-radius:6px;font-size:11px">dlv_01HXAQ3K9P</span>
+</section>
+<main>
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;font-weight:600">Indo coletar · ~4 min · 0,8 km</div>
+  <h1>Pizzaria do José</h1>
+  <p class="addr">Rua das Flores, 123 · Centro</p>
+  <div class="actions">
+    <a href="tel:+5522999991234" data-action="call">📞 Ligar</a>
+    <a href="/entregador/chat/dlv_01HXAQ3K9P" data-action="message">💬 Mensagem</a>
+  </div>
+  <button class="primary" type="button" data-action="arrived-pickup">Cheguei na coleta</button>
+  <button class="problem" type="button" data-action="cannot-complete">Não consigo concluir esta entrega</button>
+  <div class="error-state" role="alert">Você parece longe do ponto de coleta. Aproxime-se para confirmar a chegada.</div>
+  <ol class="steps">
+    <li class="done">Aceita às 14:30</li>
+    <li class="current">Indo coletar</li>
+    <li>Coletar e fotografar</li>
+    <li>Entregar em Vila Nova (endereço aparece após a coleta)</li>
+    <li>Comprovar entrega</li>
+  </ol>
+</main>
+</body></html>

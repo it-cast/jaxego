@@ -1,0 +1,8 @@
+name: offline-first
+category: mobile
+required_for:
+  - flag: has_mobile
+    when_offline_required: true
+  - keyword_any: ["offline mode", "offline-first", "service worker", "local storage", "indexedDB", "sync queue", "conflict resolution"]
+recommended_for:
+  - flag: has_mobile

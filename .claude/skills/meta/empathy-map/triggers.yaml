@@ -1,0 +1,7 @@
+name: empathy-map
+category: meta
+required_for:
+  - keyword_any: ["empathy map", "mapa de empatia", "Diz Pensa Faz Sente"]
+recommended_for:
+  - phase_type: research
+  - phase_type: discuss-phase

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Entregas da loja</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:980px;margin:24px auto;padding:0 20px}
+h1{font-size:24px;letter-spacing:-.02em}
+form.filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+select,input[type=date],input[type=search]{padding:9px;border:1px solid #C8BAA5;border-radius:6px;font-size:13px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid #E5DBCC;border-radius:10px;overflow:hidden}
+td,th{padding:10px 8px;border-bottom:1px solid #F2EBE0;text-align:left}
+.st{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.st.finalizada{background:#D6F1ED;color:#0F6E62}
+.st.entregue{background:#D6F1ED;color:#1B998B}
+.st.cancelada{background:#F2EBE0;color:#9D8E7A}
+.st.recusada{background:#FFF1E8;color:#E84E1B}
+.mono{font-family:'JetBrains Mono',monospace}
+.empty-state{text-align:center;color:#6B5F50;padding:40px;background:#fff;border:1px solid #E5DBCC;border-radius:10px;display:none}
+nav.pages{display:flex;gap:8px;justify-content:center;margin:16px 0}
+nav.pages a{padding:8px 12px;border:1px solid #C8BAA5;border-radius:6px;color:#4A4136;text-decoration:none;font-size:13px}
+</style></head>
+<body>
+<main>
+  <h1>Entregas</h1>
+  <form class="filters" action="/loja/entregas" method="get">
+    <select name="state">
+      <option value="">Todos os status</option>
+      <option value="criada">Procurando</option><option value="aceita">Aceita</option><option value="coletada">A caminho</option>
+      <option value="entregue">Entregue</option><option value="finalizada">Finalizada</option>
+      <option value="recusada_no_destino">Recusada no destino</option><option value="cancelada">Cancelada</option>
+    </select>
+    <select name="payment_method">
+      <option value="">Todo pagamento</option><option value="direct">Direto</option><option value="pix">PIX</option><option value="card">Cartão</option>
+    </select>
+    <input type="date" name="from"><input type="date" name="to">
+    <input type="search" name="q" placeholder="Buscar por nº, destinatário…">
+    <button type="submit" style="padding:9px 16px;background:#181410;color:#fff;border:0;border-radius:6px;font-weight:600;cursor:pointer">Filtrar</button>
+  </form>
+  <table>
+    <thead><tr><th>Nº</th><th>Data</th><th>Destino</th><th>Entregador</th><th>Frete</th><th>Pagamento</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="mono"><a href="/loja/entregas/2851">#2851</a></td><td class="mono">25/04 14:28</td><td>Vila Nova</td><td>João Silva</td><td class="mono">R$ 8,50</td><td>direto</td><td><span class="st entregue">ENTREGUE</span></td></tr>
+      <tr><td class="mono"><a href="/loja/entregas/2848">#2848</a></td><td class="mono">25/04 12:02</td><td>Centro</td><td>Ana Costa</td><td class="mono">R$ 7,00</td><td>PIX</td><td><span class="st finalizada">FINALIZADA</span></td></tr>
+      <tr><td class="mono"><a href="/loja/entregas/2840">#2840</a></td><td class="mono">24/04 19:45</td><td>Sereno</td><td>Pedro Lima</td><td class="mono">R$ 10,00</td><td>cartão</td><td><span class="st recusada">RECUSADA</span></td></tr>
+      <tr><td class="mono"><a href="/loja/entregas/2833">#2833</a></td><td class="mono">24/04 11:10</td><td>Centro</td><td>—</td><td class="mono">—</td><td>—</td><td><span class="st cancelada">CANCELADA</span></td></tr>
+    </tbody>
+  </table>
+  <div class="empty-state">Nenhuma entrega com esses filtros. <a href="/loja/entregas">Limpar filtros</a></div>
+  <nav class="pages"><a href="?page=1" aria-current="page">1</a><a href="?page=2">2</a><a href="?page=3">3</a></nav>
+</main>
+</body></html>

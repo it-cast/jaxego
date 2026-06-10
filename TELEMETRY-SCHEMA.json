@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gsd-framework.local/telemetry-schema-v1.json",
+  "title": "GSD Framework Telemetry Export v1",
+  "description": "Formato canônico de exportação de métricas de uso do framework GSD, para envio anonimizado ao autor do framework para iteração baseada em dados reais.",
+  "type": "object",
+  "required": ["schema_version", "framework_version", "exported_at", "entries"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1"],
+      "description": "Versão deste schema. Incrementa em breaking changes."
+    },
+    "framework_version": {
+      "type": "string",
+      "description": "Versão do GSD Framework usado (ex: 0.2.0)."
+    },
+    "exported_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC."
+    },
+    "entry_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PhaseEntry"
+      }
+    }
+  },
+  "$defs": {
+    "PhaseEntry": {
+      "type": "object",
+      "required": ["phase_hash", "closed_at", "framework_effort", "framework_value"],
+      "properties": {
+        "phase_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{12}$",
+          "description": "Hash anônimo do phase_id (SHA256 truncado em 12 chars). Permite deduplicar entradas sem revelar o nome original."
+        },
+        "started_at": { "type": ["string", "null"], "format": "date-time" },
+        "closed_at": { "type": "string", "format": "date-time" },
+        "duration_days": { "type": ["number", "null"], "minimum": 0 },
+
+        "plan_revisions": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Commits que tocaram PLAN.md durante a fase — proxy de quantas vezes o plano foi refeito."
+        },
+        "skills_cited": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "IDs públicos de skills listadas em 'Skills Consultadas' do PLAN.md."
+        },
+        "skills_dispensed": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "IDs públicos de skills listadas em 'Skills Dispensadas' do PLAN.md."
+        },
+        "plan_checker_blocks": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Quantas vezes o plan-checker bloqueou o planning (indicador de fricção)."
+        },
+
+        "tasks_total": { "type": ["integer", "null"], "minimum": 0 },
+        "tasks_completed": { "type": ["integer", "null"], "minimum": 0 },
+        "gates_passed": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1, "maximum": 7 }
+        },
+        "gates_bypassed": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["gate", "reason"],
+                "properties": {
+                  "gate": { "type": "integer", "minimum": 1, "maximum": 7 },
+                  "reason": { "type": "string" }
+                }
+              }
+            ]
+          }
+        },
+        "reconcile_runs": { "type": ["integer", "null"], "minimum": 0 },
+        "reconcile_divergences_found": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Afirmações do PLAN.md que o código não sustentava (maior = mais honestidade ganha pela ferramenta)."
+        },
+
+        "fix_iterations": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "PRs de fix nos 7 dias pós-close da fase. Proxy de 'saiu quebrado em produção'."
+        },
+        "bugs_reported_7d": { "type": ["integer", "null"], "minimum": 0 },
+        "bugs_severity_high": { "type": ["integer", "null"], "minimum": 0 },
+        "rollback": { "type": ["boolean", "null"] },
+
+        "what_worked": {
+          "type": ["string", "null"],
+          "maxLength": 280,
+          "description": "1 linha qualitativa — o que o framework ajudou. ANONIMIZADO antes do export."
+        },
+        "what_hurt": {
+          "type": ["string", "null"],
+          "maxLength": 280,
+          "description": "1 linha qualitativa — onde o framework atrapalhou. ANONIMIZADO antes do export."
+        },
+        "what_missing": {
+          "type": ["string", "null"],
+          "maxLength": 280,
+          "description": "1 linha qualitativa — o que faltou. ANONIMIZADO antes do export."
+        },
+
+        "framework_effort": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Overhead subjetivo — 1=invisível, 5=muito peso."
+        },
+        "framework_value": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Valor subjetivo — 1=inútil, 5=salvou muito trabalho."
+        }
+      }
+    }
+  }
+}

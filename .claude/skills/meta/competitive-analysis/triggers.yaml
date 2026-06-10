@@ -1,0 +1,8 @@
+name: competitive-analysis
+category: meta
+required_for:
+  - phase_type: bootstrap
+  - keyword_any: ["competidor", "concorrente", "competitive analysis", "matriz competitiva", "positioning"]
+recommended_for:
+  - phase_type: discovery
+  - phase_type: pricing-decision

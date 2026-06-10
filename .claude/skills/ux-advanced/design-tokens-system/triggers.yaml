@@ -1,0 +1,7 @@
+name: design-tokens-system
+category: ux-advanced
+required_for:
+  - flag: has_ui
+  - keyword_any: ["tokens.json", "design system", "design tokens", "theme provider", "css variables", "scss variables"]
+  - path_pattern: ["**/tokens.json", "**/design-system/**", "**/themes/**"]
+recommended_for: []

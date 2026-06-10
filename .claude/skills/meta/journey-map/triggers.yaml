@@ -1,0 +1,14 @@
+name: journey-map
+category: meta
+priority: high
+required_for:
+  - phase_type: discovery
+  - phase_type: discuss-phase
+  - feature: onboarding
+  - feature: checkout
+  - keyword_any: ["journey map", "customer journey", "user journey", "jornada do usuário", "jornada do cliente", "mapa de jornada", "estágios da jornada", "curva emocional", "touchpoints", "service blueprint"]
+recommended_for:
+  - phase_type: redesign
+  - phase_type: growth
+  - phase_type: retention
+  - keyword_any: ["onboarding", "drop-off", "abandono", "fricção"]

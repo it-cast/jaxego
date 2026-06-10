@@ -1,0 +1,7 @@
+name: parallel-orchestration
+category: meta
+required_for:
+  - config: parallelization.task_level
+  - keyword_any: ["wave paralela", "parallel execution", "executores paralelos", "wave-dispatcher", "task_level"]
+recommended_for:
+  - keyword_any: ["squad", "orquestração", "waves"]

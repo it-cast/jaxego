@@ -1,0 +1,13 @@
+name: heuristic-evaluation
+category: quality
+priority: high
+required_for:
+  - phase_type: verify-work
+  - phase_type: audit-milestone
+  - phase_type: ui-audit
+  - flag: has_ui
+  - keyword_any: ["heuristic", "Nielsen", "avaliação heurística", "audit UX", "auditoria UX", "usability audit", "usability evaluation", "10 heurísticas", "severity scale"]
+recommended_for:
+  - phase_type: redesign
+  - phase_type: pre-release
+  - keyword_any: ["polish", "ux review", "antes do release"]

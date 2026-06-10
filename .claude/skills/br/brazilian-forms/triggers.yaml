@@ -1,0 +1,8 @@
+name: brazilian-forms
+category: br
+required_for:
+  - locale: pt-BR
+  - keyword_any: ["CPF", "CNPJ", "CEP", "RG", "PIS", "telefone brasileiro", "endereço brasil", "estado brasileiro"]
+  - flag: has_forms
+    when_locale: pt-BR
+recommended_for: []

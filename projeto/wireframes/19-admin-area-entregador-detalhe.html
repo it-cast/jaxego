@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Roberto Paula · revisão</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:760px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+.doc{display:grid;grid-template-columns:90px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #F2EBE0}
+.thumb{width:90px;height:64px;background:#F2EBE0;border-radius:6px;display:grid;place-items:center;font-size:10px;color:#9D8E7A}
+button{padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:0}
+button.ok{background:#1B998B;color:#fff}
+button.no{background:#fff;color:#C71D1D;border:1px solid #C71D1D}
+select,textarea{width:100%;padding:9px;border:1px solid #C8BAA5;border-radius:6px;font-size:13px;box-sizing:border-box}
+.mono{font-family:'JetBrains Mono',monospace}
+.ok-tag{color:#1B998B;font-weight:700;font-size:12px}
+.pending-tag{color:#8B5A05;font-weight:700;font-size:12px}
+.rejected-tag{color:#C71D1D;font-weight:700;font-size:12px}
+.dim{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+</style></head>
+<body>
+<main>
+  <a href="/admin/padua/entregadores">← Entregadores</a>
+  <h1>Roberto Paula <span class="mono" style="font-size:13px;color:#6B5F50">cou_01HYR9KX</span></h1>
+  <p style="font-size:13px;color:#6B5F50">Validação exigida em Pádua: <strong>completa</strong> · cadastro há 2 dias · moto ABC1D23</p>
+
+  <section class="card" aria-labelledby="kyc">
+    <h2 id="kyc" style="font-size:15px;margin:0 0 4px">Itens da validação · 2 de 4 aprovados</h2>
+    <div class="doc">
+      <div class="thumb">[selfie]</div>
+      <div><strong>CPF + Selfie com documento</strong><br><small class="mono" style="color:#6B5F50">123.***.***-09 · enviado 23/04</small></div>
+      <span class="ok-tag">✓ Aprovado</span>
+    </div>
+    <div class="doc">
+      <div class="thumb">[MEI]</div>
+      <div><strong>MEI</strong><br><small class="mono" style="color:#6B5F50">CNAE 5320-2/02 · Receita: ATIVO</small></div>
+      <span class="ok-tag">✓ Aprovado (automático)</span>
+    </div>
+    <div class="doc">
+      <div class="thumb">[CNH]</div>
+      <div><strong>CNH com EAR</strong><br><small style="color:#6B5F50">enviada há 5h</small>
+        <form action="/api/v1/admin/kyc/cou_01HYR9KX/cnh/reject" method="post" style="margin-top:6px">
+          <select name="rejection_reason"><option value="">Motivo da reprovação…</option><option value="illegible">Ilegível</option><option value="no_ear">Sem EAR</option><option value="expired">Vencida</option><option value="mismatch">Não confere com o titular</option></select>
+        </form>
+      </div>
+      <div><button class="ok" type="submit" formaction="/api/v1/admin/kyc/cou_01HYR9KX/cnh/approve">Aprovar</button> <button class="no" type="submit">Reprovar</button></div>
+    </div>
+    <div class="doc">
+      <div class="thumb">[CRLV]</div>
+      <div><strong>CRLV</strong><br><small style="color:#6B5F50">Honda Biz · ABC1D23 · enviada há 5h</small></div>
+      <div><button class="ok" type="button">Aprovar</button> <button class="no" type="button">Reprovar</button></div>
+    </div>
+    <p style="font-size:12px;color:#6B5F50">Reprovação notifica o entregador com o motivo e libera reenvio só do item reprovado. Tudo fica no audit log.</p>
+  </section>
+
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 4px">Score (quando ativo)</h2>
+    <div class="dim"><span>Entregas no prazo (30%)</span><span class="mono">—</span></div>
+    <div class="dim"><span>Aceite (20%)</span><span class="mono">—</span></div>
+    <div class="dim"><span>Cancelou após aceite (15%)</span><span class="mono">—</span></div>
+    <div class="dim"><span>Comprovação correta (15%)</span><span class="mono">—</span></div>
+    <div class="dim"><span>Avaliações (20%)</span><span class="mono">—</span></div>
+    <p style="font-size:12px;color:#6B5F50">Novato entra em probation pelas primeiras 30 entregas.</p>
+  </section>
+
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 8px">Ações</h2>
+    <form action="/api/v1/admin/couriers/cou_01HYR9KX/suspend" method="post">
+      <select name="suspension_reason" required>
+        <option value="">Suspender com motivo…</option>
+        <option value="proof_fraud">Fraude de comprovação</option>
+        <option value="repeated_cancellation">Cancelamentos repetidos pós-aceite</option>
+        <option value="conduct">Conduta com loja/destinatário</option>
+        <option value="docs_expired">Documentos vencidos</option>
+      </select>
+      <textarea name="suspension_details" rows="2" placeholder="Detalhe verificável (obrigatório) — o entregador verá este texto" required style="margin-top:8px"></textarea>
+      <button class="no" type="submit" style="margin-top:8px">Suspender (abre recurso de 5 dias úteis)</button>
+    </form>
+  </section>
+  <div class="error-state" role="alert" style="display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:8px;font-size:13px">Selecione o motivo antes de reprovar — o entregador precisa saber o que corrigir.</div>
+</main>
+</body></html>

@@ -1,0 +1,8 @@
+name: file-upload-ux
+category: ux-advanced
+required_for:
+  - feature: upload
+  - keyword_any: ["upload", "drag and drop", "drop zone", "file picker", "attach file", "image upload", "document upload"]
+  - path_pattern: ["**/upload/**", "**/uploads/**"]
+recommended_for:
+  - keyword_any: ["avatar", "profile picture", "import"]

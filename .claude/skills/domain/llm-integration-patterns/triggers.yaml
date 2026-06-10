@@ -1,0 +1,8 @@
+name: llm-integration-patterns
+category: domain
+required_for:
+  - keyword_any: ["LLM", "Claude API", "OpenAI", "Anthropic SDK", "langchain", "llamaindex", "completions", "chat completions", "embeddings", "function calling", "tool use", "ReAct"]
+  - feature: ai_integration
+  - path_pattern: ["**/llm/**", "**/ai/**", "**/llm_providers/**"]
+recommended_for:
+  - keyword_any: ["prompt", "system message"]

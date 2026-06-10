@@ -1,0 +1,55 @@
+name: quality:web-design-audit
+priority: high
+tier: 2
+description: >
+  Auditoria sistemática de UI contra Web Interface Guidelines.
+  Trigger preferencial em phase-close, pre-launch, accessibility-review.
+
+phase_types:
+  - ui-audit
+  - phase-close
+  - pre-launch
+  - accessibility-review
+  - pre-release
+  - regression
+
+flags:
+  has_ui: true
+  is_phase_close: true
+
+keywords_pt_br:
+  - auditar UI
+  - revisar interface
+  - checklist UI antes de release
+  - audit acessibilidade ampla
+  - revisão de UI
+  - audit pré-launch
+  - revisão final UI
+  - validar interface contra boas práticas
+  - inspecionar UI completa
+  - checagem antes de release
+  - revisão de boas práticas web
+
+keywords_en:
+  - audit UI
+  - check accessibility
+  - review UI compliance
+  - design audit
+  - web interface guidelines
+  - WCAG check
+  - review UX
+  - check site against best practices
+  - pre-launch UI review
+  - UI compliance check
+  - vercel web interface
+
+triggers_in_files:
+  - "src/components/**/*.{tsx,jsx,vue,svelte}"
+  - "src/pages/**/*.{tsx,jsx,vue,svelte}"
+  - "src/app/**/*.{tsx,jsx}"
+
+trigger_signals:
+  - "phase com has_ui:true entrando em close"
+  - "tag de release próxima"
+  - "PR contém component novo de UI substancial"
+  - "ROADMAP marca esta phase como pre-launch"

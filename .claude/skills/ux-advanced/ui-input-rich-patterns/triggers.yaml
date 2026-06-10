@@ -1,0 +1,6 @@
+name: ui-input-rich-patterns
+category: ux-advanced
+required_for:
+  - keyword_any: ["date picker", "datepicker", "combobox", "autocomplete", "search input", "rich text editor", "wysiwyg", "tag input", "multi-select"]
+recommended_for:
+  - flag: has_forms

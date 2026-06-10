@@ -1,0 +1,8 @@
+name: payment-checkout-ux
+category: ux-advanced
+required_for:
+  - feature: payment
+  - feature: checkout
+  - keyword_any: ["payment", "checkout", "billing", "stripe", "asaas", "pagarme", "credit card", "pix", "boleto", "subscription"]
+  - path_pattern: ["**/payment/**", "**/checkout/**", "**/billing/**"]
+recommended_for: []

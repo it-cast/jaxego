@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Comprovar entrega</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:420px;margin:auto}
+main{padding:16px}
+h1{font-size:20px;letter-spacing:-.02em}
+.camera{border:2px dashed #C8BAA5;border-radius:10px;padding:32px;text-align:center;color:#6B5F50;font-size:13px;margin:12px 0}
+.gps-ok{background:#D6F1ED;color:#1B998B;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600}
+.gps-bad{background:#F9DCDC;color:#C71D1D;padding:8px 12px;border-radius:8px;font-size:13px;font-weight:600;display:none}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 4px}
+input{width:100%;padding:12px;border:1px solid #C8BAA5;border-radius:8px;font-size:16px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;text-align:center;letter-spacing:.2em}
+button{width:100%;padding:16px;background:#E84E1B;color:#fff;border:0;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
+button:disabled{opacity:.5}
+button.alt{background:transparent;color:#C71D1D;border:0;font-size:13px;text-decoration:underline;padding:8px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+fieldset{border:1px solid #E5DBCC;border-radius:8px;padding:14px;margin-top:16px}
+legend{font-size:12px;font-weight:700;color:#8B5A05;background:#FFF8C2;padding:2px 8px;border-radius:4px}
+</style></head>
+<body>
+<main>
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;font-weight:600">No destino · Vila Nova</div>
+  <h1>Comprovar entrega</h1>
+  <p style="font-size:13px;color:#6B5F50">Destinatária: Maria Silva</p>
+  <form action="/api/v1/deliveries/dlv_01HXAQ3K9P/proof" method="post" enctype="multipart/form-data">
+    <div class="gps-ok" role="status">📍 GPS confirmado · você está no endereço</div>
+    <div class="gps-bad" role="alert">📍 Você está fora do raio do endereço. Aproxime-se ou ligue para a loja.</div>
+    <div class="camera">
+      <input type="file" name="delivery_photo" accept="image/*" capture="environment" required>
+      Foto da entrega — enquadre a fachada, número ou porta
+    </div>
+    <label for="reference_number">Número do pedido (pergunte ao destinatário)</label>
+    <input type="text" id="reference_number" name="reference_number" inputmode="numeric" placeholder="0000" maxlength="6">
+    <div class="error-state" role="alert">Número não confere (tentativa 2 de 3). Confirme com o destinatário ou ligue para a loja.</div>
+    <fieldset>
+      <legend>PAGAMENTO DIRETO</legend>
+      <label style="font-weight:400"><input type="radio" name="direct_payment_received" value="cash" style="width:auto"> Recebi R$ 8,50 em dinheiro</label>
+      <label style="font-weight:400"><input type="radio" name="direct_payment_received" value="pix" style="width:auto"> Recebi R$ 8,50 por PIX</label>
+      <label style="font-weight:400"><input type="radio" name="direct_payment_received" value="not_received" style="width:auto"> Não recebi o pagamento</label>
+    </fieldset>
+    <button type="submit">Confirmar entrega</button>
+    <button class="alt" type="button" data-action="recipient-absent">Destinatário ausente</button>
+    <button class="alt" type="button" data-action="recipient-refused">Destinatário recusou o item</button>
+  </form>
+</main>
+</body></html>

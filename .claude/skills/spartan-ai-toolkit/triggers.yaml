@@ -1,0 +1,8 @@
+name: spartan-ai-toolkit
+category: standalone
+required_for:
+  - feature: ai_integration
+    when_minimal_design: true
+  - keyword_any: ["minimal AI", "lean prompt", "spartan toolkit"]
+recommended_for:
+  - feature: ai_integration

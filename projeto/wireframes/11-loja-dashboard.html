@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Painel da loja</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+header.top{background:#fff;border-bottom:1px solid #E5DBCC;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+nav.menu a{margin-right:16px;color:#4A4136;text-decoration:none;font-size:14px;font-weight:500}
+nav.menu a[aria-current="page"]{color:#E84E1B;font-weight:700}
+main{max-width:980px;margin:24px auto;padding:0 20px}
+h1{font-size:24px;letter-spacing:-.02em}
+h1 em{font-family:'Fraunces',serif;font-style:italic;color:#E84E1B;font-weight:500}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.stat{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px}
+.stat b{font-size:24px;font-family:'JetBrains Mono',monospace;display:block}
+.stat span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#6B5F50}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+button.new{padding:14px 24px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:10px 6px;border-bottom:1px solid #F2EBE0;text-align:left}
+.st{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.st.aceita{background:#DDEBFA;color:#0A66C2}
+.st.coletada{background:#FFF1D2;color:#8B5A05}
+.st.criada{background:#F2EBE0;color:#6B5F50}
+.mono{font-family:'JetBrains Mono',monospace}
+.empty-state{text-align:center;color:#6B5F50;padding:32px;display:none}
+.warn{background:#FFF1D2;color:#8B5A05;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+</style></head>
+<body>
+<header class="top">
+  <strong>Jaxegô · Pizzaria do José</strong>
+  <nav class="menu">
+    <a href="/loja" aria-current="page">Painel</a>
+    <a href="/loja/entregas">Entregas</a>
+    <a href="/loja/favoritos">Favoritos</a>
+    <a href="/loja/plano">Plano e faturas</a>
+  </nav>
+</header>
+<main>
+  <div class="warn" hidden id="invoice-warn">Sua fatura de abril venceu há 3 dias. <a href="/loja/plano#faturas">Pagar agora</a> — novas entregas serão bloqueadas em 4 dias.</div>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h1>Hoje na sua loja. Tudo <em>certinho.</em></h1>
+    <button class="new" type="button" onclick="location.href='/loja/entregas/nova'">+ Nova entrega</button>
+  </div>
+  <section class="stats" aria-label="Resumo de hoje">
+    <div class="stat"><b>7</b><span>entregas hoje</span></div>
+    <div class="stat"><b class="mono">14 min</b><span>tempo médio</span></div>
+    <div class="stat"><b class="mono">R$ 61,50</b><span>fretes hoje</span></div>
+    <div class="stat"><b>12/40</b><span>entregas do plano</span></div>
+  </section>
+  <section class="card" aria-labelledby="curso">
+    <h2 id="curso" style="font-size:15px;margin:0 0 8px">Em curso agora</h2>
+    <table>
+      <thead><tr><th>Entrega</th><th>Destino</th><th>Entregador</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">#2851</td><td>Vila Nova</td><td>João Silva ★87</td><td><span class="st coletada">A CAMINHO</span></td><td>direto 💵</td><td><a href="/loja/entregas/2851">ver</a></td></tr>
+        <tr><td class="mono">#2850</td><td>Centro</td><td>Ana Costa ★91</td><td><span class="st aceita">INDO COLETAR</span></td><td>PIX</td><td><a href="/loja/entregas/2850">ver</a></td></tr>
+        <tr><td class="mono">#2849</td><td>Sereno</td><td>— procurando…</td><td><span class="st criada">PROCURANDO</span></td><td>cartão</td><td><a href="/loja/entregas/2849">ver</a></td></tr>
+      </tbody>
+    </table>
+    <div class="empty-state">Nenhuma entrega em curso. Crie uma no botão acima.</div>
+  </section>
+</main>
+</body></html>

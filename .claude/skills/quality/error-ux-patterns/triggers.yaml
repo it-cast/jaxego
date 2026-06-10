@@ -1,0 +1,8 @@
+name: error-ux-patterns
+category: quality
+required_for:
+  - flag: has_forms
+  - flag: has_error_states
+  - keyword_any: ["error message", "error state", "validation error", "404", "500", "fallback ui", "error boundary"]
+recommended_for:
+  - flag: has_ui

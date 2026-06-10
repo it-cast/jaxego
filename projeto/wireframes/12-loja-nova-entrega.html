@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Nova entrega</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:620px;margin:24px auto;padding:0 20px}
+h1{font-size:24px;letter-spacing:-.02em}
+fieldset{border:1px solid #E5DBCC;border-radius:8px;margin:14px 0;padding:16px;background:#fff}
+legend{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;padding:0 6px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #C8BAA5;border-radius:6px;font-size:14px;box-sizing:border-box}
+.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pay label{border:2px solid #E5DBCC;border-radius:8px;padding:12px;text-align:center;cursor:pointer;font-weight:600;margin:0}
+.pay input{width:auto}
+.pay label.sel{border-color:#E84E1B;background:#FFF1E8}
+.estimate{background:#FFF1E8;border:1px solid #FFDEC1;border-radius:8px;padding:14px;display:flex;justify-content:space-between;font-size:14px}
+.mono{font-family:'JetBrains Mono',monospace;font-weight:700}
+button{width:100%;padding:16px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+.warn{display:none;background:#FFF1D2;color:#8B5A05;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+small{color:#6B5F50}
+</style></head>
+<body>
+<main>
+  <h1>Nova entrega</h1>
+  <form action="/api/v1/deliveries" method="post">
+    <fieldset><legend>Coleta</legend>
+      <label for="pickup">Endereço de coleta</label>
+      <input type="text" id="pickup" name="pickup_address" value="Rua das Flores, 123 · Centro (sua loja)">
+    </fieldset>
+    <fieldset><legend>Entrega</legend>
+      <label for="dest_street">Endereço de entrega</label>
+      <input type="text" id="dest_street" name="destination_address" required placeholder="Rua, número">
+      <label for="dest_nb">Bairro</label>
+      <select id="dest_nb" name="destination_neighborhood" required>
+        <option value="">Selecione…</option>
+        <option value="centro">Centro</option><option value="vila-nova">Vila Nova</option><option value="sereno">Sereno</option><option value="cidade-nova">Cidade Nova</option>
+      </select>
+      <div class="error-state" id="err-area" role="alert">Endereço fora da nossa área de cobertura. Confira o bairro.</div>
+      <label for="rec_name">Nome do destinatário</label>
+      <input type="text" id="rec_name" name="recipient_name" required>
+      <label for="rec_phone">Telefone do destinatário</label>
+      <input type="tel" id="rec_phone" name="recipient_phone" required>
+    </fieldset>
+    <fieldset><legend>Itens</legend>
+      <label for="items">O que vai ser entregue</label>
+      <textarea id="items" name="items_description" rows="2" required placeholder="1 pizza grande, 1 refrigerante 2L"></textarea>
+      <label for="ref">Número do pedido (para comprovação)</label>
+      <input type="text" id="ref" name="reference_number" placeholder="2851">
+      <label for="notes">Observações para o entregador</label>
+      <input type="text" id="notes" name="notes" placeholder="Cuidado, não virar a caixa">
+    </fieldset>
+    <fieldset><legend>Pagamento da corrida</legend>
+      <div class="pay">
+        <label class="sel"><input type="radio" name="payment_method" value="direct" checked> 💵 Direto ao entregador<br><small>dinheiro ou seu PIX</small></label>
+        <label><input type="radio" name="payment_method" value="pix"> PIX<br><small>pela plataforma</small></label>
+        <label><input type="radio" name="payment_method" value="card"> Cartão<br><small>pela plataforma</small></label>
+      </div>
+      <div class="error-state" id="err-pay" role="alert">Cartão recusado. A entrega não foi criada. Tente outro cartão ou pague direto ao entregador.</div>
+      <div class="warn" id="warn-direct-blocked" role="alert">Pagamento direto indisponível para sua loja por 90 dias (disputas não resolvidas). Use PIX ou cartão.</div>
+    </fieldset>
+    <div class="estimate" role="status">
+      <span>Frete estimado <small>(3 entregadores online)</small></span>
+      <span class="mono">R$ 8,00–9,50 + taxa R$ 1,50</span>
+    </div>
+    <div class="warn" id="warn-none" role="alert">0 entregadores online agora para esse trecho — sua entrega pode demorar. Criar mesmo assim?</div>
+    <div class="error-state" id="err-limit" role="alert">Você usou as 2 entregas do plano Free este mês. <a href="/loja/plano">Fazer upgrade</a> ou aguardar o dia 1º.</div>
+    <button type="submit">Chamar entregador</button>
+  </form>
+</main>
+</body></html>

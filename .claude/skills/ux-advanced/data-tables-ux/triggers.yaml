@@ -1,0 +1,7 @@
+name: data-tables-ux
+category: ux-advanced
+required_for:
+  - keyword_any: ["tabela", "listagem", "mat-table", "data grid", "admin panel", "painel admin", "relatório tabular", "export csv", "bulk action", "seleção em massa"]
+  - flag: has_admin
+recommended_for:
+  - flag: has_ui

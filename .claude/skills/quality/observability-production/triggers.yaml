@@ -1,0 +1,9 @@
+name: observability-production
+category: quality
+required_for:
+  - feature: api_endpoint
+  - feature: background_job
+  - feature: deployment_setup
+  - keyword_any: ["logger", "structlog", "winston", "pino", "sentry", "opentelemetry", "trace", "log structured"]
+  - path_pattern: ["**/api/**", "**/jobs/**", "**/workers/**"]
+recommended_for: []

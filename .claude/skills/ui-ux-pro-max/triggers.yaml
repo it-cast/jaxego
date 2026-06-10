@@ -1,0 +1,114 @@
+name: ui-ux-pro-max
+version: 2.1
+category: standalone
+priority: high
+tier: 1
+required_for:
+  - flag: has_ui
+recommended_for:
+  - phase_type: ui-design
+  - phase_type: design-system
+  - phase_type: refactor-ui
+  - phase_type: ui-audit
+  - phase_type: dashboard
+  - phase_type: landing-page
+
+description: >
+  Design intelligence para construir UI/UX profissional. Engine BM25 + reasoning rules
+  com 84 styles, 161 palettes, 161 product types, 73 font pairings, 99 UX guidelines,
+  16 stacks (React, Next.js, Vue, Svelte, SwiftUI, React Native, Flutter, Tailwind,
+  shadcn/ui, HTML, Astro, Angular, Laravel, Three.js, Jetpack Compose, Nuxt UI).
+  Gera design system completo via --design-system com persistência em
+  design-system/MASTER.md + page overrides.
+
+flags:
+  has_ui: true
+
+keywords_pt_br:
+  - design system
+  - paleta de cores
+  - tipografia
+  - estilo visual
+  - landing page
+  - dashboard
+  - admin panel
+  - SaaS UI
+  - ecommerce UI
+  - identidade visual
+  - design para produto
+  - revisar UI
+  - melhorar interface
+  - polir UI
+  - acessibilidade UI
+  - dark mode
+  - responsivo
+  - componentes UI
+  - botões e modais
+  - formulários e tabelas
+  - charts e gráficos
+
+keywords_en:
+  - design system
+  - color palette
+  - typography
+  - visual style
+  - landing page
+  - dashboard
+  - admin panel
+  - SaaS UI
+  - ecommerce UI
+  - brand identity
+  - product design
+  - review UI
+  - improve interface
+  - polish UI
+  - UI accessibility
+  - dark mode
+  - responsive
+  - UI components
+  - buttons and modals
+  - forms and tables
+  - charts and graphs
+  - glassmorphism
+  - claymorphism
+  - minimalism
+  - brutalism
+  - neumorphism
+  - bento grid
+
+actions:
+  - plan
+  - build
+  - create
+  - design
+  - implement
+  - review
+  - fix
+  - improve
+  - optimize
+  - enhance
+  - refactor
+  - check
+
+scripts:
+  search_engine: scripts/search.py
+  invocation: |
+    # Gerar design system completo
+    python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system -p "<project-name>"
+
+    # Persistir em design-system/MASTER.md
+    python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system --persist -p "<project>"
+
+    # Domain-specific search
+    python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain ux
+
+trigger_signals:
+  - "task envolve criar/refactorar UI"
+  - "phase tem has_ui:true no ROADMAP"
+  - "decisão sobre style, color palette ou typography"
+  - "audit de UI / revisar interface"
+  - "design system inicial ou refresh"
+
+upgraded_from:
+  v1: 2026-04-22 (67 styles, 96 palettes, 95 product types, 13 stacks)
+  v2.1: 2026-05-09 (84 styles, 161 palettes, 161 product types com Reasoning Rules, 16 stacks, design system generator com persistence)

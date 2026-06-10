@@ -1,0 +1,7 @@
+name: north-star-vision
+category: meta
+required_for:
+  - phase_type: bootstrap
+  - keyword_any: ["north star", "visão norte", "north-star metric", "métrica norte", "visão de produto"]
+recommended_for:
+  - phase_type: positioning

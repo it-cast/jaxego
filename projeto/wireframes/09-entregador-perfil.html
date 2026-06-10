@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Perfil do entregador</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:420px;margin:auto}
+main{padding:16px 16px 80px}
+h1{font-size:22px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px;margin-bottom:12px}
+.mono{font-family:'JetBrains Mono',monospace}
+.doc{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F2EBE0;font-size:14px}
+.ok{color:#1B998B;font-weight:700;font-size:12px}
+.warn{color:#E89B0E;font-weight:700;font-size:12px}
+.bar{height:8px;background:#F2EBE0;border-radius:999px;overflow:hidden}
+.bar>div{height:100%;background:#D4A017;width:78%}
+.dim{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+button{padding:8px 14px;background:#181410;color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+a{color:#0A66C2}
+</style></head>
+<body>
+<main>
+  <h1>João Silva</h1>
+  <p style="font-size:12px;color:#6B5F50">CPF <span class="mono">123.***.***-09</span> · Pádua · Moto <span class="mono">ABC1D23</span></p>
+
+  <section class="card" id="score" aria-labelledby="score-h">
+    <h2 id="score-h" style="font-size:14px;margin:0 0 8px">Seu score · <span style="color:#D4A017">OURO 87,4</span> <span style="font-size:12px;color:#C71D1D">(−1,2 esta semana)</span></h2>
+    <div class="bar"><div></div></div>
+    <p style="font-size:12px;color:#6B5F50">Faltam <em style="font-family:'Fraunces',serif;color:#E84E1B">12,6 pts</em> para diamante</p>
+    <div class="dim"><span>Entregas no prazo (peso 30%)</span><span class="mono">94%</span></div>
+    <div class="dim"><span>Aceite de ofertas (peso 20%)</span><span class="mono">87%</span></div>
+    <div class="dim"><span>Cancelou após aceitar (peso 15%)</span><span class="mono" style="color:#C71D1D">2 esta semana</span></div>
+    <div class="dim"><span>Comprovação correta (peso 15%)</span><span class="mono">98%</span></div>
+    <div class="dim"><span>Avaliações (peso 20%)</span><span class="mono">★ 4.8</span></div>
+    <p style="font-size:12px;background:#FFF1E8;border-left:3px solid #E84E1B;padding:8px;border-radius:4px">Por que caiu: 2 cancelamentos após aceite na terça. No M1 o score não muda taxas — é seu histórico público para as lojas.</p>
+  </section>
+
+  <section class="card" id="docs" aria-labelledby="docs-h">
+    <h2 id="docs-h" style="font-size:14px;margin:0">Documentos · validação completa</h2>
+    <div class="doc"><span>CPF + Selfie</span><span class="ok">✓ Aprovado</span></div>
+    <div class="doc"><span>CNH com EAR <span style="color:#6B5F50;font-size:12px">válida até 12/2027</span></span><span class="ok">✓ Aprovado</span></div>
+    <div class="doc"><span>CRLV</span><span class="ok">✓ Aprovado</span></div>
+    <div class="doc" id="mei"><span>MEI <span style="color:#E89B0E;font-size:12px">vence em 30 dias</span></span><button type="button" data-action="renew-mei">Renovar</button></div>
+  </section>
+
+  <section class="card" id="pix">
+    <h2 style="font-size:14px;margin:0 0 8px">Chave PIX para saque</h2>
+    <form action="/api/v1/couriers/me/pix" method="post">
+      <input type="text" name="pix_key" value="joao@email.com" style="width:100%;padding:10px;border:1px solid #C8BAA5;border-radius:6px;box-sizing:border-box">
+      <button type="submit" style="margin-top:8px">Salvar chave</button>
+    </form>
+  </section>
+
+  <nav class="card">
+    <a href="/entregador/cobertura">Meus bairros e preços →</a><br><br>
+    <a href="/entregador/recursos">Recursos e suspensões →</a><br><br>
+    <a href="/auth/logout">Sair da conta</a>
+  </nav>
+  <div class="error-state" role="alert" style="display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px">Não foi possível carregar seu perfil. Verifique a conexão e tente de novo.</div>
+  <div class="loading skeleton" hidden aria-hidden="true" style="height:80px;background:#E5DBCC;border-radius:10px"></div>
+</main>
+</body></html>

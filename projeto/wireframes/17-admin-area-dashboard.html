@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Admin Pádua</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;display:flex}
+aside{width:200px;background:#181410;color:#FAF6EE;min-height:100vh;padding:16px}
+aside a{display:block;color:#C8BAA5;text-decoration:none;padding:8px;border-radius:6px;font-size:13px;margin-bottom:2px}
+aside a[aria-current="page"]{background:#2D261F;color:#FFA56B;font-weight:700}
+main{flex:1;padding:24px;max-width:900px}
+h1{font-size:22px;letter-spacing:-.02em}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.stat{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px}
+.stat b{font-size:24px;font-family:'JetBrains Mono',monospace;display:block}
+.stat span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#6B5F50}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+.queue{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F2EBE0;font-size:14px}
+.count{background:#FFF1E8;color:#E84E1B;font-weight:700;font-family:'JetBrains Mono',monospace;padding:2px 10px;border-radius:999px}
+.count.zero{background:#F2EBE0;color:#9D8E7A}
+</style></head>
+<body>
+<aside>
+  <strong style="display:block;margin-bottom:16px">Jaxegô · <span style="color:#FFA56B">Pádua</span></strong>
+  <nav>
+    <a href="/admin/padua" aria-current="page">Painel</a>
+    <a href="/admin/padua/entregadores">Entregadores</a>
+    <a href="/admin/padua/lojas">Lojas</a>
+    <a href="/admin/padua/entregas">Entregas</a>
+    <a href="/admin/padua/disputas">Disputas</a>
+    <a href="/admin/padua/config">Configurações</a>
+    <a href="/admin/padua/apikeys">API keys</a>
+  </nav>
+</aside>
+<main>
+  <h1>Pádua · hoje</h1>
+  <section class="stats">
+    <div class="stat"><b>34</b><span>entregas hoje</span></div>
+    <div class="stat"><b>11</b><span>entregadores online</span></div>
+    <div class="stat"><b class="mono">42s</b><span>mediana até aceite</span></div>
+    <div class="stat"><b class="mono">R$ 51,00</b><span>taxas hoje</span></div>
+  </section>
+  <section class="card" aria-labelledby="filas">
+    <h2 id="filas" style="font-size:15px;margin:0 0 4px">Filas que precisam de você</h2>
+    <div class="queue"><span>Validações de entregador aguardando</span><a href="/admin/padua/entregadores?kyc=pending"><span class="count">4</span></a></div>
+    <div class="queue"><span>Disputas de pagamento direto abertas</span><a href="/admin/padua/disputas?type=payment_direct"><span class="count">2</span></a></div>
+    <div class="queue"><span>Comprovações em revisão (baixa confiança)</span><a href="/admin/padua/entregas?proof=low_confidence"><span class="count">1</span></a></div>
+    <div class="queue"><span>Recursos de suspensão (SLA 5 dias úteis)</span><a href="/admin/padua/recursos"><span class="count zero">0</span></a></div>
+    <div class="queue"><span>Lojas com fatura vencida</span><a href="/admin/padua/lojas?invoice=overdue"><span class="count">3</span></a></div>
+  </section>
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 8px">Atividade recente</h2>
+    <p style="font-size:13px;color:#6B5F50">14:31 · Entrega #2851 aceita em 38s · 14:12 · KYC de Roberto Paula: CNH reprovada (ilegível) · 13:58 · Fatura de Mercado Bom Preço paga (PIX)</p>
+  </section>
+  <div class="empty-state" hidden style="text-align:center;color:#6B5F50;padding:32px">Sem dados ainda hoje.</div>
+  <div class="error-state" role="alert" style="display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:8px;font-size:13px">Erro ao carregar os indicadores. Recarregue a página.</div>
+</main>
+</body></html>

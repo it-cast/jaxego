@@ -1,0 +1,7 @@
+name: mysql-schema-design
+category: domain
+required_for:
+  - stack: mysql
+  - keyword_any: ["CREATE TABLE", "ALTER TABLE", "alembic migration", "schema design", "foreign key", "index", "JSON column"]
+  - path_pattern: ["**/migrations/**", "**/alembic/versions/**", "specs/database.yaml"]
+recommended_for: []

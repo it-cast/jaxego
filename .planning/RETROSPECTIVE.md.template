@@ -1,0 +1,146 @@
+# Retrospectiva — {{ phase_id }}
+
+> Template preenchido ao fechar cada fase. Objetivo: não deixar a memória do que aconteceu evaporar.
+> Leva 10-15 minutos. Vale o investimento — é daqui que o framework aprende.
+
+## Contexto
+
+- **Fase:** {{ phase_id }}
+- **Fechada em:** {{ closed_at }}
+- **Duração real:** {{ duration_days }} dias
+- **Duração estimada no início:** <FILL> dias
+- **Delta estimativa:** <FILL> (positivo = demorou mais que esperado)
+
+---
+
+## Planning
+
+### O plano mudou durante a execução?
+
+- [ ] Plano seguido integralmente
+- [ ] Ajustes menores (reordenação, detalhes)
+- [ ] Ajustes significativos (tarefas adicionadas/removidas)
+- [ ] Replanejado do zero
+
+**Principal motivo do maior desvio:**
+<FILL — 1 parágrafo>
+
+### O plan-checker ajudou ou atrapalhou?
+
+- Vezes que bloqueou: <FILL>
+- Dessas, quantas foram catches legítimos: <FILL>
+- Quantas foram falsos positivos / fricção gratuita: <FILL>
+
+**Sugestão concreta de melhoria do plan-checker:**
+<FILL — se aplicável>
+
+---
+
+## Skills
+
+### Skills que puxaram peso real
+
+Liste 1-3 skills que evitaram retrabalho, catches de bug, ou elevaram a qualidade:
+
+- [ ] <FILL — skill + 1 linha explicando qual decisão ela guiou>
+
+### Skills citadas mas que não ajudaram
+
+- [ ] <FILL — se alguma skill ficou "citada por obrigação" sem agregar>
+
+### Skills que faltaram
+
+O que você procurou na biblioteca e não encontrou? Tópicos que teria valor virar skill:
+
+- <FILL — lista bullets>
+
+---
+
+## Gates
+
+### Qual gate mais atritou?
+
+- [ ] Gate 1 (discovery)
+- [ ] Gate 2 (planning)
+- [ ] Gate 3 (skills)
+- [ ] Gate 4 (observability)
+- [ ] Gate 5 (UI/UX)
+- [ ] Gate 6 (tests)
+- [ ] Gate 7 (docs/reconcile)
+
+**Por quê:**
+<FILL — 1 parágrafo>
+
+### Bypasses aplicados
+
+Vezes que você usou `--skip-gate-N --reason`:
+
+| Gate | Motivo | Em retrospectiva, foi a decisão certa? |
+|------|--------|-----------------------------------------|
+| <FILL> | <FILL> | [ ] Sim [ ] Não |
+
+### Reconcile-state encontrou divergência?
+
+- Runs: <FILL>
+- Divergências reais detectadas: <FILL>
+
+Se sim, **uma divergência em particular que valeu a pena:**
+<FILL — 1 parágrafo>
+
+---
+
+## Qualidade após close
+
+Preencher 7 dias depois do close (ou na próxima retro, o que vier antes):
+
+- Fixes urgentes necessários (PRs de "fix:" em 7 dias): <FILL>
+- Bugs reportados por users/QA: <FILL>
+- Algum rollback? <FILL>
+
+**Se teve fix urgente — o framework deveria ter pego?**
+<FILL — 1 parágrafo>
+
+---
+
+## Três perguntas curtas (máx 1 linha cada)
+
+Estas três alimentam a telemetria:
+
+**O que funcionou?** (what_worked)
+<FILL — máx 280 chars, sem nome de pessoa/empresa>
+
+**O que atrapalhou?** (what_hurt)
+<FILL — máx 280 chars>
+
+**O que faltou?** (what_missing)
+<FILL — máx 280 chars>
+
+---
+
+## Scores
+
+**Framework effort** (1=invisível, 5=muito overhead): <FILL>
+**Framework value** (1=inútil, 5=salvou muito trabalho): <FILL>
+
+---
+
+## Ações para próxima fase
+
+Decisões concretas (não "deveríamos..."). Máximo 3:
+
+1. <FILL>
+2. <FILL>
+3. <FILL>
+
+---
+
+## Após preencher
+
+```bash
+# Fecha esta retrospectiva
+bin/collect-metrics.sh {{ phase_id }}
+# Depois edite .planning/METRICS.md substituindo os <FILL> com dados deste arquivo
+
+# Opcional: exporta telemetria anonimizada para compartilhar
+bin/export-telemetry.sh {{ phase_id }}
+```

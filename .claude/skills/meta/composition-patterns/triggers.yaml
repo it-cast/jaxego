@@ -1,0 +1,53 @@
+name: meta:composition-patterns
+priority: high
+tier: 2
+description: >
+  Detecta tasks de design de API de componentes / refactor de boolean props /
+  compound components / state lifting / variant explicit.
+
+phase_types:
+  - design-system
+  - component-library
+  - refactor-ui
+  - frontend-architecture
+
+flags:
+  has_ui: true
+  has_design_system: true
+
+keywords_pt_br:
+  - composição de componentes
+  - boolean props demais
+  - compound components
+  - state lifting
+  - design de componente
+  - arquitetura de componente
+  - props proliferation
+  - variant components
+  - children vs render props
+  - reutilizar componente
+  - design system
+  - biblioteca de componentes
+
+keywords_en:
+  - composition patterns
+  - compound components
+  - boolean prop proliferation
+  - state lifting
+  - context providers
+  - explicit variants
+  - children over render props
+  - component architecture
+  - component library design
+  - asChild radix
+
+triggers_in_files:
+  - "**/components/**/*.tsx"
+  - "**/components/**/*.vue"
+  - "**/components/**/*.svelte"
+
+trigger_signals:
+  - "5+ boolean props no mesmo componente"
+  - "componente com isX/isY/isZ múltiplos"
+  - "componente em crescimento sem definir variant enum"
+  - "duplicação entre <CardCompact />, <CardLarge />, <CardSmall />"

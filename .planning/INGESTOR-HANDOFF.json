@@ -1,0 +1,90 @@
+{
+  "ingestor_version": "v0.9.7",
+  "ingested_at": "2026-06-10T00:00:00Z",
+  "project": "jaxego",
+  "source_files": {
+    "regras_negocio": 5,
+    "wireframes": 26,
+    "identidade_visual": 2,
+    "stacks": 1,
+    "docs_externos": 1,
+    "referencias": 1,
+    "decisoes_existentes": 1,
+    "readmes": 11,
+    "total": 47
+  },
+  "outputs_generated": {
+    "planning_files": [
+      ".planning/PROJECT.md",
+      ".planning/REQUIREMENTS.md",
+      ".planning/MILESTONES.md",
+      ".planning/ROADMAP.md",
+      ".planning/STATE.md",
+      ".planning/DECISIONS.md",
+      ".planning/TECH-DEBT.md",
+      ".planning/SUGGESTIONS.md"
+    ],
+    "docs_files": [
+      "docs/project-brief.md",
+      "docs/INDEX.md",
+      "docs/glossario.md",
+      "docs/personas/INDEX.md",
+      "docs/personas/loja-dono.md",
+      "docs/personas/loja-operador.md",
+      "docs/personas/entregador.md",
+      "docs/personas/admin-area.md",
+      "docs/personas/admin-plataforma.md",
+      "docs/personas/destinatario.md",
+      "docs/integracoes/INDEX.md",
+      "docs/integracoes/safe2pay.md",
+      "docs/integracoes/menu-certo.md",
+      "docs/integracoes/servicos-suporte.md",
+      "docs/regras-negocio/INDEX.md",
+      "docs/regras-negocio/visao-geral.md",
+      "docs/regras-negocio/entidades.md",
+      "docs/regras-negocio/fluxos.md",
+      "docs/regras-negocio/regras.md",
+      "docs/identidade-visual/INDEX.md",
+      "docs/identidade-visual/brand.md",
+      "docs/identidade-visual/tokens.json"
+    ],
+    "design_system_files": ["design-system/MASTER.md"],
+    "report": "DISCOVERY-REPORT.md"
+  },
+  "counts": {
+    "requirements": 56,
+    "milestones": 5,
+    "phases": 14,
+    "adrs_detected": 17,
+    "derived_decisions": 10,
+    "tech_debts_pre_registered": 13,
+    "open_questions_blocking": 1,
+    "open_questions_nonblocking": 2,
+    "assumptions_registered": 14,
+    "conflicts_detected": 1,
+    "gaps": 2
+  },
+  "blocking_detail": {
+    "OQ-3": {
+      "title": "Contrato Safe2Pay: split disponível, prazo de repasse de subconta, taxas",
+      "blocks": "Phase 10 (e por dependência 11-14 do caminho financeiro)",
+      "does_not_block": "Phases 1-9 (MS-01, MS-02, MS-03)",
+      "source": "projeto/decisoes-existentes/adrs.md:53, projeto/docs-externos/integracoes.md:36"
+    }
+  },
+  "next_actions": {
+    "ready_for_autopilot": true,
+    "ready_scope": "MS-01..MS-03 (Phases 1-9); resolver OQ-3 antes da Phase 10",
+    "blocking_questions": ["OQ-3 (bloqueia apenas Phase 10+ financeiro)"],
+    "suggested_command": "/gsd:autopilot MS-01",
+    "alternative_command": "/gsd:discuss-phase 1 (revisão humana phase a phase)"
+  },
+  "milestone_overview": [
+    { "id": "MS-01", "name": "Foundation", "phases": [1, 2, 3], "estimate": "3 semanas", "first_phase_complete": false },
+    { "id": "MS-02", "name": "Cadastros & malha", "phases": [4, 5, 6], "estimate": "4 semanas", "first_phase_complete": false },
+    { "id": "MS-03", "name": "Core de entregas", "phases": [7, 8, 9], "estimate": "5 semanas", "first_phase_complete": false },
+    { "id": "MS-04", "name": "Financeiro & integrações", "phases": [10, 11, 12], "estimate": "5 semanas", "blocked_by": "OQ-3", "first_phase_complete": false },
+    { "id": "MS-05", "name": "Operação & release piloto", "phases": [13, 14], "estimate": "3 semanas", "first_phase_complete": false }
+  ],
+  "previous_runs": []
+}

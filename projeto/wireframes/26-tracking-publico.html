@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Acompanhe sua entrega</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:480px;margin:auto}
+header{padding:16px;text-align:center}
+header strong em{font-family:'Fraunces',serif;font-style:italic;color:#E84E1B;font-weight:500}
+.map{height:240px;background:#F2EBE0;display:grid;place-items:center;color:#9D8E7A;font-size:13px;margin:0 16px;border-radius:10px}
+main{padding:16px}
+.state-banner{background:#FFF1D2;color:#8B5A05;font-weight:700;text-align:center;padding:12px;border-radius:10px;font-size:15px;margin-bottom:12px}
+ol.timeline{list-style:none;padding:0;margin:0;background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px}
+ol.timeline li{padding:6px 0 6px 22px;border-left:2px solid #E5DBCC;margin-left:8px;position:relative;font-size:14px;color:#6B5F50}
+ol.timeline li::before{content:"";width:10px;height:10px;border-radius:999px;background:#C8BAA5;position:absolute;left:-6px;top:10px}
+ol.timeline li.done{color:#181410}
+ol.timeline li.done::before{background:#1B998B}
+ol.timeline li.current{color:#181410;font-weight:700}
+ol.timeline li.current::before{background:#E84E1B}
+ol.timeline time{font-size:11px;font-family:'JetBrains Mono',monospace;color:#9D8E7A;display:block}
+.courier{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px;display:flex;gap:12px;align-items:center;margin-top:12px}
+.avatar{width:44px;height:44px;border-radius:999px;background:#F2EBE0;display:grid;place-items:center;font-weight:700}
+.error-state{display:none;text-align:center;padding:40px;color:#6B5F50}
+footer{text-align:center;font-size:11px;color:#9D8E7A;padding:16px}
+</style></head>
+<body>
+<header><strong>Jaxegô. Chegou <em>rapidinho.</em></strong></header>
+<section class="map" aria-label="Mapa">[posição aproximada do entregador — atualiza a cada minuto]</section>
+<main>
+  <div class="state-banner" role="status">🛵 Sua entrega está a caminho — chega em ~6 min</div>
+  <ol class="timeline">
+    <li class="done">Pedido pronto na Pizzaria do José <time>14:28</time></li>
+    <li class="done">João aceitou sua entrega <time>14:29</time></li>
+    <li class="done">Saiu para entrega <time>14:36</time></li>
+    <li class="current">Chegando em Vila Nova <time>agora</time></li>
+    <li>Entregue</li>
+  </ol>
+  <div class="courier">
+    <div class="avatar">JS</div>
+    <div><strong>João Silva</strong> · ★ 4.8<br><small style="color:#6B5F50">Moto Honda Biz · placa ABC1D23</small></div>
+  </div>
+  <div class="error-state" role="alert">Link de rastreio expirado ou entrega não encontrada. Confira com a loja.</div>
+</main>
+<footer>Você recebeu este link por SMS porque a Pizzaria do José enviou uma entrega para você via Jaxegô · jaxego.com.br</footer>
+</body></html>

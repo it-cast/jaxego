@@ -1,0 +1,11 @@
+name: monorepo-deploy-safety
+category: domain
+required_for:
+  - keyword_any: ["deploy", "blue-green", "blue green", "symlink", "atomic deploy", "rollback", "release strategy", "zero downtime", "estratégia de deploy", "monorepo deploy", "docker deploy", "ghcr", "registry", "backup mysql", "point-in-time", "pitr", "disaster recovery", "recuperação de desastre"]
+  - path_pattern: ["**/deploy*.sh", "**/deploy*.yml", "**/.github/workflows/deploy*", "**/release*.sh", "**/docker-compose.prod*", "**/backup*.sh"]
+  - feature: deployment_setup
+  - phase_type: ["release", "pre-launch", "deploy"]
+  - flag: is_pre_release
+recommended_for:
+  - keyword_any: ["turborepo", "nx monorepo", "moon monorepo", "ci/cd", "migrations order", "expand-contract", "docker", "container", "volume", "mysqldump", "binlog"]
+  - phase_type: ["foundation"]   # invariantes precisam ser conhecidas na Phase 1

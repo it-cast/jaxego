@@ -1,0 +1,13 @@
+name: refactoring-ui
+category: meta
+priority: high
+required_for:
+  - flag: has_ui
+  - flag: no_dedicated_designer
+  - phase_type: ui-design
+  - phase_type: refactor-ui
+  - keyword_any: ["refactoring UI", "AI slop", "anti-amador", "polish UX", "estética", "hierarquia visual", "personalidade visual", "Wathan Schoger"]
+recommended_for:
+  - phase_type: bootstrap
+  - phase_type: pre-release
+  - keyword_any: ["amador", "design genérico", "Bootstrap genérico", "v0 generated", "Lovable generated"]

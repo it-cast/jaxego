@@ -1,0 +1,11 @@
+name: loading-states
+category: ux-advanced
+priority: high
+required_for:
+  - flag: has_ui
+  - flag: has_async_operations
+  - keyword_any: ["loading", "skeleton", "shimmer", "spinner", "carregamento", "fetch async", "API call", "submit form", "optimistic update", "progress bar", "progressive reveal"]
+recommended_for:
+  - phase_type: dashboard
+  - phase_type: list-view
+  - keyword_any: ["lista", "feed", "checkout", "pagamento"]

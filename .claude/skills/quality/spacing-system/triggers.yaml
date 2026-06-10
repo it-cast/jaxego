@@ -1,0 +1,12 @@
+name: spacing-system
+category: quality
+priority: high
+required_for:
+  - flag: has_ui
+  - phase_type: bootstrap
+  - phase_type: ui-design
+  - phase_type: design-system
+  - keyword_any: ["spacing", "espaçamento", "margin", "padding", "gap", "base unit", "8-point grid", "design tokens spacing", "scale", "t-shirt sizes"]
+recommended_for:
+  - phase_type: refactor-ui
+  - keyword_any: ["whitespace", "ritmo visual", "densidade", "compact", "balanced", "generous"]

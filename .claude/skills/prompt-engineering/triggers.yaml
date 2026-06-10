@@ -1,0 +1,7 @@
+name: prompt-engineering
+category: standalone
+required_for:
+  - feature: ai_integration
+  - keyword_any: ["system prompt", "few-shot", "chain of thought", "prompt template", "instruction tuning"]
+  - path_pattern: ["**/prompts/**", "**/llm/**"]
+recommended_for: []

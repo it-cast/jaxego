@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Início (entregador)</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:420px;margin:auto}
+header{padding:16px;display:flex;justify-content:space-between;align-items:center}
+main{padding:0 16px 80px}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px;margin-bottom:12px}
+.toggle-on{background:#D6F1ED;color:#1B998B;padding:10px 16px;border-radius:999px;font-weight:600;border:0;cursor:pointer}
+.toggle-off{background:#F2EBE0;color:#6B5F50;padding:10px 16px;border-radius:999px;font-weight:600;border:0;cursor:pointer}
+.money{font-size:32px;font-weight:800;letter-spacing:-.02em;font-family:'JetBrains Mono',monospace}
+.label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;font-weight:600}
+.empty-state{text-align:center;color:#6B5F50;padding:24px;font-size:14px}
+.loading.skeleton{height:80px;background:#E5DBCC;border-radius:10px;animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.5}}
+nav.tabbar{position:fixed;bottom:0;left:0;right:0;max-width:420px;margin:auto;background:#fff;border-top:1px solid #E5DBCC;display:flex}
+nav.tabbar a{flex:1;text-align:center;padding:12px 4px;font-size:11px;color:#6B5F50;text-decoration:none}
+nav.tabbar a[aria-current="page"]{color:#E84E1B;font-weight:700}
+.mono{font-family:'JetBrains Mono',monospace}
+</style></head>
+<body>
+<header>
+  <div><div style="font-size:12px;color:#6B5F50">Bom dia,</div><strong>João Silva</strong></div>
+  <button class="toggle-on" type="button" data-action="toggle-online">● Online</button>
+</header>
+<main>
+  <section class="card" aria-labelledby="ganhos">
+    <div class="label" id="ganhos">Ganhos hoje</div>
+    <div class="money">R$ 187,50</div>
+    <div style="font-size:12px;color:#6B5F50">14 entregas · 4h online</div>
+    <hr style="border:0;border-top:1px solid #E5DBCC">
+    <div style="display:flex;justify-content:space-between;font-size:13px">
+      <span>Saldo disponível: <strong class="mono">R$ 643,20</strong></span>
+      <a href="/entregador/extrato">Extrato →</a>
+    </div>
+  </section>
+  <section class="card">
+    <div class="label">Seu score · ouro</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <span class="mono" style="font-size:24px;font-weight:700;color:#D4A017">87,4</span>
+      <a href="/entregador/perfil#score" style="font-size:12px">Por que esse valor? →</a>
+    </div>
+  </section>
+  <section aria-labelledby="recentes">
+    <h2 id="recentes" style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#6B5F50">Entregas recentes</h2>
+    <article class="card">
+      <div style="display:flex;justify-content:space-between"><strong>Pizzaria do José</strong><span class="mono" style="color:#1B998B">+R$ 8,50</span></div>
+      <div style="font-size:12px;color:#6B5F50">hoje, 14:12 · Centro → Vila Nova · pago pela plataforma</div>
+    </article>
+    <article class="card">
+      <div style="display:flex;justify-content:space-between"><strong>Mercado Bom Preço</strong><span class="mono" style="color:#1B998B">+R$ 12,00 direto</span></div>
+      <div style="font-size:12px;color:#6B5F50">hoje, 13:48 · Centro → Sereno · recebido em dinheiro</div>
+    </article>
+    <div class="empty-state" hidden>Nenhuma entrega ainda hoje. Fique online para receber ofertas.</div>
+    <div class="loading skeleton" hidden aria-hidden="true"></div>
+  </section>
+</main>
+<nav class="tabbar">
+  <a href="/entregador" aria-current="page">Início</a>
+  <a href="/entregador/entregas">Entregas</a>
+  <a href="/entregador/extrato">Ganhos</a>
+  <a href="/entregador/perfil">Perfil</a>
+</nav>
+</body></html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Ganhos e saque</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:420px;margin:auto}
+main{padding:16px 16px 80px}
+h1{font-size:22px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px;margin-bottom:12px}
+.mono{font-family:'JetBrains Mono',monospace}
+.money-big{font-size:30px;font-weight:800;font-family:'JetBrains Mono',monospace}
+button{width:100%;padding:14px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5}
+.notice{background:#FFF1D2;color:#8B5A05;padding:12px;border-radius:8px;font-size:13px;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:8px 4px;border-bottom:1px solid #F2EBE0;text-align:left}
+td.val{text-align:right;font-family:'JetBrains Mono',monospace}
+.empty-state{text-align:center;color:#6B5F50;padding:24px;font-size:14px;display:none}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+.tag-direct{font-size:10px;background:#FFF8C2;color:#8B5A05;padding:1px 6px;border-radius:4px}
+.tag-plat{font-size:10px;background:#DDEBFA;color:#0A66C2;padding:1px 6px;border-radius:4px}
+</style></head>
+<body>
+<main>
+  <h1>Ganhos</h1>
+  <section class="card">
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;font-weight:600">Saldo disponível para saque</div>
+    <div class="money-big">R$ 643,20</div>
+    <div style="font-size:12px;color:#6B5F50">+ R$ 36,50 liberando em 24h (escrow)</div>
+    <button type="button" data-action="withdraw" formaction="/api/v1/payouts">Sacar via PIX (mín. R$ 20)</button>
+    <div class="notice" hidden id="mei-blocked">Saque bloqueado: seu MEI está vencido. <a href="/entregador/perfil#mei">Regularize aqui</a>. Você continua recebendo entregas com pagamento direto.</div>
+    <div class="error-state" role="alert">Chave PIX inválida. <a href="/entregador/perfil#pix">Atualize sua chave</a> e tente de novo.</div>
+    <div style="font-size:12px;color:#6B5F50;margin-top:8px">Saque automático toda terça-feira. Chave: <span class="mono">***@email.com</span></div>
+  </section>
+  <h2 style="font-size:14px">Movimentações</h2>
+  <section class="card">
+    <table>
+      <thead><tr><th>Data</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">25/04</td><td>Pizzaria do José <span class="tag-plat">PLATAFORMA</span></td><td class="val" style="color:#1B998B">+8,50</td></tr>
+        <tr><td class="mono">25/04</td><td>Mercado Bom Preço <span class="tag-direct">DIRETO</span></td><td class="val" style="color:#6B5F50">8,00 fora</td></tr>
+        <tr><td class="mono">23/04</td><td>Saque PIX</td><td class="val" style="color:#C71D1D">−250,00</td></tr>
+        <tr><td class="mono">22/04</td><td>Farmácia Central <span class="tag-plat">PLATAFORMA</span></td><td class="val" style="color:#1B998B">+9,00</td></tr>
+      </tbody>
+    </table>
+    <div class="empty-state">Nenhuma movimentação ainda. Suas corridas aparecem aqui.</div>
+  </section>
+  <p style="font-size:12px;color:#6B5F50">Corridas com pagamento direto não passam pelo saldo — você já recebeu na mão. Elas aparecem aqui só para seu controle.</p>
+</main>
+</body></html>

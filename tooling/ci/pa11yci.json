@@ -1,0 +1,32 @@
+{
+  "defaults": {
+    "standard": "WCAG2AA",
+    "timeout": 30000,
+    "wait": 500,
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox", "--disable-dev-shm-usage"]
+    },
+    "actions": [],
+    "ignore": [
+      "notice",
+      "warning"
+    ],
+    "hideElements": ".skip-a11y-check",
+    "includeNotices": false,
+    "includeWarnings": false
+  },
+  "urls": [
+    {
+      "url": "http://localhost:4200/",
+      "viewport": { "width": 1440, "height": 900 }
+    },
+    {
+      "url": "http://localhost:4200/",
+      "viewport": { "width": 375, "height": 667 }
+    },
+    {
+      "url": "http://localhost:4200/login",
+      "viewport": { "width": 1440, "height": 900 }
+    }
+  ]
+}

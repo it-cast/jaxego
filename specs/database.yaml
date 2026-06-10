@@ -1,0 +1,62 @@
+# ══════════════════════════════════════════
+# SPECS — Convenções de banco de dados
+# ══════════════════════════════════════════
+# Regras invariantes. Aplicadas por skills como mysql-schema-design.
+
+charset:
+  default: "utf8mb4"
+  collation: "utf8mb4_unicode_ci"
+
+primary_keys:
+  type: "UUID v4 binary(16)"  # ou bigint autoincrement se preferir
+  generation: "app-side"  # não trigger
+
+soft_delete:
+  enabled: true
+  column: "deleted_at"
+  type: "DATETIME NULL"
+  # Queries filtrar por padrão com deleted_at IS NULL
+
+timestamps:
+  created_at:
+    type: "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  updated_at:
+    type: "DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+
+money:
+  type: "DECIMAL(18,4)"  # nunca FLOAT/DOUBLE para dinheiro
+  currency_column: "char(3)"
+
+json_fields:
+  type: "JSON"  # MySQL 8+ nativo
+  # Para busca/filtro em JSON, usar índice funcional
+
+enums:
+  strategy: "VARCHAR + CHECK constraint"  # evitar ENUM nativo (mudança dolorosa)
+
+text_fields:
+  short: "VARCHAR(255)"
+  medium: "VARCHAR(1024)"
+  long: "TEXT"
+  huge: "LONGTEXT"
+
+foreign_keys:
+  required: true
+  on_delete: "RESTRICT"  # default; CASCADE apenas em relações de composição
+  on_update: "CASCADE"
+
+indexes:
+  naming: "idx_{table}_{col1}_{col2}"
+  unique_naming: "uq_{table}_{col1}_{col2}"
+
+migrations:
+  tool: "Alembic"
+  naming: "{NNN}_{verb}_{subject}.py"
+  # Ex: 042_add_index_to_service_requests.py
+  rollback: "mandatory — toda migration tem downgrade funcional"
+
+naming:
+  tables: "snake_case, plural (users, service_requests)"
+  columns: "snake_case"
+  booleans: "is_active, has_feature, can_edit"
+  timestamps: "ends_with _at (created_at, accepted_at, expires_at)"

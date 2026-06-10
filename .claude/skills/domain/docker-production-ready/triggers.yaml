@@ -1,0 +1,7 @@
+name: docker-production-ready
+category: domain
+required_for:
+  - keyword_any: ["Dockerfile", "docker-compose", "docker build", "docker push", "container", "k8s", "kubernetes deployment"]
+  - path_pattern: ["Dockerfile*", "**/docker-compose*.yml", "**/.dockerignore"]
+  - feature: deployment_setup
+recommended_for: []

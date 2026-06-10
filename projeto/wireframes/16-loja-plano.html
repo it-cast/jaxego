@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Plano e faturas</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:860px;margin:24px auto;padding:0 20px}
+h1{font-size:24px;letter-spacing:-.02em}
+.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.plan{background:#fff;border:2px solid #E5DBCC;border-radius:10px;padding:16px;text-align:center}
+.plan.current{border-color:#E84E1B;position:relative}
+.plan.current::before{content:"SEU PLANO";position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:#E84E1B;color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:999px}
+.plan b{font-size:22px;font-family:'JetBrains Mono',monospace;display:block}
+.plan small{color:#6B5F50;font-size:12px}
+.plan button{width:100%;padding:10px;border-radius:6px;border:1px solid #E84E1B;background:#fff;color:#E84E1B;font-weight:700;cursor:pointer;margin-top:10px}
+.plan button.up{background:#E84E1B;color:#fff}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:10px 6px;border-bottom:1px solid #F2EBE0;text-align:left}
+.mono{font-family:'JetBrains Mono',monospace}
+.st-paid{color:#1B998B;font-weight:700}
+.st-overdue{color:#C71D1D;font-weight:700}
+.st-open{color:#8B5A05;font-weight:700}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:8px;font-size:13px;margin:8px 0}
+</style></head>
+<body>
+<main>
+  <h1>Plano e faturas</h1>
+  <section class="plans" aria-label="Planos disponíveis">
+    <div class="plan"><strong>Free</strong><b>R$ 0</b><small>2 entregas/mês<br>taxa R$ 2,00/entrega</small><button type="button" data-action="downgrade" data-plan="free">Mudar no próximo ciclo</button></div>
+    <div class="plan current"><strong>Início</strong><b>R$ 49</b><small>40 entregas/mês<br>taxa R$ 1,50/entrega</small><button type="button" disabled>Plano atual · 12/40 usadas</button></div>
+    <div class="plan"><strong>Profissional</strong><b>R$ 129</b><small>150 entregas/mês<br>taxa R$ 1,00/entrega</small><button class="up" type="button" data-action="upgrade" data-plan="pro">Fazer upgrade (pro-rata)</button></div>
+    <div class="plan"><strong>Sem Limite</strong><b>R$ 299</b><small>ilimitado<br>taxa R$ 0,50/entrega</small><button class="up" type="button" data-action="upgrade" data-plan="unlimited">Fazer upgrade</button></div>
+  </section>
+  <section class="card" id="faturas" aria-labelledby="fat">
+    <h2 id="fat" style="font-size:15px;margin:0 0 8px">Faturas de taxas (entregas com pagamento direto)</h2>
+    <div class="error-state" role="alert">Fatura de março vencida há 8 dias — novas entregas estão bloqueadas até o pagamento.</div>
+    <table>
+      <thead><tr><th>Mês</th><th>Entregas diretas</th><th>Taxas</th><th>Vencimento</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Abril (em aberto)</td><td class="mono">23</td><td class="mono">R$ 34,50</td><td class="mono">08/05</td><td class="st-open">FECHA 01/05</td><td>—</td></tr>
+        <tr><td>Março</td><td class="mono">31</td><td class="mono">R$ 46,50</td><td class="mono">08/04</td><td class="st-paid">PAGA · PIX</td><td><a href="/loja/faturas/2026-03.pdf">2ª via</a></td></tr>
+        <tr><td>Fevereiro</td><td class="mono">18</td><td class="mono">R$ 27,00</td><td class="mono">08/03</td><td class="st-paid">PAGA · boleto</td><td><a href="/loja/faturas/2026-02.pdf">2ª via</a></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#6B5F50">Fatura fecha todo dia 1º e vence dia 8. Pague por PIX, cartão ou boleto. Atraso acima de 7 dias bloqueia novas entregas.</p>
+  </section>
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 8px">Cobranças da assinatura</h2>
+    <table>
+      <tbody>
+        <tr><td class="mono">01/04</td><td>Assinatura Início · abril</td><td class="mono">R$ 49,00</td><td class="st-paid">PAGA</td></tr>
+        <tr><td class="mono">01/03</td><td>Assinatura Início · março</td><td class="mono">R$ 49,00</td><td class="st-paid">PAGA</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+</body></html>

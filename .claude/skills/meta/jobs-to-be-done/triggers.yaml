@@ -1,0 +1,13 @@
+name: jobs-to-be-done
+category: meta
+priority: high
+required_for:
+  - phase_type: feature_planning
+  - phase_type: discovery
+  - phase_type: discuss-phase
+  - keyword_any: ["JTBD", "job-to-be-done", "jobs to be done", "motivação do usuário", "porque o usuário usa", "validar feature", "switch interview", "outcome-driven innovation", "ODI", "trabalho do usuário", "que problema resolve"]
+recommended_for:
+  - phase_type: bootstrap
+  - phase_type: pivot
+  - phase_type: pricing
+  - keyword_any: ["pivot", "feature nova", "redesign", "value proposition"]

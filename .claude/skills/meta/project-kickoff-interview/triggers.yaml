@@ -1,0 +1,7 @@
+name: project-kickoff-interview
+category: meta
+required_for:
+  - phase_type: kickoff
+  - phase_type: bootstrap
+  - keyword_any: ["project discovery", "kickoff", "stakeholder interview", "requirement gathering"]
+recommended_for: []

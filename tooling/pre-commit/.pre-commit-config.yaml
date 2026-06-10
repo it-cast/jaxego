@@ -1,0 +1,74 @@
+# .pre-commit-config.yaml
+# Hooks rodam antes de cada commit. Instalar: `pre-commit install`
+# Rodar tudo manualmente: `pre-commit run --all-files`
+
+repos:
+  # Hooks básicos universais
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Secrets detection
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+
+  # Python — ruff (formatter + linter) + mypy
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.5
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+        args: [--ignore-missing-imports, --strict]
+
+  # JS/TS — eslint + prettier
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: npx eslint --fix
+        language: system
+        types: [file]
+        files: \.(ts|tsx|js|jsx)$
+        pass_filenames: true
+
+      - id: prettier
+        name: Prettier
+        entry: npx prettier --write
+        language: system
+        types: [file]
+        files: \.(ts|tsx|js|jsx|json|css|scss|md|html)$
+        pass_filenames: true
+
+      - id: typescript
+        name: TypeScript type-check
+        entry: npx tsc --noEmit
+        language: system
+        types: [ts]
+        pass_filenames: false
+
+  # Commit message — conventional commits
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]

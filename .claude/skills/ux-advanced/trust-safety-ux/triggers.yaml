@@ -1,0 +1,11 @@
+name: trust-safety-ux
+category: ux-advanced
+required_for:
+  - feature: payment
+  - feature: checkout
+  - feature: onboarding
+  - feature: account_deletion
+  - feature: pii_collection
+  - keyword_any: ["destructive action", "delete account", "irreversible", "confirm dangerous", "personal data"]
+recommended_for:
+  - keyword_any: ["password reset", "logout", "permission grant"]

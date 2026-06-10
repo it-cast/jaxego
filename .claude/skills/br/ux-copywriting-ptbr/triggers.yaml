@@ -1,0 +1,8 @@
+name: ux-copywriting-ptbr
+category: br
+required_for:
+  - locale: pt-BR
+    when_has_ui: true
+  - keyword_any: ["microcopy", "copy", "texto botão", "mensagem erro", "label", "placeholder"]
+recommended_for:
+  - locale: pt-BR

@@ -1,0 +1,6 @@
+name: responsive-breakpoint-strategy
+category: ux-advanced
+required_for:
+  - flag: has_ui_web
+  - keyword_any: ["responsive", "breakpoint", "mobile-first", "media query", "tablet view"]
+recommended_for: []

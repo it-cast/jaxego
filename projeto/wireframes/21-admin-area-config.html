@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Configurações · Pádua</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:680px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;letter-spacing:-.02em}
+fieldset{border:1px solid #E5DBCC;border-radius:8px;margin:14px 0;padding:16px;background:#fff}
+legend{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;padding:0 6px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+input,select{padding:9px;border:1px solid #C8BAA5;border-radius:6px;font-size:13px;box-sizing:border-box}
+input[type=number]{width:120px;font-family:'JetBrains Mono',monospace}
+button{padding:12px 20px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+.nb{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F2EBE0;font-size:14px}
+.nb button{padding:6px 10px;background:#fff;color:#C71D1D;border:1px solid #C71D1D;font-size:12px}
+small{color:#6B5F50;display:block;margin-top:2px;font-weight:400}
+</style></head>
+<body>
+<main>
+  <a href="/admin/padua">← Painel</a>
+  <h1>Configurações da área · Pádua</h1>
+  <form action="/api/v1/admin/areas/padua/config" method="post">
+    <fieldset><legend>Validação de entregadores</legend>
+      <label for="kyc_level">Nível exigido<small>Simples: CPF + selfie + contatos. Completa: + CNH EAR + CRLV + MEI.</small></label>
+      <select id="kyc_level" name="required_validation_level"><option value="simple">Simples</option><option value="complete" selected>Completa</option></select>
+      <label><input type="checkbox" name="require_background_check" style="width:auto"> Exigir certidão de antecedentes</label>
+    </fieldset>
+    <fieldset><legend>Preços e geofence</legend>
+      <label for="floor">Piso de frete (R$)</label>
+      <input type="number" id="floor" name="price_floor" value="6.00" step="0.50" min="0">
+      <label for="geofence">Raio de comprovação GPS (metros)</label>
+      <input type="number" id="geofence" name="geofence_radius_m" value="80" step="10" min="30" max="300">
+      <label for="return_pct">Política de retorno default (% da corrida)</label>
+      <input type="number" id="return_pct" name="return_policy_pct" value="50" min="0" max="100">
+    </fieldset>
+    <fieldset><legend>Despacho</legend>
+      <label for="offer_timeout">Tempo de cada oferta (segundos · 10–60)</label>
+      <input type="number" id="offer_timeout" name="offer_timeout_s" value="20" min="10" max="60">
+      <label for="fav_window">Janela total de favoritos (segundos)</label>
+      <input type="number" id="fav_window" name="favorites_window_s" value="60" min="20" max="180">
+    </fieldset>
+    <fieldset><legend>Catálogo de bairros</legend>
+      <div class="nb"><span>Centro</span><button type="button" data-action="remove-nb" data-nb="centro">Remover</button></div>
+      <div class="nb"><span>Vila Nova</span><button type="button" data-action="remove-nb" data-nb="vila-nova">Remover</button></div>
+      <div class="nb"><span>Sereno</span><button type="button" data-action="remove-nb" data-nb="sereno">Remover</button></div>
+      <div class="nb"><span>Cidade Nova</span><button type="button" data-action="remove-nb" data-nb="cidade-nova">Remover</button></div>
+      <div class="nb"><span>Divinéia <small>(bairro informal — incluído pelo gestor)</small></span><button type="button" data-action="remove-nb" data-nb="divineia">Remover</button></div>
+      <label for="new_nb">Adicionar bairro</label>
+      <div style="display:flex;gap:8px"><input type="text" id="new_nb" name="new_neighborhood" placeholder="Nome do bairro" style="flex:1"><button type="button" data-action="add-nb" style="background:#181410">Adicionar</button></div>
+      <small>Remover bairro com entregas ativas não é permitido — arquive primeiro.</small>
+    </fieldset>
+    <div class="error-state" role="alert" style="display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-bottom:8px">Não é possível remover "Centro": há entregas ativas nesse bairro. Arquive primeiro.</div>
+    <button type="submit">Salvar configurações (auditado)</button>
+  </form>
+</main>
+</body></html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Nova oferta</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#181410;color:#181410;margin:0;max-width:420px;margin:auto;min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end}
+.sheet{background:#FAF6EE;border-radius:20px 20px 0 0;padding:20px}
+.timer{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px}
+h1{font-size:24px;letter-spacing:-.02em;margin:8px 0 4px}
+.stop{display:flex;gap:10px;align-items:center;padding:10px;border-radius:8px;margin:6px 0;font-size:14px}
+.stop.a{background:#F2EBE0}
+.stop.b{background:#FFF1E8;border:1px solid #FFDEC1}
+.pin{width:24px;height:24px;border-radius:999px;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700}
+.money{font-size:26px;font-weight:800;color:#E84E1B;font-family:'JetBrains Mono',monospace}
+.meta{display:flex;gap:16px;font-size:13px;color:#6B5F50;border-top:1px solid #E5DBCC;border-bottom:1px solid #E5DBCC;padding:10px 0;margin:12px 0}
+button.accept{width:100%;padding:16px;background:#E84E1B;color:#fff;border:0;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+button.refuse{width:100%;padding:10px;background:transparent;color:#6B5F50;border:1px solid #C8BAA5;border-radius:8px;margin-top:8px;cursor:pointer}
+.badge-direct{background:#FFF8C2;color:#8B5A05;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+</style></head>
+<body>
+<main>
+<section class="sheet" role="dialog" aria-labelledby="oferta-title">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#E84E1B;font-weight:700">Nova oferta</span>
+    <span class="timer" aria-live="polite">⏱ 18s</span>
+  </div>
+  <h1 id="oferta-title">Pizzaria do José</h1>
+  <div style="font-size:12px;color:#6B5F50;margin-bottom:10px">⭐ Você já entregou 14 vezes pra essa loja</div>
+  <div class="stop a"><span class="pin" style="background:#181410">A</span><div><div style="font-size:11px;color:#6B5F50">COLETA</div><strong>Rua das Flores, 123 · Centro</strong></div></div>
+  <div class="stop b"><span class="pin" style="background:#E84E1B">B</span><div><div style="font-size:11px;color:#A0300A">ENTREGA</div><strong>Vila Nova · ~2,8 km</strong> <span style="font-size:11px;color:#6B5F50">(endereço completo após a coleta)</span></div></div>
+  <div class="meta">
+    <span>Você ganha <span class="money">R$ 8,50</span></span>
+    <span>2,8 km</span><span>~15 min</span>
+    <span class="badge-direct">PAGAMENTO DIRETO 💵</span>
+  </div>
+  <button class="accept" type="button" data-action="accept" data-delivery="dlv_01HXAQ3K9P">Aceitar entrega</button>
+  <button class="refuse" type="button" data-action="refuse">Recusar</button>
+  <div class="error-state" role="alert">Essa entrega acabou de ser aceita por outro entregador. Sem problema — a próxima é sua.</div>
+</section>
+</main>
+</body></html>

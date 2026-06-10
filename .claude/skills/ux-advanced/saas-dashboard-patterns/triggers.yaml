@@ -1,0 +1,8 @@
+name: saas-dashboard-patterns
+category: ux-advanced
+required_for:
+  - context: saas_dashboard
+  - context: admin_panel
+  - keyword_any: ["dashboard", "admin panel", "metrics view", "kpi widget", "analytics dashboard"]
+  - path_pattern: ["**/admin/**", "**/dashboard/**"]
+recommended_for: []

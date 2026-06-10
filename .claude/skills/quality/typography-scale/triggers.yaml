@@ -1,0 +1,14 @@
+name: typography-scale
+category: quality
+priority: high
+required_for:
+  - flag: has_ui
+  - phase_type: bootstrap
+  - phase_type: ui-design
+  - phase_type: design-system
+  - keyword_any: ["typography", "tipografia", "font", "fonte", "modular scale", "escala tipográfica", "line-height", "letter-spacing", "font pairing", "font family", "h1 h2 h3", "heading"]
+recommended_for:
+  - phase_type: refactor-ui
+  - phase_type: marketing
+  - phase_type: blog
+  - keyword_any: ["readability", "legibilidade", "leitura", "long-form"]

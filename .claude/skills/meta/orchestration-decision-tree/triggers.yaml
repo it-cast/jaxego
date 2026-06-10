@@ -1,0 +1,6 @@
+name: orchestration-decision-tree
+category: meta
+required_for:
+  - phase_type: planning
+  - keyword_any: ["multi-agent", "agent orchestration", "task delegation", "subtask split"]
+recommended_for: []

@@ -1,0 +1,7 @@
+name: i18n-ready-architecture
+category: quality
+required_for:
+  - flag: has_i18n
+  - keyword_any: ["i18n", "internationalization", "translation", "ngx-translate", "i18next", "locale switcher", "RTL"]
+recommended_for:
+  - keyword_any: ["multi-language", "es-419", "en-US"]

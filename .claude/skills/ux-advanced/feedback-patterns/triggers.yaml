@@ -1,0 +1,12 @@
+name: feedback-patterns
+category: ux-advanced
+priority: high
+required_for:
+  - flag: has_ui
+  - flag: has_user_actions
+  - keyword_any: ["toast", "snackbar", "feedback", "confirmação", "notificação", "banner", "modal", "inline validation", "status badge", "progress indicator", "error message", "mensagem de erro", "validação de formulário"]
+recommended_for:
+  - phase_type: form-design
+  - phase_type: checkout
+  - phase_type: action-design
+  - keyword_any: ["submit", "deletar", "confirmar", "alerta"]

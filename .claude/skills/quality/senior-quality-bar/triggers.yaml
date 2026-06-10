@@ -1,0 +1,8 @@
+name: senior-quality-bar
+category: quality
+required_for:
+  - phase_type: code
+  - keyword_any: ["definição de pronto", "definition of done", "quality bar", "code review", "verify-work", "pré-release", "gate 8"]
+recommended_for:
+  - flag: has_ui
+  - flag: has_api

@@ -1,0 +1,13 @@
+name: color-system
+category: quality
+priority: high
+required_for:
+  - flag: has_ui
+  - phase_type: bootstrap
+  - phase_type: ui-design
+  - phase_type: design-system
+  - keyword_any: ["color", "cor", "palette", "paleta", "brand color", "tokens de cor", "WCAG contrast", "contraste", "dark mode", "tema escuro", "daltonismo", "colorblind", "design tokens"]
+recommended_for:
+  - phase_type: refactor-ui
+  - phase_type: marketing
+  - keyword_any: ["theming", "white-label", "branding"]

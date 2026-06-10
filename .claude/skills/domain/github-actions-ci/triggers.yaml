@@ -1,0 +1,7 @@
+name: github-actions-ci
+category: domain
+required_for:
+  - path_pattern: [".github/workflows/**"]
+  - keyword_any: ["github actions", "ci/cd", "pipeline", "workflow yaml", "ghcr", "deploy automático", "build mobile ci", "release tag"]
+recommended_for:
+  - keyword_any: ["deploy", "vps"]

@@ -1,0 +1,171 @@
+name: example-release-validation
+# Template GSD v0.8 — exemplos de steps que evitam bugs descobertos em campo (Rota Certa diagnóstico)
+#
+# CONTEXTO:
+# Este NÃO é um workflow drop-in completo. É um catálogo de steps
+# que você deve copiar para o seu workflow real. Cada step resolve
+# um bug específico observado em campo no diagnóstico v0.7.x.
+#
+# COMO USAR: copie os jobs/steps relevantes para o seu workflow real
+# (ex: .github/workflows/release.yml).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  # ───────────────────────────────────────────────────────────────
+  # Job 1: Validação de placeholders ANTES de qualquer build
+  # ───────────────────────────────────────────────────────────────
+  # PROBLEMA QUE RESOLVE (Rota Certa Phase 9):
+  # ExportOptions.plist foi commitado com REPLACE_WITH_APPLE_TEAM_ID e
+  # REPLACE_WITH_PROFILE_NAME. Sem este step, o primeiro tag push iria
+  # falhar em xcodebuild com erro críptico, sem indicar que o problema
+  # eram os placeholders. 30 segundos de prevenção evitam horas de debug.
+  validate-placeholders:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify no REPLACE_WITH_* placeholders in critical files
+        run: |
+          set -e
+          # Lista de paths críticos onde placeholders quebram o build silenciosamente
+          # AJUSTE para seu projeto — exemplos abaixo cobrem mobile, infra, secrets
+          critical_paths=(
+            "apps/app/ios"
+            "apps/app/android/app/build.gradle"
+            "infra/"
+            "deploy/"
+            ".github/workflows/"
+          )
+
+          found=0
+          for p in "${critical_paths[@]}"; do
+            if [ -d "$p" ] || [ -f "$p" ]; then
+              # Buscar REPLACE_WITH_, FIXME_, TODO_, <PLACEHOLDER>, e similares
+              if grep -rE "(REPLACE_WITH_|FIXME_|TODO_PLACEHOLDER|<PLACEHOLDER|XXX_TODO_XXX)" "$p" 2>/dev/null; then
+                echo "❌ Placeholder encontrado em $p"
+                found=1
+              fi
+            fi
+          done
+
+          if [ "$found" -eq 1 ]; then
+            echo ""
+            echo "ERRO: Placeholders não substituídos detectados acima."
+            echo "Esses placeholders quebrariam o build downstream com erro críptico."
+            echo "Substitua-os antes do tag push."
+            exit 1
+          fi
+
+          echo "✓ Sem placeholders pendentes"
+
+  # ───────────────────────────────────────────────────────────────
+  # Job 2: Changelog correto (Conventional Commits com escopo)
+  # ───────────────────────────────────────────────────────────────
+  # PROBLEMA QUE RESOLVE (Rota Certa Phase 9):
+  # ROADMAP gerou step com `grep -E "^(feat|fix):"` mas TODOS os commits
+  # do projeto usam `feat(scope):` com parênteses. Resultado: changelog
+  # vazio apesar de 77 feat e 36 fix commits. Bug latente até primeiro
+  # tag push. Pattern correto abaixo: `^(feat|fix)(\(.*\))?:` aceita
+  # ambos `feat:` e `feat(scope):`.
+  generate-changelog:
+    runs-on: ubuntu-latest
+    needs: [validate-placeholders]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute commit range
+        id: range
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            echo "range=" >> $GITHUB_OUTPUT
+            echo "First tag — comparing against initial commit"
+          else
+            echo "range=${PREV_TAG}..HEAD" >> $GITHUB_OUTPUT
+            echo "Range: ${PREV_TAG}..HEAD"
+          fi
+
+      - name: Generate changelog (Conventional Commits compatible)
+        run: |
+          set -e
+          RANGE="${{ steps.range.outputs.range }}"
+
+          # Pattern aceita: feat:, fix:, feat(scope):, fix(scope):, feat!: (breaking),
+          # mas NÃO aceita docs:, chore:, style: (não vão pro changelog).
+          # Bug Rota Certa: ^(feat|fix): sem parens não casava nada.
+          # Correto: ^(feat|fix)(\(.*\))?!?:
+          PATTERN='^(feat|fix)(\(.*\))?!?:'
+
+          {
+            echo "# Release ${{ github.ref_name }}"
+            echo ""
+            echo "## Features"
+            git log $RANGE --format="- %s (%h)" 2>/dev/null \
+              | grep -E "^- feat(\(.*\))?!?:" \
+              | sed -E 's/^- feat(\(.*\))?!?:\s*/- /' \
+              || echo "_No features_"
+            echo ""
+            echo "## Fixes"
+            git log $RANGE --format="- %s (%h)" 2>/dev/null \
+              | grep -E "^- fix(\(.*\))?!?:" \
+              | sed -E 's/^- fix(\(.*\))?!?:\s*/- /' \
+              || echo "_No fixes_"
+          } > CHANGELOG-${{ github.ref_name }}.md
+
+          echo "✓ Changelog generated:"
+          cat CHANGELOG-${{ github.ref_name }}.md
+
+      - name: Verify changelog não está vazio
+        run: |
+          # Sanity check: se changelog tem só headers, algo errou no grep pattern
+          # (provavelmente formato de commit não casa com o pattern)
+          BODY_LINES=$(grep -cE "^- " CHANGELOG-${{ github.ref_name }}.md || true)
+          if [ "$BODY_LINES" -eq 0 ]; then
+            echo "❌ ERRO: Changelog vazio apesar de commits no range."
+            echo "Provável causa: padrão de commit não casa com regex feat/fix."
+            echo "Verifique se commits seguem Conventional Commits (feat:, fix:, feat(scope):)."
+            git log ${{ steps.range.outputs.range }} --oneline | head -20
+            exit 1
+          fi
+          echo "✓ Changelog tem ${BODY_LINES} entries"
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: CHANGELOG-${{ github.ref_name }}.md
+
+  # ───────────────────────────────────────────────────────────────
+  # Job 3: Verificar versionCode/versionName não-hardcoded (Android)
+  # ───────────────────────────────────────────────────────────────
+  # PROBLEMA QUE RESOLVE (Rota Certa Phase 9):
+  # versionCode hardcoded em build.gradle = rejeição garantida no segundo
+  # upload Play Console. Verificar que versionCode vem de variável.
+  android-version-check:
+    runs-on: ubuntu-latest
+    if: hashFiles('apps/app/android/app/build.gradle') != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify versionCode is dynamic
+        run: |
+          set -e
+          GRADLE=apps/app/android/app/build.gradle
+
+          if grep -E "versionCode\s+[0-9]+\s*$" "$GRADLE"; then
+            echo "❌ versionCode hardcoded detectado em $GRADLE"
+            echo ""
+            echo "Hardcoded versionCode causa rejeição no segundo upload Play Console."
+            echo "Use leitura de local.properties:"
+            echo ""
+            echo "  def versionCodeFromProps = localProperties.getProperty('VERSION_CODE')"
+            echo "  versionCode versionCodeFromProps ? versionCodeFromProps.toInteger() : 1"
+            exit 1
+          fi
+          echo "✓ versionCode lido dinamicamente"

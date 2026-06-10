@@ -1,0 +1,5 @@
+BLOCK
+reason: missing_section:Skills Consultadas
+reason: missing_required_skill:product/api-design-contracts
+reason: missing_required_skill:br/brazilian-forms
+reason: missing_required_skill:quality/observability-production

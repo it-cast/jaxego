@@ -1,0 +1,7 @@
+name: productivity-estimation
+category: meta
+required_for:
+  - phase_type: milestone_close
+  - keyword_any: ["produtividade", "ganho", "estimativa solo-dev", "tempo real", "milestone summary"]
+recommended_for:
+  - phase_type: bootstrap

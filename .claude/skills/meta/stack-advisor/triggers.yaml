@@ -1,0 +1,6 @@
+name: stack-advisor
+category: meta
+required_for:
+  - phase_type: stack_decision
+  - keyword_any: ["choose framework", "stack decision", "compare frameworks", "tech selection"]
+recommended_for: []

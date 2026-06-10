@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Áreas</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:760px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+input,select{width:100%;padding:9px;border:1px solid #C8BAA5;border-radius:6px;font-size:13px;box-sizing:border-box}
+button{padding:12px 20px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer;margin-top:10px}
+.area{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F2EBE0}
+.mono{font-family:'JetBrains Mono',monospace}
+small{color:#6B5F50}
+</style></head>
+<body>
+<main>
+  <a href="/admin">← Visão global</a>
+  <h1>Áreas</h1>
+  <section class="card">
+    <h2 style="font-size:15px;margin:0">Áreas cadastradas</h2>
+    <div class="area"><div><strong>Santo Antônio de Pádua – RJ</strong> <span class="mono" style="font-size:11px">padua</span><br><small>cidade inteira · validação completa · piso R$ 6,00 · admin: Carlos (revenue share 20%)</small></div><a href="/admin/areas/padua">configurar</a></div>
+    <div class="area"><div><strong>Nova Friburgo – Centro</strong> <span class="mono" style="font-size:11px">friburgo</span><br><small>região: centro expandido · validação simples · piso R$ 7,00 · admin: equipe Jaxegô</small></div><a href="/admin/areas/friburgo">configurar</a></div>
+  </section>
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 4px">Nova área</h2>
+    <form action="/api/v1/admin/areas" method="post">
+      <label for="name">Nome da área</label>
+      <input type="text" id="name" name="name" required placeholder="Itaperuna – RJ">
+      <label for="codename">Codinome (URL e API)</label>
+      <input type="text" id="codename" name="codename" required pattern="[a-z0-9-]+" placeholder="itaperuna">
+      <label for="kind">Abrangência</label>
+      <select id="kind" name="kind"><option value="city">Cidade inteira</option><option value="region">Região de cidade</option></select>
+      <label for="city">Cidade / UF</label>
+      <input type="text" id="city" name="city" required placeholder="Itaperuna / RJ">
+      <label for="admin_email">E-mail do admin local (convite)</label>
+      <input type="email" id="admin_email" name="admin_email" placeholder="gestor@exemplo.com.br">
+      <label for="rev_share">Revenue share do admin local (%)</label>
+      <input type="number" id="rev_share" name="revenue_share_pct" value="20" min="0" max="50">
+      <div class="error-state" role="alert" style="display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px">Codinome já existe. Escolha outro.</div>
+      <button type="submit">Criar área (nasce inativa, configure antes de ativar)</button>
+    </form>
+  </section>
+</main>
+</body></html>

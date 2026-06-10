@@ -1,0 +1,5 @@
+DIVERGENCE
+missing: migration:create_audit_log_table
+missing: endpoint:/api/v1/admin/audit-log
+missing: middleware:audit_middleware
+present: function:log_audit_event

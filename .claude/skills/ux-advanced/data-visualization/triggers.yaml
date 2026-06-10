@@ -1,0 +1,12 @@
+name: data-visualization
+category: ux-advanced
+priority: high
+required_for:
+  - feature: dashboard
+  - feature: analytics
+  - feature: report
+  - keyword_any: ["chart", "gráfico", "visualization", "visualização", "dashboard", "KPI", "analytics", "bar chart", "line chart", "pie chart", "heatmap", "Recharts", "ngx-charts", "Chart.js", "D3", "Tufte"]
+recommended_for:
+  - phase_type: admin-panel
+  - phase_type: report-generation
+  - keyword_any: ["relatório", "métricas", "data viz", "BI"]

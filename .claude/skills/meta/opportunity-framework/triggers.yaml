@@ -1,0 +1,12 @@
+name: opportunity-framework
+category: meta
+priority: high
+required_for:
+  - phase_type: bootstrap
+  - phase_type: roadmap-planning
+  - phase_type: milestone-planning
+  - keyword_any: ["RICE", "ICE score", "impact effort", "Kano", "value complexity", "priorização", "prioritization", "opportunity matrix", "priorize features", "roadmap priorities", "tech debt priority"]
+recommended_for:
+  - phase_type: discuss-phase
+  - phase_type: pivot
+  - keyword_any: ["o que fazer primeiro", "qual feature", "tudo é prioridade"]

@@ -1,0 +1,9 @@
+name: chat-ux-patterns
+category: ux-advanced
+required_for:
+  - feature: chat
+  - feature: messaging
+  - keyword_any: ["chat", "message", "conversation", "inbox", "thread", "chat-ui"]
+  - path_pattern: ["**/chat/**", "**/messages/**", "**/conversations/**"]
+recommended_for:
+  - keyword_any: ["comments", "reply", "discussion"]

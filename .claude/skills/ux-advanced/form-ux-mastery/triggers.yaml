@@ -1,0 +1,10 @@
+name: form-ux-mastery
+category: ux-advanced
+required_for:
+  - flag: has_forms
+  - flag: has_ui_with_inputs
+  - keyword_any: ["form", "formulário", "input field", "validation", "submit", "create user", "register", "sign up"]
+  - path_pattern: ["frontend/**/forms/**", "frontend/**/inputs/**", "**/forms.module.*"]
+recommended_for:
+  - keyword_any: ["search", "filter", "edit"]
+  - flag: has_ui

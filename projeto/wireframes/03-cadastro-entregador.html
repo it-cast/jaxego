@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Quero entregar</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:480px;margin:24px auto;padding:0 16px}
+h1{font-size:24px;letter-spacing:-.02em}
+h1 em{font-family:'Fraunces',serif;font-style:italic;color:#E84E1B;font-weight:500}
+ol.steps{display:flex;gap:6px;list-style:none;padding:0;font-size:11px;color:#6B5F50}
+ol.steps li{flex:1;text-align:center;padding:6px 2px;border-top:3px solid #E5DBCC}
+ol.steps li[aria-current="step"]{border-color:#E84E1B;color:#E84E1B;font-weight:700}
+fieldset{border:1px solid #E5DBCC;border-radius:8px;margin:16px 0;padding:16px}
+legend{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid #C8BAA5;border-radius:6px;font-size:14px;box-sizing:border-box}
+button{width:100%;padding:14px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;margin-top:8px}
+button.secondary{background:#fff;color:#4A4136;border:1px solid #C8BAA5}
+.upload{border:2px dashed #C8BAA5;border-radius:8px;padding:24px;text-align:center;color:#6B5F50;font-size:13px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+.notice{background:#FFF1D2;color:#8B5A05;padding:12px;border-radius:8px;font-size:13px;margin:12px 0}
+</style></head>
+<body>
+<main>
+  <header>
+    <h1>Entregue na sua cidade. Comece <em>hoje.</em></h1>
+    <ol class="steps">
+      <li aria-current="step">1 Dados</li><li>2 Selfie</li><li>3 Veículo</li><li>4 Documentos</li><li>5 Bairros e preços</li>
+    </ol>
+  </header>
+  <form action="/api/v1/couriers" method="post" enctype="multipart/form-data">
+    <fieldset><legend>Etapa 1 · Seus dados</legend>
+      <label for="area_id">Cidade onde você vai entregar</label>
+      <select id="area_id" name="area_id" required>
+        <option value="">Selecione…</option>
+        <option value="padua">Santo Antônio de Pádua – RJ</option>
+        <option value="friburgo">Nova Friburgo – RJ</option>
+      </select>
+      <label for="full_name">Nome completo</label>
+      <input type="text" id="full_name" name="full_name" required>
+      <label for="cpf">CPF</label>
+      <input type="text" id="cpf" name="cpf" inputmode="numeric" required>
+      <div class="error-state" role="alert">Você já tem cadastro nessa cidade. <a href="/auth/recuperar-senha">Recuperar acesso</a></div>
+      <label for="birthdate">Data de nascimento</label>
+      <input type="date" id="birthdate" name="birthdate" required>
+      <label for="phone">Telefone</label>
+      <input type="tel" id="phone" name="phone" required>
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" required>
+      <label for="password">Senha</label>
+      <input type="password" id="password" name="password" minlength="10" required>
+    </fieldset>
+    <fieldset><legend>Etapa 2 · Selfie com documento</legend>
+      <div class="upload"><input type="file" name="selfie_document" accept="image/*" capture="user" required> Tire uma foto sua segurando seu documento (CNH ou RG)</div>
+    </fieldset>
+    <fieldset><legend>Etapa 3 · Veículo</legend>
+      <label for="vehicle_type">Tipo</label>
+      <select id="vehicle_type" name="vehicle_type" required>
+        <option value="motorcycle">Moto</option><option value="bicycle">Bicicleta</option><option value="car">Carro</option><option value="walking">A pé</option>
+      </select>
+      <label for="plate">Placa (se motorizado)</label>
+      <input type="text" id="plate" name="plate" placeholder="ABC1D23">
+    </fieldset>
+    <fieldset><legend>Etapa 4 · Documentos (validação completa — se a cidade exigir)</legend>
+      <div class="notice">Pádua exige validação <strong>completa</strong>: CNH com EAR, CRLV e MEI. Sem MEI você ainda pode trabalhar recebendo direto da loja.</div>
+      <label>CNH com EAR (foto)</label>
+      <div class="upload"><input type="file" name="cnh" accept="image/*"></div>
+      <label>CRLV (foto)</label>
+      <div class="upload"><input type="file" name="crlv" accept="image/*"></div>
+      <label for="mei_cnpj">CNPJ do seu MEI (opcional — necessário só para receber pela plataforma)</label>
+      <input type="text" id="mei_cnpj" name="mei_cnpj" inputmode="numeric" placeholder="00.000.000/0001-00">
+    </fieldset>
+    <fieldset><legend>Etapa 5 · Onde você atende e seus preços</legend>
+      <label>Bairros que você atende (coleta e entrega)</label>
+      <label><input type="checkbox" name="neighborhoods[]" value="centro" style="width:auto"> Centro</label>
+      <label><input type="checkbox" name="neighborhoods[]" value="vila-nova" style="width:auto"> Vila Nova</label>
+      <label><input type="checkbox" name="neighborhoods[]" value="sereno" style="width:auto"> Sereno</label>
+      <label><input type="checkbox" name="neighborhoods[]" value="cidade-nova" style="width:auto"> Cidade Nova</label>
+      <label for="pricing_mode">Como você cobra</label>
+      <select id="pricing_mode" name="pricing_mode">
+        <option value="per_neighborhood">Por bairro</option>
+        <option value="per_km">Por km</option>
+      </select>
+      <label for="price_base">Preço base (R$) — piso da cidade: R$ 6,00</label>
+      <input type="number" id="price_base" name="price_base" min="6" step="0.5" value="8">
+    </fieldset>
+    <button type="button" class="secondary" formaction="/api/v1/couriers/draft">Salvar e continuar depois</button>
+    <button type="submit">Enviar para análise</button>
+  </form>
+</main>
+</body></html>

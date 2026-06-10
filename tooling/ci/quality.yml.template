@@ -1,0 +1,188 @@
+# .github/workflows/quality.yml
+# Template do GSD Framework — ajustar paths de build/URL conforme projeto
+
+name: Quality Gates
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Lint + Type-check (rápido, rodar primeiro)
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Prettier check
+        run: npm run format:check
+
+  # ---------------------------------------------------------------------------
+  # Unit + integration tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test -- --ci --coverage
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+  # ---------------------------------------------------------------------------
+  # Bundle size budget
+  # Enforces quality/performance-web-vitals budgets
+  # ---------------------------------------------------------------------------
+  bundlesize:
+    name: Bundle Size Budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build production
+        run: npm run build  # ajustar conforme projeto (build, build:prod, etc.)
+      - name: Check bundle size
+        run: npx bundlesize
+        # lê bundlesize.config.json na raiz
+
+  # ---------------------------------------------------------------------------
+  # Accessibility — pa11y CI (páginas) + axe (componentes via jest)
+  # Enforces quality/accessibility-pro
+  # ---------------------------------------------------------------------------
+  a11y:
+    name: Accessibility (WCAG AA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build & start server
+        run: |
+          npm run build
+          npm run start:ci &
+          npx wait-on http://localhost:4200 --timeout 60000
+      - name: Run pa11y-ci
+        run: npx pa11y-ci --config pa11yci.json
+      - name: Run jest-axe unit tests
+        run: npm run test:a11y
+
+  # ---------------------------------------------------------------------------
+  # Lighthouse CI — Core Web Vitals
+  # Enforces quality/performance-web-vitals thresholds
+  # ---------------------------------------------------------------------------
+  lighthouse:
+    name: Lighthouse (Performance, A11y, SEO, Best Practices)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Build & start server
+        run: |
+          npm run build
+          npm run start:ci &
+          npx wait-on http://localhost:4200 --timeout 60000
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+  # ---------------------------------------------------------------------------
+  # Visual regression — Chromatic
+  # Enforces product/visual-regression-testing
+  # Descomentar se projeto usa Chromatic
+  # ---------------------------------------------------------------------------
+  # chromatic:
+  #   name: Visual Regression (Chromatic)
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0  # Chromatic precisa do histórico
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #     - run: npm ci
+  #     - name: Publish to Chromatic
+  #       uses: chromaui/action@v11
+  #       with:
+  #         projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+  #         exitOnceUploaded: true
+  #         onlyChanged: true
+  #         autoAcceptChanges: main
+
+  # ---------------------------------------------------------------------------
+  # i18n coverage — garante que strings novas foram extraídas
+  # Enforces quality/i18n-ready-architecture
+  # ---------------------------------------------------------------------------
+  i18n:
+    name: i18n Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Check translation keys
+        run: |
+          # Ajustar conforme biblioteca (Transloco, ngx-translate, react-intl, etc.)
+          npx transloco-keys-manager extract --strict
+          # Falha se há chaves em templates sem tradução em pt-BR.json
+
+  # ---------------------------------------------------------------------------
+  # Security — npm audit + SAST básico
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: npm audit (high+critical)
+        run: npm audit --audit-level=high
+      - name: Secrets scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          extra_args: --only-verified

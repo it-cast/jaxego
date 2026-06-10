@@ -1,0 +1,11 @@
+name: saas-billing-canonical
+category: domain
+required_for:
+  - feature: billing
+  - feature: subscription
+  - feature: payment
+  - feature: checkout
+  - integration: safe2pay
+  - keyword_any: ["assinatura", "subscription", "billing", "cobrança", "plano", "Safe2Pay", "trial", "renewal", "proration", "billing_cycle", "card token", "PIX recorrente"]
+  - path_pattern: ["**/billing/**", "**/subscriptions/**", "**/safe2pay/**", "**/payments/**"]
+recommended_for: []

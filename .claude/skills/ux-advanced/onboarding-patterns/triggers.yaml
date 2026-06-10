@@ -1,0 +1,9 @@
+name: onboarding-patterns
+category: ux-advanced
+required_for:
+  - feature: onboarding
+  - feature: signup
+  - feature: auth
+  - keyword_any: ["onboarding", "signup", "sign up", "register", "first run", "welcome flow", "tutorial", "guided tour"]
+recommended_for:
+  - feature: profile_setup

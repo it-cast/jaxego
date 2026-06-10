@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Cadastrar loja</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:520px;margin:32px auto;padding:0 16px}
+h1{font-size:26px;letter-spacing:-.02em}
+h1 em{font-family:'Fraunces',serif;font-style:italic;color:#E84E1B;font-weight:500}
+fieldset{border:1px solid #E5DBCC;border-radius:8px;margin:16px 0;padding:16px}
+legend{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B5F50;padding:0 6px}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid #C8BAA5;border-radius:6px;font-size:14px;box-sizing:border-box}
+button{width:100%;padding:14px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer;margin-top:8px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+.empty-state{display:none;background:#FFF1D2;color:#8B5A05;padding:14px;border-radius:8px;font-size:14px}
+small{color:#6B5F50}
+</style></head>
+<body>
+<main>
+  <header><h1>Cadastre sua loja. É <em>rapidinho.</em></h1></header>
+  <form action="/api/v1/merchants" method="post">
+    <fieldset>
+      <legend>Identificação</legend>
+      <label for="document">CNPJ (ou CPF se autônomo)</label>
+      <input type="text" id="document" name="document" inputmode="numeric" required placeholder="00.000.000/0001-00">
+      <div class="error-state" role="alert" id="err-cnpj">CNPJ não está ativo na Receita Federal. Fale com o suporte.</div>
+      <label for="trade_name">Nome da loja</label>
+      <input type="text" id="trade_name" name="trade_name" required placeholder="Pizzaria do José">
+      <label for="category">Categoria</label>
+      <select id="category" name="category" required>
+        <option value="">Selecione…</option>
+        <option value="food">Restaurante / Lanchonete</option>
+        <option value="retail">Comércio</option>
+        <option value="pharmacy">Farmácia</option>
+        <option value="market">Mercado</option>
+        <option value="other">Outro</option>
+      </select>
+    </fieldset>
+    <fieldset>
+      <legend>Contato e acesso</legend>
+      <label for="phone">Telefone (WhatsApp)</label>
+      <input type="tel" id="phone" name="phone" required placeholder="(22) 99999-1234">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" required>
+      <label for="password">Senha (mínimo 10 caracteres)</label>
+      <input type="password" id="password" name="password" minlength="10" required>
+    </fieldset>
+    <fieldset>
+      <legend>Endereço da loja</legend>
+      <label for="cep">CEP</label>
+      <input type="text" id="cep" name="cep" inputmode="numeric" required>
+      <label for="street">Rua e número</label>
+      <input type="text" id="street" name="street" required>
+      <label for="neighborhood">Bairro</label>
+      <input type="text" id="neighborhood" name="neighborhood" required>
+      <div class="empty-state" role="status" id="no-area">
+        Ainda não chegamos na sua cidade. Deixe seu e-mail que avisamos quando o Jaxegô chegar aí:
+        <input type="email" name="interest_email" placeholder="seu e-mail" style="margin-top:8px">
+        <button type="button" formaction="/api/v1/interest">Avisar quando chegar</button>
+      </div>
+    </fieldset>
+    <button type="submit">Criar conta da loja</button>
+    <small>Ao continuar você concorda com os <a href="/termos">Termos</a> e a <a href="/privacidade">Política de Privacidade</a>.</small>
+  </form>
+</main>
+</body></html>

@@ -1,0 +1,6 @@
+name: safe2pay-escrow-br
+category: domain
+required_for:
+  - keyword_any: ["Safe2Pay", "safe2pay", "escrow", "split payment", "marketplace payment"]
+  - integration: safe2pay
+recommended_for: []

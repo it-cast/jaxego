@@ -1,0 +1,6 @@
+name: push-notifications-architecture
+category: mobile
+required_for:
+  - feature: push_notifications
+  - keyword_any: ["FCM", "APNs", "push notification", "OneSignal", "Firebase Messaging", "notification permission"]
+recommended_for: []

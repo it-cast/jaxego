@@ -1,0 +1,27 @@
+[
+  {
+    "path": "./dist/**/main*.js",
+    "maxSize": "400 kB",
+    "compression": "gzip"
+  },
+  {
+    "path": "./dist/**/runtime*.js",
+    "maxSize": "20 kB",
+    "compression": "gzip"
+  },
+  {
+    "path": "./dist/**/polyfills*.js",
+    "maxSize": "100 kB",
+    "compression": "gzip"
+  },
+  {
+    "path": "./dist/**/vendor*.js",
+    "maxSize": "800 kB",
+    "compression": "gzip"
+  },
+  {
+    "path": "./dist/**/styles*.css",
+    "maxSize": "100 kB",
+    "compression": "gzip"
+  }
+]

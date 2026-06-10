@@ -1,0 +1,13 @@
+name: user-persona
+category: meta
+priority: high
+required_for:
+  - phase_type: bootstrap
+  - phase_type: discovery
+  - phase_type: discuss-phase
+  - flag: has_external_users
+  - keyword_any: ["persona", "user persona", "buyer persona", "perfil de usuário", "anti-persona", "persona priorization", "público-alvo"]
+recommended_for:
+  - phase_type: ui-design
+  - phase_type: marketing
+  - keyword_any: ["audience", "segmento", "usuário ideal"]

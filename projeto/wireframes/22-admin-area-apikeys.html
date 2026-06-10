@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — API keys · Pádua</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:760px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+.mono{font-family:'JetBrains Mono',monospace}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:10px 6px;border-bottom:1px solid #F2EBE0;text-align:left}
+button{padding:9px 14px;border-radius:6px;font-weight:600;cursor:pointer;border:0;font-size:13px}
+button.create{background:#E84E1B;color:#fff}
+button.revoke{background:#fff;color:#C71D1D;border:1px solid #C71D1D}
+.newkey{background:#FFF8C2;border:1px solid #E89B0E;border-radius:8px;padding:14px;display:none}
+.newkey code{font-family:'JetBrains Mono',monospace;background:#fff;padding:6px 10px;border-radius:6px;display:block;margin:8px 0;font-size:13px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+input,select{width:100%;padding:9px;border:1px solid #C8BAA5;border-radius:6px;font-size:13px;box-sizing:border-box}
+</style></head>
+<body>
+<main>
+  <a href="/admin/padua">← Painel</a>
+  <h1>API keys · Pádua</h1>
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 8px">Criar nova chave</h2>
+    <form action="/api/v1/admin/areas/padua/apikeys" method="post">
+      <label for="key_name">Nome (quem usa)</label>
+      <input type="text" id="key_name" name="name" required placeholder="Menu Certo · produção">
+      <label for="scopes">Escopos</label>
+      <select id="scopes" name="scopes[]" multiple>
+        <option value="deliveries:create" selected>deliveries:create</option>
+        <option value="deliveries:read" selected>deliveries:read</option>
+        <option value="deliveries:cancel">deliveries:cancel</option>
+        <option value="webhooks:manage">webhooks:manage</option>
+      </select>
+      <label for="env">Ambiente</label>
+      <select id="env" name="environment"><option value="live">Produção (jx_live_)</option><option value="test">Teste (jx_test_)</option></select>
+      <button class="create" type="submit" style="margin-top:10px">Criar chave</button>
+    </form>
+    <div class="newkey" role="alert">
+      <strong>Copie agora — essa chave não será mostrada de novo:</strong>
+      <code>jx_live_4f8a2b9c1d3e5f7a9b0c2d4e6f8a0b1c</code>
+      <button type="button" data-action="copy-key" style="background:#181410;color:#fff">Copiar</button>
+    </div>
+  </section>
+  <section class="card">
+    <h2 style="font-size:15px;margin:0 0 8px">Chaves ativas</h2>
+    <table>
+      <thead><tr><th>Nome</th><th>Prefixo</th><th>Escopos</th><th>Último uso</th><th>Rate limit</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Menu Certo · produção</td><td class="mono">jx_live_4f8a…</td><td class="mono" style="font-size:11px">create, read</td><td class="mono">hoje 14:31</td><td class="mono">120/min</td><td><button class="revoke" type="button" data-action="revoke" data-key="key_01">Revogar</button></td></tr>
+        <tr><td>Homologação</td><td class="mono">jx_test_9c2e…</td><td class="mono" style="font-size:11px">create, read, cancel</td><td class="mono">22/04 09:12</td><td class="mono">60/min</td><td><button class="revoke" type="button" data-action="revoke" data-key="key_02">Revogar</button></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#6B5F50">Revogação propaga em menos de 1 minuto. Chaves são armazenadas como hash — ninguém consegue vê-las de novo, nem a gente.</p>
+  </section>
+  <div class="empty-state" hidden style="text-align:center;color:#6B5F50;padding:24px">Nenhuma chave ativa. Crie a primeira acima.</div>
+  <div class="error-state" role="alert" style="display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:8px;font-size:13px">Erro ao criar a chave. Tente novamente.</div>
+</main>
+</body></html>

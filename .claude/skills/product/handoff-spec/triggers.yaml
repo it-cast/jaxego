@@ -1,0 +1,8 @@
+name: handoff-spec
+category: product
+required_for:
+  - phase_type: design-handoff
+  - keyword_any: ["handoff", "designer entregou", "Figma spec", "componente novo do design system"]
+recommended_for:
+  - flag: has_ui
+  - flag: has_design_files

@@ -1,0 +1,7 @@
+name: systematic-debugging
+category: standalone
+required_for:
+  - phase_type: debugging
+  - phase_type: bug_fix
+  - keyword_any: ["debug", "investigation", "root cause", "post-mortem", "incident analysis"]
+recommended_for: []

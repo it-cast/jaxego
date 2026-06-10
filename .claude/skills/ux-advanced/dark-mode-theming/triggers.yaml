@@ -1,0 +1,7 @@
+name: dark-mode-theming
+category: ux-advanced
+required_for:
+  - flag: has_dark_mode
+  - keyword_any: ["dark mode", "dark theme", "theme switcher", "color scheme"]
+recommended_for:
+  - flag: has_ui

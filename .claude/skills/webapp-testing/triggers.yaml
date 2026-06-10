@@ -1,0 +1,9 @@
+name: webapp-testing
+category: standalone
+required_for:
+  - flag: has_ui_web
+    when_has_e2e_tests: true
+  - keyword_any: ["playwright", "cypress", "e2e test", "integration test web"]
+  - path_pattern: ["**/e2e/**", "**/tests/integration/**"]
+recommended_for:
+  - flag: has_ui_web

@@ -1,0 +1,9 @@
+name: fastapi-production-patterns
+category: domain
+required_for:
+  - stack: fastapi
+  - flag: has_api
+  - keyword_any: ["endpoint", "APIRouter", "FastAPI", "Depends", "Pydantic", "auth backend", "JWT", "rate limit", "background job", "arq worker"]
+  - path_pattern: ["**/api/**", "**/routers/**", "**/services/**", "**/schemas/**", "backend/src/**"]
+recommended_for:
+  - keyword_any: ["websocket", "middleware", "cors"]

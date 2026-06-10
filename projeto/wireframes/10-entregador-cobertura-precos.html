@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Meus bairros e preços</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0;max-width:420px;margin:auto}
+main{padding:16px}
+h1{font-size:22px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:14px;margin-bottom:12px}
+label{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F2EBE0;font-size:14px}
+input[type=number]{width:90px;padding:8px;border:1px solid #C8BAA5;border-radius:6px;font-family:'JetBrains Mono',monospace;text-align:right}
+input[type=checkbox]{width:20px;height:20px}
+button{width:100%;padding:14px;background:#E84E1B;color:#fff;border:0;border-radius:8px;font-weight:700;cursor:pointer;margin-top:12px}
+.notice{background:#FFF1D2;color:#8B5A05;padding:10px;border-radius:8px;font-size:13px}
+.error-state{display:none;background:#F9DCDC;color:#C71D1D;padding:10px;border-radius:6px;font-size:13px;margin-top:8px}
+</style></head>
+<body>
+<main>
+  <h1>Bairros e preços</h1>
+  <p class="notice">Você só recebe ofertas quando a coleta E a entrega estão nos seus bairros. Piso da cidade: <strong>R$ 6,00</strong>.</p>
+  <form action="/api/v1/couriers/me/coverage" method="post">
+    <section class="card">
+      <h2 style="font-size:14px;margin:0">Bairros que atendo · preço por entrega</h2>
+      <label><span><input type="checkbox" name="nb[centro][on]" checked> Centro</span><input type="number" name="nb[centro][price]" value="7.00" min="6" step="0.5"></label>
+      <label><span><input type="checkbox" name="nb[vila-nova][on]" checked> Vila Nova</span><input type="number" name="nb[vila-nova][price]" value="8.50" min="6" step="0.5"></label>
+      <label><span><input type="checkbox" name="nb[sereno][on]" checked> Sereno</span><input type="number" name="nb[sereno][price]" value="10.00" min="6" step="0.5"></label>
+      <label><span><input type="checkbox" name="nb[cidade-nova][on]"> Cidade Nova</span><input type="number" name="nb[cidade-nova][price]" value="9.00" min="6" step="0.5" disabled></label>
+      <label><span><input type="checkbox" name="nb[divinea][on]"> Divinéia</span><input type="number" name="nb[divinea][price]" min="6" step="0.5" disabled placeholder="—"></label>
+    </section>
+    <section class="card">
+      <h2 style="font-size:14px;margin:0 0 8px">Retorno (quando o destinatário recusa)</h2>
+      <label style="border:0"><span>% sobre a corrida para voltar com o item</span><input type="number" name="return_trip_pct" value="50" min="0" max="100"></label>
+    </section>
+    <div class="error-state" role="alert">O preço de Vila Nova está abaixo do piso da cidade (R$ 6,00). Ajuste para salvar.</div>
+    <button type="submit">Salvar bairros e preços</button>
+  </form>
+</main>
+</body></html>

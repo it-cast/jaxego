@@ -1,0 +1,8 @@
+name: ionic-patterns
+category: domain
+required_for:
+  - stack: ionic
+  - flag: has_mobile
+    when_ui_framework: ionic
+  - keyword_any: ["@ionic", "Capacitor", "ionic component", "ion-button", "ion-input"]
+recommended_for: []

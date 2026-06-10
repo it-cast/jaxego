@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Entrega #2851</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:760px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;letter-spacing:-.02em}
+.grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:12px}
+.map{height:220px;background:#F2EBE0;display:grid;place-items:center;color:#9D8E7A;border-radius:8px;font-size:13px}
+.mono{font-family:'JetBrains Mono',monospace}
+ol.timeline{list-style:none;padding:0;margin:0}
+ol.timeline li{padding:8px 0 8px 24px;border-left:2px solid #E5DBCC;margin-left:8px;position:relative;font-size:14px}
+ol.timeline li::before{content:"";width:10px;height:10px;border-radius:999px;background:#C8BAA5;position:absolute;left:-6px;top:12px}
+ol.timeline li.done::before{background:#1B998B}
+ol.timeline li.current::before{background:#E84E1B}
+ol.timeline li.current{font-weight:700}
+ol.timeline time{display:block;font-size:11px;color:#6B5F50;font-family:'JetBrains Mono',monospace}
+button.cancel{padding:10px 16px;background:transparent;color:#C71D1D;border:1px solid #C71D1D;border-radius:8px;font-weight:600;cursor:pointer}
+button.release{padding:10px 16px;background:#181410;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer}
+.proof img{width:100%;border-radius:8px;background:#F2EBE0;min-height:120px}
+.badge-direct{background:#FFF8C2;color:#8B5A05;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px}
+.warn{background:#FFF1D2;color:#8B5A05;padding:10px;border-radius:8px;font-size:13px;display:none}
+</style></head>
+<body>
+<main>
+  <a href="/loja/entregas">← Entregas</a>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h1>Entrega <span class="mono">#2851</span> · A CAMINHO <span class="badge-direct">DIRETO 💵</span></h1>
+    <button class="cancel" type="button" data-action="cancel" data-policy="apos-coleta-100">Cancelar (cobra 100% + retorno)</button>
+  </div>
+  <div class="grid">
+    <section>
+      <div class="card"><div class="map">[mapa ao vivo do entregador — v1.1]</div></div>
+      <div class="card">
+        <h2 style="font-size:14px;margin:0 0 8px">Linha do tempo</h2>
+        <ol class="timeline">
+          <li class="done">Criada <time>14:28:03</time></li>
+          <li class="done">Aceita por João Silva <time>14:28:41 · 38s</time></li>
+          <li class="done">Coletada · foto ok · GPS ok <time>14:36:12</time></li>
+          <li class="current">A caminho de Vila Nova <time>agora</time></li>
+          <li>Entregue</li>
+          <li>Finalizada (24h depois)</li>
+        </ol>
+      </div>
+      <div class="card proof">
+        <h2 style="font-size:14px;margin:0 0 8px">Comprovações</h2>
+        <img alt="Foto da coleta — 14:36, GPS confirmado" src="">
+        <div class="warn error-state" role="alert">Número de referência não confere (3 tentativas). <button class="release" type="button" data-action="manual-release">Liberar entrega manualmente</button> (fica registrado)</div>
+      </div>
+    </section>
+    <aside>
+      <div class="card">
+        <h2 style="font-size:14px;margin:0 0 8px">Entregador</h2>
+        <strong>João Silva</strong> · ★ 87,4 ouro<br>
+        <span style="font-size:12px;color:#6B5F50">Moto <span class="mono">ABC1D23</span> · 14 entregas pra você</span><br><br>
+        <a href="tel:+5522999990000">📞 Ligar</a> · <a href="/loja/chat/2851">💬 Mensagem</a>
+      </div>
+      <div class="card">
+        <h2 style="font-size:14px;margin:0 0 8px">Valores</h2>
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>Corrida (direto ao entregador)</span><span class="mono">R$ 8,50</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>Taxa Jaxegô (na fatura)</span><span class="mono">R$ 1,50</span></div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:14px;margin:0 0 8px">Destinatário</h2>
+        Maria Silva · <span class="mono">(22) 9****-1234</span><br>
+        <a href="https://jaxego.com.br/r/a8Xk2">Link de rastreio público →</a>
+      </div>
+    </aside>
+  </div>
+  <div class="loading skeleton" hidden aria-hidden="true" style="height:120px;background:#E5DBCC;border-radius:10px"></div>
+  <div class="empty-state" hidden style="text-align:center;color:#6B5F50;padding:32px">Entrega não encontrada. <a href="/loja/entregas">Voltar à lista</a></div>
+</main>
+</body></html>

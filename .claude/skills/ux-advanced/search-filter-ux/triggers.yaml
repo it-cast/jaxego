@@ -1,0 +1,7 @@
+name: search-filter-ux
+category: ux-advanced
+required_for:
+  - keyword_any: ["busca", "search", "filtro", "filter", "FULLTEXT", "autocomplete", "typeahead", "faceta", "período", "date range"]
+recommended_for:
+  - flag: has_admin
+  - keyword_any: ["catálogo", "histórico", "listagem"]

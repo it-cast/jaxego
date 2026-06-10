@@ -1,0 +1,9 @@
+name: owasp-security
+category: standalone
+required_for:
+  - feature: api_endpoint
+  - feature: auth
+  - feature: pii_collection
+  - keyword_any: ["security", "auth", "JWT", "OAuth", "CSRF", "XSS", "SQL injection", "SSRF", "rate limit", "OWASP", "vulnerability", "encryption", "password hash"]
+  - path_pattern: ["**/auth/**", "**/security/**", "**/api/**"]
+recommended_for: []

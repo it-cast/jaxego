@@ -1,0 +1,6 @@
+name: accessibility-pro
+category: quality
+required_for:
+  - flag: has_ui
+  - keyword_any: ["WCAG", "aria-label", "screen reader", "keyboard navigation", "color contrast", "a11y", "accessibility"]
+recommended_for: []

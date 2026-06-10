@@ -1,0 +1,8 @@
+name: angular-material-patterns
+category: domain
+required_for:
+  - stack: angular
+    when_ui_kit: angular-material
+  - path_pattern: ["**/*.module.ts", "**/material.module.*"]
+  - keyword_any: ["MatTable", "MatDialog", "MatFormField", "@angular/material"]
+recommended_for: []

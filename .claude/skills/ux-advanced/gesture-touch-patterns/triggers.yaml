@@ -1,0 +1,7 @@
+name: gesture-touch-patterns
+category: ux-advanced
+required_for:
+  - flag: has_mobile
+  - context: mobile
+  - keyword_any: ["swipe", "pinch", "long press", "haptic", "gesture", "pull to refresh"]
+recommended_for: []

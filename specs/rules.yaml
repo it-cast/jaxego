@@ -1,0 +1,57 @@
+# ══════════════════════════════════════════
+# SPECS — Regras de negócio invariantes
+# ══════════════════════════════════════════
+# Regras que NÃO dependem de fase — valem para o projeto inteiro.
+# Consumido por researchers e planners.
+
+pii_fields:
+  # Campos que, se presentes em resposta ou log, ativam LGPD
+  - cpf
+  - cnpj
+  - rg
+  - email
+  - phone
+  - full_name
+  - birth_date
+  - address_full
+
+required_validations:
+  cpf:
+    - "11 dígitos"
+    - "Dígito verificador válido"
+    - "Não pode ser sequencial (111.111.111-11, 222.222.222-22, etc.)"
+  cnpj:
+    - "14 dígitos"
+    - "Dígito verificador válido"
+  cep:
+    - "8 dígitos"
+    - "Buscar via ViaCEP antes de confiar no input"
+  phone_br:
+    - "(XX) XXXXX-XXXX ou (XX) XXXX-XXXX"
+    - "DDD válido"
+
+money_rules:
+  min_value_brl: 0.01
+  max_value_brl: 999999999.99
+  rounding: "banker's rounding (round half to even)"
+
+audit_trail:
+  # Tabelas que exigem audit log (preencher com as do seu projeto)
+  # Exemplos comuns: users, payments, orders, auth_events, critical_business_entities
+  - "users"
+  - "{tabela_critica_1}"
+  - "{tabela_critica_2}"
+
+rate_limits:
+  # Defaults — skills owasp-security aplica por endpoint
+  global_default: "60/minute"
+  auth_login: "5/minute/ip"
+  auth_password_reset: "3/hour/ip"
+  webhook_external: "100/minute"
+
+timezones:
+  storage: "UTC"
+  display_default: "America/Sao_Paulo"
+
+# Regras específicas deste projeto (preencher):
+business_specific: {}

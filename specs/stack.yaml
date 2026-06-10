@@ -1,0 +1,100 @@
+# ══════════════════════════════════════════
+# SPECS — Stack técnica fechada
+# ══════════════════════════════════════════
+# Fonte de verdade técnica. Mudança aqui = ADR obrigatório em docs/adrs/.
+
+backend:
+  language: "Python 3.13"
+  framework: "FastAPI >=0.115 (async-first)"
+  server: "Uvicorn + Gunicorn"
+  validation: "Pydantic v2"
+  orm_strategy: "SQLAlchemy 2.0 Core (sem ORM)"
+  async_library: "httpx.AsyncClient"
+  package_manager: "uv"
+  linter: "ruff"
+  typechecker: "basedpyright (strict em módulos core)"
+
+frontend:
+  # Omitir ou deixar null se não houver frontend web
+  framework: "Angular 19 standalone"
+  styling: "Tailwind + Material 3"
+  state: "signals"
+  forms: "Angular Forms + custom validators BR"
+  package_manager: "pnpm"
+
+mobile:
+  # Omitir ou deixar null se não houver mobile
+  framework: "Ionic 8 + Capacitor 6"
+  language: "TypeScript"
+  platforms: ["ios", "android"]
+  native_plugins:
+    - "@capacitor/camera"
+    - "@capacitor/push-notifications"
+    - "@capacitor/haptics"
+    - "@capacitor/network"
+
+database:
+  prod: "MySQL 8 via PyMySQL + aiomysql"
+  dev: "SQLite via aiosqlite (mesmo schema)"
+  migrations: "Alembic. SQL puro não aceito."
+
+cache:
+  engine: "Redis 7"
+  usage:
+    - "Cache de LLM determinístico (temperature=0), TTL 24h"
+    - "Rate limit sliding window"
+    - "Idempotency-Key storage, TTL 24h"
+
+storage:
+  prod: "Wasabi S3"
+  dev: "MinIO local"
+  encryption: "SSE-S3"
+
+llm_providers:
+  # Omitir se projeto não usa LLM
+  - name: "Anthropic"
+    models: ["claude-opus-4-7"]
+  - name: "OpenAI"
+    models: ["gpt-5.4", "gpt-5.4-mini"]
+  # Roteamento por use_case: configurado em tabela MySQL (ADR específico do projeto)
+
+auth:
+  password_hash: "Argon2id (custo 12)"
+  session: "JWT short-lived + refresh token com rotação"
+  session_storage:
+    admin: "httpOnly cookie + SameSite=Strict"  # NUNCA localStorage
+    mobile: "Capacitor Secure Storage"
+  oauth_providers: ["google"]  # opcional
+
+payment:
+  # Omitir se projeto não cobra
+  providers: ["stripe", "asaas"]
+  # idempotency: obrigatório
+
+observability:
+  error_tracking: "Sentry"
+  tracing: "OpenTelemetry → Jaeger"
+  logs: "structlog + Loki"
+  metrics: "Prometheus + Grafana"
+  product_analytics: "PostHog"
+
+infra:
+  containerization: "Docker Compose (dev) / Docker Swarm ou Kubernetes (prod)"
+  reverse_proxy: "Nginx"
+  tunnel: "Cloudflare Tunnel"  # ou traefik, caddy, etc.
+  ci_cd: "GitHub Actions"
+
+quality_gates:
+  # Estes gates ficam ativos no CI do projeto gerado
+  lint_required: true
+  test_required: true
+  coverage_target: 80
+  a11y_ci: true  # axe-core em PR
+  bundle_budget_ci: true  # bundlesize
+  lighthouse_ci: true
+  visual_regression: "chromatic"  # opcional
+
+ci_environment:
+  runner: "ubuntu-latest"
+  node_version: "22"
+  python_version: "3.13"

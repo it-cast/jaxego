@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Favoritos e bloqueados</title>
+<style>
+body{font-family:'Inter Tight',sans-serif;background:#FAF6EE;color:#181410;margin:0}
+main{max-width:720px;margin:24px auto;padding:0 20px}
+h1{font-size:24px;letter-spacing:-.02em}
+.card{background:#fff;border:1px solid #E5DBCC;border-radius:10px;padding:16px;margin-bottom:16px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F2EBE0}
+.mono{font-family:'JetBrains Mono',monospace}
+button{padding:8px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #C8BAA5;background:#fff;color:#4A4136}
+button.danger{color:#C71D1D;border-color:#C71D1D}
+.empty-state{text-align:center;color:#6B5F50;padding:24px;font-size:14px}
+p.hint{font-size:13px;color:#6B5F50}
+</style></head>
+<body>
+<main>
+  <h1>Favoritos e bloqueados</h1>
+  <p class="hint">Favoritos recebem suas ofertas primeiro (um por vez, 20s cada). Bloqueados nunca recebem suas ofertas — a lista é privada e não afeta o score de ninguém.</p>
+  <section class="card" aria-labelledby="fav">
+    <h2 id="fav" style="font-size:15px;margin:0">⭐ Favoritos (ordem de prioridade)</h2>
+    <div class="row"><div><strong>1 · João Silva</strong> <span style="color:#D4A017">★87 ouro</span><br><small class="mono" style="color:#6B5F50">142 entregas pra você · 96% no prazo</small></div><div><button type="button" data-action="move-up" disabled>↑</button> <button type="button" data-action="move-down">↓</button> <button class="danger" type="button" data-action="unfavorite">Remover</button></div></div>
+    <div class="row"><div><strong>2 · Ana Costa</strong> <span style="color:#1B998B">★91 diamante</span><br><small class="mono" style="color:#6B5F50">87 entregas pra você · 98% no prazo</small></div><div><button type="button" data-action="move-up">↑</button> <button type="button" data-action="move-down" disabled>↓</button> <button class="danger" type="button" data-action="unfavorite">Remover</button></div></div>
+    <div class="empty-state" hidden>Você ainda não tem favoritos. Marque a estrela em qualquer entrega concluída.</div>
+  </section>
+  <section class="card" aria-labelledby="blk">
+    <h2 id="blk" style="font-size:15px;margin:0">🚫 Bloqueados</h2>
+    <div class="row"><div><strong>Carlos Mota</strong><br><small style="color:#6B5F50">bloqueado em 12/03 — motivo (privado): atrasos repetidos</small></div><button type="button" data-action="unblock">Desbloquear</button></div>
+    <div class="empty-state" hidden>Nenhum entregador bloqueado.</div>
+  </section>
+</main>
+</body></html>

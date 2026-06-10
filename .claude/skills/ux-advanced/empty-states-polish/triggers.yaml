@@ -1,0 +1,7 @@
+name: empty-states-polish
+category: ux-advanced
+required_for:
+  - flag: has_ui
+  - keyword_any: ["empty state", "empty list", "no results", "first time user", "onboarding screen"]
+recommended_for:
+  - keyword_any: ["list", "table", "grid", "search results"]
