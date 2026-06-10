@@ -65,6 +65,18 @@
   --state-recusada: var(--jx-delivery-recusada-no-destino);
   --state-cancelada: var(--jx-delivery-cancelada);
   --state-finalizada: var(--jx-delivery-finalizada);
+
+  // score level colors (Phase 8 — ADR-013, UI-SPEC §7.1). Derived MECHANICALLY
+  // from the `color.score_level.*` primitives (--jx-score-*), exactly like the
+  // --state-* above were derived from `color.delivery_state.*`. Used as VIVID
+  // text/glyph over a NEUTRAL chip surface (--surface-sunken). Score is exhibited
+  // only (no financial weight in M1 — ADR-013); the chip is never color-only
+  // (text label + mono value always present).
+  --score-probation: var(--jx-score-probation);
+  --score-bronze: var(--jx-score-bronze);
+  --score-prata: var(--jx-score-prata);
+  --score-ouro: var(--jx-score-ouro);
+  --score-diamante: var(--jx-score-diamante);
 }
 
 // ---------------------------------------------------------------------------
@@ -121,6 +133,17 @@
   --state-recusada: var(--jx-delivery-recusada-no-destino);
   --state-cancelada: var(--jx-neutral-400);
   --state-finalizada: var(--jx-delivery-finalizada);
+
+  // score level colors (Phase 8 — DEC-001 dark). The two MUTED neutrals
+  // (prata #7E7B73 / probation #9D8E7A) are luminance-lifted to lighter neutrals
+  // so the chip text stays AA over the dark chip surface (--surface-sunken). The
+  // vivid hues (bronze/ouro/diamante) already read AA in dark unchanged — same
+  // treatment as --state-criada/--state-cancelada above.
+  --score-probation: var(--jx-neutral-400);
+  --score-bronze: var(--jx-score-bronze);
+  --score-prata: var(--jx-neutral-300);
+  --score-ouro: var(--jx-score-ouro);
+  --score-diamante: var(--jx-score-diamante);
 }
 
 // Explicit toggle (set by anti-FOUC script + ThemeService) takes precedence.
