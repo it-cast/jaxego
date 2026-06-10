@@ -164,11 +164,11 @@
 **Milestone:** MS-02 · **Tipo:** core · **Status:** not_started · **Estimativa:** M (3-5d) · **Plans:** 5 plans
 
 ### Plans
-- [ ] 06-01-PLAN.md — Migration 0005 (3 tabelas espaciais/relacionais) + AreaConfig tipada com audit + test scaffold (Wave 1)
-- [ ] 06-02-PLAN.md — Catálogo de bairros: CRUD area-scoped + validação de polígono GeoJSON + ST_Contains nativo (Wave 2)
-- [ ] 06-03-PLAN.md — Cobertura (RN-003) + tabela de frete com piso (RN-015) + online/offline (Wave 2)
-- [ ] 06-04-PLAN.md — Admin web: config da área + jx-data-table + catálogo de bairros (Wave 3)
-- [ ] 06-05-PLAN.md — Entregador mobile: cobertura+preços (tela 10) + jx-availability-toggle (Wave 3)
+- [x] 06-01-PLAN.md — Migration 0005 (3 tabelas espaciais/relacionais) + AreaConfig tipada com audit + test scaffold (Wave 1)
+- [x] 06-02-PLAN.md — Catálogo de bairros: CRUD area-scoped + validação de polígono GeoJSON + ST_Contains nativo (Wave 2)
+- [x] 06-03-PLAN.md — Cobertura (RN-003) + tabela de frete com piso (RN-015) + online/offline (Wave 2)
+- [x] 06-04-PLAN.md — Admin web: config da área + jx-data-table + catálogo de bairros (Wave 3)
+- [x] 06-05-PLAN.md — Entregador mobile: cobertura+preços (tela 10) + jx-availability-toggle (Wave 3)
 
 ### REQs cobertos
 - REQ-003: catálogo de bairros · REQ-002 (UI config — tela 21) · REQ-016: cobertura coleta E entrega · REQ-017: tabela de frete com piso · REQ-018: online/offline/busy · REQ-044 (parcial): KYC fila + config + bairros
