@@ -234,25 +234,15 @@ def downgrade() -> None:
         op.execute("DROP TRIGGER IF EXISTS trg_dst_no_update")
         op.execute("DROP TRIGGER IF EXISTS trg_dst_no_delete")
 
-    op.drop_index(
-        "ix_delivery_state_transitions_delivery_id",
-        table_name="delivery_state_transitions",
-    )
-    op.drop_index(
-        op.f("ix_delivery_state_transitions_area_id"),
-        table_name="delivery_state_transitions",
-    )
+    # Drop tables in FK-dependency order (children before parents). All three
+    # tables of this migration are dropped here, so NO explicit op.drop_index is
+    # needed — drop_table removes the table's indexes with it. On MySQL, dropping
+    # an index that backs a FK first raises error 1553 ("needed in a foreign key
+    # constraint"), so those calls were not only redundant but broke downgrade.
+    #
+    # Order: delivery_state_transitions (FK→deliveries) → deliveries
+    # (FK→recipients) → recipients. neighborhoods_catalog/areas/merchants/couriers
+    # belong to earlier migrations and remain.
     op.drop_table("delivery_state_transitions")
-
-    op.drop_index("ix_deliveries_area_id_state", table_name="deliveries")
-    op.drop_index("ix_deliveries_area_id_merchant_id_created_at", table_name="deliveries")
-    op.drop_index(op.f("ix_deliveries_dropoff_neighborhood_id"), table_name="deliveries")
-    op.drop_index(op.f("ix_deliveries_recipient_id"), table_name="deliveries")
-    op.drop_index(op.f("ix_deliveries_courier_id"), table_name="deliveries")
-    op.drop_index(op.f("ix_deliveries_merchant_id"), table_name="deliveries")
-    op.drop_index(op.f("ix_deliveries_area_id"), table_name="deliveries")
     op.drop_table("deliveries")
-
-    op.drop_index("ix_recipients_area_id_cpf_hash", table_name="recipients")
-    op.drop_index(op.f("ix_recipients_area_id"), table_name="recipients")
     op.drop_table("recipients")
