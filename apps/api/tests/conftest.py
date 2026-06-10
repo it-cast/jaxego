@@ -23,6 +23,12 @@ import pytest_asyncio
 from app.areas.models import Area, AreaAdmin
 from app.audit.models import AuditLog  # noqa: F401 (registers mapper)
 from app.auth.models import RefreshToken, User  # noqa: F401
+from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
+    Merchant,
+    MerchantSubscription,
+    MerchantUser,
+)
+from app.plans.models import SubscriptionPlan  # noqa: F401
 from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import get_session

@@ -1,0 +1,125 @@
+"""Merchant + MerchantUser + MerchantSubscription models (F-01, D-05).
+
+`Merchant` is AREA-SCOPED (AreaScopedMixin): every store belongs to exactly one
+delivery area (Pádua in the pilot). It carries the state-machine `status`
+(pending_payment / pending_validation / active / suspended), the geocoded point
+(lat/lng nullable until resolved), and the BR identity (document normalised to
+digits/uppercase + account_type). PII (document, phone) is masked in outputs and
+NEVER logged (TH-06).
+
+RN-011 uniqueness is per ACCOUNT TYPE: the composite UNIQUE
+(`account_type`, `document`) lets a CPF and a CNPJ that happen to share a digit
+string coexist, while blocking a true duplicate. `phone_e164` and `email` are
+globally unique on the merchant (anti-duplicidade across the three identifiers).
+
+`MerchantUser` links the owner `User` (argon2id via `auth/`) to the merchant.
+`MerchantSubscription` ties a merchant to a `subscription_plan` with a status.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base import Base
+from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
+
+# Merchant state machine values (D-05). The valid transitions live in
+# `state_machine.py`; these are the persisted strings.
+MERCHANT_STATUSES = ("pending_payment", "pending_validation", "active", "suspended")
+ACCOUNT_TYPES = ("cnpj", "cpf")
+
+
+class Merchant(Base, AreaScopedMixin, TimestampMixin):
+    """A store (F-01). Area-scoped; status is the state machine (D-05)."""
+
+    __tablename__ = "merchants"
+    __table_args__ = (
+        # RN-011: uniqueness per account type (CPF vs CNPJ namespaces are separate).
+        UniqueConstraint("account_type", "document", name="uq_merchants_account_type_document"),
+        UniqueConstraint("phone_e164", name="uq_merchants_phone_e164"),
+        UniqueConstraint("email", name="uq_merchants_email"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+
+    account_type: Mapped[str] = mapped_column(String(8), nullable=False)
+    # Normalised document (digits/uppercase). [PII] — masked in outputs, never logged.
+    document: Mapped[str] = mapped_column(String(20), nullable=False)
+    trade_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    category: Mapped[str] = mapped_column(String(40), nullable=False)
+    # [PII] E.164 phone — masked in outputs, never logged.
+    phone_e164: Mapped[str] = mapped_column(String(20), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)  # [PII]
+
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending_validation")
+
+    # Geocoded point (resolved at signup; nullable until then).
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # Receita validation bookkeeping (E4 / job retry).
+    receita_validated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    revalidation_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    next_revalidation_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+
+
+class MerchantUser(Base, TimestampMixin):
+    """Owner membership: links a global User to a Merchant with a role.
+
+    GLOBAL (not AreaScopedMixin): the merchant already carries area_id; this is a
+    pure association row mirroring `area_admins`.
+    """
+
+    __tablename__ = "merchant_users"
+    __table_args__ = (
+        UniqueConstraint("merchant_id", "user_id", name="uq_merchant_users_merchant_id_user_id"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    merchant_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("merchants.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("users.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(32), nullable=False, default="owner")
+
+
+class MerchantSubscription(Base, AreaScopedMixin, TimestampMixin):
+    """A merchant's subscription to a plan (status: active / pending / canceled)."""
+
+    __tablename__ = "merchant_subscriptions"
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    merchant_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("merchants.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    plan_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("subscription_plans.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    # active (Free or paid confirmed) | pending (paid not yet confirmed) | canceled
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
