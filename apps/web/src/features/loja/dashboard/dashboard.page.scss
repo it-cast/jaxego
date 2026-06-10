@@ -1,0 +1,118 @@
+// Tela 11 — store dashboard (UI-SPEC §4.2). Tokens only.
+
+:host {
+  display: block;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.jx-dash__head {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-4);
+  margin-bottom: var(--jx-space-5);
+}
+
+.jx-dash__title {
+  flex: 1;
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+
+  em {
+    font-family: var(--jx-font-serif-accent);
+    font-style: italic;
+    font-weight: var(--jx-weight-medium);
+    color: var(--brand);
+  }
+}
+
+.jx-dash__new {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border: none;
+  border-radius: var(--jx-radius-lg);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-dash__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--jx-space-3);
+  margin-bottom: var(--jx-space-5);
+}
+
+@media (max-width: 640px) {
+  .jx-dash__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.jx-dash__stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+}
+
+.jx-dash__stat-value {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-dash__stat-label {
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.jx-dash__incurso-title {
+  margin: 0 0 var(--jx-space-3);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-dash__num {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-base);
+}
+
+.jx-dash__rowaction {
+  text-align: right;
+
+  button {
+    min-height: 44px;
+    padding: 0 var(--jx-space-2);
+    background: transparent;
+    border: none;
+    color: var(--info);
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+      border-radius: var(--jx-radius-lg);
+    }
+  }
+}

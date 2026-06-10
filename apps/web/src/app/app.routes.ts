@@ -103,11 +103,27 @@ export const routes: Routes = [
     loadComponent: () =>
       import('../layouts/loja-shell.component').then((m) => m.LojaShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
+      { path: '', pathMatch: 'full', redirectTo: 'painel' },
       {
         path: 'inicio',
         loadComponent: () =>
           import('../features/loja/inicio.page').then((m) => m.LojaInicioPage),
+      },
+      // Phase 7 (F-03): dashboard (tela 11), new delivery (tela 12), list (tela 14).
+      {
+        path: 'painel',
+        loadComponent: () =>
+          import('../features/loja/dashboard/dashboard.page').then((m) => m.LojaDashboardPage),
+      },
+      {
+        path: 'entregas/nova',
+        loadComponent: () =>
+          import('../features/loja/entregas/nova-entrega.page').then((m) => m.NovaEntregaPage),
+      },
+      {
+        path: 'entregas',
+        loadComponent: () =>
+          import('../features/loja/entregas/entregas-list.page').then((m) => m.EntregasListPage),
       },
     ],
   },

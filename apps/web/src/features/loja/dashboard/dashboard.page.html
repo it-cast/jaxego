@@ -1,0 +1,46 @@
+@if (showInvoiceBanner()) {
+  <!-- Invoice banner SLOT (RN-025 / Phase 11) — hidden in Phase 7. -->
+  <jx-warn-banner message="Sua fatura venceu. Pague para continuar enviando entregas." />
+}
+
+<header class="jx-dash__head">
+  <h1 class="jx-dash__title">Hoje na sua loja. Tudo <em>certinho.</em></h1>
+  <button type="button" class="jx-dash__new" (click)="goNova()">+ Nova entrega</button>
+</header>
+
+<section class="jx-dash__stats" aria-label="Indicadores da loja">
+  @for (kpi of kpis(); track kpi.label) {
+    <article class="jx-dash__stat">
+      <b class="jx-dash__stat-value">{{ kpi.value }}</b>
+      <span class="jx-dash__stat-label">{{ kpi.label }}</span>
+    </article>
+  }
+</section>
+
+<section class="jx-dash__incurso" aria-label="Entregas em curso">
+  <h2 class="jx-dash__incurso-title">Em curso agora</h2>
+  <jx-data-table
+    [columns]="columns"
+    [rows]="inProgress()"
+    [state]="tableState()"
+    [hasActions]="true"
+    [trackBy]="trackById"
+    caption="Entregas em curso"
+    emptyTitle="Nenhuma entrega em curso."
+    emptyMessage="Crie uma no botão acima."
+    emptyCtaLabel="Nova entrega"
+    (emptyCta)="goNova()"
+    errorMessage="Não foi possível carregar as entregas em curso."
+    (retry)="load()"
+  >
+    <ng-template #row let-item>
+      <td class="jx-dash__num">{{ shortToken(item) }}</td>
+      <td>{{ item.recipient_name || '—' }}</td>
+      <td><jx-state-badge [state]="item.state" variant="dashboard" /></td>
+      <td>{{ paymentLabel(item) }}</td>
+      <td class="jx-dash__rowaction">
+        <button type="button" (click)="onView(item)">ver</button>
+      </td>
+    </ng-template>
+  </jx-data-table>
+</section>
