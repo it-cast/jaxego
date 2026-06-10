@@ -1,0 +1,79 @@
+[project]
+name = "jaxego-api"
+version = "0.1.0"
+description = "Jaxego API — backend FastAPI (monorepo apps/api)"
+readme = "README.md"
+requires-python = "==3.13.*"
+dependencies = [
+    "fastapi==0.115.*",
+    "uvicorn[standard]>=0.30,<0.40",
+    "sqlalchemy>=2,<3",
+    "alembic>=1.13,<2",
+    "aiomysql>=0.2,<0.3",
+    "redis>=5,<6",
+    "arq>=0.26,<0.27",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3,<3",
+    "structlog>=24.1,<26",
+    "sentry-sdk>=2.0,<3",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6,<0.13",
+    "basedpyright>=1.13,<2",
+    "pytest>=8.2,<9",
+    "pytest-asyncio>=0.23,<1",
+    "httpx>=0.27,<1",
+]
+
+[tool.uv]
+package = false
+
+# ---------------------------------------------------------------------------
+# Ruff — lint + format
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["app", "tests", "tools"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez (naive datetime guard, complementa o AST custom)
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["DTZ"]            # snippets sintéticos de naive datetime são intencionais
+"alembic/versions/*" = ["E501"]
+
+# ---------------------------------------------------------------------------
+# basedpyright — typecheck
+# ---------------------------------------------------------------------------
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+include = ["app", "tools"]
+exclude = ["**/__pycache__", ".venv", "alembic/versions"]
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportAny = false
+reportExplicitAny = false
+
+# ---------------------------------------------------------------------------
+# pytest — pythonpath inegociável (evita "0 testes coletados")
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q"

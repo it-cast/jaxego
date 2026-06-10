@@ -1,0 +1,23 @@
+# Normalize line endings to LF for source/config to keep ruff format --check
+# stable across Windows/macOS/Linux and in CI.
+* text=auto eol=lf
+
+*.py        text eol=lf
+*.toml      text eol=lf
+*.cfg       text eol=lf
+*.ini       text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.mako      text eol=lf
+*.conf      text eol=lf
+Dockerfile  text eol=lf
+.env.example text eol=lf
+.python-version text eol=lf
+
+# Lockfiles / binaries
+uv.lock     text eol=lf
+*.png       binary
+*.jpg       binary
+*.svg       text eol=lf
