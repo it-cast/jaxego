@@ -10,11 +10,11 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from app.integrations.receita_stub import ReceitaStubAdapter
 from app.merchants import service
 from app.merchants.schemas import MerchantSignupBody
 from app.plans.service import seed_plans_if_missing
+
 from tests.helpers import Seed
 
 # A valid numeric CNPJ (check-digit valid) used across the happy paths.
@@ -44,7 +44,9 @@ async def with_plans(db_session) -> None:
 
 
 @pytest.mark.asyncio
-async def test_free_path_activates(db_session, seed: Seed, with_plans, geocoding_stub_padua) -> None:
+async def test_free_path_activates(
+    db_session, seed: Seed, with_plans, geocoding_stub_padua
+) -> None:
     """Happy path: CNPJ ativa + Free plan → merchant active."""
     result = await service.signup(
         db_session,

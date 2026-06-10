@@ -50,7 +50,7 @@
 
   "observability": {
     "required_log_fields": ["request_id", "user_id", "endpoint", "method", "status_code", "duration_ms"],
-    "pii_fields_forbidden_in_logs": ["cpf", "cnpj", "email", "password", "token", "jwt", "card_number", "cvv"],
+    "pii_fields_forbidden_in_logs": ["cpf", "cnpj", "phone", "phone_e164", "document", "email", "password", "token", "jwt", "card_number", "cvv"],
     "slow_query_threshold_ms": 100
   },
 

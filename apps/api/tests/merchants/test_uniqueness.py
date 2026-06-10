@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import pytest
-
 from app.integrations.receita_stub import ReceitaStubAdapter
 from app.merchants import service
 from app.merchants.schemas import MerchantSignupBody
 from app.plans.service import seed_plans_if_missing
+
 from tests.helpers import Seed
 
 VALID_CNPJ = "11222333000181"
@@ -63,8 +63,9 @@ async def test_same_document_different_account_type_allowed(
     cpf = "39053344705"
     await service.signup(
         db_session,
-        body=_body(account_type="cpf", document=cpf, email="cpf@example.com",
-                   phone_e164="+5522900001111"),
+        body=_body(
+            account_type="cpf", document=cpf, email="cpf@example.com", phone_e164="+5522900001111"
+        ),
         receita=ReceitaStubAdapter(scenario="ativa"),
         geocoding=geocoding_stub_padua,
     )

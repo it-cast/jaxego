@@ -10,9 +10,17 @@ from fastapi import APIRouter
 
 from app.areas.router import router as areas_router
 from app.auth.router import router as auth_router
+from app.merchants.router import interest_router
+from app.merchants.router import router as merchants_router
+from app.plans.router import router as plans_router
 
 api_router = APIRouter()
 
 # Phase 2 domain sub-routers.
 api_router.include_router(auth_router)
 api_router.include_router(areas_router)
+
+# Phase 4 domain sub-routers (F-01).
+api_router.include_router(merchants_router)
+api_router.include_router(plans_router)
+api_router.include_router(interest_router)

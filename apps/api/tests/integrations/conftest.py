@@ -8,7 +8,6 @@ Every test here uses the STUB adapters — they NEVER touch the network (Pitfall
 from __future__ import annotations
 
 import pytest
-
 from app.integrations.email_stub import EmailStubAdapter
 from app.integrations.geocoding_stub import GeocodingStubAdapter
 from app.integrations.receita_stub import ReceitaStubAdapter

@@ -8,7 +8,6 @@ is the canonical attack). It must accept an allowlisted public host.
 from __future__ import annotations
 
 import pytest
-
 from app.integrations.http import SsrfBlockedError, assert_safe_url
 
 

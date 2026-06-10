@@ -23,15 +23,15 @@ import pytest_asyncio
 from app.areas.models import Area, AreaAdmin
 from app.audit.models import AuditLog  # noqa: F401 (registers mapper)
 from app.auth.models import RefreshToken, User  # noqa: F401
+from app.core.security import hash_password
+from app.db.base import Base
+from app.db.session import get_session
 from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
     Merchant,
     MerchantSubscription,
     MerchantUser,
 )
 from app.plans.models import SubscriptionPlan  # noqa: F401
-from app.core.security import hash_password
-from app.db.base import Base
-from app.db.session import get_session
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -138,6 +138,33 @@ async def seed(session_factory) -> Seed:
             platform_admin=platform_admin,
             password=password,
         )
+
+
+# --- Phase 4: external-integration STUB fixtures (no network — Pitfall 1) ---
+@pytest.fixture
+def geocoding_stub_padua():
+    """Geocoder that always resolves inside the Pádua area."""
+    from app.integrations.geocoding_stub import GeocodingStubAdapter
+
+    return GeocodingStubAdapter(scenario="padua")
+
+
+@pytest.fixture
+def geocoding_stub_fora():
+    """Geocoder that resolves to a point with no covering area (empty state)."""
+    from app.integrations.geocoding_stub import GeocodingStubAdapter
+
+    return GeocodingStubAdapter(scenario="fora")
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Clear the in-process signup limiter between tests (deterministic)."""
+    from app.core.ratelimit import signup_limiter
+
+    signup_limiter.reset()
+    yield
+    signup_limiter.reset()
 
 
 @pytest_asyncio.fixture
