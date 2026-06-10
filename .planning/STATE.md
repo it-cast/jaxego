@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: MS-03
 milestone_name: Coração transacional (entregas)
 status: in_progress
-last_updated: "2026-06-10T23:30:00.000Z"
-last_activity: "2026-06-10 — Phase 7 EXECUTADA (criação de entrega F-03 direta + máquina de 7 estados RN-019 + histórico append-only RN-012 + estimativa mediana RN-030 + limite de plano RN-028 + 4 componentes UI governados + telas 11/12/14). 242 testes backend not-mysql + 80 frontend, zero hex. Pendente ao vivo: migration 0006 + trigger append-only delivery_state_transitions + concorrência FOR UPDATE."
+last_updated: "2026-06-11T00:00:00.000Z"
+last_activity: "2026-06-11 — Phase 7 COMPLETA e verificada ao vivo (migration 0006 reversivel apos fix downgrade; trigger append-only delivery_state_transitions errno 1644; concorrencia FOR UPDATE). 245+80 testes. Smoke pegou 2 bugs reais (seed/URL @mysql + downgrade 0006). Proximo: Phase 8 (despacho)."
 progress:
   total_phases: 14
   completed_phases: 7
