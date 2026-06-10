@@ -1,3 +1,18 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: Ingest completo. Nenhuma execução iniciada.
+last_updated: "2026-06-10T12:35:49.960Z"
+last_activity: "2026-06-10 — `/gsd:ingest` gerou `.planning/`, `docs/`, `design-system/` e `DISCOVERY-REPORT.md`."
+progress:
+  total_phases: 14
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # STATE — Current Execution State
 
 > Documento vivo. Claude Code lê ao iniciar sessão. Atualiza ao fechar plano.
