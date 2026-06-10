@@ -10,7 +10,7 @@
 
 ## Phase 1: Fundação técnica (repo, infra, API skeleton)
 
-**Milestone:** MS-01 · **Tipo:** foundation · **Status:** not_started · **Estimativa:** M (3-5d)
+**Milestone:** MS-01 · **Tipo:** foundation · **Status:** complete (2026-06-10) · **Estimativa:** M (3-5d)
 
 ### REQs cobertos
 - REQ-052: Infra Docker Compose + CI/CD
