@@ -65,12 +65,16 @@ async def test_create_direct_starts_in_criada(delivery_seed, db_session) -> None
     assert isinstance(delivery.fee_cents, int)
 
     transitions = (
-        await db_session.execute(
-            select(DeliveryStateTransition).where(
-                DeliveryStateTransition.delivery_id == result.delivery_id
+        (
+            await db_session.execute(
+                select(DeliveryStateTransition).where(
+                    DeliveryStateTransition.delivery_id == result.delivery_id
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(transitions) == 1
     assert transitions[0].from_state is None
     assert transitions[0].to_state == "CRIADA"

@@ -39,8 +39,12 @@ async def _seed_one_transition(s) -> int:
 
     Assumes migration 0006 (deliveries/transitions/recipients) is applied.
     """
-    await s.execute(text("INSERT INTO areas (codename, name, config, created_at, updated_at) "
-                         "VALUES ('t_padua', 'T', '{}', NOW(6), NOW(6))"))
+    await s.execute(
+        text(
+            "INSERT INTO areas (codename, name, config, created_at, updated_at) "
+            "VALUES ('t_padua', 'T', '{}', NOW(6), NOW(6))"
+        )
+    )
     area_id = (await s.execute(text("SELECT id FROM areas WHERE codename='t_padua'"))).scalar_one()
     # Minimal delivery (most columns nullable / defaulted for the trigger test).
     await s.execute(

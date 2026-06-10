@@ -68,9 +68,7 @@ async def test_two_concurrent_cancels_one_wins(mysql_engine) -> None:
 
     async def cancel() -> str:
         async with sm() as s:
-            delivery = (
-                await s.execute(select(Delivery).where(Delivery.id == did))
-            ).scalar_one()
+            delivery = (await s.execute(select(Delivery).where(Delivery.id == did))).scalar_one()
             try:
                 await service.transition(
                     s,

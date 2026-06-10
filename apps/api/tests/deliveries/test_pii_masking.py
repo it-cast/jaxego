@@ -68,8 +68,14 @@ async def test_recipient_stores_only_cpf_hash(delivery_seed, db_session) -> None
     )
     await db_session.flush()
     recipient = (
-        await db_session.execute(select(Recipient).where(Recipient.area_id == delivery_seed.area_a_id))
-    ).scalars().first()
+        (
+            await db_session.execute(
+                select(Recipient).where(Recipient.area_id == delivery_seed.area_a_id)
+            )
+        )
+        .scalars()
+        .first()
+    )
     assert recipient is not None
     assert recipient.cpf_hash is not None
     assert recipient.cpf_hash != "39053344705"

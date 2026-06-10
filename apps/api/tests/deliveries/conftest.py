@@ -167,9 +167,7 @@ async def delivery_seed(
         s.add_all(
             [
                 MerchantUser(merchant_id=merchant.id, user_id=owner.id, role="owner"),
-                MerchantUser(
-                    merchant_id=other_merchant.id, user_id=other_owner.id, role="owner"
-                ),
+                MerchantUser(merchant_id=other_merchant.id, user_id=other_owner.id, role="owner"),
                 MerchantSubscription(
                     area_id=area_a.id,
                     merchant_id=merchant.id,

@@ -32,6 +32,11 @@ from app.couriers.models import (  # noqa: F401 (registers mappers — Phase 5/6
 )
 from app.db.base import Base
 from app.db.session import get_session
+from app.deliveries.models import (  # noqa: F401 (registers mappers — Phase 7)
+    Delivery,
+    DeliveryStateTransition,
+    Recipient,
+)
 from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
     Merchant,
     MerchantSubscription,
