@@ -60,8 +60,8 @@ Access token 15 min em memória; refresh opaco em DB (httpOnly cookie web / Secu
 **Categoria:** functional · **Prioridade:** must · **Origem:** RN-011 (`regras.md:17`), F-01 E2 (`fluxos.md:21`)
 CNPJ/CPF + telefone + e-mail únicos por tipo de conta. Mensagem de colisão nunca revela QUAL dado colide além do informado (antifraude). CPF de entregador único por área; permitido em outra área (novo vínculo).
 **Critérios de aceite:**
-- [ ] Colisão → "Já existe conta com esse dado. Recuperar acesso?"
-- [ ] CPF já entregador na área A pode se cadastrar na área B reaproveitando o user
+- [x] Colisão → "Já existe conta com esse dado. Recuperar acesso?" (Phase 4: mensagem única + `verify_dummy`, `test_colisao_anti_enumeracao`)
+- [ ] CPF já entregador na área A pode se cadastrar na área B reaproveitando o user (Phase 5 — entregador)
 
 ### REQ-007: Papéis e permissões (6 papéis)
 **Categoria:** functional/security · **Prioridade:** must · **Origem:** `visao-geral.md:25-34`
@@ -79,17 +79,17 @@ Admin plataforma, admin de área (owner/manager/viewer), loja dono, loja operado
 **Categoria:** functional · **Prioridade:** must · **Origem:** `fluxos.md:7-24`, wireframe 02
 CNPJ (ou CPF autônomo) validado na Receita Federal (situação ativa); confirmação de e-mail (link) e telefone (SMS); geocodificação do endereço vincula à área. Exceções E1–E4 obrigatórias (CNPJ inativo bloqueia; Receita fora do ar → `pending_validation` com retry 6/6/12/24h e Free limitado; pagamento falha → `pending_payment` usando Free).
 **Critérios de aceite:**
-- [ ] Fluxo completo em wizard com as 4 exceções tratadas conforme F-01
-- [ ] Endereço sem área cobrindo → tela "Ainda não chegamos aí" com captura de interesse (e-mail + cidade)
-- [ ] Admin de área enxerga fila de lojas `pending_validation`
+- [x] Fluxo completo em wizard com as 4 exceções tratadas conforme F-01 (Phase 4: `test_signup` E1–E4 + wizard tela 02)
+- [x] Endereço sem área cobrindo → tela "Ainda não chegamos aí" com captura de interesse (e-mail + cidade) (Phase 4: `AreaNotCoveredError` + `jx-sem-area` → POST /v1/interest)
+- [ ] Admin de área enxerga fila de lojas `pending_validation` (UI de admin de área é phase futura — backend já marca o status)
 
 ### REQ-009: Planos de assinatura da loja `[ASSUMIDO — valores]`
 **Categoria:** functional · **Prioridade:** must · **Origem:** `visao-geral.md:45-54`, `entidades.md:22-23`, wireframe 16
 Free R$ 0/2 entregas/taxa R$ 2,00 · Início R$ 49/40/R$ 1,50 · Profissional R$ 129/150/R$ 1,00 · Sem Limite R$ 299/ilimitado/R$ 0,50. Plano Free é seed imutável. Atributos: quota SMS, acesso API, prioridade de despacho. Planos custom por área.
 **Critérios de aceite:**
-- [ ] Seeds dos 4 planos com valores parametrizados (não hardcoded — facilita validação dos [ASSUMIDO])
-- [ ] Plano Free não editável/deletável
-- [ ] Tela 16 exibe comparativo + plano atual + uso do mês
+- [x] Seeds dos 4 planos com valores parametrizados (não hardcoded — facilita validação dos [ASSUMIDO]) (Phase 4: `PLAN_SEEDS` + `seed.py`, `test_seed_plan_values_are_data_not_hardcoded`)
+- [x] Plano Free não editável/deletável (Phase 4: `is_free` flag imutável; seed não sobrescreve preço do Free)
+- [~] Tela 16 exibe comparativo + plano atual + uso do mês (Phase 4: comparativo de 4 cards data-driven; "uso do mês" e faturas diferidos à Phase 10)
 
 ### REQ-010: Assinatura recorrente via Safe2Pay
 **Categoria:** functional · **Prioridade:** must · **Origem:** ADR-009 v2 (`adrs.md:48-53`), `integracoes.md:7-36`
