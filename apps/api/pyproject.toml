@@ -10,6 +10,8 @@ dependencies = [
     "sqlalchemy>=2,<3",
     "alembic>=1.13,<2",
     "aiomysql>=0.2,<0.3",
+    # Required by aiomysql/pymysql for MySQL 8 caching_sha2_password auth handshake.
+    "cryptography>=43,<46",
     "redis>=5,<6",
     "arq>=0.26,<0.27",
     "pydantic>=2.7,<3",
