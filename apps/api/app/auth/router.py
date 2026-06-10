@@ -17,8 +17,22 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import service
-from app.auth.schemas import LoginBody, LogoutBody, RefreshBody, TokenPair
+from app.auth.dependencies import CurrentUser
+from app.auth.schemas import (
+    LoginBody,
+    LogoutBody,
+    RefreshBody,
+    TokenPair,
+    TotpEnrollResponse,
+    TotpVerifyBody,
+)
 from app.core.config import settings
+from app.core.security import (
+    current_totp_window,
+    generate_totp_secret,
+    totp_provisioning_uri,
+    verify_totp,
+)
 from app.db.session import get_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -90,5 +104,38 @@ async def logout(
         await service.logout(session, raw)
         await session.commit()
     _clear_refresh_cookie(response)
+    response.status_code = 204
+    return response
+
+
+@router.post("/totp/enroll", response_model=TotpEnrollResponse)
+async def totp_enroll(user: CurrentUser, session: SessionDep) -> TotpEnrollResponse:
+    """Generate a TOTP secret + provisioning URI (shown ONCE; never re-fetched).
+
+    Allowed for a not-yet-enrolled user (the platform-admin enrolment gate in
+    get_current_user explicitly permits this path). Enrolment is confirmed by
+    /totp/verify with a code from the authenticator app.
+    """
+    secret = generate_totp_secret()
+    user.totp_secret = secret
+    await session.commit()
+    uri = totp_provisioning_uri(secret, account_name=user.email)
+    return TotpEnrollResponse(provisioning_uri=uri, secret=secret)
+
+
+@router.post("/totp/verify", status_code=204)
+async def totp_verify(
+    body: TotpVerifyBody,
+    user: CurrentUser,
+    response: Response,
+    session: SessionDep,
+) -> Response:
+    """Confirm TOTP enrolment with a code; flips totp_enrolled/required on."""
+    if user.totp_secret is None or not verify_totp(user.totp_secret, body.code):
+        raise service.TotpRequiredError("Código TOTP inválido.")
+    user.totp_enrolled = True
+    user.totp_required = True
+    user.totp_last_window = current_totp_window(user.totp_secret)
+    await session.commit()
     response.status_code = 204
     return response
