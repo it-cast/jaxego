@@ -69,9 +69,7 @@ async def test_cpf_other_area_allowed(db_session, courier_seed) -> None:
     """E2 — the SAME CPF MAY onboard in a DIFFERENT area (new vínculo)."""
     r1 = await service.signup(db_session, body=_body(courier_seed["area_a_id"]))
     await db_session.flush()
-    r2 = await service.signup(
-        db_session, body=_body(courier_seed["area_b_id"])
-    )
+    r2 = await service.signup(db_session, body=_body(courier_seed["area_b_id"]))
     assert r1.courier_id != r2.courier_id
 
 

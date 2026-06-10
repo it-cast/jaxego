@@ -18,6 +18,11 @@ from arq.connections import RedisSettings
 
 from app.core.config import settings
 from app.db.session import async_session_factory
+from app.workers.document_expiry import (
+    escalate_stale_reviews_task,
+    expire_documents_task,
+)
+from app.workers.document_reprocess import reprocess_document_task
 from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import healthcheck
 
@@ -35,4 +40,11 @@ class WorkerSettings:
 
     # At least one job must be registered or arq refuses to boot.
     # Phase 4: revalidate_receita (E4 retry 6/6/12/24h).
-    functions = [healthcheck, revalidate_receita]
+    # Phase 5: document reprocess (post-upload) + expiry + 48h escalation (E5).
+    functions = [
+        healthcheck,
+        revalidate_receita,
+        reprocess_document_task,
+        expire_documents_task,
+        escalate_stale_reviews_task,
+    ]
