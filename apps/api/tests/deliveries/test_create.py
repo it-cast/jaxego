@@ -80,13 +80,12 @@ async def test_create_direct_starts_in_criada(delivery_seed, db_session) -> None
     assert transitions[0].to_state == "CRIADA"
 
 
-@pytest.mark.asyncio
-async def test_card_em_breve(delivery_seed, db_session) -> None:
-    with pytest.raises(AppError) as exc:
-        _body(payment_method="card", dropoff_neighborhood_id=delivery_seed.dropoff_nbhd_id)
-    # The enum accepts card/pix; the regra rejects it. We allow either the schema
-    # validator OR the service to raise, so test both shapes:
-    assert exc.value is not None or True
+def test_card_accepted_by_enum_rejected_by_rule(delivery_seed) -> None:
+    # The narrow enum ACCEPTS card/pix (so the UI can offer them as "em breve"),
+    # but the rule rejects them — the rejection is asserted in
+    # test_card_payment_rejected_by_service below.
+    body = _body(payment_method="card", dropoff_neighborhood_id=delivery_seed.dropoff_nbhd_id)
+    assert body.payment_method.value == "card"
 
 
 @pytest.mark.asyncio

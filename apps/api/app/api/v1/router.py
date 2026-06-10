@@ -12,6 +12,7 @@ from app.areas.router import router as areas_router
 from app.auth.router import router as auth_router
 from app.couriers.router import admin_router as couriers_admin_router
 from app.couriers.router import router as couriers_router
+from app.deliveries.router import router as deliveries_router
 from app.merchants.router import interest_router
 from app.merchants.router import router as merchants_router
 from app.neighborhoods.router import router as neighborhoods_router
@@ -34,3 +35,6 @@ api_router.include_router(couriers_admin_router)
 
 # Phase 6 domain sub-routers (área operável).
 api_router.include_router(neighborhoods_router)
+
+# Phase 7 domain sub-routers (F-03 — criação de entrega + máquina de estados).
+api_router.include_router(deliveries_router)
