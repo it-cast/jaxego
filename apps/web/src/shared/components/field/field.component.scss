@@ -1,0 +1,60 @@
+.jx-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-field__label {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-field__input {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--jx-space-3);
+  background: var(--surface-elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-base);
+}
+
+.jx-field__input::placeholder {
+  color: var(--text-subtle);
+}
+
+.jx-field__input:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: var(--focus-ring);
+}
+
+.jx-field__input--mono {
+  font-family: var(--jx-font-mono);
+  letter-spacing: 0.12em;
+}
+
+.jx-field__input--error {
+  border-color: var(--error);
+}
+
+.jx-field__input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-field__hint {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--text-subtle);
+}
+
+.jx-field__error {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--error);
+}

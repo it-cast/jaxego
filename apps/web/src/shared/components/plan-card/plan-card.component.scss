@@ -1,0 +1,77 @@
+.jx-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-4);
+  background: var(--surface-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  text-align: center;
+}
+
+.jx-plan--current {
+  border-color: var(--brand);
+}
+
+.jx-plan__pill {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px var(--jx-space-3);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border-radius: var(--jx-radius-full);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.jx-plan__name {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-plan__price {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-extrabold);
+  color: var(--text);
+}
+
+.jx-plan__details {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-plan__cta {
+  width: 100%;
+  min-height: 44px;
+  margin-top: var(--jx-space-2);
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--brand);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--brand);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+}
+
+// Free CTA has the SAME visual weight as a paid CTA (anti-dark-pattern §6.2).
+.jx-plan__cta--fill {
+  background: var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-plan__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
