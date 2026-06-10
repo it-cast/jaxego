@@ -185,24 +185,24 @@ Janela 90 dias, 70–80% objetivo + 20–30% avaliação; níveis probation/bron
 **Categoria:** functional · **Prioridade:** must · **Origem:** `fluxos.md:51-69`, wireframe 12
 Coleta pré-preenchida editável; destino com bairro do catálogo; destinatário; itens; método de comprovação (foto default | foto+referência | OTP desabilitado com badge "em breve"); forma de pagamento por entrega (cartão|PIX|direto — RN-023). Exceções E1–E5 obrigatórias.
 **Critérios de aceite:**
-- [ ] As 5 exceções de F-03 implementadas (fora da área; 0 entregadores online com aviso; pagamento falha → entrega NÃO nasce + opção trocar para direto; limite do plano; fatura vencida >7d bloqueia)
-- [ ] OTP visível porém desabilitado com badge "em breve"
-- [ ] Estimativa exibida antes de confirmar: frete estimado + taxa do plano
+- [~] Exceções de F-03: E1 fora da área (✅ bloqueia), E2 0 entregadores (✅ aviso não-bloqueante), E4 limite do plano (✅ modal upgrade). E3 pagamento falha (Phase 10 — só `direct` nesta phase) e E5 fatura vencida (Phase 11) deferidas com gancho.
+- [x] OTP visível porém desabilitado com badge "em breve" (proof_method radiogroup, tela 12)
+- [x] Estimativa exibida antes de confirmar: frete estimado (mediana RN-030) + taxa do plano (jx-estimate-box)
 
 ### REQ-022: Máquina de 7 estados com transições exclusivas e logadas
 **Categoria:** functional · **Prioridade:** must · **Origem:** RN-019 (`regras.md:25`), RN-012, `fluxos.md:3`
 CRIADA → ACEITA → COLETADA → ENTREGUE → FINALIZADA + RECUSADA_NO_DESTINO + CANCELADA. Transições só via máquina de estados; novo estado exige ADR. Entrega nunca deletada — anonimizada após 12 meses.
 **Critérios de aceite:**
-- [ ] Transição inválida → erro de domínio (teste para cada par inválido)
-- [ ] Toda transição grava em `delivery_state_transitions` (append-only)
-- [ ] Timestamps por transição na entidade entrega
+- [x] Transição inválida → erro de domínio 422 (teste exaustivo do produto cartesiano dos 7 estados)
+- [x] Toda transição grava em `delivery_state_transitions` (append-only via trigger SIGNAL 45000)
+- [x] Timestamps por transição na entidade entrega (accepted_at/collected_at/.../cancelled_at aware-UTC)
 
 ### REQ-023: Estimativa de frete `[ASSUMIDO — RN-030]`
 **Categoria:** functional · **Prioridade:** should · **Origem:** RN-030 (`regras.md:36`)
 Estimativa = mediana das tabelas dos entregadores online elegíveis; valor final = tabela de quem aceitou; se exceder teto exibido +10% → re-confirma com a loja.
 **Critérios de aceite:**
-- [ ] Estimativa mostra faixa (min–max) + nº de entregadores online (wireframe 12)
-- [ ] Aceite com valor > teto+10% → re-confirmação antes de prosseguir
+- [x] Estimativa mostra faixa (min–max) + nº de entregadores online (jx-estimate-box, mediana RN-030)
+- [ ] Aceite com valor > teto+10% → re-confirmação antes de prosseguir (Phase 8 — aceite/despacho)
 
 ### REQ-024: Despacho em cascata (favoritos → ranking automático)
 **Categoria:** functional · **Prioridade:** must · **Origem:** ADR-007 (`adrs.md:38-41`), F-05, ADR-104

@@ -198,7 +198,8 @@
 
 ## Phase 7: Criação de entrega + máquina de estados (modalidade direta)
 
-**Milestone:** MS-03 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-03 · **Tipo:** core · **Status:** executed (verificação ao vivo MySQL pendente) · **Estimativa:** L (1-2sem)
+> ✅ Executada 2026-06-10 — 12 tasks, 1 plano. Migration 0006 + máquina 7 estados + estimativa mediana + limite de plano + 4 componentes UI + telas 11/12/14. 242 testes backend (not-mysql) + 80 frontend, zero hex. Ver `phases/07-.../07-00-SUMMARY.md`.
 
 ### REQs cobertos
 - REQ-021: F-03 (pagamento direto primeiro; cartão/PIX na Phase 10) · REQ-022: 7 estados append-only · REQ-023: estimativa de frete `[ASSUMIDO RN-030]` · REQ-011 (parcial): limite do plano

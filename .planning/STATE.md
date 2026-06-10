@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: MS-02
-milestone_name: Cadastros + área operável
-status: complete
-last_updated: "2026-06-10T22:30:00.000Z"
-last_activity: "2026-06-10 — MS-02 (Cadastros + área operável) COMPLETO. Phase 6 fechada e verificada ao vivo (migration 0005 reversível + ST_Contains ponto-em-polígono em MySQL real: dentro→elegível, fora→não; 2 testes espaciais asseverando). Próximo: MS-03 (Phase 7 — criação de entrega + máquina de estados)."
+milestone: MS-03
+milestone_name: Coração transacional (entregas)
+status: in_progress
+last_updated: "2026-06-10T23:30:00.000Z"
+last_activity: "2026-06-10 — Phase 7 EXECUTADA (criação de entrega F-03 direta + máquina de 7 estados RN-019 + histórico append-only RN-012 + estimativa mediana RN-030 + limite de plano RN-028 + 4 componentes UI governados + telas 11/12/14). 242 testes backend not-mysql + 80 frontend, zero hex. Pendente ao vivo: migration 0006 + trigger append-only delivery_state_transitions + concorrência FOR UPDATE."
 progress:
   total_phases: 14
-  completed_phases: 6
-  total_plans: 6
-  completed_plans: 6
-  percent: 43
+  completed_phases: 7
+  total_plans: 7
+  completed_plans: 7
+  percent: 50
 ---
 
 # STATE — Current Execution State
@@ -21,14 +21,14 @@ progress:
 ---
 
 ```yaml
-milestone: MS-02
-milestone_name: Cadastros + área operável
+milestone: MS-03
+milestone_name: Coração transacional (entregas)
 status: in_progress
 release_target: v1.0 (piloto Pádua)
 progress:
   total_phases: 14
-  completed_phases: 6
-  percent: 43
+  completed_phases: 7
+  percent: 50
 ```
 
 ## Project Reference
@@ -40,12 +40,12 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 
 ## Current Position
 
-- **Milestone:** MS-02 (Cadastros + área operável) — em andamento
-- **Phase atual:** 6 of 14 — Área operável (bairros, config, cobertura e tabela de frete) — ✅ EXECUTADA (verificação ao vivo MySQL pendente: migration 0005 + ST_Contains)
-- **Próxima Phase:** 7 of 14 — Criação de entregas
-- **Last activity:** 2026-06-10 — Phase 6 executada (área operável: migration 0005 espacial + AreaConfig tipada/audit + catálogo de bairros ST_Contains + cobertura/piso/disponibilidade + admin web jx-data-table + entregador mobile).
+- **Milestone:** MS-03 (Coração transacional — entregas) — em andamento
+- **Phase atual:** 7 of 14 — Criação de entrega + máquina de estados (modalidade direta) — ✅ EXECUTADA (verificação ao vivo MySQL pendente: migration 0006 + trigger append-only delivery_state_transitions + concorrência FOR UPDATE)
+- **Próxima Phase:** 8 of 14 — Despacho / oferta / aceite
+- **Last activity:** 2026-06-10 — Phase 7 executada (criação F-03 direta + máquina de 7 estados RN-019 + histórico append-only RN-012 + estimativa mediana RN-030 + limite de plano RN-028 + 4 componentes UI governados + telas 11/12/14).
 
-**Progress:** [████░░░░░░] 43%
+**Progress:** [█████░░░░░] 50%
 
 ## MS-01 — entregue
 
@@ -59,6 +59,10 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 - **Phase 5:** F-02 cadastro/KYC do entregador. Backend: couriers/courier_documents (migration 0004, AreaScoped, unique (area_id,cpf) → E2), StoragePort (Protocol+Stub FS+B2 boto3 S3v4) com presigned PUT/GET, pipeline media (magic bytes + Pillow WebP + strip total EXIF + SHA-256 do derivado, anti-bomb), endpoints /v1/couriers/* (signup público rate-limited, presign, complete, MEI) + /v1/admin/couriers/* (view-url, PATCH review item-a-item), máquina de estados dupla (422), KYC 2 níveis RN-002, MEI mei_pending RN-024 (E3), jobs aware-UTC (expiração + escalação 48h E5). Frontend: jx-doc-upload/jx-doc-card/jx-kyc-queue-table/jx-kyc-review-row (stories + a11y), wizard Ionic tela 03 (stepper condicional 3/4, draft sem senha E1, upload presign background), painel admin tela 19 (review otimista, CPF mascarado, Score placeholder), em-análise + banner mei_pending. **179 testes backend (not-mysql) + 46 frontend, zero hex.** TD-016 (antivírus PDF) registrada. **Pendente ao vivo:** migration 0004 reversível + FK RESTRICT (`pytest -m mysql`) + integration check B2 (Gate 5, conta real).
 - **Phase 6:** Área operável (F-08 + RN-003/RN-015 + REQ-016/017/018). Backend: **migration 0005** (neighborhoods_catalog com `polygon POLYGON NULL SRID 4326` via DDL MySQL-only + courier_coverage_areas + courier_pricing_tables + couriers.is_online/max_concurrent); **AreaConfig** Pydantic tipada (ranges geofence/timeouts/pisos/retorno, `extra=forbid`) substituindo JSON cru + **audit before/after** em config sensível (RN-012/F-08 E2); módulo **neighborhoods/** (CRUD area-scoped, polígono GeoJSON validado por shapely, `point_in_polygon` ST_Contains lat-first via func.ST_* sem GeoAlchemy2 — LOW-1); **cobertura** include/exclude com elegibilidade nos dois pontos (RN-003), **tabela de frete** com piso citado na rejeição (RN-015 — plataforma nunca fixa preço), **disponibilidade** online/offline só para active + busy derivado (REQ-018), rotas self-only. Frontend: **jx-data-table** primitivo governado, tela 21A config da área (máscara monetária pt-BR + confirmação sensível before→after), tela 21B catálogo de bairros (CRUD + GeoJSON + remoção bloqueada), tela 10 entregador cobertura+preços (modo bairro/km + validação de piso citando o valor), **jx-availability-toggle**. **206 testes backend (not-mysql) + 65 frontend, zero hex.** TD-017 (SPATIAL INDEX nullable) + TD-018 (piso retroativo) + SUG-008/009 registradas. **Pendente ao vivo:** migration 0005 reversível + `ST_Contains` ponto-em-polígono dentro/fora (`pytest -m mysql tests/neighborhoods/test_spatial.py`) + smoke visual das telas 21/10.
 
+## MS-03 — em andamento
+
+- **Phase 7:** Criação de entrega F-03 (modalidade direta) + máquina de estados (REQ-021/022/023 + REQ-011 parcial). Backend: **migration 0006** (deliveries area-scoped 7-state máquina + money em centavos inteiros + separação RN-013 endereço completo × bairro/distância + public_token ULID-like opaco; delivery_state_transitions **append-only** via trigger MySQL SIGNAL 45000; recipients só cpf_hash, sem CPF puro). **Máquina de 7 estados** (RN-019) dict-de-sets, transição inválida → 422 (testada exaustivamente — produto cartesiano); **`transition()`** único ponto de escrita de state com `SELECT ... FOR UPDATE` (lock pessimista LOW-1). **Estimativa mediana** (RN-030) compondo `is_eligible` da Phase 6 (preço efetivo por trecho bairro/km LOW-2). **Limite de plano** (RN-028) COUNT server-side excluindo CANCELADA (LOW-3); 3ª Free → 402 upgrade. Endpoints `/v1/deliveries` (POST/GET/{id}/cancel) com `merchant_scope` → IDOR 404, rate limit 30/min/loja, telefone mascarado, PII fora de log. Frontend: **jx-state-badge** (7 estados texto+ícone+cor, 7 vars --state-* derivadas de color.delivery_state claro+dark), **jx-estimate-box**, **jx-upgrade-modal** (E4 anti-dark-pattern foco preso/Esc), **jx-delivery-row** (Cancelar só CRIADA); **tela 12** form nova entrega (máscaras BR, direto único habilitado, E1/E2/E4), **tela 14** lista (jx-data-table + filtros), **tela 11** dashboard (KPIs mono + em curso + H1 italic). **242 testes backend (not-mysql) + 80 frontend, zero hex.** **Pendente ao vivo:** migration 0006 reversível + trigger append-only delivery_state_transitions (errno 1644) + concorrência FOR UPDATE (`pytest -m mysql tests/deliveries`).
+
 ## Atenção para MS-02+
 
 1. **OQ-3 (contrato Safe2Pay) bloqueia a Phase 10** — resolver antes de chegar lá; Phases 4–9 podem prosseguir.
@@ -71,15 +75,18 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 
 ```
 
-# Verificar Phase 6 ao vivo (MySQL real) — migration 0005 + ST_Contains ponto-em-polígono:
+# Verificar Phase 7 ao vivo (MySQL real) — migration 0006 + trigger append-only + concorrência:
 
 cd apps/api && uv run alembic upgrade head && uv run alembic downgrade -1 && uv run alembic upgrade head
-cd apps/api && uv run pytest -m mysql tests/neighborhoods/test_spatial.py
+cd apps/api && uv run pytest -m mysql tests/deliveries
 
-# Smoke visual (telas 21A/21B/10) claro+dark; validação de piso citando o valor.
+# (trigger SIGNAL 45000 em delivery_state_transitions: UPDATE/DELETE → errno 1644;
+#  FOR UPDATE: 2 transições simultâneas → 1 vence, 1 → 422)
+
+# Smoke visual (telas 11/12/14) claro+dark; estimativa mediana + badge dos estados.
 
 # Depois:
 
-/gsd:reconcile-state 6      # reconciliação prometido vs. código
-/gsd:discuss-phase 7        # Criação de entregas
+/gsd:reconcile-state 7      # reconciliação prometido vs. código
+/gsd:discuss-phase 8        # Despacho / oferta / aceite
 ```
