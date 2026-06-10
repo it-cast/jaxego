@@ -20,6 +20,7 @@
 /test-results
 /playwright-report
 /.playwright
+/visual-baseline
 
 # IDE / OS
 .DS_Store
