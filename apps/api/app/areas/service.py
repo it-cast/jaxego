@@ -16,13 +16,15 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import structlog
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.areas.config_schema import AreaConfig, diff_sensitive
 from app.areas.models import Area, AreaAdmin
 from app.areas.schemas import AreaCreate, AreaUpdate
 from app.auth.models import User
-from app.core.exceptions import AppError, NotFoundError
+from app.core.exceptions import AppError, NotFoundError, ValidationAppError
 
 logger = structlog.get_logger("areas")
 
@@ -104,15 +106,37 @@ async def list_areas(session: AsyncSession, *, limit: int = 100, offset: int = 0
     return list((await session.execute(stmt)).scalars().all())
 
 
-async def update_area(session: AsyncSession, area_id: int, body: AreaUpdate) -> Area:
-    """Patch an area's mutable fields."""
+async def update_area(
+    session: AsyncSession, area_id: int, body: AreaUpdate
+) -> tuple[Area, tuple[dict, dict] | None]:
+    """Patch an area's mutable fields; return (area, sensitive_config_diff).
+
+    Config is validated through the typed `AreaConfig` (ranges enforced — a value
+    out of range raises 422 RFC-7807, never persisted) instead of being written
+    raw (Pitfall 4). When a SENSITIVE config key changes, the returned diff lets
+    the router record a `write_audit("area.config.update", before, after)` row
+    (RN-012 / F-08 E2). `name`-only changes return a None diff.
+    """
     area = await get_area(session, area_id)
     if body.name is not None:
         area.name = body.name
+
+    diff: tuple[dict, dict] | None = None
     if body.config is not None:
-        area.config = body.config
+        try:
+            validated = AreaConfig(**body.config)
+        except ValidationError as exc:
+            # Out-of-range / unknown key → 422 (mapped to the global RFC-7807 envelope).
+            raise ValidationAppError(
+                "Configuração da área inválida (verifique faixas e chaves)."
+            ) from exc
+        before_config = dict(area.config or {})
+        new_config = validated.model_dump(mode="json")
+        diff = diff_sensitive(before_config, new_config)
+        area.config = new_config
+
     await session.flush()
-    return area
+    return area, diff
 
 
 async def archive_area(session: AsyncSession, area_id: int) -> Area:

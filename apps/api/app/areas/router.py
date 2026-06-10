@@ -108,7 +108,7 @@ async def update_area(
 ) -> AreaRead:
     before = await service.get_area(session, area_id)
     before_snap = {"name": before.name, "config": before.config}
-    area = await service.update_area(session, area_id, body)
+    area, config_diff = await service.update_area(session, area_id, body)
     await _audit_bypass(
         session,
         actor=admin,
@@ -118,6 +118,20 @@ async def update_area(
         before=before_snap,
         after={"name": area.name, "config": area.config},
     )
+    # Sensitive config change (piso/geofence/kyc_level/timeouts/retorno) → its own
+    # before/after audit row (RN-012 / F-08 E2). A name-only change has no diff.
+    if config_diff is not None:
+        diff_before, diff_after = config_diff
+        await write_audit(
+            session,
+            actor_id=admin.id,
+            action="area.config.update",
+            area_id=area_id,
+            before=diff_before,
+            after=diff_after,
+            ip=_client_ip(request),
+            cross_area_bypass=True,
+        )
     await session.commit()
     return AreaRead.model_validate(area)
 
