@@ -12,17 +12,27 @@ Run with:
 
 from __future__ import annotations
 
+from typing import Any
+
 from arq.connections import RedisSettings
 
 from app.core.config import settings
+from app.db.session import async_session_factory
+from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import healthcheck
+
+
+async def _on_startup(ctx: dict[str, Any]) -> None:
+    """Expose the async session factory to jobs (revalidate_receita uses it)."""
+    ctx["session_factory"] = async_session_factory
 
 
 class WorkerSettings:
     """arq worker configuration."""
 
     redis_settings = RedisSettings.from_dsn(settings.redis_url)
+    on_startup = _on_startup
 
     # At least one job must be registered or arq refuses to boot.
-    # Domain jobs are appended here from Phase 2 onward.
-    functions = [healthcheck]
+    # Phase 4: revalidate_receita (E4 retry 6/6/12/24h).
+    functions = [healthcheck, revalidate_receita]
