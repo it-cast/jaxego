@@ -1,0 +1,123 @@
+"""Areas service + RBAC role resolution.
+
+CRUD is restricted to the platform admin (enforced by the router dependency).
+Reads are scoped via the base repository (`WHERE area_id`); a cross-area resource
+returns 404 (not 403) so existence is not leaked (A01). Soft-archive replaces
+hard delete when an area has dependents (REQ-002, DRV-002).
+
+`resolve_role` is the single authority that maps (user, area) -> role for this
+phase (only `area_admins` memberships exist now; merchant_users/couriers arrive
+in later phases). Platform admins resolve to 'admin_plataforma' regardless of
+area (D-09).
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+import structlog
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.areas.models import Area, AreaAdmin
+from app.areas.schemas import AreaCreate, AreaUpdate
+from app.auth.models import User
+from app.core.exceptions import AppError, NotFoundError
+
+logger = structlog.get_logger("areas")
+
+PLATFORM_ADMIN_ROLE = "admin_plataforma"
+
+
+class DuplicateAreaError(AppError):
+    """An area with the same codename already exists (anti-duplicidade)."""
+
+    status_code = 409
+    code = "duplicate_area"
+
+    def __init__(self) -> None:
+        super().__init__("Já existe uma área com esse identificador.")
+
+
+class AreaHasDependentsError(AppError):
+    """An area with dependents cannot be deleted — archive it instead (REQ-002)."""
+
+    status_code = 409
+    code = "area_has_dependents"
+
+    def __init__(self) -> None:
+        super().__init__("Área possui registros vinculados; arquive em vez de excluir.")
+
+
+def resolve_role(user: User, *, area_id: int | None) -> str:
+    """Resolve the user's role in the given area context (D-09).
+
+    Platform admins are 'admin_plataforma' everywhere. Otherwise the role is
+    derived from the user's `area_admins` membership for that area, if any.
+    NOTE: membership lookup uses the eagerly-loaded `_memberships` cache set by
+    the dependency layer to avoid a query here; falls back to 'user'.
+    """
+    if user.platform_role == PLATFORM_ADMIN_ROLE:
+        return PLATFORM_ADMIN_ROLE
+    memberships: list[AreaAdmin] = getattr(user, "_memberships", []) or []
+    if area_id is not None:
+        for m in memberships:
+            if m.area_id == area_id:
+                return f"admin_area:{m.role}"
+    return "user"
+
+
+async def load_memberships(session: AsyncSession, user: User) -> list[AreaAdmin]:
+    """Load and cache the user's area memberships (single query, no N+1)."""
+    stmt = select(AreaAdmin).where(AreaAdmin.user_id == user.id)
+    memberships = list((await session.execute(stmt)).scalars().all())
+    user._memberships = memberships  # type: ignore[attr-defined]
+    return memberships
+
+
+async def create_area(session: AsyncSession, body: AreaCreate) -> Area:
+    """Create an area; reject duplicate codename (anti-duplicidade)."""
+    existing = (
+        await session.execute(select(Area).where(Area.codename == body.codename))
+    ).scalar_one_or_none()
+    if existing is not None:
+        raise DuplicateAreaError()
+    area = Area(codename=body.codename, name=body.name, config=body.config)
+    session.add(area)
+    await session.flush()
+    return area
+
+
+async def get_area(session: AsyncSession, area_id: int) -> Area:
+    """Fetch an area by id or raise 404."""
+    area = await session.get(Area, area_id)
+    if area is None or area.deleted_at is not None:
+        raise NotFoundError("Área não encontrada.")
+    return area
+
+
+async def list_areas(session: AsyncSession, *, limit: int = 100, offset: int = 0) -> list[Area]:
+    """List non-archived areas (platform-admin view; single query, no N+1)."""
+    stmt = (
+        select(Area).where(Area.deleted_at.is_(None)).order_by(Area.id).limit(limit).offset(offset)
+    )
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def update_area(session: AsyncSession, area_id: int, body: AreaUpdate) -> Area:
+    """Patch an area's mutable fields."""
+    area = await get_area(session, area_id)
+    if body.name is not None:
+        area.name = body.name
+    if body.config is not None:
+        area.config = body.config
+    await session.flush()
+    return area
+
+
+async def archive_area(session: AsyncSession, area_id: int) -> Area:
+    """Soft-archive an area (DRV-002 / REQ-002) — never hard-deleted."""
+    area = await get_area(session, area_id)
+    area.deleted_at = datetime.now(UTC)  # AWARE — TD-010
+    await session.flush()
+    return area
