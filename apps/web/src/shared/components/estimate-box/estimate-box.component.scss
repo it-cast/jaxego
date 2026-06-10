@@ -1,0 +1,56 @@
+// jx-estimate-box — brand-wash highlight box (UI-SPEC §2.7). Tokens only.
+
+.jx-estimate-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  background: var(--brand-wash);
+  border: 1px solid var(--brand-wash-border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+}
+
+.jx-estimate-box__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+
+  small {
+    color: var(--text-muted);
+    font-size: var(--jx-text-2xs);
+  }
+}
+
+.jx-estimate-box__value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.jx-estimate-box__amount {
+  font-family: var(--jx-font-mono);
+  font-weight: var(--jx-weight-bold);
+  font-size: var(--jx-text-md);
+  color: var(--text);
+}
+
+.jx-estimate-box__fee {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+.jx-estimate-box__empty {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-estimate-box__disclaimer {
+  margin: var(--jx-space-1) 0 0;
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}

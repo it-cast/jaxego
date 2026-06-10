@@ -53,6 +53,18 @@
   --shadow-md: var(--jx-shadow-md);
   --shadow-lg: var(--jx-shadow-lg);
   --focus-ring: var(--jx-shadow-focus);
+
+  // delivery state colors (Phase 7 — RN-019). Derived mechanically from the
+  // `color.delivery_state.*` primitives (--jx-delivery-*); used as VIVID text +
+  // border over a NEUTRAL badge surface (--surface-sunken), the dark-mode pattern
+  // — so the same 7 vars work in light AND dark with zero `_bg` tokens.
+  --state-criada: var(--jx-delivery-criada);
+  --state-aceita: var(--jx-delivery-aceita);
+  --state-coletada: var(--jx-delivery-coletada);
+  --state-entregue: var(--jx-delivery-entregue);
+  --state-recusada: var(--jx-delivery-recusada-no-destino);
+  --state-cancelada: var(--jx-delivery-cancelada);
+  --state-finalizada: var(--jx-delivery-finalizada);
 }
 
 // ---------------------------------------------------------------------------
@@ -97,6 +109,18 @@
   --shadow-md: var(--jx-shadow-md);
   --shadow-lg: var(--jx-shadow-lg);
   --focus-ring: var(--jx-shadow-focus);
+
+  // delivery state colors (Phase 7). Most state hues read AA over the dark badge
+  // surface unchanged; the two MUTED browns (criada/cancelada) are luminance-
+  // lifted to lighter neutrals so the badge text stays AA in dark (the vivid
+  // hues already pass — the badge surface is --surface-elevated in dark).
+  --state-criada: var(--jx-neutral-300);
+  --state-aceita: var(--jx-delivery-aceita);
+  --state-coletada: var(--jx-delivery-coletada);
+  --state-entregue: var(--jx-delivery-entregue);
+  --state-recusada: var(--jx-delivery-recusada-no-destino);
+  --state-cancelada: var(--jx-neutral-400);
+  --state-finalizada: var(--jx-delivery-finalizada);
 }
 
 // Explicit toggle (set by anti-FOUC script + ThemeService) takes precedence.

@@ -1,0 +1,32 @@
+// jx-state-badge — neutral surface + vivid color (dark-mode-theming pattern).
+// Text + icon carry the meaning; color is reinforcement, never the only signal.
+// Tokens only — no hex (Gate 2).
+
+.jx-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  padding: 3px var(--jx-space-2);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  border: 1px solid var(--state-color);
+  color: var(--state-color);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-bold);
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+// Dashboard journey vocabulary uses normal case (less shouty, UI-SPEC §3.1).
+.jx-state-badge--dashboard {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.jx-state-badge__icon {
+  font-size: var(--jx-text-xs);
+  line-height: 1;
+}
