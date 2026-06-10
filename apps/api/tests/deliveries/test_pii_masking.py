@@ -12,9 +12,9 @@ import json
 
 import pytest
 from app.deliveries import service
+from app.deliveries.models import Recipient
 from app.deliveries.schemas import CreateDeliveryBody, mask_phone_display
 from app.deliveries.service import hash_cpf
-from app.deliveries.models import Recipient
 from sqlalchemy import select
 
 

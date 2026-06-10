@@ -119,3 +119,40 @@ interpretacao_humana:
   go_reduziu_friccao: "<FILL — você usou /gsd:go ou voltou aos comandos granulares? por quê?>"
   skills_novas_uteis: "<FILL — alguma skill nova mudou uma decisão de código? qual?>"
 ```
+
+## Snapshot 2026-06-10T23:06:36Z
+
+```yaml
+gate8_senior_quality_bar:
+  phases_avaliadas: 0
+  fail_block_total: 0      # quanto a barra BLOQUEOU (valor entregue)
+  fail_debt_total: 0        # quanto virou dívida consciente
+
+gate8_enforcement_script:           # v0.9.6 — estado REAL hoje, via gsd-tools verify quality-bar
+  phases_que_passariam: 0
+  phases_bloqueadas_hoje: 0   # >0 ao fechar milestone = dívida não contabilizada ou FAIL-BLOCK aberto
+
+wave_dispatcher:
+  execucoes_paralelas: 0
+  particoes_via_codigo: 0    # v0.9.6 — waves particionadas por gsd-tools partition (determinístico)
+  execucoes_serial: 0
+  taxa_rebaixamento_serial: n/a   # alto = heurística conservadora ou phases monocamada
+  conflitos_de_lease: 0             # >0 = planner não declarou implícitos
+
+gsd_go:
+  referencias_uso: 4
+
+skills_v095_aplicacao:
+  fastapi-production-patterns: citada_em_22_planos
+  github-actions-ci: citada_em_3_planos
+  data-tables-ux: citada_em_7_planos
+  search-filter-ux: citada_em_2_planos
+  parallel-orchestration: citada_em_0_planos
+  senior-quality-bar: citada_em_25_planos
+
+interpretacao_humana:
+  gate8_vale_a_pena: "<FILL — fail_block pegou algo que teria ido a produção? sim/não/exemplo>"
+  paralelismo_compensou: "<FILL — wall-clock real foi menor que serial? valeu o custo de tokens?>"
+  go_reduziu_friccao: "<FILL — você usou /gsd:go ou voltou aos comandos granulares? por quê?>"
+  skills_novas_uteis: "<FILL — alguma skill nova mudou uma decisão de código? qual?>"
+```
