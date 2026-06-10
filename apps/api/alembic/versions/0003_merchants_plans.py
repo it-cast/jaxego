@@ -84,9 +84,7 @@ def upgrade() -> None:
             ondelete="RESTRICT",
             onupdate="RESTRICT",
         ),
-        sa.UniqueConstraint(
-            "account_type", "document", name="uq_merchants_account_type_document"
-        ),
+        sa.UniqueConstraint("account_type", "document", name="uq_merchants_account_type_document"),
         sa.UniqueConstraint("phone_e164", name=op.f("uq_merchants_phone_e164")),
         sa.UniqueConstraint("email", name=op.f("uq_merchants_email")),
         **_TABLE_KW,
@@ -117,9 +115,7 @@ def upgrade() -> None:
             ondelete="RESTRICT",
             onupdate="RESTRICT",
         ),
-        sa.UniqueConstraint(
-            "merchant_id", "user_id", name="uq_merchant_users_merchant_id_user_id"
-        ),
+        sa.UniqueConstraint("merchant_id", "user_id", name="uq_merchant_users_merchant_id_user_id"),
         **_TABLE_KW,
     )
     op.create_index(op.f("ix_merchant_users_merchant_id"), "merchant_users", ["merchant_id"])
@@ -171,15 +167,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index(
-        op.f("ix_merchant_subscriptions_plan_id"), table_name="merchant_subscriptions"
-    )
+    op.drop_index(op.f("ix_merchant_subscriptions_plan_id"), table_name="merchant_subscriptions")
     op.drop_index(
         op.f("ix_merchant_subscriptions_merchant_id"), table_name="merchant_subscriptions"
     )
-    op.drop_index(
-        op.f("ix_merchant_subscriptions_area_id"), table_name="merchant_subscriptions"
-    )
+    op.drop_index(op.f("ix_merchant_subscriptions_area_id"), table_name="merchant_subscriptions")
     op.drop_table("merchant_subscriptions")
 
     op.drop_index(op.f("ix_merchant_users_user_id"), table_name="merchant_users")
