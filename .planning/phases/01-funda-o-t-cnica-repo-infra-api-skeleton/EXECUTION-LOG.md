@@ -59,7 +59,31 @@ Nenhum desvio arquitetural (Rule 4). Nenhuma tabela de domínio/auth/UI criada (
 ## Stubs conhecidos (intencionais, fundação)
 
 - `app/api/v1/router.py` — `api_router` sem sub-rotas (domínio entra na Phase 2).
-- `app/workers/settings.py` — `functions: []` (sem job de domínio; skeleton arq).
+- `app/workers/settings.py` — registra apenas `healthcheck` (heartbeat mínimo); jobs de domínio entram na Phase 2. ~~`functions: []`~~ corrigido no smoke (ver abaixo): lista vazia fazia o arq crashar no boot.
 - `alembic/versions/0001_baseline.py` — `upgrade`/`downgrade` vazios (REQ-022: sem schema de domínio).
 
 Todos previstos pelo PLAN/CONTEXT como skeleton da fundação.
+
+---
+
+## Fixes pós-smoke (T-09, docker compose up real)
+
+> Data: 2026-06-10 · Executor: gsd-executor (Claude Opus 4.8)
+> O smoke ao vivo (docker compose up real) revelou 2 bugs de runtime que o pytest com mocks não pegou.
+
+| Bug | Commit | Resumo |
+|-----|--------|--------|
+| BUG 1 — `/health` → 503 (db:down) | `2e5f9b6` | `RuntimeError: 'cryptography' package is required for sha256_password or caching_sha2_password auth methods`. MySQL 8.0 usa `caching_sha2_password` por padrão e aiomysql/pymysql precisam de `cryptography` para o handshake. Fix: `cryptography>=43,<46` adicionado às deps de `apps/api`; `uv.lock` atualizado (resolveu `cryptography==45.0.7`, `cffi`, `pycparser`). **Auth plugin do MySQL 8 mantido no default seguro** — sem downgrade para `mysql_native_password`. |
+| BUG 2 — worker arq em crash loop (Restarting 1) | `34682b3` | `RuntimeError: at least one function or cron_job must be registered` em `WorkerSettings` com `functions=[]`. Fix: criada task mínima `async def healthcheck(ctx) -> str` em `app/workers/tasks.py` e registrada em `WorkerSettings.functions`. Novo teste `tests/test_worker_settings.py` (3 testes) garante ≥1 função registrada — gate 7 protege contra regressão. |
+
+### Verificação local pós-fix (gate 7)
+
+Rodado a partir de `apps/api/`:
+
+- `uv lock` + `uv sync` → consistentes; `cryptography==45.0.7` no `uv.lock` (versionado).
+- `uv run ruff check .` → **All checks passed!**
+- `uv run ruff format --check .` → **28 files already formatted**
+- `uv run basedpyright` → **0 errors, 0 warnings, 0 notes**
+- `uv run pytest` → **20 passed** (17 anteriores + 3 do worker)
+
+> `docker compose up` real e re-teste do smoke ficam a cargo do humano (não rodado pelo agente, conforme escopo do checkpoint T-09).
