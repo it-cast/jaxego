@@ -80,8 +80,14 @@ LOW-3: como o trigger só roda contra MySQL, se a verificação ao vivo não for
 | 4 | Rule 1 (bug) | `ensure_aware_utc()` no boundary de leitura do DB — SQLite/MySQL retornam naive em `DateTime(timezone=True)`, causando `TypeError` naive/aware no lockout/refresh (TD-010) | `1b936f2` |
 | 5 | Rule 1 (bug) | `commit()` (não `flush()`) no service para failed-attempt/lockout e revogação de família por reuso — o router não faz commit no caminho de exceção, então o estado de segurança precisa persistir mesmo ao levantar erro | `1b936f2` |
 | 6 | Rule 3 (blocking) | `BIG_ID` variant (BIGINT MySQL / INTEGER SQLite) — SQLite só auto-incrementa `INTEGER PRIMARY KEY` | `1b936f2` |
+| 7 | Rule 1 (bug, qualidade de teste) | Testes `@mysql` reportavam FAILED por ruído de teardown asyncio no Windows (`RuntimeError: Event loop is closed` em `aiomysql.Connection.__del__`, escalado por `unraisableexception`). Causa raiz: usavam o `engine` process-wide de `app.db.session` (criado em import-time, fora do loop do teste; conexões pooled finalizadas num loop já fechado). Fix: fixture `mysql_engine` dedicada com `NullPool` + `await engine.dispose()` no teardown, dentro do mesmo loop. Sem `filterwarnings ignore` — ciclo de vida corrigido. | `test(02)` |
 
 Todos os fixes têm cobertura de teste. Nenhuma mudança arquitetural (Rule 4) foi necessária.
+
+**Verificação ao vivo do trigger append-only (LOW-3 resolvido):** rodado contra MySQL 8 real
+(`DATABASE_URL=mysql+aiomysql://jaxego:jaxego@127.0.0.1:3307/jaxego`): INSERT OK, UPDATE/DELETE
+→ errno 1644 / SQLSTATE 45000 (`audit_log is append-only (RN-012)`). `uv run pytest -m mysql -v`
+→ **3 passed**. Critério de aceite append-only do ROADMAP confirmado.
 
 ---
 
