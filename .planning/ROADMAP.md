@@ -102,7 +102,7 @@
 
 ## Phase 4: Cadastro e ativação de loja
 
-**Milestone:** MS-02 · **Tipo:** core · **Status:** executed (verificação ao vivo MySQL pendente) · **Estimativa:** L (1-2sem) · **Plans:** 1/1
+**Milestone:** MS-02 · **Tipo:** core · **Status:** complete (2026-06-10) · **Estimativa:** L (1-2sem) · **Plans:** 1/1
 
 ### REQs cobertos
 - REQ-008: F-01 completo com 4 exceções · REQ-009: seeds de planos `[ASSUMIDO]` · REQ-006 (aplicado)

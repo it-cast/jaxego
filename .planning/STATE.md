@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-last_updated: "2026-06-10T21:30:00.000Z"
-last_activity: 2026-06-10 — Phase 4 (cadastro de loja, F-01) executada. Backend E1–E4 + adapters/SSRF + seed + frontend wizard. 112 testes backend + 33 frontend verdes.
+milestone: MS-02
+milestone_name: Cadastros + área operável
+status: in_progress
+last_updated: "2026-06-10T21:45:00.000Z"
+last_activity: 2026-06-10 — Phase 4 (cadastro de loja, F-01) COMPLETA, reconciliada e verificada ao vivo (MySQL: migration 0003 + seed idempotente 2x + pytest -m mysql 4 passed). Backend E1–E4 + adapters/SSRF + seed + frontend wizard. 112+4 backend + 33 frontend verdes.
 progress:
   total_phases: 14
   completed_phases: 4
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 4
+  completed_plans: 4
   percent: 29
 ---
 
