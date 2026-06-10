@@ -1,0 +1,9 @@
+// Typography layer. Expanded in T-03 (scale, helpers, italic accent).
+// Minimal base here so the token layer (T-02) builds standalone.
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--jx-font-display);
+  margin: 0;
+}

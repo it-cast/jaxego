@@ -1,0 +1,94 @@
+// ============================================================================
+// GENERATED FILE — DO NOT EDIT BY HAND.
+// Source: docs/identidade-visual/tokens.json
+// Regenerate: npm run tokens:build  (apps/web)
+// Primitive token layer (--jx-*). Components must consume the SEMANTIC layer
+// (_semantic.scss), never these primitives or a literal hex.
+// tokens.json version: v2-jaxego
+// ============================================================================
+
+:root {
+  --jx-brand-50: #FFF1E8;
+  --jx-brand-100: #FFDEC1;
+  --jx-brand-200: #FFC396;
+  --jx-brand-300: #FFA56B;
+  --jx-brand-400: #FB813D;
+  --jx-brand-500: #E84E1B;
+  --jx-brand-600: #C73E0F;
+  --jx-brand-700: #A0300A;
+  --jx-brand-800: #6F2308;
+  --jx-brand-900: #421405;
+  --jx-neutral-50: #FAF6EE;
+  --jx-neutral-100: #F2EBE0;
+  --jx-neutral-200: #E5DBCC;
+  --jx-neutral-300: #C8BAA5;
+  --jx-neutral-400: #9D8E7A;
+  --jx-neutral-500: #6B5F50;
+  --jx-neutral-600: #4A4136;
+  --jx-neutral-700: #2D261F;
+  --jx-neutral-800: #181410;
+  --jx-neutral-900: #0A0805;
+  --jx-success: #1B998B;
+  --jx-success-bg: #D6F1ED;
+  --jx-warning: #E89B0E;
+  --jx-warning-bg: #FFF1D2;
+  --jx-error: #C71D1D;
+  --jx-error-bg: #F9DCDC;
+  --jx-info: #0A66C2;
+  --jx-info-bg: #DDEBFA;
+  --jx-highlight: #FFD60A;
+  --jx-delivery-criada: #6B5F50;
+  --jx-delivery-aceita: #0A66C2;
+  --jx-delivery-coletada: #E89B0E;
+  --jx-delivery-entregue: #1B998B;
+  --jx-delivery-recusada-no-destino: #E84E1B;
+  --jx-delivery-cancelada: #9D8E7A;
+  --jx-delivery-finalizada: #0F6E62;
+  --jx-score-probation: #9D8E7A;
+  --jx-score-bronze: #A66D2F;
+  --jx-score-prata: #7E7B73;
+  --jx-score-ouro: #D4A017;
+  --jx-score-diamante: #1B998B;
+  --jx-space-1: 4px;
+  --jx-space-2: 8px;
+  --jx-space-3: 12px;
+  --jx-space-4: 16px;
+  --jx-space-5: 24px;
+  --jx-space-6: 32px;
+  --jx-space-7: 48px;
+  --jx-space-8: 64px;
+  --jx-space-9: 96px;
+  --jx-radius-sm: 4px;
+  --jx-radius-md: 6px;
+  --jx-radius-lg: 10px;
+  --jx-radius-xl: 16px;
+  --jx-radius-full: 9999px;
+  --jx-font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
+  --jx-font-serif-accent: 'Fraunces', 'Times New Roman', serif;
+  --jx-font-body: 'Inter Tight', system-ui, sans-serif;
+  --jx-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --jx-text-2xs: 11px;
+  --jx-text-xs: 12px;
+  --jx-text-sm: 13px;
+  --jx-text-base: 14px;
+  --jx-text-md: 16px;
+  --jx-text-lg: 18px;
+  --jx-text-xl: 22px;
+  --jx-text-2xl: 28px;
+  --jx-text-3xl: 36px;
+  --jx-text-4xl: 48px;
+  --jx-text-5xl: 72px;
+  --jx-weight-regular: 400;
+  --jx-weight-medium: 500;
+  --jx-weight-semibold: 600;
+  --jx-weight-bold: 700;
+  --jx-weight-extrabold: 800;
+  --jx-shadow-sm: 0 1px 3px rgba(24,20,16,.06), 0 1px 2px rgba(24,20,16,.04);
+  --jx-shadow-md: 0 4px 12px -2px rgba(24,20,16,.10), 0 2px 4px -1px rgba(24,20,16,.06);
+  --jx-shadow-lg: 0 16px 32px -8px rgba(24,20,16,.14), 0 4px 8px -2px rgba(24,20,16,.08);
+  --jx-shadow-focus: 0 0 0 3px rgba(232,78,27,.28);
+  --jx-motion-fast: 140ms;
+  --jx-motion-normal: 220ms;
+  --jx-motion-slow: 380ms;
+  --jx-motion-easing-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

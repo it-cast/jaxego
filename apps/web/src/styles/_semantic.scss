@@ -1,0 +1,112 @@
+// ============================================================================
+// Semantic token layer (UI-SPEC §1.3 / §1.4).
+// Hand-written, but consumes ONLY primitives from _tokens.scss (--jx-*).
+// NEVER put a literal hex here — that is the whole point of the layer.
+//
+// 21 semantic vars per theme:
+//   :root                     -> light (default)
+//   :root[data-theme="dark"]  -> dark overrides
+//   @media (prefers-color-scheme: dark) -> dark when no explicit data-theme
+//
+// Dark mode (DEC-001): persimmon shifts to brand.400 for luminance; semantic
+// _bg pastels are replaced by a single dark surface + vivid colored text/border
+// (dark-mode-theming pattern); warm shadows (rgba(24,20,16,…)) preserved.
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// LIGHT (default)
+// ---------------------------------------------------------------------------
+:root {
+  // surfaces
+  --surface: var(--jx-neutral-50);
+  --surface-elevated: var(--jx-neutral-100);
+  --surface-sunken: var(--jx-neutral-200);
+
+  // text
+  --text: var(--jx-neutral-800);
+  --text-muted: var(--jx-neutral-500);
+  --text-subtle: var(--jx-neutral-400);
+
+  // borders
+  --border: var(--jx-neutral-200);
+  --border-strong: var(--jx-neutral-300);
+
+  // brand
+  --brand: var(--jx-brand-500);
+  --brand-hover: var(--jx-brand-600);
+  --brand-contrast: var(--jx-neutral-50);
+  --brand-wash: var(--jx-brand-50);
+  --brand-wash-border: var(--jx-brand-100);
+
+  // semantic — success / warning / error / info
+  --success: var(--jx-success);
+  --success-bg: var(--jx-success-bg);
+  --warning: var(--jx-warning);
+  --warning-bg: var(--jx-warning-bg);
+  --error: var(--jx-error);
+  --error-bg: var(--jx-error-bg);
+  --info: var(--jx-info);
+  --info-bg: var(--jx-info-bg);
+
+  // shadows + focus (warm, same in both themes — §1.4)
+  --shadow-sm: var(--jx-shadow-sm);
+  --shadow-md: var(--jx-shadow-md);
+  --shadow-lg: var(--jx-shadow-lg);
+  --focus-ring: var(--jx-shadow-focus);
+}
+
+// ---------------------------------------------------------------------------
+// DARK overrides (shared mixin via placeholder to keep explicit + media in sync)
+// ---------------------------------------------------------------------------
+@mixin jx-dark-theme {
+  // surfaces
+  --surface: var(--jx-neutral-900);
+  --surface-elevated: var(--jx-neutral-800);
+  --surface-sunken: var(--jx-neutral-700);
+
+  // text
+  --text: var(--jx-neutral-50);
+  --text-muted: var(--jx-neutral-300);
+  --text-subtle: var(--jx-neutral-400);
+
+  // borders
+  --border: var(--jx-neutral-700);
+  --border-strong: var(--jx-neutral-600);
+
+  // brand (luminance-boosted persimmon)
+  --brand: var(--jx-brand-400);
+  --brand-hover: var(--jx-brand-300);
+  --brand-contrast: var(--jx-neutral-900);
+  --brand-wash: var(--jx-brand-900);
+  --brand-wash-border: var(--jx-brand-800);
+
+  // semantic — vivid text/border over a single dark elevated surface.
+  // The light pastel _bg hexes do not work in dark, so _bg maps to the dark
+  // elevated surface; the colored text/border carries the meaning (§1.3 notes).
+  --success: var(--jx-success);
+  --success-bg: var(--jx-neutral-800);
+  --warning: var(--jx-warning);
+  --warning-bg: var(--jx-neutral-800);
+  --error: var(--jx-error);
+  --error-bg: var(--jx-neutral-800);
+  --info: var(--jx-info);
+  --info-bg: var(--jx-neutral-800);
+
+  // shadows + focus unchanged (warm preserved)
+  --shadow-sm: var(--jx-shadow-sm);
+  --shadow-md: var(--jx-shadow-md);
+  --shadow-lg: var(--jx-shadow-lg);
+  --focus-ring: var(--jx-shadow-focus);
+}
+
+// Explicit toggle (set by anti-FOUC script + ThemeService) takes precedence.
+:root[data-theme='dark'] {
+  @include jx-dark-theme;
+}
+
+// System preference applies dark only when no explicit choice is recorded.
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    @include jx-dark-theme;
+  }
+}

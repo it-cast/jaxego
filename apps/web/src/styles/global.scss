@@ -1,5 +1,12 @@
-// Global styles. Token layers (_tokens.scss generated, _semantic.scss) are
-// wired in T-02; typography in T-03. Minimal reset for the scaffold.
+// Global styles entrypoint.
+// Layer order: primitives (generated) -> semantic -> typography -> base.
+@use 'tokens'; // generated --jx-* primitives (:root)
+@use 'semantic'; // semantic vars per theme (light / dark)
+@use 'typography'; // families, scale, weights, helpers (T-03)
+
+// ---------------------------------------------------------------------------
+// Base reset + app surface
+// ---------------------------------------------------------------------------
 * {
   box-sizing: border-box;
 }
@@ -8,4 +15,33 @@ html,
 body {
   margin: 0;
   padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-regular);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  // Smooth theme transition, disabled under reduced-motion.
+  transition:
+    background-color var(--jx-motion-normal) var(--jx-motion-easing-out),
+    color var(--jx-motion-normal) var(--jx-motion-easing-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
+
+// Accessible default focus ring for any interactive element that opts in.
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--jx-radius-sm);
 }
