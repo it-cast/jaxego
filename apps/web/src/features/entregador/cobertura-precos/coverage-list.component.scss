@@ -1,0 +1,116 @@
+// jx-coverage-list — mobile coverage rows (UI-SPEC §4). Tokens only; touch ≥44px.
+
+.jx-coverage-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+}
+
+.jx-coverage-list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-elevated);
+  transition: transform var(--jx-motion-fast, 120ms) ease;
+}
+
+.jx-coverage-list__row:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-coverage-list__row {
+    transition: none;
+  }
+  .jx-coverage-list__row:active {
+    transform: none;
+  }
+}
+
+.jx-coverage-list__row--excluded {
+  opacity: 0.7;
+}
+
+.jx-coverage-list__check {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  flex: 1;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.jx-coverage-list__check input {
+  width: 22px;
+  height: 22px;
+}
+
+.jx-coverage-list__name {
+  color: var(--text);
+  font-size: var(--jx-text-base);
+}
+
+.jx-coverage-list__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--error);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-coverage-list__price {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jx-coverage-list__price-input {
+  width: 110px;
+  min-height: 44px;
+  padding: 0 var(--jx-space-2);
+  text-align: right;
+  font-family: var(--jx-font-mono);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.jx-coverage-list__price-input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.jx-coverage-list__price-input:disabled {
+  opacity: 0.5;
+}
+
+.jx-coverage-list__price-input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jx-coverage-list__price-error {
+  color: var(--error);
+  font-size: var(--jx-text-2xs);
+}
+
+.jx-coverage-list__exclude {
+  min-height: 44px;
+  padding: 0 var(--jx-space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--jx-text-xs);
+  cursor: pointer;
+}
+
+.jx-coverage-list__exclude:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

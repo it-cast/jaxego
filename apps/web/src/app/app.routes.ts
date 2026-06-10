@@ -57,6 +57,13 @@ export const routes: Routes = [
             (m) => m.EntregadorPerfilPage
           ),
       },
+      {
+        path: 'cobertura',
+        loadComponent: () =>
+          import(
+            '../features/entregador/cobertura-precos/cobertura-precos.page'
+          ).then((m) => m.CoberturaPrecosPage),
+      },
     ],
   },
   // Public courier onboarding (F-02): the wizard + post-submit "em análise" are

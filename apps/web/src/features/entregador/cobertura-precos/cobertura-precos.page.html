@@ -1,0 +1,116 @@
+<ion-content>
+  <div class="jx-cobertura">
+    <h1 class="jx-cobertura__title">Bairros e <em>preços</em></h1>
+
+    <!-- RN-003 aviso (não-dispensável) -->
+    <jx-warn-banner [message]="warnMessage" />
+
+    <!-- Seletor de modo -->
+    <div
+      class="jx-cobertura__mode"
+      role="radiogroup"
+      aria-label="Modo de preço"
+    >
+      <button
+        type="button"
+        role="radio"
+        class="jx-cobertura__mode-btn"
+        [class.jx-cobertura__mode-btn--active]="mode() === 'neighborhood'"
+        [attr.aria-checked]="mode() === 'neighborhood'"
+        (click)="setMode('neighborhood')"
+      >
+        Por bairro
+      </button>
+      <button
+        type="button"
+        role="radio"
+        class="jx-cobertura__mode-btn"
+        [class.jx-cobertura__mode-btn--active]="mode() === 'km'"
+        [attr.aria-checked]="mode() === 'km'"
+        (click)="setMode('km')"
+      >
+        Por km
+      </button>
+    </div>
+
+    @if (saveError()) {
+      <jx-error-state [message]="saveError()!" />
+    }
+
+    <!-- Cobertura de bairros (sempre visível) -->
+    @if (items().length === 0) {
+      <jx-empty-state
+        icon="🗺️"
+        title="Você ainda não atende nenhum bairro."
+        message="Marque os bairros que quer atender abaixo."
+      />
+    } @else {
+      <jx-coverage-list
+        [items]="items()"
+        [showPrice]="mode() === 'neighborhood'"
+      />
+    }
+
+    <!-- Modo km: faixas -->
+    @if (mode() === 'km') {
+      <section class="jx-cobertura__km">
+        <h2 class="jx-cobertura__km-title">Faixas por km</h2>
+        @for (band of kmBands; track $index) {
+          <div class="jx-cobertura__band">
+            <input
+              class="jx-cobertura__band-km"
+              inputmode="numeric"
+              placeholder="até km"
+              [value]="band.upToKm"
+              [attr.aria-label]="'Até quantos km (faixa ' + ($index + 1) + ')'"
+              (input)="onBandKm(band, $event)"
+            />
+            <input
+              class="jx-cobertura__band-price"
+              inputmode="decimal"
+              placeholder="R$ 0,00"
+              [value]="band.price"
+              [attr.aria-label]="'Preço da faixa ' + ($index + 1)"
+              [attr.aria-invalid]="band.priceError ? 'true' : null"
+              (input)="onBandPrice(band, $event)"
+            />
+          </div>
+          @if (band.priceError) {
+            <p class="jx-cobertura__band-error" role="alert">{{ band.priceError }}</p>
+          }
+        }
+        <button type="button" class="jx-cobertura__add-band" (click)="addBand()">
+          Adicionar faixa
+        </button>
+      </section>
+    }
+
+    <!-- Retorno -->
+    <label class="jx-cobertura__return">
+      <span class="jx-cobertura__return-label">
+        % sobre a corrida para voltar com o item
+      </span>
+      <input
+        class="jx-cobertura__return-input"
+        inputmode="numeric"
+        [value]="returnPct"
+        aria-label="Percentual de retorno"
+        (input)="onReturnInput($event)"
+      />
+    </label>
+
+    @if (saved()) {
+      <p class="jx-cobertura__saved" role="status">Bairros e preços salvos.</p>
+    }
+
+    <button
+      type="button"
+      class="jx-cobertura__save"
+      [disabled]="saving()"
+      [attr.aria-busy]="saving() ? 'true' : null"
+      (click)="save()"
+    >
+      {{ saving() ? 'Salvando…' : 'Salvar bairros e preços' }}
+    </button>
+  </div>
+</ion-content>
