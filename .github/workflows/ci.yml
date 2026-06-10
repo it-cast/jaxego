@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: apps/api
+
+jobs:
+  lint:
+    name: lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install (frozen lockfile)
+        run: uv sync --frozen
+      - name: Ruff check
+        run: uv run ruff check .
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+  typecheck:
+    name: typecheck (basedpyright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install (frozen lockfile)
+        run: uv sync --frozen
+      - name: basedpyright
+        run: uv run basedpyright
+
+  test:
+    name: test (pytest)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root
+          MYSQL_DATABASE: jaxego
+          MYSQL_USER: jaxego
+          MYSQL_PASSWORD: jaxego
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pci-root"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: mysql+aiomysql://jaxego:jaxego@127.0.0.1:3306/jaxego?charset=utf8mb4
+      REDIS_URL: redis://127.0.0.1:6379/0
+      ENVIRONMENT: test
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install (frozen lockfile)
+        run: uv sync --frozen
+      - name: Apply migrations (catches broken migration chain)
+        run: uv run alembic upgrade head
+      - name: Run tests (health + sentry + naive-datetime guard)
+        run: uv run pytest -q
+      - name: Naive datetime guard (TD-010)
+        run: uv run python tools/check_naive_datetime.py
+
+# ---------------------------------------------------------------------------
+# Build/deploy by tag is intentionally a skeleton — real deploy is Phase 14.
+#
+# release:
+#   name: build & deploy
+#   if: startsWith(github.ref, 'refs/tags/v')
+#   needs: [lint, typecheck, test]
+#   runs-on: ubuntu-latest
+#   steps:
+#     - uses: actions/checkout@v4
+#     - run: echo "build image + deploy (Phase 14)"
