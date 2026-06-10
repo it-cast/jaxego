@@ -51,6 +51,27 @@ class Settings(BaseSettings):
     access_token_minutes: int = Field(default=15)
     refresh_token_days: int = Field(default=30)
 
+    # --- External integrations (Phase 4) — adapters; secrets only via env ---
+    # In dev/test the factory returns Stub adapters (no network); these values are
+    # only consulted by the real httpx adapters in staging/production.
+    receita_base_url: str = Field(default="https://minhareceita.org")
+    receita_brasilapi_url: str = Field(default="https://brasilapi.com.br/api/cnpj/v1")
+    # Comma-separated host allowlist for the SSRF guard (TH-02/TH-03).
+    receita_allowlist_hosts: str = Field(default="minhareceita.org,brasilapi.com.br")
+
+    sms_zenvia_url: str = Field(default="https://api.zenvia.com/v2/channels/sms/messages")
+    sms_zenvia_token: str | None = Field(default=None)
+    sms_twilio_url: str | None = Field(default=None)
+    sms_twilio_token: str | None = Field(default=None)
+    sms_allowlist_hosts: str = Field(default="api.zenvia.com")
+
+    ses_send_url: str = Field(default="https://email.sa-east-1.amazonaws.com/send")
+    ses_api_token: str | None = Field(default=None)
+    ses_allowlist_hosts: str = Field(default="email.sa-east-1.amazonaws.com")
+
+    geocoding_base_url: str = Field(default="https://nominatim.openstreetmap.org")
+    geocoding_allowlist_hosts: str = Field(default="nominatim.openstreetmap.org")
+
 
 @lru_cache
 def get_settings() -> Settings:
