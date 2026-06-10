@@ -6,8 +6,12 @@ The whole point: the test suite and local dev NEVER touch the network. Productio
 
 from __future__ import annotations
 
+from functools import lru_cache
+from pathlib import Path
+from tempfile import gettempdir
+
 from app.core.config import settings
-from app.integrations.base import EmailPort, GeocodingPort, ReceitaPort, SmsPort
+from app.integrations.base import EmailPort, GeocodingPort, ReceitaPort, SmsPort, StoragePort
 from app.integrations.email import EmailSesAdapter
 from app.integrations.email_stub import EmailStubAdapter
 from app.integrations.geocoding import GeocodingHttpAdapter
@@ -16,6 +20,8 @@ from app.integrations.receita import ReceitaHttpAdapter
 from app.integrations.receita_stub import ReceitaStubAdapter
 from app.integrations.sms import SmsHttpAdapter
 from app.integrations.sms_stub import SmsStubAdapter
+from app.integrations.storage import StorageB2Adapter
+from app.integrations.storage_stub import StorageStubAdapter
 
 _STUB_ENVS = {"dev", "test"}
 
@@ -66,4 +72,29 @@ def get_geocoding_adapter() -> GeocodingPort:
     return GeocodingHttpAdapter(
         base_url=settings.geocoding_base_url,
         allowlist=_hosts(settings.geocoding_allowlist_hosts),
+    )
+
+
+@lru_cache
+def _stub_storage() -> StorageStubAdapter:
+    """A process-wide stub rooted in the OS temp dir (dev only; tests inject own)."""
+    return StorageStubAdapter(root=Path(gettempdir()) / "jaxego-b2-stub")
+
+
+def get_storage_adapter() -> StoragePort:
+    """KYC document storage: Stub in dev/test (FS temp, no network), B2 otherwise.
+
+    The B2 secrets (key_id/app_key) are required for the real adapter; if they are
+    absent in a non-stub environment the StorageB2Adapter is constructed with empty
+    strings only as a last resort — staging/production MUST set them (Gate 8).
+    """
+    if _use_stub():
+        return _stub_storage()
+    return StorageB2Adapter(
+        endpoint_url=settings.b2_endpoint_url,
+        region=settings.b2_region,
+        key_id=settings.b2_key_id or "",
+        app_key=settings.b2_app_key or "",
+        bucket=settings.b2_kyc_bucket,
+        allowlist=_hosts(settings.b2_allowlist_hosts),
     )

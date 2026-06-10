@@ -62,3 +62,38 @@ class GeocodingPort(Protocol):
     """Resolve an address to a point. Returns None when geocoding fails."""
 
     async def geocode(self, address: str) -> GeocodeResult | None: ...
+
+
+# ---------------------------------------------------------------------------
+# Object storage (Backblaze B2, S3-compatible) — KYC documents, PRIVATE bucket.
+# Bytes NEVER transit the backend on upload (presigned PUT direct to B2). The
+# StoragePort is shared (Phase 9 proofs reuse the same contract).
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class PresignResult:
+    """A presigned URL the client (PUT) or admin (GET) uses directly.
+
+    `headers` are the headers the caller MUST send with the request (e.g. the
+    Content-Type bound into the PUT signature).
+    """
+
+    url: str
+    method: str  # "PUT" | "GET"
+    expires_in: int  # seconds
+    headers: dict[str, str]
+
+
+class StoragePort(Protocol):
+    """Private object storage (B2 S3-compatible).
+
+    `presign_put` / `presign_get` are LOCAL operations (no network — boto3 just
+    signs). `fetch` downloads the raw object for server-side validation;
+    `put_bytes` writes the reprocessed derivative back.
+    """
+
+    async def presign_put(
+        self, key: str, *, content_type: str, expires_in: int
+    ) -> PresignResult: ...
+    async def presign_get(self, key: str, *, expires_in: int) -> PresignResult: ...
+    async def fetch(self, key: str) -> bytes: ...
+    async def put_bytes(self, key: str, data: bytes, *, content_type: str) -> None: ...
