@@ -135,3 +135,36 @@ what_missing: "<FILL — 1 linha>"
 framework_effort: <FILL 1-5>
 framework_value: <FILL 1-5>
 ```
+
+### 05-cadastro-do-entregador-kyc-2-n-veis-documentos-b2
+
+```yaml
+phase_id: 05-cadastro-do-entregador-kyc-2-n-veis-documentos-b2
+started_at: <FILL_AUTO>
+closed_at: 2026-06-10T20:32:08Z
+duration_days: <FILL>
+
+plan_revisions: 0
+skills_cited: []
+skills_dispensed: []
+plan_checker_blocks: <FILL>
+
+tasks_total: 0
+tasks_completed: 0
+gates_passed: <FILL>
+gates_bypassed: <FILL>
+reconcile_runs: 1
+reconcile_divergences_found: <FILL>
+
+fix_iterations: 4
+bugs_reported_7d: <FILL>
+bugs_severity_high: <FILL>
+rollback: <FILL>
+
+what_worked: "<FILL — 1 linha>"
+what_hurt: "<FILL — 1 linha>"
+what_missing: "<FILL — 1 linha>"
+
+framework_effort: <FILL 1-5>
+framework_value: <FILL 1-5>
+```
