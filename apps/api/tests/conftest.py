@@ -35,6 +35,7 @@ from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
     MerchantSubscription,
     MerchantUser,
 )
+from app.neighborhoods.models import Neighborhood  # noqa: F401 (Phase 6 mapper)
 from app.plans.models import SubscriptionPlan  # noqa: F401
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
