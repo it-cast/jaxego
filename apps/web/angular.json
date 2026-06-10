@@ -31,7 +31,17 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles/global.scss"],
+            "styles": [
+              "node_modules/@fontsource/inter-tight/400.css",
+              "node_modules/@fontsource/inter-tight/500.css",
+              "node_modules/@fontsource/inter-tight/600.css",
+              "node_modules/@fontsource/inter-tight/700.css",
+              "node_modules/@fontsource/inter-tight/800.css",
+              "node_modules/@fontsource/fraunces/500-italic.css",
+              "node_modules/@fontsource/jetbrains-mono/400.css",
+              "node_modules/@fontsource/jetbrains-mono/600.css",
+              "src/styles/global.scss"
+            ],
             "stylePreprocessorOptions": {
               "includePaths": ["src/styles"]
             },
@@ -99,7 +109,17 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles/global.scss"],
+            "styles": [
+              "node_modules/@fontsource/inter-tight/400.css",
+              "node_modules/@fontsource/inter-tight/500.css",
+              "node_modules/@fontsource/inter-tight/600.css",
+              "node_modules/@fontsource/inter-tight/700.css",
+              "node_modules/@fontsource/inter-tight/800.css",
+              "node_modules/@fontsource/fraunces/500-italic.css",
+              "node_modules/@fontsource/jetbrains-mono/400.css",
+              "node_modules/@fontsource/jetbrains-mono/600.css",
+              "src/styles/global.scss"
+            ],
             "stylePreprocessorOptions": {
               "includePaths": ["src/styles"]
             },

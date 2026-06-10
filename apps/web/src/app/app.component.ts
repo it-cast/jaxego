@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ThemeService } from '../core/theme/theme.service';
 
 @Component({
   selector: 'jx-root',
@@ -8,4 +9,8 @@ import { RouterOutlet } from '@angular/router';
   imports: [RouterOutlet],
   template: `<router-outlet />`,
 })
-export class AppComponent {}
+export class AppComponent {
+  // Construct ThemeService at root so the signal syncs with the data-theme
+  // attribute the anti-FOUC inline script already applied.
+  private readonly theme = inject(ThemeService);
+}

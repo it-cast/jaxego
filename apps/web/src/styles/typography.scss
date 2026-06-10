@@ -1,9 +1,98 @@
-// Typography layer. Expanded in T-03 (scale, helpers, italic accent).
-// Minimal base here so the token layer (T-02) builds standalone.
+// ============================================================================
+// Typography layer (UI-SPEC §2). Editorial-technical direction (ui-ux-pro-max):
+// Inter Tight everywhere, Fraunces italic on ONE keyword per title (brand color),
+// JetBrains Mono for data. All values via tokens — no inline font-family.
+// ============================================================================
+
+// Self-hosted fonts (@fontsource, font-display: swap) are wired in angular.json
+// "styles" so url() asset resolution works correctly.
+
+// --- Headings (scale from font.size, §2.3) ---------------------------------
 h1,
-h2,
-h3,
-h4 {
+.jx-h1 {
   font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-semibold);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   margin: 0;
+  color: var(--text);
+}
+
+h2,
+.jx-h2 {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-semibold);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text);
+}
+
+h3,
+.jx-h3 {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-medium);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text);
+}
+
+// --- Body / support --------------------------------------------------------
+.jx-body {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-regular);
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.jx-muted {
+  color: var(--text-muted);
+}
+
+.jx-subtle {
+  color: var(--text-subtle);
+}
+
+.jx-label {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+// Overline / section label (§2.3)
+.jx-overline {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.jx-caption {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-regular);
+  color: var(--text-subtle);
+}
+
+// --- Fraunces italic accent (§2.2 — brand.md inviolable rule) ---------------
+// ONE keyword per title, italic, brand color, medium weight. Used as <em>.
+.jx-italic-accent,
+.jx-h1 em,
+h1 em {
+  font-family: var(--jx-font-serif-accent);
+  font-style: italic;
+  font-weight: var(--jx-weight-medium);
+  color: var(--brand);
+}
+
+// --- Mono for data (§2.1) --------------------------------------------------
+.jx-mono {
+  font-family: var(--jx-font-mono);
+  font-variant-numeric: tabular-nums;
 }
