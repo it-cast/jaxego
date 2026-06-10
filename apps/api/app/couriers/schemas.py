@@ -1,0 +1,169 @@
+"""Courier signup + document API contracts (Pydantic v2, extra='forbid' — A03).
+
+These are the stable contracts the Ionic wizard (apps/web) and the admin panel
+consume (Integration contracts). CPF validation uses `validate-docbr` (never
+hand-rolled). The request body carries PII (CPF, phone, email) and is NEVER
+logged (TH-05).
+"""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from validate_docbr import CPF
+
+from app.auth.schemas import PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
+
+_CPF = CPF()
+
+DocumentKind = Literal["selfie", "cnh", "crlv", "mei", "antecedentes"]
+VehicleType = Literal["moto", "bicicleta", "carro", "a_pe"]
+CourierStatus = Literal["pending_kyc", "active", "suspended", "banned"]
+RejectReason = Literal["ilegivel", "sem_ear", "vencida", "nao_confere", "outro"]
+
+
+def normalize_cpf(raw: str) -> str:
+    """Strip mask, keep digits only."""
+    return "".join(c for c in raw if c.isdigit())
+
+
+def validate_cpf(raw: str) -> bool:
+    """Server-side CPF check-digit validation (TH-08)."""
+    return _CPF.validate(normalize_cpf(raw))
+
+
+# ---------------------------------------------------------------------------
+# Signup (wizard step 1 — área + dados). Creates User + Courier (pending_kyc).
+# ---------------------------------------------------------------------------
+class CourierSignupBody(BaseModel):
+    """F-02 step 1 contract. `extra='forbid'` blocks mass assignment (A03)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    area_id: int
+    cpf: str = Field(min_length=11, max_length=14)
+    full_name: str = Field(min_length=2, max_length=120)
+    phone_e164: str = Field(min_length=12, max_length=20, pattern=r"^\+\d{11,15}$")
+    email: EmailStr
+    password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+    vehicle_type: VehicleType
+    vehicle_plate: str | None = Field(default=None, max_length=8)
+    # LGPD: explicit, non-pre-checked consent is required to submit (TH-09).
+    consent: bool
+
+    @field_validator("cpf")
+    @classmethod
+    def _normalize_cpf(cls, v: str) -> str:
+        return normalize_cpf(v)
+
+    @field_validator("consent")
+    @classmethod
+    def _consent_required(cls, v: bool) -> bool:
+        if v is not True:
+            raise ValueError("consent_required")
+        return v
+
+
+class CourierSignupResponse(BaseModel):
+    """Response consumed by the wizard (Integration contracts)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    courier_id: int
+    status: CourierStatus
+    kyc_level: Literal["simples", "completa"]
+    next_step: Literal["selfie", "documents", "done"]
+
+
+# ---------------------------------------------------------------------------
+# Document presign + complete (wizard steps 2/4).
+# ---------------------------------------------------------------------------
+class DocumentPresignBody(BaseModel):
+    """Request a presigned PUT for a document upload."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: DocumentKind
+    # The client declares the SHA-256 of the RAW file (detects transport
+    # corruption). The server confirms the derivative's hash (source of truth).
+    sha256_client: str = Field(min_length=64, max_length=64, pattern=r"^[0-9a-f]{64}$")
+    content_type: Literal["image/jpeg", "image/png", "image/webp"]
+
+
+class DocumentPresignResponse(BaseModel):
+    """Presigned PUT envelope the doc-upload component uses."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    document_id: int
+    presigned_url: str
+    method: Literal["PUT"]
+    expires_in: int
+    headers: dict[str, str]
+
+
+class DocumentReadResponse(BaseModel):
+    """A document's current KYC state (read by the wizard / admin)."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    id: int
+    kind: DocumentKind
+    status: Literal["pending_upload", "pending", "approved", "rejected", "expired"]
+    reject_reason: RejectReason | None = None
+    reject_detail: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# MEI (wizard step 4 — optional). Absence/inactive → mei_pending (RN-024).
+# ---------------------------------------------------------------------------
+class MeiBody(BaseModel):
+    """Submit a MEI CNPJ for Receita validation (D-07)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    cnpj: str = Field(min_length=14, max_length=18)
+
+    @field_validator("cnpj")
+    @classmethod
+    def _normalize(cls, v: str) -> str:
+        return "".join(c for c in v if c.isalnum()).upper()
+
+
+class MeiResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mei_pending: bool
+
+
+# ---------------------------------------------------------------------------
+# Admin: view-url + item-a-item review (T-06).
+# ---------------------------------------------------------------------------
+class ViewUrlResponse(BaseModel):
+    """Short-lived presigned GET for the admin viewer (≤180s)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    url: str
+    expires_in: int
+
+
+class DocumentReviewBody(BaseModel):
+    """Approve or reject a document item-a-item (D-04)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["approve", "reject"]
+    # Required when action == reject (validated in the service — a reject without
+    # a reason is blocked, the wizard shows "Selecione o motivo antes de reprovar").
+    reason: RejectReason | None = None
+    detail: str | None = Field(default=None, max_length=500)
+
+
+class DocumentReviewResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    document_id: int
+    status: Literal["approved", "rejected"]
+    courier_status: CourierStatus
