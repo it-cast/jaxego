@@ -21,6 +21,7 @@ from app.core.config import settings
 from app.core.exceptions import AppError
 from app.core.security import (
     encode_access,
+    hash_refresh_token,
     new_refresh_token,
     verify_dummy,
     verify_password,
@@ -139,15 +140,21 @@ async def _resolve_session_context(session: AsyncSession, user: User) -> tuple[i
     return membership.area_id, f"admin_area:{membership.role}"
 
 
-async def issue_token_pair(session: AsyncSession, user: User) -> TokenPair:
-    """Mint an access JWT + persist a fresh opaque refresh token (new family)."""
+async def issue_token_pair(
+    session: AsyncSession, user: User, *, family_id: str | None = None
+) -> TokenPair:
+    """Mint an access JWT + persist a fresh opaque refresh token.
+
+    A new login starts a new family; a rotation passes the existing `family_id`
+    so reuse-detection can revoke the whole chain (TH-03).
+    """
     area_scope, role = await _resolve_session_context(session, user)
     access = encode_access(user_id=user.id, area_scope=area_scope, role=role)
     raw, digest = new_refresh_token()
     session.add(
         RefreshToken(
             user_id=user.id,
-            family_id=str(uuid.uuid4()),
+            family_id=family_id or str(uuid.uuid4()),
             token_hash=digest,
             expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_days),
         )
@@ -217,3 +224,70 @@ async def authenticate(
     pair = await issue_token_pair(session, user)
     logger.info("login_ok", user_id=user.id)
     return pair
+
+
+# ---------------------------------------------------------------------------
+# Refresh rotation + reuse detection (Pattern 4, TH-02/TH-03).
+# ---------------------------------------------------------------------------
+async def _find_refresh(session: AsyncSession, raw: str) -> RefreshToken | None:
+    digest = hash_refresh_token(raw)
+    stmt = select(RefreshToken).where(RefreshToken.token_hash == digest)
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def _revoke_family(session: AsyncSession, family_id: str) -> None:
+    """Revoke every (still-active) token in a family (reuse => compromised)."""
+    now = datetime.now(UTC)
+    stmt = select(RefreshToken).where(
+        RefreshToken.family_id == family_id,
+        RefreshToken.revoked_at.is_(None),
+    )
+    for token in (await session.execute(stmt)).scalars().all():
+        token.revoked_at = now
+    await session.flush()
+
+
+async def rotate_refresh(session: AsyncSession, raw: str) -> TokenPair:
+    """Validate a refresh token and rotate it, or detect reuse and revoke family.
+
+    - Unknown / revoked / expired -> InvalidRefreshError (401).
+    - Already rotated (reuse of a spent token) -> revoke the whole family +
+      RefreshReuseError (401). Re-login required (TH-03).
+    - Valid -> mark rotated, issue a new pair within the SAME family.
+    """
+    token = await _find_refresh(session, raw)
+    if token is None:
+        raise InvalidRefreshError()
+
+    if token.revoked_at is not None:
+        # Token belongs to a revoked family — treat as reuse, revoke again.
+        await _revoke_family(session, token.family_id)
+        logger.warning("refresh_reuse_detected", user_id=token.user_id)
+        raise RefreshReuseError()
+
+    if token.rotated_at is not None:
+        # A spent (already-rotated) token reused => session compromised.
+        await _revoke_family(session, token.family_id)
+        logger.warning("refresh_reuse_detected", user_id=token.user_id)
+        raise RefreshReuseError()
+
+    if datetime.now(UTC) >= token.expires_at:
+        raise InvalidRefreshError()
+
+    user = await session.get(User, token.user_id)
+    if user is None or not user.is_active:
+        raise InvalidRefreshError()
+
+    token.rotated_at = datetime.now(UTC)
+    pair = await issue_token_pair(session, user, family_id=token.family_id)
+    logger.info("refresh_rotated", user_id=user.id)
+    return pair
+
+
+async def logout(session: AsyncSession, raw: str) -> None:
+    """Revoke the presented refresh token (best-effort; idempotent)."""
+    token = await _find_refresh(session, raw)
+    if token is not None and token.revoked_at is None:
+        token.revoked_at = datetime.now(UTC)
+        await session.flush()
+        logger.info("logout", user_id=token.user_id)
