@@ -11,6 +11,6 @@ export const routes: Routes = [
   {
     path: 'entrar',
     loadComponent: () =>
-      import('../app/placeholder.page').then((m) => m.PlaceholderPage),
+      import('../features/auth/login.page').then((m) => m.LoginPage),
   },
 ];
