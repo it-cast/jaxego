@@ -131,10 +131,10 @@
 
 ## Phase 5: Cadastro do entregador + KYC 2 níveis + documentos B2
 
-**Milestone:** MS-02 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-02 · **Tipo:** core · **Status:** executed (verificação ao vivo MySQL + integration check B2 pendentes) · **Estimativa:** L (1-2sem) · **Plans:** 5/5
 
 ### REQs cobertos
-- REQ-013: wizard F-02 · REQ-014: validação simples/completa item a item · REQ-015: documentos B2 privado · REQ-019 (parcial): flag `mei_pending`
+- REQ-013: wizard F-02 ✅ · REQ-014: validação simples/completa item a item ✅ · REQ-015: documentos B2 privado ✅ · REQ-019 (parcial): flag `mei_pending` ✅
 
 ### Flags
 - has_ui: true · has_api: true · mobile: true · integration_check: true (B2, Receita p/ MEI, SMS)

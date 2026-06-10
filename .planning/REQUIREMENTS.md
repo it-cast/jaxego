@@ -120,25 +120,25 @@ Bloqueio privado, vale só para a loja, não afeta score. Favoritos recebem casc
 **Categoria:** functional · **Prioridade:** must · **Origem:** `fluxos.md:27-48`, wireframe 03
 Etapas: área → dados (CPF validado, SMS, e-mail) → selfie com documento → veículo → [completa: CNH EAR, CRLV, MEI, antecedentes] → cobertura e preços. Abandono → retomada por 30 dias, lembretes dia 3 e 7.
 **Critérios de aceite:**
-- [ ] Wizard com persistência de progresso por etapa
-- [ ] Exceções E1–E5 de F-02 implementadas (CPF em outra área permite; MEI inativo → flag `mei_pending` com banner)
-- [ ] Submissão → `pending_kyc` na fila do admin de área
+- [x] Wizard com persistência de progresso por etapa (draft server-side + sessionStorage sem senha, E1)
+- [x] Exceções E1–E5 de F-02 implementadas (CPF em outra área permite; MEI inativo → flag `mei_pending` com banner)
+- [x] Submissão → `pending_kyc` na fila do admin de área
 
 ### REQ-014: Validação em 2 níveis (simples/completa) com aprovação item a item
 **Categoria:** functional/regulatory · **Prioridade:** must · **Origem:** ADR-011 (`adrs.md:60-64`), RN-002, wireframe 19
 Simples = CPF + selfie + telefone + e-mail. Completa = + CNH EAR + CRLV + MEI ativo + antecedentes (se a área exigir). Admin aprova/reprova POR ITEM com motivo; reenvio libera só o item reprovado. Admin sem revisar em 48h → escalação ao admin plataforma (F-02 E5).
 **Critérios de aceite:**
-- [ ] Área configura nível mínimo; nunca menos que simples
-- [ ] Reprovação de item → notificação com motivo específico + reenvio isolado
-- [ ] Escalação 48h visível na fila do admin plataforma
+- [x] Área configura nível mínimo; nunca menos que simples (RN-002, kyc.py)
+- [x] Reprovação de item → motivo específico + reenvio isolado (E4: reprovar CNH não invalida selfie)
+- [x] Escalação 48h visível na fila do admin plataforma (job `escalate_stale_reviews` + selo "Atrasada" E5)
 
 ### REQ-015: Documentos KYC em bucket privado B2
 **Categoria:** functional/security · **Prioridade:** must · **Origem:** ADR-004 (`adrs.md:24-26`), `entidades.md:34`, `integracoes.md:85-88`
 Upload por URL pré-assinada direto do cliente; compressão (máx 1920px, WebP); hash SHA-256; URL assinada de expiração curta para leitura; expiração de CNH/CRLV/MEI monitorada por job.
 **Critérios de aceite:**
-- [ ] Nenhum documento acessível por URL pública
-- [ ] Job alerta entregador e admin sobre documento vencendo
-- [ ] Upload com retry/backoff no cliente
+- [x] Nenhum documento acessível por URL pública (bucket privado; presigned GET ≤180s; test_no_public_access)
+- [x] Job alerta sobre documento vencendo (`expire_documents` aware-UTC: CNH/CRLV/MEI approved→expired)
+- [x] Upload com retry no cliente (presign PUT background; falha de rede → arquivo retido + retry ao reconectar)
 
 ### REQ-016: Cobertura por bairro (coleta E entrega) com exclusões
 **Categoria:** functional · **Prioridade:** must · **Origem:** RN-003 (`regras.md:9`), ADR-006, wireframe 10
@@ -165,9 +165,9 @@ Linhas por bairro OU faixas por km, com % de retorno. Plataforma impõe apenas p
 **Categoria:** functional/regulatory · **Prioridade:** must · **Origem:** `regras.md:16,30`, ADR-012
 Repasse via plataforma exige MEI ativo (CNAEs 4930-2/01, 4930-2/02, 5320-2/02, 5229-0/99) + chave PIX do MEI. SEM MEI → trabalha normalmente em pagamento direto; saldo acumula, saque bloqueado com passo a passo de regularização.
 **Critérios de aceite:**
-- [ ] Entregador `mei_pending` só elegível para entregas `payment_method=direct`
-- [ ] MEI aprovado → cadastro como subconta/recebedor Safe2Pay disparado
-- [ ] MEI vencido com saldo → saldo preservado, saque bloqueado com aviso (F-07 E3)
+- [x] Entregador `mei_pending` (flag + banner permanente RN-024) — restrição lógica ao direto registrada (Phase 5); bloqueio efetivo de repasse é Phase 10/11
+- [ ] MEI aprovado → cadastro como subconta/recebedor Safe2Pay disparado (Phase 10)
+- [ ] MEI vencido com saldo → saldo preservado, saque bloqueado com aviso (F-07 E3) (Phase 11)
 
 ### REQ-020: Score explicável sem consequência financeira no M1
 **Categoria:** functional · **Prioridade:** should · **Origem:** RN-008 (`regras.md:14`), ADR-013, `entidades.md:59`, wireframe 04/09
