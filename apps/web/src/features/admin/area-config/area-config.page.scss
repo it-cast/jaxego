@@ -1,0 +1,219 @@
+// Tela 21A — Configurações da área (UI-SPEC §2). Only semantic vars; AA light+dark.
+
+.jx-area-config {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--jx-space-6) var(--jx-space-5);
+}
+
+.jx-area-config__title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  color: var(--text);
+  margin-bottom: var(--jx-space-6);
+}
+
+.jx-area-config__title em {
+  font-family: var(--jx-font-serif-accent);
+  font-style: italic;
+  color: var(--brand);
+}
+
+.jx-area-config__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-area-config__fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+  background: var(--surface-elevated);
+}
+
+.jx-area-config__fieldset legend {
+  color: var(--text-muted);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 var(--jx-space-2);
+}
+
+// 2-column fieldsets on wider screens (responsive-breakpoint-strategy).
+@media (min-width: 560px) {
+  .jx-area-config__fieldset--2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--jx-space-4);
+  }
+}
+
+.jx-area-config__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-area-config__label {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-area-config__input,
+.jx-area-config__select {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--jx-text-base);
+}
+
+.jx-area-config__input--mono {
+  font-family: var(--jx-font-mono);
+  text-align: right;
+}
+
+.jx-area-config__input:focus-visible,
+.jx-area-config__select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jx-area-config__input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.jx-area-config__error {
+  color: var(--error);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-area-config__saved {
+  color: var(--success);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-area-config__save {
+  min-height: 44px;
+  padding: 0 var(--jx-space-5);
+  border: 0;
+  border-radius: var(--jx-radius-md);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.jx-area-config__save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-area-config__save:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+// Confirmation dialog (sensitive change → audit).
+.jx-area-config__confirm {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  padding: var(--jx-space-5);
+}
+
+.jx-area-config__confirm-card {
+  max-width: 440px;
+  width: 100%;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-5);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-area-config__confirm-title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  color: var(--text);
+}
+
+.jx-area-config__confirm-copy {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-area-config__diff {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-area-config__diff li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-area-config__diff-label {
+  color: var(--text-muted);
+}
+
+.jx-area-config__diff-mono {
+  font-family: var(--jx-font-mono);
+  color: var(--text);
+}
+
+.jx-area-config__confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--jx-space-3);
+}
+
+.jx-area-config__confirm-cancel,
+.jx-area-config__confirm-ok {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  border-radius: var(--jx-radius-md);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-area-config__confirm-cancel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.jx-area-config__confirm-ok {
+  border: 0;
+  background: var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-area-config__confirm-cancel:focus-visible,
+.jx-area-config__confirm-ok:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

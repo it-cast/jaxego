@@ -125,6 +125,20 @@ export const routes: Routes = [
             (m) => m.AdminKycDetalhePage
           ),
       },
+      {
+        path: 'config',
+        loadComponent: () =>
+          import('../features/admin/area-config/area-config.page').then(
+            (m) => m.AreaConfigPage
+          ),
+      },
+      {
+        path: 'bairros',
+        loadComponent: () =>
+          import('../features/admin/neighborhoods/neighborhoods.page').then(
+            (m) => m.NeighborhoodsPage
+          ),
+      },
     ],
   },
   {

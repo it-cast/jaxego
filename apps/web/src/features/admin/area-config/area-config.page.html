@@ -1,0 +1,194 @@
+<main class="jx-area-config">
+  <h1 class="jx-area-config__title">
+    Configurações da <em>área</em> · {{ areaName() }}
+  </h1>
+
+  @if (saveError() && !confirming()) {
+    <jx-error-state
+      [message]="saveError()!"
+      retryLabel="Tentar de novo"
+      (retry)="requestSave()"
+    />
+  }
+
+  <form class="jx-area-config__form" [formGroup]="form" (ngSubmit)="requestSave()">
+    <!-- Validação de entregadores -->
+    <fieldset class="jx-area-config__fieldset">
+      <legend>Validação de entregadores</legend>
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Nível exigido</span>
+        <select class="jx-area-config__select" formControlName="kyc_level">
+          <option value="simples">Simples</option>
+          <option value="completa">Completa</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <!-- Preços e geofence -->
+    <fieldset class="jx-area-config__fieldset jx-area-config__fieldset--2col">
+      <legend>Preços e geofence</legend>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Piso por entrega</span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="decimal"
+          placeholder="R$ 0,00"
+          formControlName="piso_entrega"
+          (input)="onMoneyInput('piso_entrega', $event)"
+        />
+      </label>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Piso por km</span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="decimal"
+          placeholder="R$ 0,00"
+          formControlName="piso_km"
+          (input)="onMoneyInput('piso_km', $event)"
+        />
+      </label>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Raio de geofence (m)</span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="numeric"
+          type="number"
+          min="30"
+          max="300"
+          formControlName="geofence_m"
+          [attr.aria-invalid]="rangeError('geofence_m') ? 'true' : null"
+          [attr.aria-describedby]="rangeError('geofence_m') ? 'geofence-error' : null"
+        />
+        @if (rangeError('geofence_m'); as err) {
+          <p class="jx-area-config__error" id="geofence-error">{{ err }}</p>
+        }
+      </label>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Retorno (%)</span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="numeric"
+          type="number"
+          min="0"
+          max="100"
+          formControlName="politica_retorno_pct"
+          [attr.aria-invalid]="rangeError('politica_retorno_pct') ? 'true' : null"
+          [attr.aria-describedby]="
+            rangeError('politica_retorno_pct') ? 'retorno-error' : null
+          "
+        />
+        @if (rangeError('politica_retorno_pct'); as err) {
+          <p class="jx-area-config__error" id="retorno-error">{{ err }}</p>
+        }
+      </label>
+    </fieldset>
+
+    <!-- Despacho -->
+    <fieldset class="jx-area-config__fieldset jx-area-config__fieldset--2col">
+      <legend>Despacho</legend>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Tempo de oferta (s)</span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="numeric"
+          type="number"
+          min="10"
+          max="60"
+          formControlName="timeout_oferta_s"
+          [attr.aria-invalid]="rangeError('timeout_oferta_s') ? 'true' : null"
+          [attr.aria-describedby]="
+            rangeError('timeout_oferta_s') ? 'oferta-error' : null
+          "
+        />
+        @if (rangeError('timeout_oferta_s'); as err) {
+          <p class="jx-area-config__error" id="oferta-error">{{ err }}</p>
+        }
+      </label>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">Janela de favoritos (s)</span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="numeric"
+          type="number"
+          min="30"
+          max="180"
+          formControlName="timeout_favoritos_s"
+          [attr.aria-invalid]="rangeError('timeout_favoritos_s') ? 'true' : null"
+          [attr.aria-describedby]="
+            rangeError('timeout_favoritos_s') ? 'favoritos-error' : null
+          "
+        />
+        @if (rangeError('timeout_favoritos_s'); as err) {
+          <p class="jx-area-config__error" id="favoritos-error">{{ err }}</p>
+        }
+      </label>
+    </fieldset>
+
+    @if (saved()) {
+      <p class="jx-area-config__saved" role="status">Configurações salvas.</p>
+    }
+
+    <button
+      type="submit"
+      class="jx-area-config__save"
+      [disabled]="saving() || form.invalid"
+      [attr.aria-busy]="saving() ? 'true' : null"
+    >
+      {{ saving() ? 'Salvando…' : 'Salvar configurações (auditado)' }}
+    </button>
+  </form>
+
+  <!-- Sensitive-change confirmation (audit) -->
+  @if (confirming()) {
+    <div
+      class="jx-area-config__confirm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-title"
+    >
+      <div class="jx-area-config__confirm-card">
+        <h2 id="confirm-title" class="jx-area-config__confirm-title">
+          Confirmar alterações
+        </h2>
+        <p class="jx-area-config__confirm-copy">
+          Você está alterando regras da área. Isso fica registrado no histórico
+          (audit). Confirmar?
+        </p>
+        @if (sensitiveDiff().length > 0) {
+          <ul class="jx-area-config__diff">
+            @for (row of sensitiveDiff(); track row.label) {
+              <li>
+                <span class="jx-area-config__diff-label">{{ row.label }}</span>
+                <span class="jx-area-config__diff-mono">
+                  {{ row.before }} → {{ row.after }}
+                </span>
+              </li>
+            }
+          </ul>
+        }
+        <div class="jx-area-config__confirm-actions">
+          <button
+            type="button"
+            class="jx-area-config__confirm-cancel"
+            (click)="cancelConfirm()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="jx-area-config__confirm-ok"
+            (click)="confirmSave()"
+          >
+            Confirmar e salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</main>
