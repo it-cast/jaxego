@@ -22,11 +22,14 @@ key is generated server-side and contains NO CPF (TH-11).
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
     ForeignKey,
     Index,
+    Integer,
+    Numeric,
     String,
     UniqueConstraint,
 )
@@ -34,6 +37,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
+
+# Coverage row kinds (Pattern 3 — RN-003).
+COVERAGE_KINDS = ("include", "exclude")
+
+# Pricing modes (A3): per-neighborhood OR per-km band.
+PRICING_MODES = ("neighborhood", "km")
 
 # Courier state machine values (D-08). Transitions live in `state_machine.py`.
 COURIER_STATUSES = ("pending_kyc", "active", "suspended", "banned")
@@ -100,6 +109,12 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
     mei_cnpj: Mapped[str | None] = mapped_column(String(14), nullable=True)
     mei_pending: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # Availability (Phase 6, D-06): online/offline is persisted; `busy` is DERIVED
+    # from the load (active deliveries vs max_concurrent) — NOT a column. Only an
+    # `active` courier may go online (guarded in availability.py).
+    is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
     # LGPD retention bookkeeping (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
@@ -156,3 +171,70 @@ class CourierDocument(Base, AreaScopedMixin, TimestampMixin):
     # LGPD retention (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+
+
+class CourierCoverageArea(Base, AreaScopedMixin, TimestampMixin):
+    """The neighborhoods a courier serves / refuses (RN-003, REQ-016).
+
+    Area-scoped; `kind` is 'include' | 'exclude'. UNIQUE (courier_id,
+    neighborhood_id) → one row per neighborhood per courier. Eligibility requires
+    coverage at BOTH the pickup and the dropoff (see coverage.is_eligible).
+    """
+
+    __tablename__ = "courier_coverage_areas"
+    __table_args__ = (
+        UniqueConstraint(
+            "courier_id",
+            "neighborhood_id",
+            name="uq_courier_coverage_areas_courier_id_neighborhood_id",
+        ),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    courier_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("couriers.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    neighborhood_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("neighborhoods_catalog.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    kind: Mapped[str] = mapped_column(String(8), nullable=False)
+
+
+class CourierPricingTable(Base, AreaScopedMixin, TimestampMixin):
+    """The courier's freight table (RN-015, REQ-017) — by neighborhood OR by km.
+
+    The platform NEVER fixes the price; it only imposes the area floor (validated
+    in pricing.py). `price`/`up_to_km`/`return_pct` are `Numeric` (never Float).
+    `neighborhood_id` is set only in mode 'neighborhood'; `up_to_km` only in mode
+    'km'.
+    """
+
+    __tablename__ = "courier_pricing_tables"
+    __table_args__ = (
+        Index("ix_courier_pricing_tables_courier_id_mode", "courier_id", "mode"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    courier_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("couriers.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    neighborhood_id: Mapped[int | None] = mapped_column(
+        BIG_ID,
+        ForeignKey("neighborhoods_catalog.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=True,
+    )
+    up_to_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    return_pct: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)

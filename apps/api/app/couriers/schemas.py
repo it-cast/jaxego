@@ -8,6 +8,7 @@ logged (TH-05).
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -167,3 +168,67 @@ class DocumentReviewResponse(BaseModel):
     document_id: int
     status: Literal["approved", "rejected"]
     courier_status: CourierStatus
+
+
+# ---------------------------------------------------------------------------
+# Phase 6 — coverage / pricing / availability (área operável)
+# ---------------------------------------------------------------------------
+PricingMode = Literal["neighborhood", "km"]
+
+
+class CoverageBody(BaseModel):
+    """The neighborhoods the courier serves (include) / refuses (exclude)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    includes: list[int] = Field(default_factory=list)
+    excludes: list[int] = Field(default_factory=list)
+
+
+class CoverageRowRead(BaseModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    neighborhood_id: int
+    kind: Literal["include", "exclude"]
+
+
+class PricingRow(BaseModel):
+    """One freight-table row. `price`/`return_pct` are Decimal (never float)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    neighborhood_id: int | None = None
+    up_to_km: Decimal | None = Field(default=None, ge=0)
+    price: Decimal = Field(ge=0)
+    # % return on the run — 0..100 (Security item 4).
+    return_pct: int | None = Field(default=None, ge=0, le=100)
+
+
+class PricingBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mode: PricingMode
+    rows: list[PricingRow] = Field(default_factory=list)
+
+
+class PricingRowRead(BaseModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    mode: PricingMode
+    neighborhood_id: int | None
+    up_to_km: Decimal | None
+    price: Decimal
+    return_pct: Decimal | None
+
+
+class AvailabilityBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    online: bool
+
+
+class AvailabilityResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    is_online: bool
+    busy: bool
