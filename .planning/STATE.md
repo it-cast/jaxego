@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ingest completo. Nenhuma execução iniciada.
-last_updated: "2026-06-10T12:35:49.960Z"
-last_activity: "2026-06-10 — `/gsd:ingest` gerou `.planning/`, `docs/`, `design-system/` e `DISCOVERY-REPORT.md`."
+status: Phase 2 executada (auth + multi-área + RBAC). Trigger append-only @mysql pendente de verificação ao vivo.
+last_updated: "2026-06-10T14:30:00.000Z"
+last_activity: "2026-06-10 — Executada a Phase 2 (16 tasks T-01..T-16). Gates locais verdes; @pytest.mark.mysql pendente de run ao vivo."
 progress:
   total_phases: 14
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 2
+  total_plans: 1
+  completed_plans: 1
+  percent: 14
 ---
 
 # STATE — Current Execution State
@@ -40,11 +40,11 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 
 ## Current Position
 
-- **Phase:** 1 of 14 — Fundação técnica (repo, infra, API skeleton)
-- **Status:** Ingest completo. Nenhuma execução iniciada.
-- **Last activity:** 2026-06-10 — `/gsd:ingest` gerou `.planning/`, `docs/`, `design-system/` e `DISCOVERY-REPORT.md`.
+- **Phase:** 2 of 14 — Núcleo multi-área + autenticação + RBAC (executada)
+- **Status:** 16/16 tasks concluídas. ruff/format/basedpyright/pytest (-m "not mysql") verdes. **Pendente:** rodar `pytest -m mysql tests/test_audit_append_only.py` contra MySQL 8 real (trigger append-only, critério de aceite ROADMAP REQ-004).
+- **Last activity:** 2026-06-10 — Execução da Phase 2. Ver `phases/02-.../EXECUTION-LOG.md`.
 
-**Progress:** `[░░░░░░░░░░░░░░] 0% (0 of 14 phases complete)`
+**Progress:** `[██░░░░░░░░░░░░] 14% (2 of 14 phases complete)`
 
 ## Atenção antes de executar
 

@@ -2,7 +2,9 @@
 
 > Gerado por `gsd-project-ingestor` em 2026-06-10 a partir de `projeto/`. Cada REQ cita a fonte.
 > Prioridade MoSCoW. Itens `[ASSUMIDO]` aguardam validação humana; itens `[DECIDIR]` são Open Questions (ver DISCOVERY-REPORT.md).
-> Status de implementação: todos `not_started`.
+> Status de implementação: Phase 1 (infra) + Phase 2 (auth/multi-área/RBAC) executadas.
+> REQ-001/002/004/005/006/007 implementados na Phase 2 (ver `phases/02-.../EXECUTION-LOG.md`).
+> Ressalvas: REQ-004 critério "trigger nega UPDATE/DELETE" verificado por `@pytest.mark.mysql` (pendente run ao vivo contra MySQL 8); `delivery_state_transitions` é de phase futura. REQ-002 "config sem deploy" e REQ-006 "CPF por área (entregador)" parcialmente diferidos para as phases de cadastro de loja/entregador (4/5) — nesta phase: CRUD de área (admin plataforma), email/CPF únicos em `users`, mensagem de colisão genérica.
 
 ---
 
