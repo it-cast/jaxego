@@ -1,0 +1,36 @@
+.jx-skeleton {
+  display: block;
+  background: var(--surface-sunken);
+  border-radius: var(--jx-radius-md);
+  animation: jx-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.jx-skeleton--line {
+  height: var(--jx-text-base);
+  width: 100%;
+  border-radius: var(--jx-radius-sm);
+}
+
+.jx-skeleton--block {
+  height: 96px;
+  width: 100%;
+  border-radius: var(--jx-radius-lg);
+}
+
+.jx-skeleton--circle {
+  width: var(--jx-space-7);
+  height: var(--jx-space-7);
+  border-radius: var(--jx-radius-full);
+}
+
+@keyframes jx-skeleton-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-skeleton {
+    animation: none;
+  }
+}

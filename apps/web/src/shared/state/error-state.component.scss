@@ -1,0 +1,53 @@
+.jx-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3);
+  background: var(--error-bg);
+  color: var(--error);
+  border-left: 3px solid var(--error);
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-error__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--jx-text-lg);
+  height: var(--jx-text-lg);
+  border-radius: var(--jx-radius-full);
+  background: var(--error);
+  color: var(--brand-contrast);
+  font-weight: var(--jx-weight-bold);
+  font-size: var(--jx-text-sm);
+  line-height: 1;
+}
+
+.jx-error__message {
+  flex: 1 1 auto;
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  color: var(--error);
+  align-self: center;
+}
+
+.jx-error__retry {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: var(--jx-space-1) var(--jx-space-3);
+  background: transparent;
+  color: var(--error);
+  border: 1px solid var(--error);
+  border-radius: var(--jx-radius-md);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-error__retry:hover {
+  background: var(--error);
+  color: var(--brand-contrast);
+}
