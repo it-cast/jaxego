@@ -350,6 +350,17 @@ async def validate_mei(
         area_id=courier.area_id,
         after={"courier_id": courier.id, "mei_pending": courier.mei_pending},
     )
+
+    # Phase 10 (RN-010): a now-active MEI registers a Safe2Pay subaccount so the delivery
+    # split can pay the courier's corrida. Degrades gracefully if the API is unavailable.
+    if not courier.mei_pending:
+        from app.couriers.subaccount import register_subaccount_on_mei_active
+        from app.payments.factory import get_payment_adapter
+
+        await register_subaccount_on_mei_active(
+            session, courier=courier, payment=get_payment_adapter()
+        )
+
     return courier.mei_pending
 
 
