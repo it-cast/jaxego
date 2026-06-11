@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from arq import cron
 from arq.connections import RedisSettings
 
 from app.core.config import settings
@@ -25,6 +26,11 @@ from app.workers.document_expiry import (
     expire_documents_task,
 )
 from app.workers.document_reprocess import reprocess_document_task
+from app.workers.lifecycle import (
+    absent_timeout,
+    finalize_deliveries,
+    purge_locations,
+)
 from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import healthcheck
 
@@ -54,4 +60,14 @@ class WorkerSettings:
         send_push_task,
         # Phase 9: multichannel recipient notifications (RN-018 / RN-031).
         notify_task,
+    ]
+
+    # Phase 9 cron jobs (idempotent; failure does not derail the worker).
+    cron_jobs = [
+        # FINALIZADA 24h after ENTREGUE with no open dispute (D-06) — every 5 min.
+        cron(finalize_deliveries, minute=set(range(0, 60, 5))),
+        # Purge delivery_locations of terminal deliveries >24h (LGPD) — hourly.
+        cron(purge_locations, minute={7}),
+        # "ausente" >10min → enable return (D-07 E2) — every minute.
+        cron(absent_timeout, minute=set(range(0, 60))),
     ]
