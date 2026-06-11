@@ -396,7 +396,8 @@
 
 ## Phase 14: Hardening, APK, LGPD e release piloto
 
-**Milestone:** MS-05 · **Tipo:** release · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-05 · **Tipo:** release · **Status:** complete (2026-06-11, dev/test; deploy gated por RELEASE-CHECKLIST) · **Estimativa:** L (1-2sem)
+> ✅ Executada 2026-06-11 (autopilot). Jobs LGPD (anonimização 12m + exclusão 30d), infra LLM (router+ai_usage_log, Stub no M1), refino ETA, CI com gates web+APK debug, PERF-REPORT, RELEASE-CHECKLIST (B-01 contrato Safe2Pay = BLOCKER de go-live cartão/PIX). Migration 0012. +18 testes; suíte completa verde. TD-14-01..04. Ver `phases/14-.../RELEASE-CHECKLIST.md`.
 
 ### REQs cobertos
 - REQ-051: APK Capacitor `[ASSUMIDO]` · REQ-048: jobs LGPD · REQ-053: infra LLM (router + ai_usage_log) · REQ-050 (completo): p95/LCP validados · REQ-054 (refino): fallbacks de ETA

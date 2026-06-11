@@ -41,12 +41,12 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 ## Current Position
 
 - **Milestone:** MS-04 (Financeiro checkout + integrações) — em andamento
-- **Phase atual:** 13 of 14 — Governança — ✅ COMPLETA dev/test (autopilot). Score explicável (peso 0 no M1), avaliações, suspensão/recurso+SLA, admin plataforma cross-área auditado, shell de disputas. 25+39 testes. Pendente `pytest -m mysql` 0011.
-- **Próxima Phase:** 14 of 14 — Hardening, APK, LGPD e release piloto (**deploy**) — depende de [12, 13] ✓
-- **Ordem de build pós-DEC-004:** ~~12~~ → ~~13~~ → 14 (deploy) → 15 (Safe2Pay financeiro back-office, pós-deploy)
-- **Last activity:** 2026-06-11 — Phase 13 fechada (autopilot): governança completa. ADR-013 isolamento provado. TD-13-01 (revenue share %), TD-13-02/03.
+- **Phase atual:** 14 of 14 — Hardening/release — ✅ COMPLETA dev/test (autopilot). LGPD jobs, infra LLM, refino ETA, CI gates web+APK, RELEASE-CHECKLIST. +18 testes; suíte completa verde. **Deploy gated por RELEASE-CHECKLIST (B-01 contrato Safe2Pay).**
+- **Próxima Phase:** 15 of 15 — Safe2Pay financeiro back-office (fatura/disputas/saques) [PÓS-DEPLOY, MS-06] — depende de [14] ✓
+- **Ordem de build pós-DEC-004:** ~~12~~ → ~~13~~ → ~~14~~ (deploy) → 15 (Safe2Pay financeiro, pós-deploy) ← ÚLTIMA
+- **Last activity:** 2026-06-11 — Phase 14 fechada (autopilot): hardening/release. MS-05 completo. TD-14-01..04. Falta só a Phase 15 (back-office financeiro).
 
-**Progress:** [█████████░] 86%
+**Progress:** [█████████░] 93%
 
 ## MS-01 — entregue
 
