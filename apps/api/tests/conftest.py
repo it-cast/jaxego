@@ -20,6 +20,7 @@ import pytest
 import pytest_asyncio
 
 # Import every model so Base.metadata is complete before create_all.
+from app.ai.models import AiUsageLog  # noqa: F401 (registers mapper — Phase 14)
 from app.api_keys.models import (  # noqa: F401 (registers mappers — Phase 12)
     ApiIdempotencyKey,
     ApiKey,

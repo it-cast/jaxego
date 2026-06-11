@@ -134,6 +134,20 @@ class Settings(BaseSettings):
     # Revenue share default (OQ-1 / A7) — parametrised, never hardcoded in code.
     revenue_share_default_pct: int = Field(default=20)
 
+    # --- LLM infra (Phase 14 — REQ-053 / D-03) — INFRA ONLY, no AI feature in M1 ---
+    # The router selects a provider/model per task. In dev/test the factory returns the
+    # deterministic StubProvider (no network, no key). The ANTHROPIC_API_KEY is a SECRET
+    # provided ONLY via env (Field default None — Gate 8 FAIL-BLOCK + TH-01 if a real value
+    # lands in the repo; if committed, ROTATE). It is NEVER logged (TH-01) and NEVER part of
+    # `ai_usage_log` (TH-03). `llm_provider` forces the Stub when set to "stub" (default in
+    # dev/test) regardless of environment, so no AI is ever wired in the M1 pilot.
+    llm_provider: Literal["stub", "claude"] = Field(default="stub")
+    anthropic_api_key: str | None = Field(default=None)
+    # Default models per task class (D-03): the most capable family for reasoning, the
+    # cheap/high-volume family for bulk. Parametrised so the router never hardcodes a model.
+    llm_model_reasoning: str = Field(default="claude-opus-4-5")
+    llm_model_bulk: str = Field(default="claude-haiku-4-5")
+
 
 @lru_cache
 def get_settings() -> Settings:
