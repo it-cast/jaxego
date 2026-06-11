@@ -1,0 +1,71 @@
+// jx-favorite-row — list row with reorder + remove. Tokens only — no hex (Gate 2).
+// Touch targets ≥44px on the action buttons.
+
+.jx-favorite-row {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3);
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+
+// Position is editorial-technical (mono).
+.jx-favorite-row__pos {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-favorite-row__name {
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-favorite-row__stats {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-favorite-row__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+}
+
+.jx-favorite-row__move {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--jx-text-md);
+  cursor: pointer;
+}
+
+.jx-favorite-row__move:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.jx-favorite-row__remove {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--error);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--error);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  cursor: pointer;
+}
+
+.jx-favorite-row__move:focus-visible,
+.jx-favorite-row__remove:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

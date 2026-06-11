@@ -1,0 +1,37 @@
+// Tela 15 — Favoritos e bloqueados. Web responsivo, desktop-first. Tokens only —
+// no hex (Gate 2).
+
+.jx-favoritos {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--jx-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-favoritos__hint {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-favoritos__card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+}
+
+.jx-favoritos__title {
+  margin: 0 0 var(--jx-space-3);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-favoritos__list {
+  margin: 0;
+  padding: 0;
+}

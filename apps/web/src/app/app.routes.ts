@@ -125,6 +125,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../features/loja/entregas/entregas-list.page').then((m) => m.EntregasListPage),
       },
+      // Phase 8 (F-05): favoritos e bloqueados (tela 15).
+      {
+        path: 'favoritos',
+        loadComponent: () =>
+          import('../features/loja/favoritos/favoritos.page').then((m) => m.FavoritosPage),
+      },
     ],
   },
   {

@@ -1,0 +1,47 @@
+// jx-blocked-row — list row with unblock. Tokens only — no hex (Gate 2).
+
+.jx-blocked-row {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-3);
+  border-bottom: 1px solid var(--border);
+  list-style: none;
+}
+
+.jx-blocked-row__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jx-blocked-row__name {
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-blocked-row__detail {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-blocked-row__unblock {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  cursor: pointer;
+}
+
+.jx-blocked-row__unblock:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
