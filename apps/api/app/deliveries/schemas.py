@@ -80,6 +80,12 @@ class CreateDeliveryBody(BaseModel):
     proof_method: ProofMethod = ProofMethod.photo
     payment_method: PaymentMethod
 
+    # --- Online payment (Phase 10 — card/pix only). card_blob is the OPAQUE RSA-OAEP
+    # ciphertext from the client; the raw card NEVER arrives here (A09). ---
+    card_blob: str | None = Field(default=None, max_length=4096)
+    payer_document: str | None = Field(default=None, max_length=14)
+    payer_email: EmailStr | None = None
+
 
 class DeliveryOut(BaseModel):
     """Store-facing delivery view. Recipient phone is MASKED (TH-04).

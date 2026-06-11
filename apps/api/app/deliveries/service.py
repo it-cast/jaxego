@@ -272,11 +272,30 @@ async def create_delivery(
     body: CreateDeliveryBody,
     ip: str | None,
     pickup_nbhd_id: int | None = None,
+    payment_service: object | None = None,
+    card_blob: str | None = None,
+    customer_document: str | None = None,
+    customer_email: str | None = None,
 ) -> CreateDeliveryResponse:
-    """Create a delivery in CRIADA (F-03, direct modality). Server derives state/fee."""
-    # D-02: only `direct` is enabled in Phase 7.
-    if body.payment_method.value != "direct":
+    """Create a delivery in CRIADA (F-03). `direct` is free; card/pix charges first.
+
+    For `card`/`pix` (Phase 10): the platform charges corrida+taxa with a split BEFORE the
+    delivery is inserted. A refusal/outage raises `PaymentGatewayError` and the delivery is
+    NOT created (F-03 E3 — the caller never reaches the insert). `direct` is untouched, so a
+    gateway outage never blocks it (circuit breaker — REQ-034). The split/charge wiring is
+    delegated to the injected `payment_service` (a `PaymentService`); when absent (default),
+    only `direct` is accepted.
+    """
+    method = body.payment_method.value
+    # Phase 7 left card/pix "em breve"; Phase 10 activates them only when a payment service
+    # is wired. Without it (legacy callers), card/pix is still unavailable.
+    if method != "direct" and payment_service is None:
         raise PaymentMethodNotAvailableError()
+
+    # Subscription guard (SAAS-BILLING §9): blocked/cancelado stores cannot create.
+    from app.payments.subscriptions import assert_subscription_active
+
+    await assert_subscription_active(session, merchant_id=merchant_id, area_id=area_id)
 
     # E1: the dropoff neighborhood must be in the area catalog.
     await _resolve_dropoff_neighborhood(
@@ -310,7 +329,7 @@ async def create_delivery(
         recipient_id=recipient.id,
         state="CRIADA",
         dispatch_mode="direct",
-        payment_method="direct",
+        payment_method=method,
         proof_method=body.proof_method.value,
         pickup_address=body.pickup_address,
         pickup_neighborhood=body.pickup_neighborhood,
@@ -332,6 +351,29 @@ async def create_delivery(
     )
     session.add(delivery)
     await session.flush()
+
+    # Card/PIX (Phase 10): charge corrida+taxa with a split BEFORE finalising. A refusal/
+    # outage raises PaymentGatewayError → the caller's transaction rolls back and the
+    # delivery is NOT created (F-03 E3). `direct` skips this entirely (circuit breaker).
+    if method != "direct" and payment_service is not None:
+        from app.payments.service import PaymentService
+
+        assert isinstance(payment_service, PaymentService)
+        corrida_cents = estimate or 0
+        plan = await _active_plan(session, merchant_id=merchant_id, area_id=area_id)
+        taxa_cents = plan.fee_cents
+        await payment_service.charge_delivery(
+            area_id=area_id,
+            delivery_id=delivery.id,
+            corrida_cents=corrida_cents,
+            taxa_cents=taxa_cents,
+            courier_recipient="",  # resolved on acceptance (Phase 8); split recipient set later
+            method=method,
+            customer_name=recipient.name,
+            customer_document=customer_document or "",
+            customer_email=customer_email or (recipient.email or ""),
+        )
+        delivery.fee_cents = taxa_cents
 
     # Initial transition None → CRIADA (the single writer of state).
     await transition(

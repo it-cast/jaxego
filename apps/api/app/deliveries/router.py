@@ -72,8 +72,16 @@ async def create_delivery(
     session: SessionDep,
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
 ) -> CreateDeliveryResponse:
-    """Create a delivery (F-03, direct modality). Rate-limited per store (TH-07)."""
+    """Create a delivery (F-03). `direct` is free; card/pix charges a split first (E3)."""
     delivery_create_limiter.check(f"merchant:{scope.merchant_id}")
+    # Phase 10: wire the PaymentService for card/pix (circuit breaker: a gateway outage
+    # surfaces as a handled error on card/pix and NEVER blocks `direct`).
+    payment_service = None
+    if body.payment_method.value != "direct":
+        from app.payments.factory import get_payment_adapter
+        from app.payments.service import PaymentService
+
+        payment_service = PaymentService(session, payment=get_payment_adapter())
     result = await service.create_delivery(
         session,
         area_id=scope.area_id,
@@ -81,6 +89,10 @@ async def create_delivery(
         actor_user_id=scope.user_id,
         body=body,
         ip=_client_ip(request),
+        payment_service=payment_service,
+        card_blob=body.card_blob,
+        customer_document=body.payer_document,
+        customer_email=str(body.payer_email) if body.payer_email else None,
     )
     await session.commit()
     # Kick off the cascade (Phase 8) — enqueued, never inline (RN-009 / D-01).

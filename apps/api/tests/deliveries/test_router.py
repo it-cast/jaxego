@@ -65,14 +65,20 @@ async def test_create_list_get_cancel_flow(delivery_seed, auth_client) -> None:
 
 
 @pytest.mark.asyncio
-async def test_card_payment_returns_422(delivery_seed, auth_client) -> None:
+async def test_card_payment_now_active(delivery_seed, auth_client) -> None:
+    """Phase 10 (REQ-034): card is now ACTIVE — the Stub approves → delivery created (201).
+
+    Phase 7 rejected card/pix with 422 ("em breve"); Phase 10 charges a split first and,
+    on approval, the delivery is born CRIADA. A refusal would NOT create the delivery
+    (F-03 E3), exercised in tests/payments/test_split.py.
+    """
     tokens = await login(auth_client, delivery_seed.owner_email, delivery_seed.password)
     headers = bearer(tokens["access_token"])
     payload = _payload(delivery_seed)
     payload["payment_method"] = "card"
     resp = await auth_client.post("/v1/deliveries", json=payload, headers=headers)
-    assert resp.status_code == 422
-    assert resp.json()["error"]["code"] == "payment_method_unavailable"
+    assert resp.status_code == 201
+    assert resp.json()["state"] == "CRIADA"
 
 
 @pytest.mark.asyncio

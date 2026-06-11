@@ -57,3 +57,8 @@ api_router.include_router(locations_router)
 api_router.include_router(proofs_router)
 api_router.include_router(push_subscriptions_router)
 api_router.include_router(payments_direct_router)
+
+# Phase 10 domain sub-router (Safe2Pay núcleo — chave-pública/assinatura/cobrança/estorno).
+from app.payments.router import router as payments_router  # noqa: E402
+
+api_router.include_router(payments_router)
