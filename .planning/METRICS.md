@@ -234,3 +234,36 @@ what_missing: "<FILL — 1 linha>"
 framework_effort: <FILL 1-5>
 framework_value: <FILL 1-5>
 ```
+
+### 09-execu-o-comprova-o-tracking-p-blico-e-notifica-es
+
+```yaml
+phase_id: 09-execu-o-comprova-o-tracking-p-blico-e-notifica-es
+started_at: <FILL_AUTO>
+closed_at: 2026-06-11T02:14:31Z
+duration_days: <FILL>
+
+plan_revisions: 0
+skills_cited: []
+skills_dispensed: []
+plan_checker_blocks: <FILL>
+
+tasks_total: 0
+tasks_completed: 0
+gates_passed: <FILL>
+gates_bypassed: <FILL>
+reconcile_runs: 1
+reconcile_divergences_found: <FILL>
+
+fix_iterations: 5
+bugs_reported_7d: <FILL>
+bugs_severity_high: <FILL>
+rollback: <FILL>
+
+what_worked: "<FILL — 1 linha>"
+what_hurt: "<FILL — 1 linha>"
+what_missing: "<FILL — 1 linha>"
+
+framework_effort: <FILL 1-5>
+framework_value: <FILL 1-5>
+```

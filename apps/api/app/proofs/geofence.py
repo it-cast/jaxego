@@ -74,6 +74,7 @@ async def within_radius(
     radius_m: int,
 ) -> bool:
     """True if the proof point is within `radius_m` of the target (RN-005 / TH-1)."""
-    return await distance_m(
-        session, lat=lat, lng=lng, target_lat=target_lat, target_lng=target_lng
-    ) <= radius_m
+    return (
+        await distance_m(session, lat=lat, lng=lng, target_lat=target_lat, target_lng=target_lng)
+        <= radius_m
+    )
