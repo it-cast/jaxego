@@ -1,0 +1,23 @@
+// jx-geofence-pill — neutral surface + vivid verdict color. Text+icon carry meaning;
+// color reinforces. Tokens only — no hex (Gate 2).
+
+.jx-geofence-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  min-height: 44px; // touch / readability (accessibility-pro)
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--pill-color);
+  color: var(--pill-color);
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  line-height: 1.3;
+}
+
+.jx-geofence-pill__icon {
+  font-size: var(--jx-text-base);
+  line-height: 1;
+}

@@ -1,0 +1,21 @@
+// jx-pending-upload-banner — reassurance (not error). Tokens only — no hex (Gate 2).
+
+.jx-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-radius: var(--jx-radius-md);
+  background: var(--info-bg);
+  border: 1px solid var(--info);
+  color: var(--text);
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-sm);
+  line-height: 1.4;
+}
+
+.jx-pending__icon {
+  flex: none;
+  color: var(--info);
+  font-size: var(--jx-text-base);
+}

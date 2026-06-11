@@ -1,0 +1,59 @@
+// jx-direct-payment-confirm — deliberate radio/buttons (no swipe). ≥52px targets.
+// Tokens only — no hex (Gate 2).
+
+.jx-dpc {
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+  margin: 0;
+  background: var(--surface-elevated);
+}
+
+.jx-dpc__legend {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+  padding: 0;
+}
+
+.jx-dpc__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  margin-top: var(--jx-space-3);
+}
+
+.jx-dpc__btn {
+  min-height: 52px; // critical operation target (gesture-touch)
+  border-radius: var(--jx-radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-medium);
+  cursor: pointer;
+
+  &--ok {
+    border-color: var(--success);
+    color: var(--success);
+  }
+  &--no {
+    border-color: var(--border-strong);
+    color: var(--text-muted);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-dpc__hint {
+  margin: var(--jx-space-3) 0 0;
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+  line-height: 1.4;
+}

@@ -1,0 +1,48 @@
+// jx-notice — toast surface. Tone tints the icon/border; text always present.
+// Tokens only — no hex (Gate 2).
+
+.jx-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--info);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-sm);
+  line-height: 1.4;
+
+  &--success {
+    border-left-color: var(--success);
+  }
+  &--warning {
+    border-left-color: var(--warning);
+  }
+  &--error {
+    border-left-color: var(--error);
+  }
+}
+
+.jx-notice__icon {
+  flex: none;
+  font-size: var(--jx-text-base);
+  line-height: 1.4;
+}
+
+.jx-notice__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jx-notice__title {
+  font-weight: var(--jx-weight-semibold);
+}
+
+.jx-notice__message {
+  color: var(--text-muted);
+}

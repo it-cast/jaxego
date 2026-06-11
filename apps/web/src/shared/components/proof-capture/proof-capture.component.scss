@@ -1,0 +1,8 @@
+// jx-proof-capture — stacks the geofence pill above the reused doc-upload.
+// Tokens only — no hex (Gate 2).
+
+.jx-proof-capture {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}

@@ -1,0 +1,35 @@
+// jx-live-map — reserved-height host + skeleton (no CLS). Dark mode via raster filter.
+// Tokens only — no hex (Gate 2).
+
+.jx-live-map {
+  position: relative;
+  width: 100%;
+  height: 240px; // reserved height — skeleton fills it so the map mount has no CLS
+  border-radius: var(--jx-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+
+  // Dark mode (DEC-001): invert+hue the raster tiles so OSM reads in the dark theme.
+  &--dark .jx-live-map__host {
+    filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+  }
+}
+
+.jx-live-map__host {
+  position: absolute;
+  inset: 0;
+}
+
+.jx-live-map__skeleton {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-sunken);
+}
+
+// MapLibre injects its own canvas/controls; keep the attribution legible in both
+// themes (it sits above the filtered tiles, unaffected by the host filter).
+:host ::ng-deep .maplibregl-ctrl-attrib {
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-2xs);
+}

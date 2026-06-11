@@ -1,0 +1,70 @@
+// jx-tracking-timeline — vertical timeline. Shape + label carry meaning; persimmon
+// marks only the current step. Tokens only — no hex (Gate 2).
+
+.jx-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.jx-timeline__step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-3);
+  padding-bottom: var(--jx-space-4);
+  position: relative;
+  color: var(--text-muted);
+
+  // Connecting line between markers.
+  &:not(:last-child) .jx-timeline__marker::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 1.4em;
+    bottom: calc(-1 * var(--jx-space-4));
+    width: 1px;
+    transform: translateX(-50%);
+    background: var(--border-strong);
+  }
+
+  &--done {
+    color: var(--text);
+    .jx-timeline__marker {
+      color: var(--success);
+    }
+  }
+
+  &--current {
+    color: var(--text);
+    .jx-timeline__marker {
+      color: var(--brand); // persimmon accent — current step only
+    }
+    .jx-timeline__label {
+      font-weight: var(--jx-weight-semibold);
+    }
+  }
+}
+
+.jx-timeline__marker {
+  flex: none;
+  position: relative;
+  font-size: var(--jx-text-base);
+  line-height: 1.4;
+  color: var(--text-subtle);
+}
+
+.jx-timeline__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-timeline__time {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}

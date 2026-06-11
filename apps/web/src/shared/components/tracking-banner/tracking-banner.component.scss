@@ -1,0 +1,25 @@
+// jx-tracking-banner — state headline + mono ETA. No gradient/glass (anti-AI-slop).
+// Tokens only — no hex (Gate 2).
+
+.jx-track-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+  padding: var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+}
+
+.jx-track-banner__headline {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-track-banner__eta {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
