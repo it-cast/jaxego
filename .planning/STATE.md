@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-06-11T02:00:00.000Z"
-last_activity: "2026-06-11 — MS-03 (Coracao transacional) COMPLETO. Phase 9 fechada e verificada ao vivo (migration 0008 reversivel apos fix revision-id; geofence ST_Distance_Sphere; tracking publico sem PII). 326+5+121 testes. Mapa ao vivo DEC-002 entregue. Proximo: MS-04 (Phase 10 Safe2Pay) — BLOQUEADO por OQ-3."
+last_updated: "2026-06-11T04:00:00.000Z"
+last_activity: "2026-06-11 — Phase 10 (Safe2Pay nucleo) COMPLETA em dev/test (verificada ao vivo: migration 0009 reversivel, cripto/split/escrow/idempotencia via Stub). 370+17+121 testes. OQ-3 resolvida como DEC-003 (suposicoes); PRODUCAO pendente do contrato Safe2Pay (TD-10-01..04 pre_launch). Proximo: Phase 11 (fatura/disputas/saques)."
 progress:
   total_phases: 14
-  completed_phases: 9
-  total_plans: 9
-  completed_plans: 9
-  percent: 64
+  completed_phases: 10
+  total_plans: 10
+  completed_plans: 10
+  percent: 71
 ---
 
 # STATE — Current Execution State
@@ -21,14 +21,14 @@ progress:
 ---
 
 ```yaml
-milestone: MS-03
-milestone_name: Coração transacional (entregas)
-status: complete
+milestone: MS-04
+milestone_name: Pagamentos + API publica
+status: in_progress
 release_target: v1.0 (piloto Pádua)
 progress:
   total_phases: 14
-  completed_phases: 9
-  percent: 64
+  completed_phases: 10
+  percent: 71
 ```
 
 ## Project Reference

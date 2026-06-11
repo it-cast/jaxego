@@ -298,8 +298,8 @@
 
 ## Phase 10: Safe2Pay núcleo — assinaturas, cobrança com split, escrow, estornos
 
-**Milestone:** MS-04 · **Tipo:** integration · **Status:** not_started · **Estimativa:** L (1-2sem)
-**⚠ BLOQUEADA por OQ-3 até validação do contrato Safe2Pay (split, prazo de repasse, taxas).**
+**Milestone:** MS-04 · **Tipo:** integration · **Status:** complete (2026-06-11, dev/test; produção pendente contrato Safe2Pay TD-10-01..04) · **Estimativa:** L (1-2sem)
+**✅ OQ-3 resolvida como DEC-003 (suposições documentadas); código verde com Stub, produção pendente do contrato.
 
 ### REQs cobertos
 - REQ-010: assinatura recorrente · REQ-011: upgrade pro-rata/downgrade `[ASSUMIDO RN-029]` · REQ-034: cobrança por entrega com split · REQ-036: escrow 24h · REQ-029 (financeiro): estornos · REQ-019 (completo): subconta do entregador
