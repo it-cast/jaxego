@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: MS-03
-milestone_name: Coração transacional (entregas)
+milestone: v1.0
+milestone_name: milestone
 status: in_progress
-last_updated: "2026-06-11T01:00:00.000Z"
-last_activity: "2026-06-11 — Phase 8 COMPLETA e verificada ao vivo (aceite unico 10/10 stress: 1 vencedor; migration 0007 reversivel; RN-013 privacidade). 266+104 testes. MS-03 2/3. Proximo: Phase 9 (execucao + comprovacao foto+GPS + tracking com mapa ao vivo DEC-002)."
+last_updated: "2026-06-11T02:50:00.000Z"
+last_activity: "2026-06-11 — Phase 9 EXECUTADA (a maior do MS-03, 19 tasks): comprovação foto+EXIF/GPS antifraude (oposto do KYC), tracking público sem auth + mapa MapLibre lazy, notificações multicanal, jobs de ciclo, migration 0008 reversível. 326 testes backend (not-mysql) + 121 frontend. Pendente ao vivo: geofence ST_Distance_Sphere + migration 0008 (pytest -m mysql)."
 progress:
   total_phases: 14
-  completed_phases: 8
-  total_plans: 8
-  completed_plans: 8
-  percent: 57
+  completed_phases: 9
+  total_plans: 9
+  completed_plans: 9
+  percent: 64
 ---
 
 # STATE — Current Execution State
@@ -27,8 +27,8 @@ status: in_progress
 release_target: v1.0 (piloto Pádua)
 progress:
   total_phases: 14
-  completed_phases: 8
-  percent: 57
+  completed_phases: 9
+  percent: 64
 ```
 
 ## Project Reference
@@ -41,11 +41,11 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 ## Current Position
 
 - **Milestone:** MS-03 (Coração transacional — entregas) — em andamento
-- **Phase atual:** 7 of 14 — Criação de entrega + máquina de estados (modalidade direta) — ✅ EXECUTADA (verificação ao vivo MySQL pendente: migration 0006 + trigger append-only delivery_state_transitions + concorrência FOR UPDATE)
-- **Próxima Phase:** 8 of 14 — Despacho / oferta / aceite
-- **Last activity:** 2026-06-10 — Phase 7 executada (criação F-03 direta + máquina de 7 estados RN-019 + histórico append-only RN-012 + estimativa mediana RN-030 + limite de plano RN-028 + 4 componentes UI governados + telas 11/12/14).
+- **Phase atual:** 9 of 14 — Execução, comprovação, tracking público e notificações — ✅ EXECUTADA (verificação ao vivo MySQL pendente: geofence ST_Distance_Sphere dentro/fora + migration 0008 reversível)
+- **Próxima Phase:** 10 of 14 — Pagamento online (cartão/PIX + escrow) — ⚠️ bloqueada por OQ-3 (contrato Safe2Pay)
+- **Last activity:** 2026-06-11 — Phase 9 executada (maior do MS-03, 19 tasks): comprovação foto+EXIF/GPS antifraude (oposto do KYC), tracking público sem auth + mapa MapLibre lazy, notificações multicanal com fallback, jobs de ciclo, migration 0008 reversível. 326 testes backend (not-mysql) + 121 frontend.
 
-**Progress:** [█████░░░░░] 50%
+**Progress:** [██████░░░░] 64%
 
 ## MS-01 — entregue
 
@@ -62,6 +62,10 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 ## MS-03 — em andamento
 
 - **Phase 7:** Criação de entrega F-03 (modalidade direta) + máquina de estados (REQ-021/022/023 + REQ-011 parcial). Backend: **migration 0006** (deliveries area-scoped 7-state máquina + money em centavos inteiros + separação RN-013 endereço completo × bairro/distância + public_token ULID-like opaco; delivery_state_transitions **append-only** via trigger MySQL SIGNAL 45000; recipients só cpf_hash, sem CPF puro). **Máquina de 7 estados** (RN-019) dict-de-sets, transição inválida → 422 (testada exaustivamente — produto cartesiano); **`transition()`** único ponto de escrita de state com `SELECT ... FOR UPDATE` (lock pessimista LOW-1). **Estimativa mediana** (RN-030) compondo `is_eligible` da Phase 6 (preço efetivo por trecho bairro/km LOW-2). **Limite de plano** (RN-028) COUNT server-side excluindo CANCELADA (LOW-3); 3ª Free → 402 upgrade. Endpoints `/v1/deliveries` (POST/GET/{id}/cancel) com `merchant_scope` → IDOR 404, rate limit 30/min/loja, telefone mascarado, PII fora de log. Frontend: **jx-state-badge** (7 estados texto+ícone+cor, 7 vars --state-* derivadas de color.delivery_state claro+dark), **jx-estimate-box**, **jx-upgrade-modal** (E4 anti-dark-pattern foco preso/Esc), **jx-delivery-row** (Cancelar só CRIADA); **tela 12** form nova entrega (máscaras BR, direto único habilitado, E1/E2/E4), **tela 14** lista (jx-data-table + filtros), **tela 11** dashboard (KPIs mono + em curso + H1 italic). **242 testes backend (not-mysql) + 80 frontend, zero hex.** **Pendente ao vivo:** migration 0006 reversível + trigger append-only delivery_state_transitions (errno 1644) + concorrência FOR UPDATE (`pytest -m mysql tests/deliveries`).
+
+- **Phase 8:** Despacho / oferta / aceite (F-05). Cascata re-enqueuável no arq (favoritos → ranking → E1 exaurido), oferta por TTL no Redis (ADR-104), aceite único via Lock + FOR UPDATE (10/10 stress: 1 vencedor, 0 penalidade). PushPort/PushMessage payload zero PII. Migration 0007 (favoritos/bloqueios). 266 backend + 104 frontend. ✅ verificada ao vivo.
+
+- **Phase 9:** Execução, comprovação, tracking público e notificações (F-06 — a MAIOR do MS-03, 19 tasks). Backend: **pipeline de comprovação foto+EXIF/GPS (o OPOSTO do KYC)** — `extract_gps_from_raw` lê o GPS do RAW ANTES de qualquer reprocess/strip; `{lat,lng}` client é evidência principal (A3), EXIF reforço; **geofence server-side** via `ST_Distance_Sphere` parametrizado (POINT(lng,lat) SRID 4326) + haversine fallback; 3 falhas → `low_confidence` + revisão admin (CTA destrava, RN-005). **Tracking público** `# público:` por `public_token` SEM auth, 404 genérico (anti-enum), serializer **minimiza PII por estado** (endereço só pós-COLETADA RN-013, courier anônimo, telefone nunca no payload público, posição aproximada). **Ingestão de localização** anti-IDOR (ownership na query → 404; janela ACEITA/COLETADA → 409); `delivery_locations` retenção 24h. **Notificações multicanal** (push→email fallback; SMS só "a caminho" RN-018; cada tentativa em `notifications`); `push_subscriptions`; **confirmação de pagamento direto** RN-026 ("não recebi" → ENTREGUE + `payment_dispute`); **número de referência** E4 + liberação manual auditável. **Jobs arq** (FINALIZADA 24h sem disputa / purge_locations 24h LGPD / absent 10min) idempotentes aware-UTC. **Migration 0008 reversível** (5 tabelas + `cancel_cost_cents`; downgrade FK-order sem drop_index redundante — lição 0006). Frontend: **8 componentes** (jx-proof-capture wrapper de jx-doc-upload+GPS, jx-geofence-pill, jx-tracking-timeline/banner, **jx-live-map MapLibre LAZY** — import dinâmico, fora do main 162KB, LCP é a timeline, dark via filtro, jx-notice, jx-pending-upload-banner, jx-direct-payment-confirm); **tela 26** tracking público (/r/:token sem guard), **tela 07** comprovação, **tela 13** loja detalhe (cancelar declara custo RN-004, link /r/{token}); polling resiliente (Page Visibility pausa, filtro 50m, A5/TD-020) + upload offline (D-04). **326 testes backend (not-mysql) + 121 frontend, zero hex.** TD-019/TD-020 registradas. **Pendente ao vivo:** geofence ST_Distance_Sphere dentro/fora + migration 0008 reversível (`pytest -m mysql tests/proofs/test_geofence_db.py tests/db/test_migration_0008.py`).
 
 ## Atenção para MS-02+
 
@@ -81,6 +85,7 @@ cd apps/api && uv run alembic upgrade head && uv run alembic downgrade -1 && uv 
 cd apps/api && uv run pytest -m mysql tests/deliveries
 
 # (trigger SIGNAL 45000 em delivery_state_transitions: UPDATE/DELETE → errno 1644;
+
 #  FOR UPDATE: 2 transições simultâneas → 1 vence, 1 → 422)
 
 # Smoke visual (telas 11/12/14) claro+dark; estimativa mediana + badge dos estados.
