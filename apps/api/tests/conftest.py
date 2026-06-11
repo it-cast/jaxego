@@ -45,6 +45,7 @@ from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
 from app.neighborhoods.models import Neighborhood  # noqa: F401 (Phase 6 mapper)
 from app.plans.models import SubscriptionPlan  # noqa: F401
 from app.proofs.models import DeliveryProof  # noqa: F401 (Phase 9 mapper)
+from app.tracking.models import DeliveryLocation  # noqa: F401 (Phase 9 mapper)
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

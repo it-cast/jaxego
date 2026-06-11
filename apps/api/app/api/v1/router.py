@@ -44,3 +44,8 @@ api_router.include_router(deliveries_router)
 # Phase 8 domain sub-routers (F-05 — despacho em cascata + oferta + aceite).
 api_router.include_router(dispatch_router)
 api_router.include_router(merchants_dispatch_router)
+
+# Phase 9 domain sub-routers (F-06 — comprovação, tracking público, localização).
+from app.tracking.public import router as public_tracking_router  # noqa: E402
+
+api_router.include_router(public_tracking_router)
