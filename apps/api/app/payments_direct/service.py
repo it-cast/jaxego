@@ -17,10 +17,23 @@ from datetime import UTC, datetime
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AppError
 from app.deliveries.models import Delivery
 from app.payments_direct.models import DirectPaymentConfirmation, PaymentDispute
 
 logger = structlog.get_logger("payments_direct.service")
+
+
+class DirectModalityBlockedError(AppError):
+    """The courier's direct modality is blocked (RN-027 — 2 procedentes/30d → 90d)."""
+
+    status_code = 403
+    code = "direct_modality_blocked"
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Sua modalidade direta está bloqueada por disputas procedentes (RN-027)."
+        )
 
 
 async def confirm_direct_payment(
@@ -35,7 +48,15 @@ async def confirm_direct_payment(
 
     `outcome` ∈ {cash, pix, not_received}. `not_received` also opens a dispute.
     Returns (confirmation, dispute|None). The caller commits.
+
+    RN-027 (TH-08): a courier whose direct modality is blocked (an active `DisputeBlock`)
+    cannot operate the direct modality — confirmation is rejected server-side.
     """
+    from app.payments_direct.disputes import is_blocked
+
+    if await is_blocked(session, area_id=delivery.area_id, courier_id=courier_id):
+        raise DirectModalityBlockedError()
+
     now = datetime.now(UTC)  # AWARE — TD-010
     confirmation = DirectPaymentConfirmation(
         area_id=delivery.area_id,
