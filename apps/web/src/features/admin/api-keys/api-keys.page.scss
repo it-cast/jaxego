@@ -1,0 +1,373 @@
+// Tela 22 — Admin de área · Chaves de API & Webhook (UI-SPEC / D-10).
+// Tokens semânticos apenas; AA light+dark (DEC-001). Zero hex (Gate 2).
+
+.jx-apikeys {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: var(--jx-space-6) var(--jx-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-7);
+}
+
+.jx-apikeys__title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-apikeys__title em {
+  font-family: var(--jx-font-serif-accent);
+  font-style: italic;
+  color: var(--brand);
+}
+
+.jx-apikeys__lead {
+  font-size: var(--jx-text-base);
+  color: var(--text-muted);
+  margin-top: calc(var(--jx-space-2) * -1);
+}
+
+.jx-apikeys__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-apikeys__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  flex-wrap: wrap;
+}
+
+.jx-apikeys__section-title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-apikeys__subtitle {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+  margin-top: var(--jx-space-4);
+}
+
+// --- Buttons ---------------------------------------------------------------
+.jx-apikeys__cta,
+.jx-apikeys__secondary,
+.jx-apikeys__danger {
+  min-height: 44px;
+  padding: 0 var(--jx-space-5);
+  border-radius: var(--jx-radius-md);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-apikeys__cta {
+  border: 0;
+  background: var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-apikeys__cta:hover:not(:disabled) {
+  background: var(--brand-hover);
+}
+
+.jx-apikeys__secondary {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.jx-apikeys__danger {
+  border: 0;
+  background: var(--error);
+  color: var(--brand-contrast);
+}
+
+.jx-apikeys__cta:disabled,
+.jx-apikeys__secondary:disabled,
+.jx-apikeys__danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-apikeys__cta:focus-visible,
+.jx-apikeys__secondary:focus-visible,
+.jx-apikeys__danger:focus-visible,
+.jx-apikeys__revoke:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+// --- Table cells -----------------------------------------------------------
+.jx-apikeys__mono {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+}
+
+.jx-apikeys__num {
+  text-align: right;
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-apikeys__actions {
+  text-align: right;
+}
+
+.jx-apikeys__revoke {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  color: var(--error);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-apikeys__row--new {
+  background: var(--brand-wash);
+  transition: background 0.3s ease;
+}
+
+// --- Status badges (pílulas) ----------------------------------------------
+.jx-apikeys__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--jx-space-3);
+  border-radius: var(--jx-radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  color: var(--text);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+
+  &--success {
+    color: var(--success);
+    border-color: var(--success);
+  }
+  &--warning {
+    color: var(--warning);
+    border-color: var(--warning);
+  }
+  &--error {
+    color: var(--error);
+    border-color: var(--error);
+  }
+}
+
+// --- Forms -----------------------------------------------------------------
+.jx-apikeys__webhook-form,
+.jx-apikeys__create-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-apikeys__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-apikeys__label {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-apikeys__input {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--jx-text-base);
+}
+
+.jx-apikeys__input--mono {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-apikeys__input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.jx-apikeys__input[aria-invalid='true'] {
+  border-color: var(--error);
+}
+
+.jx-apikeys__error {
+  color: var(--error);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-apikeys__hint {
+  color: var(--text-subtle);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-apikeys__saved {
+  color: var(--success);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-apikeys__loading {
+  color: var(--text-muted);
+  font-size: var(--jx-text-sm);
+}
+
+// --- Event / scope checkboxes ----------------------------------------------
+.jx-apikeys__events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+  background: var(--surface-elevated);
+}
+
+.jx-apikeys__events legend {
+  color: var(--text-muted);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 var(--jx-space-2);
+}
+
+.jx-apikeys__events-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--jx-space-2);
+}
+
+@media (min-width: 560px) {
+  .jx-apikeys__events-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.jx-apikeys__check {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.jx-apikeys__check--inline {
+  align-self: flex-start;
+}
+
+.jx-apikeys__check input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+// --- Webhook secret block --------------------------------------------------
+.jx-apikeys__secret-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-elevated);
+}
+
+.jx-apikeys__secret-pill {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-sunken);
+}
+
+.jx-apikeys__webhook-actions {
+  display: flex;
+  gap: var(--jx-space-3);
+  flex-wrap: wrap;
+}
+
+// --- Modal / dialog --------------------------------------------------------
+.jx-apikeys__modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  padding: var(--jx-space-5);
+  z-index: 100;
+}
+
+.jx-apikeys__modal-card {
+  max-width: 520px;
+  width: 100%;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-xl);
+  padding: var(--jx-space-5);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-apikeys__modal-title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-apikeys__modal-copy {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-apikeys__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--jx-space-3);
+}
+
+.jx-apikeys__diff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-apikeys__diff > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-apikeys__diff dt {
+  color: var(--text-muted);
+}
+
+.jx-apikeys__diff dd {
+  color: var(--text);
+}

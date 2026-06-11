@@ -1,0 +1,394 @@
+<main class="jx-apikeys">
+  <h1 class="jx-apikeys__title">Chaves de <em>API</em> & Webhook</h1>
+  <p class="jx-apikeys__lead">
+    Gere chaves para integradores criarem entregas pela API e configure o webhook
+    que avisa o seu sistema quando uma entrega muda de estado.
+  </p>
+
+  <!-- ================= Chaves de API ================= -->
+  <section class="jx-apikeys__section" aria-labelledby="keys-heading">
+    <header class="jx-apikeys__section-head">
+      <h2 id="keys-heading" class="jx-apikeys__section-title">Chaves de API</h2>
+      <button
+        #createTrigger
+        type="button"
+        class="jx-apikeys__cta"
+        (click)="openCreate()"
+      >
+        Criar chave
+      </button>
+    </header>
+
+    <jx-data-table
+      [columns]="keyColumns"
+      [rows]="keys()"
+      [state]="keysState()"
+      [hasActions]="true"
+      [trackBy]="trackKey"
+      caption="Chaves de API da área"
+      emptyIcon="🔑"
+      emptyTitle="Nenhuma chave de API ainda"
+      emptyMessage="Crie a primeira chave para liberar a integração via API."
+      emptyCtaLabel="Criar primeira chave"
+      errorMessage="Não conseguimos carregar as chaves. Tente de novo."
+      (emptyCta)="openCreate()"
+      (retry)="loadKeys()"
+    >
+      <ng-template #row let-item>
+        <td
+          [class.jx-apikeys__row--new]="highlightedKeyId() === item.key_id"
+        >
+          {{ item.name }}
+        </td>
+        <td class="jx-apikeys__mono">{{ item.key_id }}</td>
+        <td>{{ item.scopes }}</td>
+        <td>{{ formatDate(item.created_at) }}</td>
+        <td>{{ item.last_used_at ? formatDate(item.last_used_at) : 'Nunca' }}</td>
+        <td>
+          <span
+            class="jx-apikeys__badge"
+            [class.jx-apikeys__badge--success]="keyStatusTone(item) === 'success'"
+            [class.jx-apikeys__badge--error]="keyStatusTone(item) === 'error'"
+          >
+            {{ keyStatusLabel(item) }}
+          </span>
+        </td>
+        <td class="jx-apikeys__actions">
+          @if (!item.revoked) {
+            <button
+              type="button"
+              class="jx-apikeys__revoke"
+              (click)="requestRevoke(item)"
+              [attr.aria-label]="'Revogar chave ' + item.name"
+            >
+              Revogar
+            </button>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+
+  <!-- ================= Webhook (notificações) ================= -->
+  <section class="jx-apikeys__section" aria-labelledby="webhook-heading">
+    <h2 id="webhook-heading" class="jx-apikeys__section-title">
+      Webhook (notificações)
+    </h2>
+
+    @if (webhookState() === 'loading') {
+      <p class="jx-apikeys__loading" aria-busy="true">Carregando configuração…</p>
+    } @else if (webhookState() === 'error') {
+      <jx-error-state
+        [message]="webhookLoadError() ?? 'Não conseguimos carregar o webhook.'"
+        retryLabel="Tentar de novo"
+        (retry)="loadWebhook()"
+      />
+    } @else {
+      <form
+        class="jx-apikeys__webhook-form"
+        [formGroup]="webhookForm"
+        (ngSubmit)="saveWebhook(false)"
+      >
+        <label class="jx-apikeys__field">
+          <span class="jx-apikeys__label">URL do webhook (https)</span>
+          <input
+            class="jx-apikeys__input jx-apikeys__input--mono"
+            type="url"
+            inputmode="url"
+            placeholder="https://seusistema.com/webhooks/jaxego"
+            formControlName="url"
+            [attr.aria-invalid]="urlError() ? 'true' : null"
+            [attr.aria-describedby]="urlError() ? 'webhook-url-error' : null"
+          />
+          @if (urlError(); as err) {
+            <p class="jx-apikeys__error" id="webhook-url-error" role="alert">
+              {{ err }}
+            </p>
+          }
+        </label>
+
+        <fieldset class="jx-apikeys__events">
+          <legend>Eventos que disparam notificação</legend>
+          <div class="jx-apikeys__events-grid">
+            @for (opt of eventOptions; track opt.value) {
+              <label class="jx-apikeys__check">
+                <input
+                  type="checkbox"
+                  [checked]="isEventSelected(opt.value)"
+                  (change)="toggleEvent(opt.value, $any($event.target).checked)"
+                />
+                <span>{{ opt.label }}</span>
+              </label>
+            }
+          </div>
+          <small class="jx-apikeys__hint">
+            Sem nenhum evento marcado, enviamos todos.
+          </small>
+        </fieldset>
+
+        <label class="jx-apikeys__check jx-apikeys__check--inline">
+          <input type="checkbox" formControlName="enabled" />
+          <span>Webhook ativo</span>
+        </label>
+
+        @if (webhook()) {
+          <div class="jx-apikeys__secret-block">
+            <p class="jx-apikeys__label">Segredo de assinatura atual</p>
+            <code class="jx-apikeys__mono jx-apikeys__secret-pill">
+              {{ webhook()!.secret }}
+            </code>
+            <small class="jx-apikeys__hint">
+              Use este segredo para validar a assinatura
+              <code class="jx-apikeys__mono">X-Jaxego-Signature</code> no seu sistema.
+            </small>
+          </div>
+        }
+
+        @if (webhookSaved()) {
+          <p class="jx-apikeys__saved" role="status">
+            Configuração de webhook salva.
+          </p>
+        }
+        @if (webhookSaveError()) {
+          <jx-error-state [message]="webhookSaveError()!" />
+        }
+
+        <div class="jx-apikeys__webhook-actions">
+          <button
+            type="submit"
+            class="jx-apikeys__cta"
+            [disabled]="webhookSaving() || webhookForm.invalid"
+            [attr.aria-busy]="webhookSaving() ? 'true' : null"
+          >
+            {{ webhookSaving() ? 'Salvando…' : 'Salvar webhook' }}
+          </button>
+          <button
+            type="button"
+            class="jx-apikeys__secondary"
+            [disabled]="webhookSaving() || webhookForm.invalid"
+            (click)="saveWebhook(true)"
+          >
+            Rotacionar segredo
+          </button>
+        </div>
+      </form>
+
+      <!-- Secret rotacionado exibido 1× (jx-secret-reveal) -->
+      @if (rotatedSecret(); as secret) {
+        <div
+          class="jx-apikeys__modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rotated-secret-title"
+        >
+          <div class="jx-apikeys__modal-card">
+            <h3 id="rotated-secret-title" class="jx-apikeys__modal-title">
+              Novo segredo do webhook
+            </h3>
+            <jx-secret-reveal
+              [secret]="secret"
+              label="Segredo do webhook"
+              warning="Esta é a única vez que mostramos o novo segredo. Atualize seu sistema antes de fechar."
+            />
+            <div class="jx-apikeys__modal-actions">
+              <button
+                type="button"
+                class="jx-apikeys__cta"
+                (click)="dismissRotatedSecret()"
+              >
+                Já guardei
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+
+    <!-- Histórico de entregas de webhook -->
+    <h3 class="jx-apikeys__subtitle">Histórico de entregas</h3>
+    <jx-data-table
+      [columns]="deliveryColumns"
+      [rows]="deliveries()"
+      [state]="deliveriesState()"
+      [trackBy]="trackDelivery"
+      caption="Histórico de entregas de webhook"
+      emptyIcon="📭"
+      emptyTitle="Nenhuma entrega de webhook ainda"
+      emptyMessage="As notificações enviadas ao seu sistema aparecerão aqui."
+      errorMessage="Não conseguimos carregar o histórico. Tente de novo."
+      (retry)="loadDeliveries()"
+    >
+      <ng-template #row let-item>
+        <td>{{ eventLabel(item.event_type) }}</td>
+        <td class="jx-apikeys__num">{{ item.attempts }}</td>
+        <td class="jx-apikeys__num">{{ item.last_status_code ?? '—' }}</td>
+        <td>{{ item.next_retry_at ? formatDate(item.next_retry_at) : '—' }}</td>
+        <td>{{ formatDate(item.created_at) }}</td>
+        <td>
+          <span
+            class="jx-apikeys__badge"
+            [class.jx-apikeys__badge--success]="
+              deliveryStatusTone(item.status) === 'success'
+            "
+            [class.jx-apikeys__badge--warning]="
+              deliveryStatusTone(item.status) === 'warning'
+            "
+            [class.jx-apikeys__badge--error]="
+              deliveryStatusTone(item.status) === 'error'
+            "
+          >
+            {{ deliveryStatusLabel(item.status) }}
+          </span>
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+
+  <!-- ================= Modal: criar chave ================= -->
+  @if (creating()) {
+    <div
+      class="jx-apikeys__modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-key-title"
+      (keydown.escape)="closeCreate()"
+    >
+      <div class="jx-apikeys__modal-card">
+        @if (createdSecret(); as created) {
+          <!-- Sucesso: segredo exibido 1× -->
+          <h3 id="create-key-title" class="jx-apikeys__modal-title">
+            Chave “{{ created.name }}” criada
+          </h3>
+          <jx-secret-reveal
+            [secret]="created.secret"
+            label="Segredo da chave"
+          />
+          <div class="jx-apikeys__modal-actions">
+            <button
+              type="button"
+              class="jx-apikeys__cta"
+              (click)="closeCreate()"
+            >
+              Já guardei o segredo
+            </button>
+          </div>
+        } @else {
+          <!-- Form de criação -->
+          <h3 id="create-key-title" class="jx-apikeys__modal-title">
+            Criar chave de API
+          </h3>
+          <form
+            class="jx-apikeys__create-form"
+            [formGroup]="createForm"
+            (ngSubmit)="submitCreate()"
+          >
+            <label class="jx-apikeys__field">
+              <span class="jx-apikeys__label">Nome da chave</span>
+              <input
+                class="jx-apikeys__input"
+                type="text"
+                placeholder="Ex.: Integração Menu Certo"
+                formControlName="name"
+                [attr.aria-invalid]="nameError() ? 'true' : null"
+                [attr.aria-describedby]="nameError() ? 'create-name-error' : null"
+              />
+              @if (nameError(); as err) {
+                <p class="jx-apikeys__error" id="create-name-error" role="alert">
+                  {{ err }}
+                </p>
+              }
+            </label>
+
+            <fieldset class="jx-apikeys__events">
+              <legend>Escopos</legend>
+              <div class="jx-apikeys__events-grid">
+                @for (scope of scopeOptions; track scope) {
+                  <label class="jx-apikeys__check">
+                    <input
+                      type="checkbox"
+                      [checked]="isScopeSelected(scope)"
+                      (change)="toggleScope(scope, $any($event.target).checked)"
+                    />
+                    <span class="jx-apikeys__mono">{{ scope }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+
+            @if (createError()) {
+              <jx-error-state [message]="createError()!" />
+            }
+
+            <div class="jx-apikeys__modal-actions">
+              <button
+                type="button"
+                class="jx-apikeys__secondary"
+                (click)="closeCreate()"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="jx-apikeys__cta"
+                [disabled]="createSubmitting() || createForm.invalid"
+                [attr.aria-busy]="createSubmitting() ? 'true' : null"
+              >
+                {{ createSubmitting() ? 'Criando…' : 'Criar chave' }}
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ================= Confirmação sensível: revogar ================= -->
+  @if (revoking(); as key) {
+    <div
+      class="jx-apikeys__modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="revoke-title"
+      (keydown.escape)="cancelRevoke()"
+    >
+      <div class="jx-apikeys__modal-card">
+        <h3 id="revoke-title" class="jx-apikeys__modal-title">Revogar chave</h3>
+        <p class="jx-apikeys__modal-copy">
+          Revogar interrompe o acesso desta chave em até 1 minuto. Esta ação não
+          pode ser desfeita.
+        </p>
+        <dl class="jx-apikeys__diff">
+          <div>
+            <dt>Chave</dt>
+            <dd class="jx-apikeys__mono">{{ key.name }}</dd>
+          </div>
+          <div>
+            <dt>ID</dt>
+            <dd class="jx-apikeys__mono">{{ key.key_id }}</dd>
+          </div>
+        </dl>
+        @if (revokeError()) {
+          <jx-error-state [message]="revokeError()!" />
+        }
+        <div class="jx-apikeys__modal-actions">
+          <button
+            type="button"
+            class="jx-apikeys__secondary"
+            (click)="cancelRevoke()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="jx-apikeys__danger"
+            [disabled]="revokeSubmitting()"
+            [attr.aria-busy]="revokeSubmitting() ? 'true' : null"
+            (click)="confirmRevoke()"
+          >
+            {{ revokeSubmitting() ? 'Revogando…' : 'Revogar chave' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</main>

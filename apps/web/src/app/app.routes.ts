@@ -184,6 +184,14 @@ export const routes: Routes = [
             (m) => m.NeighborhoodsPage
           ),
       },
+      // Phase 12 (tela 22 / D-10): chaves de API + webhook da área.
+      {
+        path: 'api-keys',
+        loadComponent: () =>
+          import('../features/admin/api-keys/api-keys.page').then(
+            (m) => m.AdminApiKeysPage
+          ),
+      },
     ],
   },
   // Public tracking (tela 26, F-06 / Phase 9): token-only, NO auth guard. The map
