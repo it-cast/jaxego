@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: MS-03
 milestone_name: Coração transacional (entregas)
 status: in_progress
-last_updated: "2026-06-11T00:00:00.000Z"
-last_activity: "2026-06-11 — Phase 7 COMPLETA e verificada ao vivo (migration 0006 reversivel apos fix downgrade; trigger append-only delivery_state_transitions errno 1644; concorrencia FOR UPDATE). 245+80 testes. Smoke pegou 2 bugs reais (seed/URL @mysql + downgrade 0006). Proximo: Phase 8 (despacho)."
+last_updated: "2026-06-11T01:00:00.000Z"
+last_activity: "2026-06-11 — Phase 8 COMPLETA e verificada ao vivo (aceite unico 10/10 stress: 1 vencedor; migration 0007 reversivel; RN-013 privacidade). 266+104 testes. MS-03 2/3. Proximo: Phase 9 (execucao + comprovacao foto+GPS + tracking com mapa ao vivo DEC-002)."
 progress:
   total_phases: 14
-  completed_phases: 7
-  total_plans: 7
-  completed_plans: 7
-  percent: 50
+  completed_phases: 8
+  total_plans: 8
+  completed_plans: 8
+  percent: 57
 ---
 
 # STATE — Current Execution State
@@ -27,8 +27,8 @@ status: in_progress
 release_target: v1.0 (piloto Pádua)
 progress:
   total_phases: 14
-  completed_phases: 7
-  percent: 50
+  completed_phases: 8
+  percent: 57
 ```
 
 ## Project Reference

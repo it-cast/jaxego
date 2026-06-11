@@ -229,7 +229,7 @@
 
 ## Phase 8: Despacho em cascata + oferta + aceite
 
-**Milestone:** MS-03 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-03 · **Tipo:** core · **Status:** complete (2026-06-10) · **Estimativa:** L (1-2sem)
 
 ### REQs cobertos
 - REQ-024: cascata favoritos→auto com locks · REQ-025: privacidade do destino (RN-013) · REQ-012 (dados): favoritos/bloqueados na elegibilidade · REQ-054: OSRM/ETA `[ASSUMIDO]`
