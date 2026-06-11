@@ -29,6 +29,8 @@ from app.workers.document_expiry import (
 from app.workers.document_reprocess import reprocess_document_task
 from app.workers.lifecycle import (
     absent_timeout,
+    anonymize_inactive,
+    delete_ephemeral,
     finalize_deliveries,
     purge_locations,
 )
@@ -111,4 +113,8 @@ class WorkerSettings:
         cron(snapshot_scores, hour={5}, minute={0}),
         # Phase 13 — enforce appeal SLA every 5 min (auto-revert past-due undecided).
         cron(enforce_appeal_sla, minute=set(range(0, 60, 5))),
+        # Phase 14 — LGPD jobs (REQ-048). Anonymise inactive (12m) daily at 03:30 UTC;
+        # hard-delete ephemeral (30d) daily at 03:50 UTC. Idempotent, audited (D-01/D-02).
+        cron(anonymize_inactive, hour={3}, minute={30}),
+        cron(delete_ephemeral, hour={3}, minute={50}),
     ]
