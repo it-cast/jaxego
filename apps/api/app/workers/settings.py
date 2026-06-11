@@ -18,6 +18,7 @@ from arq.connections import RedisSettings
 
 from app.core.config import settings
 from app.db.session import async_session_factory
+from app.workers.dispatch import dispatch_offer_task, send_push_task
 from app.workers.document_expiry import (
     escalate_stale_reviews_task,
     expire_documents_task,
@@ -47,4 +48,7 @@ class WorkerSettings:
         reprocess_document_task,
         expire_documents_task,
         escalate_stale_reviews_task,
+        # Phase 8: cascade orchestration + Web Push send (LOW-1 / D-08).
+        dispatch_offer_task,
+        send_push_task,
     ]

@@ -83,6 +83,10 @@ async def create_delivery(
         ip=_client_ip(request),
     )
     await session.commit()
+    # Kick off the cascade (Phase 8) — enqueued, never inline (RN-009 / D-01).
+    from app.workers.dispatch import enqueue_dispatch
+
+    await enqueue_dispatch(result.delivery_id)
     return result
 
 
@@ -166,6 +170,11 @@ async def cancel_delivery(
         ip=_client_ip(request),
     )
     await session.commit()
+    # E4 (D-07): cancel any pending offer/cascade — zero cost, RN-004. Best-effort.
+    from app.core.redis import get_redis_client
+    from app.dispatch import service as dispatch_service
+
+    await dispatch_service.cancel_pending_offers(get_redis_client(), delivery_id=delivery_id)
     recipient = None
     if delivery.recipient_id is not None:
         from app.deliveries.models import Recipient
