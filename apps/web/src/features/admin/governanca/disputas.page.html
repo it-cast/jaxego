@@ -1,0 +1,157 @@
+<main class="jx-gov-disputes">
+  <h1 class="jx-gov-disputes__title">Disputas e <em>suspensões</em></h1>
+
+  <jx-notice
+    tone="info"
+    message="A resolução financeira da disputa é tratada no módulo financeiro — aqui você registra a decisão administrativa."
+  />
+
+  <!-- Disputas -->
+  <section class="jx-gov-disputes__section" aria-labelledby="disputes-heading">
+    <h2 id="disputes-heading" class="jx-gov-disputes__section-title">
+      Disputas de pagamento
+    </h2>
+    <jx-data-table
+      [columns]="disputeColumns"
+      [rows]="disputes()"
+      [state]="disputesState()"
+      [hasActions]="true"
+      [trackBy]="trackDispute"
+      caption="Disputas de pagamento da área"
+      emptyIcon="⚖"
+      emptyTitle="Nenhuma disputa"
+      emptyMessage="Quando uma entrega gerar disputa, ela aparece aqui."
+      errorMessage="Não conseguimos carregar as disputas. Tente de novo."
+      (retry)="loadDisputes()"
+    >
+      <ng-template #row let-item>
+        <td class="jx-gov-disputes__num">{{ item.id }}</td>
+        <td class="jx-gov-disputes__num">{{ item.delivery_id }}</td>
+        <td class="jx-gov-disputes__num">{{ item.courier_id }}</td>
+        <td>{{ disputeStatusLabel(item.status) }}</td>
+        <td>{{ formatDate(item.opened_at) }}</td>
+        <td class="jx-gov-disputes__actions">
+          @if (canDecide(item)) {
+            <button
+              #decideTrigger
+              type="button"
+              class="jx-gov-disputes__decide"
+              (click)="requestDecide(item)"
+              [attr.aria-label]="'Registrar decisão da disputa ' + item.id"
+            >
+              Registrar decisão
+            </button>
+          } @else {
+            <span class="jx-gov-disputes__resolved">Decidida</span>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+
+  <!-- Suspensões -->
+  <section class="jx-gov-disputes__section" aria-labelledby="susp-heading">
+    <h2 id="susp-heading" class="jx-gov-disputes__section-title">
+      Suspensões e recursos
+    </h2>
+
+    @if (appealError(); as err) {
+      <p class="jx-gov-disputes__error" role="alert">{{ err }}</p>
+    }
+
+    @if (suspensionsState() === 'loading') {
+      <p class="jx-gov-disputes__loading" aria-busy="true">
+        Carregando suspensões…
+      </p>
+    } @else if (suspensionsState() === 'error') {
+      <p class="jx-gov-disputes__error" role="alert">
+        Não conseguimos carregar as suspensões.
+        <button type="button" (click)="loadSuspensions()">Tentar de novo</button>
+      </p>
+    } @else if (suspensionsState() === 'empty') {
+      <p class="jx-gov-disputes__empty">Nenhuma suspensão na área.</p>
+    } @else {
+      <div class="jx-gov-disputes__panels">
+        @for (appeal of suspensions(); track trackSuspension(appeal)) {
+          <jx-suspension-panel
+            [appeal]="appeal"
+            [busy]="appealBusyId() === appeal.id"
+            (decide)="decideAppeal(appeal, $event)"
+          />
+        }
+      </div>
+    }
+  </section>
+
+  <!-- Confirmação sensível: decisão de disputa -->
+  @if (deciding(); as dispute) {
+    <div
+      class="jx-gov-disputes__modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="decide-title"
+      (keydown.escape)="cancelDecide()"
+    >
+      <div class="jx-gov-disputes__modal-card">
+        <h3 id="decide-title" class="jx-gov-disputes__modal-title">
+          Registrar decisão da disputa {{ dispute.id }}
+        </h3>
+        <p class="jx-gov-disputes__modal-copy">
+          Esta decisão é administrativa e fica auditada. Não move dinheiro: a
+          resolução financeira (bloqueio, restituição) acontece no módulo financeiro.
+        </p>
+
+        <form
+          class="jx-gov-disputes__form"
+          [formGroup]="decideForm"
+          (ngSubmit)="confirmDecide()"
+        >
+          <fieldset class="jx-gov-disputes__choices">
+            <legend>Decisão</legend>
+            <label class="jx-gov-disputes__choice">
+              <input type="radio" formControlName="outcome" value="procedente" />
+              <span>Procedente (a favor de quem abriu)</span>
+            </label>
+            <label class="jx-gov-disputes__choice">
+              <input type="radio" formControlName="outcome" value="improcedente" />
+              <span>Improcedente</span>
+            </label>
+          </fieldset>
+
+          <label class="jx-gov-disputes__field">
+            <span class="jx-gov-disputes__label">Observação (opcional)</span>
+            <textarea
+              class="jx-gov-disputes__textarea"
+              formControlName="note"
+              rows="3"
+              maxlength="500"
+              placeholder="Contexto da decisão para o histórico."
+            ></textarea>
+          </label>
+
+          @if (decideError(); as err) {
+            <p class="jx-gov-disputes__error" role="alert">{{ err }}</p>
+          }
+
+          <div class="jx-gov-disputes__modal-actions">
+            <button
+              type="button"
+              class="jx-gov-disputes__secondary"
+              (click)="cancelDecide()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="jx-gov-disputes__primary"
+              [disabled]="decideSubmitting()"
+              [attr.aria-busy]="decideSubmitting() ? 'true' : null"
+            >
+              {{ decideSubmitting() ? 'Registrando…' : 'Registrar decisão' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</main>

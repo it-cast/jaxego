@@ -1,0 +1,134 @@
+<main class="jx-gov-courier">
+  <h1 class="jx-gov-courier__title">
+    Entregador <span class="jx-gov-courier__id">#{{ courierId() }}</span>
+  </h1>
+
+  <!-- Score -->
+  <section class="jx-gov-courier__section" aria-labelledby="score-heading">
+    <h2 id="score-heading" class="jx-gov-courier__section-title">
+      Score e avaliações
+    </h2>
+
+    @if (scoreState() === 'loading') {
+      <p class="jx-gov-courier__loading" aria-busy="true">Carregando score…</p>
+    } @else if (scoreState() === 'empty') {
+      <p class="jx-gov-courier__empty">
+        Score ainda não calculado para este entregador.
+      </p>
+    } @else if (scoreState() === 'error') {
+      <p class="jx-gov-courier__error" role="alert">
+        Não conseguimos carregar o score.
+        <button type="button" (click)="loadScore()">Tentar de novo</button>
+      </p>
+    } @else {
+      @if (score(); as s) {
+        <div class="jx-gov-courier__score-head">
+          <jx-score-badge [level]="s.level" [value]="s.total_score" size="lg" />
+          <span class="jx-gov-courier__score-date">
+            Snapshot de {{ s.snapshot_date }}
+          </span>
+        </div>
+        <jx-score-breakdown [components]="s.components" [total]="s.total_score" />
+      }
+    }
+  </section>
+
+  <!-- Suspensão / recurso -->
+  <section class="jx-gov-courier__section" aria-labelledby="susp-heading">
+    <h2 id="susp-heading" class="jx-gov-courier__section-title">
+      Suspensão e recurso
+    </h2>
+
+    @if (appealError(); as err) {
+      <p class="jx-gov-courier__error" role="alert">{{ err }}</p>
+    }
+
+    @if (appeal(); as a) {
+      <jx-suspension-panel
+        [appeal]="a"
+        [busy]="appealBusy()"
+        (decide)="decideAppeal($event)"
+      />
+    } @else {
+      <jx-notice
+        tone="info"
+        message="Entregador ativo. Suspender pausa o acesso e exige o motivo."
+      />
+      <button
+        type="button"
+        class="jx-gov-courier__suspend"
+        (click)="openSuspend()"
+      >
+        Suspender entregador
+      </button>
+    }
+  </section>
+
+  <!-- Modal: suspender (motivo obrigatório) -->
+  @if (suspending()) {
+    <div
+      class="jx-gov-courier__modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="suspend-title"
+      (keydown.escape)="cancelSuspend()"
+    >
+      <div class="jx-gov-courier__modal-card">
+        <h3 id="suspend-title" class="jx-gov-courier__modal-title">
+          Suspender entregador
+        </h3>
+        <p class="jx-gov-courier__modal-copy">
+          Suspender pausa o acesso do entregador. É necessário informar o motivo, que
+          fica registrado. Será aberta uma janela de recurso; se não houver decisão até
+          o prazo, a suspensão é revertida automaticamente.
+        </p>
+
+        <form
+          class="jx-gov-courier__form"
+          [formGroup]="suspendForm"
+          (ngSubmit)="confirmSuspend()"
+        >
+          <label class="jx-gov-courier__field">
+            <span class="jx-gov-courier__label">Motivo da suspensão</span>
+            <textarea
+              class="jx-gov-courier__textarea"
+              formControlName="reason"
+              rows="3"
+              maxlength="500"
+              placeholder="Ex.: reclamações recorrentes de atraso."
+              [attr.aria-invalid]="reasonError() ? 'true' : null"
+              [attr.aria-describedby]="reasonError() ? 'suspend-reason-error' : null"
+            ></textarea>
+            @if (reasonError(); as err) {
+              <p class="jx-gov-courier__field-error" id="suspend-reason-error" role="alert">
+                {{ err }}
+              </p>
+            }
+          </label>
+
+          @if (suspendError(); as err) {
+            <p class="jx-gov-courier__error" role="alert">{{ err }}</p>
+          }
+
+          <div class="jx-gov-courier__modal-actions">
+            <button
+              type="button"
+              class="jx-gov-courier__secondary"
+              (click)="cancelSuspend()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="jx-gov-courier__danger"
+              [disabled]="suspendSubmitting()"
+              [attr.aria-busy]="suspendSubmitting() ? 'true' : null"
+            >
+              {{ suspendSubmitting() ? 'Suspendendo…' : 'Suspender' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</main>

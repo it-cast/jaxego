@@ -1,0 +1,243 @@
+// Tela 09 — Disputas e suspensões da área (UI-SPEC §Tela 09). Tokens only — no hex.
+
+.jx-gov-disputes {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-gov-disputes__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-gov-disputes__title em {
+  font-family: var(--jx-font-serif-accent);
+  font-style: italic;
+  color: var(--brand);
+}
+
+.jx-gov-disputes__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-gov-disputes__section-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-gov-disputes__num {
+  text-align: right;
+  font-family: var(--jx-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.jx-gov-disputes__actions {
+  text-align: right;
+}
+
+.jx-gov-disputes__decide {
+  min-height: 36px;
+  padding: 0 var(--jx-space-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-gov-disputes__decide:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-gov-disputes__resolved {
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+.jx-gov-disputes__panels {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--jx-space-3);
+}
+
+@media (min-width: 720px) {
+  .jx-gov-disputes__panels {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.jx-gov-disputes__loading,
+.jx-gov-disputes__empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.jx-gov-disputes__error {
+  margin: 0;
+  color: var(--error);
+}
+
+.jx-gov-disputes__error button {
+  margin-left: var(--jx-space-2);
+  background: transparent;
+  border: 0;
+  color: var(--brand);
+  font: inherit;
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+// --- Modal de decisão ------------------------------------------------------
+.jx-gov-disputes__modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  padding: var(--jx-space-5);
+  z-index: 100;
+}
+
+.jx-gov-disputes__modal-card {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--jx-space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-gov-disputes__modal-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-gov-disputes__modal-copy {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-gov-disputes__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-gov-disputes__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-3);
+}
+
+.jx-gov-disputes__choices legend {
+  color: var(--text-muted);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 var(--jx-space-2);
+}
+
+.jx-gov-disputes__choice {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+}
+
+.jx-gov-disputes__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-gov-disputes__label {
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.jx-gov-disputes__textarea {
+  padding: var(--jx-space-2) var(--jx-space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.jx-gov-disputes__textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-gov-disputes__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--jx-space-2);
+}
+
+.jx-gov-disputes__secondary,
+.jx-gov-disputes__primary {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-gov-disputes__secondary {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.jx-gov-disputes__primary {
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-gov-disputes__primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-gov-disputes__secondary:focus-visible,
+.jx-gov-disputes__primary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

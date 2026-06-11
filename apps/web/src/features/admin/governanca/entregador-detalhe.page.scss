@@ -1,0 +1,209 @@
+// Telas 19/20 — Detalhe do entregador (UI-SPEC §Tela 19/20). Tokens only — no hex.
+
+.jx-gov-courier {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-gov-courier__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-gov-courier__id {
+  font-family: var(--jx-font-mono);
+  color: var(--text-muted);
+}
+
+.jx-gov-courier__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-gov-courier__section-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-gov-courier__score-head {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  flex-wrap: wrap;
+}
+
+.jx-gov-courier__score-date {
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+.jx-gov-courier__loading,
+.jx-gov-courier__empty {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.jx-gov-courier__error {
+  margin: 0;
+  color: var(--error);
+}
+
+.jx-gov-courier__error button {
+  margin-left: var(--jx-space-2);
+  background: transparent;
+  border: 0;
+  color: var(--brand);
+  font: inherit;
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-gov-courier__suspend {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: var(--error);
+  border: 1px solid var(--error);
+  border-radius: var(--jx-radius-lg);
+  color: var(--brand-contrast);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-gov-courier__suspend:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+// --- Modal -----------------------------------------------------------------
+.jx-gov-courier__modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  padding: var(--jx-space-5);
+  z-index: 100;
+}
+
+.jx-gov-courier__modal-card {
+  width: min(520px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--jx-space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-gov-courier__modal-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-gov-courier__modal-copy {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-gov-courier__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-gov-courier__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-gov-courier__label {
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.jx-gov-courier__textarea {
+  padding: var(--jx-space-2) var(--jx-space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.jx-gov-courier__textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-gov-courier__field-error {
+  margin: 0;
+  font-size: var(--jx-text-2xs);
+  color: var(--error);
+}
+
+.jx-gov-courier__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--jx-space-2);
+}
+
+.jx-gov-courier__secondary,
+.jx-gov-courier__danger {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-gov-courier__secondary {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.jx-gov-courier__danger {
+  background: var(--error);
+  border: 1px solid var(--error);
+  color: var(--brand-contrast);
+}
+
+.jx-gov-courier__danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-gov-courier__secondary:focus-visible,
+.jx-gov-courier__danger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
