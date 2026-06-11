@@ -46,6 +46,8 @@ api_router.include_router(dispatch_router)
 api_router.include_router(merchants_dispatch_router)
 
 # Phase 9 domain sub-routers (F-06 — comprovação, tracking público, localização).
+from app.tracking.locations import router as locations_router  # noqa: E402
 from app.tracking.public import router as public_tracking_router  # noqa: E402
 
 api_router.include_router(public_tracking_router)
+api_router.include_router(locations_router)
