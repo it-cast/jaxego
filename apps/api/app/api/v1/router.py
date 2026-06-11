@@ -14,6 +14,7 @@ from app.couriers.router import admin_router as couriers_admin_router
 from app.couriers.router import router as couriers_router
 from app.deliveries.router import router as deliveries_router
 from app.dispatch.router import router as dispatch_router
+from app.merchants.favorites import router as merchants_dispatch_router
 from app.merchants.router import interest_router
 from app.merchants.router import router as merchants_router
 from app.neighborhoods.router import router as neighborhoods_router
@@ -42,3 +43,4 @@ api_router.include_router(deliveries_router)
 
 # Phase 8 domain sub-routers (F-05 — despacho em cascata + oferta + aceite).
 api_router.include_router(dispatch_router)
+api_router.include_router(merchants_dispatch_router)
