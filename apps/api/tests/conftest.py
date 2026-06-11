@@ -52,15 +52,21 @@ from app.notifications.models import (  # noqa: F401 (Phase 9 mappers)
     Notification,
     PushSubscription,
 )
+from app.invoices.models import (  # noqa: F401 (Phase 15 mappers)
+    InvoiceLineItem,
+    PlatformInvoice,
+)
 from app.payments.models import (  # noqa: F401 (Phase 10 mappers)
     EscrowLedger,
     PaymentWebhookEvent,
     PlatformCharge,
 )
-from app.payments_direct.models import (  # noqa: F401 (Phase 9 mappers)
+from app.payments_direct.models import (  # noqa: F401 (Phase 9/15 mappers)
     DirectPaymentConfirmation,
+    DisputeBlock,
     PaymentDispute,
 )
+from app.withdrawals.models import Withdrawal  # noqa: F401 (Phase 15 mapper)
 from app.plans.models import SubscriptionPlan  # noqa: F401
 from app.proofs.models import DeliveryProof  # noqa: F401 (Phase 9 mapper)
 from app.ratings.models import CourierRating  # noqa: F401 (Phase 13 mapper)
