@@ -43,6 +43,11 @@ from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
     MerchantUser,
 )
 from app.neighborhoods.models import Neighborhood  # noqa: F401 (Phase 6 mapper)
+from app.payments.models import (  # noqa: F401 (Phase 10 mappers)
+    EscrowLedger,
+    PaymentWebhookEvent,
+    PlatformCharge,
+)
 from app.notifications.models import (  # noqa: F401 (Phase 9 mappers)
     Notification,
     PushSubscription,
