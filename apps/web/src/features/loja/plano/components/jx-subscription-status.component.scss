@@ -1,0 +1,56 @@
+// jx-subscription-status — status banner; text+icon carry meaning, color reinforces.
+// Tokens only — no hex (Gate 2). Works in both themes via the semantic vars.
+
+.jx-sub-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-sunken);
+  border: 1px solid var(--status-color);
+  color: var(--text);
+}
+
+// blocked: stronger emphasis (role=alert) — the border + a tinted edge.
+.jx-sub-status--blocked {
+  border-width: 2px;
+}
+
+.jx-sub-status__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--jx-radius-full);
+  background: var(--surface);
+  border: 1px solid var(--status-color);
+  color: var(--status-color);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-bold);
+  font-size: var(--jx-text-md);
+  line-height: 1;
+}
+
+.jx-sub-status__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-sub-status__label {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-md);
+  color: var(--status-color);
+}
+
+.jx-sub-status__detail {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  line-height: 1.5;
+  color: var(--text-muted);
+}

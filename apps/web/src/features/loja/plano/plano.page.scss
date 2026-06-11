@@ -34,3 +34,29 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+.jx-plano jx-subscription-status {
+  display: block;
+  margin-top: var(--jx-space-5);
+}
+
+.jx-plano__history,
+.jx-plano__invoices {
+  margin-top: var(--jx-space-6);
+}
+
+.jx-plano__history h2,
+.jx-plano__invoices h2 {
+  font-size: var(--jx-text-lg);
+  margin: 0 0 var(--jx-space-3);
+}
+
+.jx-plano__placeholder {
+  margin: 0;
+  padding: var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-strong);
+  color: var(--text-muted);
+  font-size: var(--jx-text-sm);
+}

@@ -1,0 +1,19 @@
+// jx-charge-history — mono money/dates, status as text+color (never color-only).
+// Tokens only — no hex (Gate 2).
+
+.jx-charge-history__mono {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-charge-history__num {
+  text-align: right;
+}
+
+.jx-charge-history__status {
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
