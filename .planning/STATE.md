@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-06-11T04:00:00.000Z"
-last_activity: "2026-06-11 — Phase 10 (Safe2Pay nucleo) COMPLETA em dev/test (verificada ao vivo: migration 0009 reversivel, cripto/split/escrow/idempotencia via Stub). 370+17+121 testes. OQ-3 resolvida como DEC-003 (suposicoes); PRODUCAO pendente do contrato Safe2Pay (TD-10-01..04 pre_launch). Proximo: Phase 11 (fatura/disputas/saques)."
+last_updated: "2026-06-11T12:00:00.000Z"
+last_activity: "2026-06-11 — DEC-004: resequenciamento. Parte financeira pesada de Safe2Pay (ex-Phase 11: fatura/disputas-resolucao/saques/conciliacao) movida para POS-DEPLOY = Phase 15 (MS-06), ultima do projeto. Nova ordem de build (autopilot): 12 (API publica) -> 13 (governanca, religada a [9]) -> 14 (deploy) -> 15 (Safe2Pay back-office). Phase 10 (checkout cartao/PIX) fica live no deploy. ROADMAP/MILESTONES/DECISIONS atualizados. Proximo: Phase 12."
 progress:
   total_phases: 14
   completed_phases: 10
@@ -40,12 +40,13 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 
 ## Current Position
 
-- **Milestone:** MS-03 (Coração transacional — entregas) — em andamento
-- **Phase atual:** 9 of 14 — Execução, comprovação, tracking público e notificações — ✅ EXECUTADA (verificação ao vivo MySQL pendente: geofence ST_Distance_Sphere dentro/fora + migration 0008 reversível)
-- **Próxima Phase:** 10 of 14 — Pagamento online (cartão/PIX + escrow) — ⚠️ bloqueada por OQ-3 (contrato Safe2Pay)
-- **Last activity:** 2026-06-11 — Phase 9 executada (maior do MS-03, 19 tasks): comprovação foto+EXIF/GPS antifraude (oposto do KYC), tracking público sem auth + mapa MapLibre lazy, notificações multicanal com fallback, jobs de ciclo, migration 0008 reversível. 326 testes backend (not-mysql) + 121 frontend.
+- **Milestone:** MS-04 (Financeiro checkout + integrações) — em andamento
+- **Phase atual:** 10 of 14 — Safe2Pay núcleo (checkout) — ✅ COMPLETA dev/test (Stub); produção pendente contrato (TD-10-01..04)
+- **Próxima Phase:** 12 of 14 — API pública + integração Menu Certo (sem pagamento; pronta — depende de [10] ✓)
+- **Ordem de build pós-DEC-004:** 12 → 13 → 14 (deploy) → 15 (Safe2Pay financeiro back-office, pós-deploy)
+- **Last activity:** 2026-06-11 — DEC-004 resequenciamento aplicado (ROADMAP/MILESTONES/DECISIONS/STATE). Safe2Pay financeiro pesado → Phase 15 pós-deploy.
 
-**Progress:** [██████░░░░] 64%
+**Progress:** [███████░░░] 71%
 
 ## MS-01 — entregue
 

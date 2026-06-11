@@ -5,6 +5,7 @@
 > Convenções: locale pt-BR; código/schema em inglês; tokens canônicos em `docs/identidade-visual/tokens.json`.
 > **DEC-001 (2026-06-10):** dark mode é escopo do M1 → `ux-advanced/dark-mode-theming` é obrigatória em TODA phase com `has_ui: true` (3–14), além das listadas explicitamente.
 > **DEC-002 (2026-06-10):** mapa de tracking em tempo real entra no M1 (ADR-101 promovida) → escopo detalhado na Phase 9.
+> **DEC-004 (2026-06-11):** resequenciamento — a parte financeira pesada de Safe2Pay (ex-Phase 11: fatura/disputas-resolução/saques/conciliação) foi movida para DEPOIS do deploy do piloto, agora **Phase 15** (MS-06, última do projeto). Ordem de build: 12 → 13 → 14 (deploy) → 15. Phase 13 religada a [9]. No deploy (Phase 14) ficam live a assinatura + cartão/PIX com split + escrow (Phase 10), assumindo contrato Safe2Pay assinado. Ver DECISIONS.md DEC-004.
 
 ---
 
@@ -328,37 +329,6 @@
 
 ---
 
-## Phase 11: Pagamento direto completo — fatura, disputas, saques
-
-**Milestone:** MS-04 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
-
-### REQs cobertos
-- REQ-035 (completo): pagamento direto 1ª classe · REQ-037: fatura mensal `[ASSUMIDO RN-025]` · REQ-038: saques `[ASSUMIDO R$ 20]` · REQ-039: disputas + RN-027 `[ASSUMIDO]` · REQ-040: conciliação diária · REQ-012 (UI tela 15)
-
-### Flags
-- has_ui: true · has_api: true · mobile: true (extrato/saque do entregador) · integration_check: true (Safe2Pay boleto/PIX/transferência)
-- has_ai: false · has_external_users: true · has_external_integration: true · has_payments: true · has_pii: true · is_pre_release: false
-
-### Skills obrigatórias
-- `domain/safe2pay-escrow-br` · `domain/saas-billing-canonical` + SAAS-BILLING-DOCS.md · `ux-advanced/payment-checkout-ux` · `ux-advanced/trust-safety-ux` (disputas) · `ux-advanced/data-tables-ux` (faturas/extrato) · matriz UI + `br/ux-copywriting-ptbr` · `owasp-security` · `quality/observability-production`
-
-### Squad recomendado
-- pre-phase: squad-research · post-execute: squad-review · pre-release: none
-
-### Verificações automatizadas
-- Job fecha fatura dia 1º; vencida >7 dias → criação de entrega bloqueada (F-03 E5)
-- "Não recebi" → ENTREGUE + disputa; 2 procedentes/30d → modalidade direta bloqueada 90 dias
-- Saque falha → saldo restituído; saque < R$ 20 → rejeitado
-- Wireframe-contract de `08`, `15`, `16`
-
-### Dependências
-- Depende das phases: [10] · Bloqueia: [13]
-
-### Origem
-- ADR-012 (`adrs.md:66-71`) · RN-025/026/027 · `projeto/wireframes/08,15,16` · `projeto/regras-negocio/fluxos.md:142-152`
-
----
-
 ## Phase 12: API pública + integração Menu Certo
 
 **Milestone:** MS-04 · **Tipo:** integration · **Status:** not_started · **Estimativa:** M (3-5d)
@@ -414,7 +384,8 @@
 - Wireframe-contract de `09`, `19`, `20`, `23`, `24`, `25`
 
 ### Dependências
-- Depende das phases: [11] · Bloqueia: [14]
+- Depende das phases: [9] · Bloqueia: [14]
+- **DEC-004 (2026-06-11):** dependência religada de [11]→[9]. A UI de disputas/suspensões do admin de área se apoia no primitivo de disputa já entregue na Phase 9 (`payment_dispute`, "não recebi" → ENTREGUE + disputa). A **resolução financeira** da disputa (2 procedentes/30d → bloqueio 90d, restituição de saldo) foi adiada para a Phase 15 (pós-deploy). Esta phase entrega o shell admin de disputas/suspensão + score + avaliações.
 
 ### Origem
 - ADR-013 (`adrs.md:73-76`) · RN-008/014/016 · `projeto/wireframes/09,19,20,23,24,25` · `projeto/regras-negocio/visao-geral.md:29`
@@ -445,10 +416,43 @@
 - Suíte completa + lint verdes; zero FAIL-BLOCK do Senior Quality Bar
 
 ### Dependências
-- Depende das phases: [12, 13] · Bloqueia: []
+- Depende das phases: [12, 13] · Bloqueia: [15]
+- **DEC-004 (2026-06-11):** esta é a phase de **deploy do piloto**. Escopo de pagamentos no launch = Phase 10 live (assinatura + cartão/PIX com split + escrow 24h), assumindo contrato Safe2Pay assinado até aqui (DEC-003 → confirmar). O back-office financeiro (fatura mensal/disputas-resolução/saques/conciliação) **não** entra no deploy — está na Phase 15 pós-deploy. A regressão de pagamentos desta phase cobre apenas o escopo da Phase 10.
 
 ### Origem
 - ADR-003 · RN-021 · `projeto/stacks/stack.md:53-60` · `projeto/docs-externos/integracoes.md:99-102`
+
+---
+
+## Phase 15: Safe2Pay financeiro (back-office) — fatura, disputas, saques [PÓS-DEPLOY]
+
+**Milestone:** MS-06 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+> **DEC-004 (2026-06-11):** ex-Phase 11, movida para DEPOIS do deploy do piloto (decisão do dono). É a **última phase** do projeto. Toda a parte financeira pesada de Safe2Pay (fatura mensal, resolução de disputas, saques, conciliação) só ativa em produção após o piloto estar no ar e o contrato Safe2Pay confirmado. Código nasce verde com Stub + valores parametrizados (DEC-003), produção atrás das TDs do contrato (TD-10-01..04).
+
+### REQs cobertos
+- REQ-035 (completo): pagamento direto 1ª classe · REQ-037: fatura mensal `[ASSUMIDO RN-025]` · REQ-038: saques `[ASSUMIDO R$ 20]` · REQ-039: disputas + RN-027 `[ASSUMIDO]` · REQ-040: conciliação diária · REQ-012 (UI tela 15)
+
+### Flags
+- has_ui: true · has_api: true · mobile: true (extrato/saque do entregador) · integration_check: true (Safe2Pay boleto/PIX/transferência)
+- has_ai: false · has_external_users: true · has_external_integration: true · has_payments: true · has_pii: true · is_pre_release: false
+
+### Skills obrigatórias
+- `domain/safe2pay-escrow-br` · `domain/saas-billing-canonical` + SAAS-BILLING-DOCS.md · `ux-advanced/payment-checkout-ux` · `ux-advanced/trust-safety-ux` (disputas) · `ux-advanced/data-tables-ux` (faturas/extrato) · matriz UI + `br/ux-copywriting-ptbr` · `owasp-security` · `quality/observability-production`
+
+### Squad recomendado
+- pre-phase: squad-research · post-execute: squad-review · pre-release: none
+
+### Verificações automatizadas
+- Job fecha fatura dia 1º; vencida >7 dias → criação de entrega bloqueada (F-03 E5)
+- "Não recebi" → ENTREGUE + disputa; 2 procedentes/30d → modalidade direta bloqueada 90 dias
+- Saque falha → saldo restituído; saque < R$ 20 → rejeitado
+- Wireframe-contract de `08`, `15`, `16`
+
+### Dependências
+- Depende das phases: [14] · Bloqueia: []
+
+### Origem
+- ADR-012 (`adrs.md:66-71`) · RN-025/026/027 · `projeto/wireframes/08,15,16` · `projeto/regras-negocio/fluxos.md:142-152`
 
 ---
 
@@ -465,8 +469,8 @@
 | 7 | Criação de entrega | 03 | ✓ | – | ✓ | – | – | L |
 | 8 | Despacho em cascata | 03 | ✓ | ✓ | ✓ | ✓ | – | L |
 | 9 | Execução + tracking | 03 | ✓ | ✓ | ✓ | ✓ | – | L |
-| 10 | Safe2Pay núcleo ⚠OQ-3 | 04 | ✓ | – | ✓ | ✓ | ✓ | L |
-| 11 | Direto + fatura + saques | 04 | ✓ | ✓ | ✓ | ✓ | ✓ | L |
+| 10 | Safe2Pay núcleo (checkout) | 04 | ✓ | – | ✓ | ✓ | ✓ | L |
 | 12 | API pública/Menu Certo | 04 | ✓ | – | ✓ | ✓ | – | M |
 | 13 | Governança + score | 05 | ✓ | – | ✓ | – | – | L |
-| 14 | Hardening + release | 05 | ✓ | ✓ | ✓ | ✓ | ✓ | L |
+| 14 | Hardening + release (deploy) | 05 | ✓ | ✓ | ✓ | ✓ | ✓ | L |
+| 15 | Safe2Pay financeiro (back-office) [PÓS-DEPLOY] | 06 | ✓ | ✓ | ✓ | ✓ | ✓ | L |
