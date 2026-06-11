@@ -58,3 +58,78 @@
 - Wave 3 (frontend T-09..T-12) — admin plataforma 23-25 + área 09/19/20.
 - Consequência financeira de disputa/score (Phase 15 / DEC-004).
 - Teste `@pytest.mark.mysql` da migration 0011 escrito mas NÃO rodado aqui (roda contra MySQL live).
+
+---
+
+# Phase 13 — Execution Log (frontend, Wave 3 / T-09..T-12)
+
+**Executor:** frontend (apps/web) · **Escopo:** Wave 3 (T-09..T-12). **Data:** 2026-06-11
+**Branch:** master · **Angular 19 + Ionic 8, standalone/signals/OnPush, lazy por rota.**
+
+## Tarefas concluídas
+
+| Task | Descrição | Commit |
+|------|-----------|--------|
+| T-09 | Componentes jx-score-badge, jx-score-breakdown, jx-suspension-panel (+ stories + specs + a11y) | `29d559b` |
+| T-12 | Serviços Angular de governança (PlatformAdminService + GovernancaService) | `1967a0e` |
+| T-10 | Shell admin de plataforma + telas 23/24/25 | `dc2054e` |
+| T-11 | Admin de área — telas 09 + 19/20 | `6940455` |
+| T-12 | Specs de serviços + estados (signals/empty/loading/error) das telas | `9954d81` |
+
+## Componentes novos (T-09)
+
+- `jx-score-badge` — nível + cor do token `--score-*` + label textual (cor+texto, daltonismo);
+  variantes md/lg; valor em mono pt-BR. Exportado no barrel (`ScoreBadgeLevel` para evitar
+  colisão com o `ScoreLevel` do score-chip existente).
+- `jx-score-breakdown` — tabela explicável (componente | valor | peso | contribuição) +
+  footer de total + nota "informativo no piloto" (ADR-013). `<th scope>` + caption sr-only.
+- `jx-suspension-panel` — motivo + janela de recurso + SLA countdown (`aria-live="polite"`,
+  tick 1/min) + ações manter/reverter; estados aberta/risco/vencida/revertida/mantida.
+
+## Telas (T-10/T-11)
+
+- **Plataforma (novo shell lazy `/plataforma`, só renderiza; backend exige TOTP+platform_admin):**
+  23 (KPIs mono + lista de áreas com badge info `% parametrizado`), 24 (busca/filtro cross-área
+  + jx-score-badge → drawer jx-score-breakdown; aviso info "score não afeta despacho nem cobrança"),
+  25 (disputas globais + jx-suspension-panel).
+- **Área (rotas no shell `/admin` existente):** 09 (disputas com decisão administrativa
+  procedente/improcedente + aviso "resolução financeira no módulo financeiro" — sem efeito
+  financeiro; recursos via jx-suspension-panel), 19/20 (detalhe entregador + score + breakdown +
+  suspender com motivo obrigatório → recurso + SLA).
+
+## Serviços (T-12)
+
+- `PlatformAdminService` (`/v1/platform/*` + `/v1/admin/scores/*`) e `GovernancaService`
+  (`/v1/admin/suspensions|disputes`, `/v1/admin/scores`). Contratos espelham os schemas do backend.
+
+## Decisões de implementação (Claude's discretion)
+
+- **score-badge ≠ score-chip:** o piloto já tinha `jx-score-chip` (inline, células). O UI-SPEC pede
+  `jx-score-badge` — criado como badge maior para detalhe (telas 19/20/24) reusando os mesmos
+  `--score-*`. Ambos coexistem; nenhum hex.
+- **Filtro de score na tela 24** abre um drawer com breakdown (reuso do `--surface-sunken` como
+  backdrop, padrão dos modais da api-keys; sem token `--scrim`, que não existe).
+- **Histórico de avaliações (telas 19/20):** o backend NÃO expõe endpoint de listagem de ratings;
+  a contribuição das avaliações aparece no `jx-score-breakdown` (componente `ratings`). Lista
+  detalhada de avaliações registrada como TD-13-03.
+- **`as` em `@else if`:** Angular 19 só permite `as` no `@if` primário — breakdown movido para um
+  `@if` aninhado dentro do `@else`.
+
+## Desvios das regras (deviation rules)
+
+- **[Rule 3]** SLA countdown precisava de `aria-live` e tick — implementado com `setInterval`
+  limpo via `DestroyRef` (sem vazamento). Sem desvio arquitetural (Rule 4).
+- Nenhum bug pré-existente corrigido fora de escopo.
+
+## Tech debt registrada
+
+- **TD-13-03** (post_launch_quarter) — endpoint + UI de histórico detalhado de avaliações
+  (loja→entregador) nas telas 19/20; hoje a contribuição aparece só agregada no score breakdown.
+
+## Gates / verificação
+
+- Gate 7: `npm run test` (177 SUCCESS), `npm run build` e `npm run lint` verdes.
+- Zero hex confirmado nas pastas novas (`admin-plataforma/`, `admin/governanca/`, os 3 componentes,
+  o shell): `grep -rn "#[0-9A-Fa-f]{3,6}"` → 0.
+- A11y: score badge cor+texto; modais role=dialog/aria-modal/Esc; SLA countdown aria-live;
+  tabelas `<th scope>` + teclado.
