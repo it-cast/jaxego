@@ -171,6 +171,24 @@ async def transition(
         to_state=to_state,
     )
 
+    # Phase 12 (T-07 / D-08): enqueue an outbound webhook for this state change. This
+    # is the SINGLE write-point of state, so it is the right hook. NON-BLOCKING by
+    # contract — a webhook failure must NEVER derail a delivery transition (try/except;
+    # the row is enqueued in the same tx, the arq job delivers it later).
+    try:
+        from app.webhooks import service as webhook_service
+
+        await webhook_service.enqueue_event(
+            session, area_id=locked.area_id, delivery=locked, state=to_state
+        )
+    except Exception:  # noqa: BLE001 — webhook enqueue is best-effort (D-07)
+        logger.warning(
+            "delivery.webhook_enqueue_failed",
+            area_id=locked.area_id,
+            delivery_id=locked.id,
+            to_state=to_state,
+        )
+
 
 # ---------------------------------------------------------------------------
 # Plan limit (RN-028 / D-07 / LOW-3) — COUNT server-side, CANCELADA excluded.

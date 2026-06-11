@@ -20,6 +20,10 @@ import pytest
 import pytest_asyncio
 
 # Import every model so Base.metadata is complete before create_all.
+from app.api_keys.models import (  # noqa: F401 (registers mappers — Phase 12)
+    ApiIdempotencyKey,
+    ApiKey,
+)
 from app.areas.models import Area, AreaAdmin
 from app.audit.models import AuditLog  # noqa: F401 (registers mapper)
 from app.auth.models import RefreshToken, User  # noqa: F401
@@ -59,6 +63,10 @@ from app.payments_direct.models import (  # noqa: F401 (Phase 9 mappers)
 from app.plans.models import SubscriptionPlan  # noqa: F401
 from app.proofs.models import DeliveryProof  # noqa: F401 (Phase 9 mapper)
 from app.tracking.models import DeliveryLocation  # noqa: F401 (Phase 9 mapper)
+from app.webhooks.models import (  # noqa: F401 (registers mappers — Phase 12)
+    WebhookDelivery,
+    WebhookEndpoint,
+)
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

@@ -64,3 +64,12 @@ from app.payments.webhooks_router import router as payments_webhooks_router  # n
 
 api_router.include_router(payments_router)
 api_router.include_router(payments_webhooks_router)
+
+# Phase 12 domain sub-routers (API pública + integração Menu Certo — F-04).
+# - api_public.router: POST /v1/deliveries (public, API-key auth, idempotent).
+# - api_keys.admin_router: /v1/admin/areas/{area_id}/api-keys + /webhook (area admin).
+from app.api_keys.admin_router import router as api_keys_admin_router  # noqa: E402
+from app.api_public.router import router as public_deliveries_router  # noqa: E402
+
+api_router.include_router(public_deliveries_router, prefix="/public")
+api_router.include_router(api_keys_admin_router)

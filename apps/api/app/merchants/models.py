@@ -50,6 +50,9 @@ class Merchant(Base, AreaScopedMixin, TimestampMixin):
         UniqueConstraint("account_type", "document", name="uq_merchants_account_type_document"),
         UniqueConstraint("phone_e164", name="uq_merchants_phone_e164"),
         UniqueConstraint("email", name="uq_merchants_email"),
+        # Phase 12 / D-03: the integrator's external ref is unique WITHIN an area so
+        # `merchant_external_ref` resolves to exactly one store per API key area.
+        UniqueConstraint("area_id", "external_ref", name="uq_merchants_area_id_external_ref"),
         Base.__table_args__,
     )
 
@@ -65,6 +68,11 @@ class Merchant(Base, AreaScopedMixin, TimestampMixin):
     email: Mapped[str] = mapped_column(String(255), nullable=False)  # [PII]
 
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending_validation")
+
+    # The store's id in the integrator's system (Menu Certo) — Phase 12 / D-03. The
+    # public API maps `merchant_external_ref` → this store, SCOPED to the API key's
+    # area (IDOR closed by area_id in the WHERE — TH-03). Nullable; unique per area.
+    external_ref: Mapped[str | None] = mapped_column(String(120), nullable=True)
 
     # Geocoded point (resolved at signup; nullable until then).
     lat: Mapped[float | None] = mapped_column(Float, nullable=True)

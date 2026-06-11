@@ -17,13 +17,19 @@ from app.core.exceptions import AppError
 
 
 class RateLimitedError(AppError):
-    """Too many requests from this client in the window (429)."""
+    """Too many requests from this client in the window (429).
+
+    `retry_after` (seconds), when given, is surfaced as the standard `Retry-After`
+    response header (RFC 7807 + header — D-05 / TH-08) by the global error handler.
+    """
 
     status_code = 429
     code = "rate_limited"
 
-    def __init__(self) -> None:
+    def __init__(self, *, retry_after: int | None = None) -> None:
         super().__init__("Muitas tentativas. Aguarde um momento e tente de novo.")
+        if retry_after is not None:
+            self.headers["Retry-After"] = str(retry_after)
 
 
 class SlidingWindowLimiter:
@@ -34,15 +40,21 @@ class SlidingWindowLimiter:
         self._window = window
         self._hits: dict[str, deque[datetime]] = defaultdict(deque)
 
-    def check(self, key: str, *, now: datetime | None = None) -> None:
-        """Record a hit for `key`; raise RateLimitedError if over the limit."""
+    def check(
+        self, key: str, *, now: datetime | None = None, retry_after: int | None = None
+    ) -> None:
+        """Record a hit for `key`; raise RateLimitedError if over the limit.
+
+        `retry_after` (seconds), when given, is attached to the 429 as the
+        `Retry-After` header (D-05 / TH-08).
+        """
         current = now or datetime.now(UTC)
         cutoff = current - self._window
         bucket = self._hits[key]
         while bucket and bucket[0] < cutoff:
             bucket.popleft()
         if len(bucket) >= self._limit:
-            raise RateLimitedError()
+            raise RateLimitedError(retry_after=retry_after)
         bucket.append(current)
 
     def reset(self) -> None:

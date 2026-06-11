@@ -40,6 +40,7 @@ from app.workers.tasks import (
     release_escrow,
     sync_delinquency,
 )
+from app.workers.webhooks import deliver_due_webhooks, purge_idempotency_keys
 
 
 async def _on_startup(ctx: dict[str, Any]) -> None:
@@ -74,6 +75,9 @@ class WorkerSettings:
         reconcile_safe2pay,
         # Phase 10: webhook event processing (enqueued from the public webhook endpoint).
         process_safe2pay_event,
+        # Phase 12: public-API idempotency purge + outbound webhook delivery.
+        purge_idempotency_keys,
+        deliver_due_webhooks,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).
@@ -93,4 +97,8 @@ class WorkerSettings:
         cron(release_escrow, minute=set(range(0, 60, 10))),
         # Reconcile extrato × platform_charges daily at 07:00 UTC (D-08).
         cron(reconcile_safe2pay, hour={7}, minute={0}),
+        # Phase 12 — purge expired idempotency snapshots hourly (T-05, LGPD/cleanup).
+        cron(purge_idempotency_keys, minute={23}),
+        # Phase 12 — sweep due webhook deliveries every minute (drives the 8× backoff).
+        cron(deliver_due_webhooks, minute=set(range(0, 60))),
     ]

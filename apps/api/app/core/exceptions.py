@@ -23,6 +23,8 @@ class AppError(Exception):
         self.message = message or self.__class__.__name__
         if code is not None:
             self.code = code
+        # Optional response headers (e.g. Retry-After on 429 — set by subclasses).
+        self.headers: dict[str, str] = {}
         super().__init__(self.message)
 
 
@@ -53,6 +55,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content=_error_payload(exc.code, exc.message, request_id),
+        headers=getattr(exc, "headers", None) or None,
     )
 
 
