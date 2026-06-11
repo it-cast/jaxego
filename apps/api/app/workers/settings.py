@@ -20,6 +20,7 @@ from arq.connections import RedisSettings
 from app.core.config import settings
 from app.db.session import async_session_factory
 from app.notifications.tasks import notify_task
+from app.workers.appeals import enforce_appeal_sla
 from app.workers.dispatch import dispatch_offer_task, send_push_task
 from app.workers.document_expiry import (
     escalate_stale_reviews_task,
@@ -32,6 +33,7 @@ from app.workers.lifecycle import (
     purge_locations,
 )
 from app.workers.revalidate import revalidate_receita
+from app.workers.scores import snapshot_scores
 from app.workers.tasks import (
     charge_subscriptions_daily,
     healthcheck,
@@ -78,6 +80,10 @@ class WorkerSettings:
         # Phase 12: public-API idempotency purge + outbound webhook delivery.
         purge_idempotency_keys,
         deliver_due_webhooks,
+        # Phase 13: daily score snapshot (idempotent, no financial effect — ADR-013).
+        snapshot_scores,
+        # Phase 13: appeal SLA enforcement (auto-revert + alert, idempotent — LOW-1).
+        enforce_appeal_sla,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).
@@ -101,4 +107,8 @@ class WorkerSettings:
         cron(purge_idempotency_keys, minute={23}),
         # Phase 12 — sweep due webhook deliveries every minute (drives the 8× backoff).
         cron(deliver_due_webhooks, minute=set(range(0, 60))),
+        # Phase 13 — daily score snapshot at 05:00 UTC (1/dia/courier, idempotent).
+        cron(snapshot_scores, hour={5}, minute={0}),
+        # Phase 13 — enforce appeal SLA every 5 min (auto-revert past-due undecided).
+        cron(enforce_appeal_sla, minute=set(range(0, 60, 5))),
     ]

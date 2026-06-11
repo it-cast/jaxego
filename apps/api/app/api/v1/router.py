@@ -73,3 +73,19 @@ from app.api_public.router import router as public_deliveries_router  # noqa: E4
 
 api_router.include_router(public_deliveries_router, prefix="/public")
 api_router.include_router(api_keys_admin_router)
+
+# Phase 13 domain sub-routers (governança — score, avaliações, suspensão/recurso,
+# admin de plataforma). Score is read-only (TH-05); admin plataforma is TOTP-gated.
+from app.platform_admin.router import router as platform_admin_router  # noqa: E402
+from app.ratings.router import router as ratings_router  # noqa: E402
+from app.scores.router import admin_router as scores_admin_router  # noqa: E402
+from app.scores.router import router as scores_router  # noqa: E402
+from app.suspensions.router import admin_router as suspensions_admin_router  # noqa: E402
+from app.suspensions.router import disputes_router as disputes_admin_router  # noqa: E402
+
+api_router.include_router(scores_router)
+api_router.include_router(scores_admin_router)
+api_router.include_router(ratings_router)
+api_router.include_router(suspensions_admin_router)
+api_router.include_router(disputes_admin_router)
+api_router.include_router(platform_admin_router)

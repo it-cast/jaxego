@@ -19,6 +19,8 @@ from app.auth.models import User
 from app.core.security import hash_password
 from app.db.session import async_session_factory
 from app.plans.service import seed_plans_if_missing
+from app.scores.service import seed_weights_if_missing
+from app.suspensions.service import seed_revenue_share_if_missing
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -82,6 +84,9 @@ async def run_seed(session: AsyncSession) -> None:
     """Idempotent seed: Pádua + 4 plans + platform admin + area admin."""
     area = await _upsert_area(session)
     await seed_plans_if_missing(session)
+    # Phase 13 — parametrised score weights (DRV-009) + [ASSUMIDO] revenue share %.
+    await seed_weights_if_missing(session)
+    await seed_revenue_share_if_missing(session, area_id=area.id)
     await _upsert_user(
         session,
         email=PLATFORM_ADMIN_EMAIL,
