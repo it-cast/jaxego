@@ -16,6 +16,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.mixins import ensure_aware_utc
 from app.deliveries.models import Delivery
 from app.deliveries.service import transition
 from app.deliveries.state_machine import InvalidTransitionError
@@ -130,10 +131,13 @@ async def accept_offer(
         await offer_state.close_offer(r, delivery_id)
         await offer_state.clear_candidates(r, delivery_id)
 
-        # KPI NORTE (observability) — tempo criação→aceite, no PII.
+        # KPI NORTE (observability) — tempo criação→aceite, no PII. Coerce both to
+        # aware UTC at the read boundary (TD-010): SQLite/MySQL read back naive.
         elapsed_ms: int | None = None
         if locked.created_at is not None and locked.accepted_at is not None:
-            elapsed_ms = int((locked.accepted_at - locked.created_at).total_seconds() * 1000)
+            created = ensure_aware_utc(locked.created_at)
+            accepted = ensure_aware_utc(locked.accepted_at)
+            elapsed_ms = int((accepted - created).total_seconds() * 1000)
         logger.info(
             "dispatch.offer.accepted",
             area_id=area_id,
