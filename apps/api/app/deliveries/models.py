@@ -161,6 +161,9 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     # Cancellation bookkeeping (who/why) — reason/actor set on cancel.
     cancel_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     cancel_actor_user_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True)
+    # RN-004 cancellation cost in cents, computed server-side by state at cancel
+    # time and RECORDED here (the effective charge is the Phase 11 invoice). Phase 9.
+    cancel_cost_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # LGPD retention (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)

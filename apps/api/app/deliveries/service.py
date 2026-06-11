@@ -380,6 +380,40 @@ async def get_delivery(
     return delivery
 
 
+# ---------------------------------------------------------------------------
+# RN-004 cancellation cost + RN-013 dropoff reveal (Phase 9 — F-06).
+# ---------------------------------------------------------------------------
+# The full dropoff address is revealed ONLY after pickup (RN-013) — by state.
+_DROPOFF_REVEALED_STATES = frozenset({"COLETADA", "ENTREGUE", "FINALIZADA"})
+
+
+def dropoff_revealed(state: str) -> bool:
+    """True if the full dropoff address may be shown for this state (RN-013)."""
+    return state in _DROPOFF_REVEALED_STATES
+
+
+def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
+    """RN-004 cost (cents) for cancelling NOW, by the delivery's current state.
+
+    - CRIADA (pre-acceptance): 0 (the store may free-cancel before a courier accepts).
+    - ACEITA (accepted, not collected): 50% of the estimate.
+    - COLETADA (collected): 100% of the estimate + the area's return policy %.
+
+    The estimate base is `estimate_max_cents` (or 0 if unpriced). This is only
+    RECORDED on the delivery; the effective charge is the Phase 11 invoice.
+    """
+    base = delivery.estimate_max_cents or 0
+    state = delivery.state
+    if state == "CRIADA":
+        return 0
+    if state == "ACEITA":
+        return base // 2
+    if state == "COLETADA":
+        return base + (base * max(return_pct, 0)) // 100
+    # Terminal states are not cancellable (the transition will 422); cost 0.
+    return 0
+
+
 async def cancel_delivery(
     session: AsyncSession,
     *,
@@ -390,10 +424,22 @@ async def cancel_delivery(
     reason: str | None,
     ip: str | None,
 ) -> Delivery:
-    """Cancel a delivery the store owns (CRIADA → CANCELADA, zero cost RN-004)."""
+    """Cancel a delivery the store owns; RECORD the RN-004 cost by state (Phase 9)."""
     delivery = await get_delivery(
         session, area_id=area_id, merchant_id=merchant_id, delivery_id=delivery_id
     )
+    # Compute the cost BEFORE the transition flips the state to CANCELADA.
+    from app.areas.config_schema import AreaConfig
+    from app.areas.models import Area
+
+    area = await session.get(Area, area_id)
+    raw = dict(area.config) if area and area.config else {}
+    try:
+        cfg = AreaConfig(**raw)
+    except Exception:  # noqa: BLE001 — defaults rather than block a cancel
+        cfg = AreaConfig()
+    cost = cancellation_cost_cents(delivery, return_pct=cfg.politica_retorno_pct)
+
     await transition(
         session,
         delivery=delivery,
@@ -402,6 +448,8 @@ async def cancel_delivery(
         reason=reason,
         ip=ip,
     )
+    delivery.cancel_cost_cents = cost  # recorded (charge is Phase 11)
+    await session.flush()
     return delivery
 
 
