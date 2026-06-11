@@ -1,0 +1,65 @@
+<main class="jx-plat-overview">
+  <h1 class="jx-plat-overview__title">Visão geral da <em>plataforma</em></h1>
+  <p class="jx-plat-overview__lead">
+    Números agregados das áreas e o repasse parametrizado de cada uma. O acesso
+    cross-área é registrado para auditoria.
+  </p>
+
+  <!-- KPIs -->
+  <section class="jx-plat-overview__kpis" aria-label="Indicadores da plataforma">
+    <div class="jx-plat-overview__kpi">
+      <span class="jx-plat-overview__kpi-value">{{ formatInt(totalAreas()) }}</span>
+      <span class="jx-plat-overview__kpi-label">Áreas ativas</span>
+    </div>
+    <div class="jx-plat-overview__kpi">
+      <span class="jx-plat-overview__kpi-value">{{
+        formatInt(totalCouriers())
+      }}</span>
+      <span class="jx-plat-overview__kpi-label">Entregadores</span>
+    </div>
+    <div class="jx-plat-overview__kpi">
+      <span class="jx-plat-overview__kpi-value">{{
+        formatInt(totalMerchants())
+      }}</span>
+      <span class="jx-plat-overview__kpi-label">Lojas</span>
+    </div>
+    <div class="jx-plat-overview__kpi">
+      <span class="jx-plat-overview__kpi-value">{{
+        formatInt(totalDeliveries())
+      }}</span>
+      <span class="jx-plat-overview__kpi-label">Entregas</span>
+    </div>
+  </section>
+
+  <!-- Lista de áreas -->
+  <section class="jx-plat-overview__section" aria-labelledby="areas-heading">
+    <h2 id="areas-heading" class="jx-plat-overview__section-title">Áreas</h2>
+    <jx-data-table
+      [columns]="columns"
+      [rows]="areas()"
+      [state]="state()"
+      [trackBy]="trackArea"
+      caption="Áreas da plataforma com volume e repasse parametrizado"
+      emptyIcon="◧"
+      emptyTitle="Nenhuma área ainda"
+      emptyMessage="Quando uma área for criada, ela aparece aqui com seus números."
+      errorMessage="Não conseguimos carregar as áreas. Tente de novo."
+      (retry)="load()"
+    >
+      <ng-template #row let-item>
+        <td>{{ item.name }}</td>
+        <td class="jx-plat-overview__num">{{ formatInt(item.couriers) }}</td>
+        <td class="jx-plat-overview__num">{{ formatInt(item.merchants) }}</td>
+        <td class="jx-plat-overview__num">{{ formatInt(item.deliveries) }}</td>
+        <td>
+          <span
+            class="jx-plat-overview__share"
+            [class.jx-plat-overview__share--info]="hasRevenue(item.area_id)"
+          >
+            {{ revenueLabel(item.area_id) }}
+          </span>
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+</main>

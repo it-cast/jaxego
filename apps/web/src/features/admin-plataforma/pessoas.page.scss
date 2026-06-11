@@ -1,0 +1,210 @@
+// Tela 24 — Entregadores e lojas cross-área + score (UI-SPEC §Tela 24).
+// Tokens only — no hex.
+
+.jx-plat-people {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-plat-people__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-plat-people__title em {
+  font-family: var(--jx-font-serif-accent);
+  font-style: italic;
+  color: var(--brand);
+}
+
+.jx-plat-people__tabs {
+  display: flex;
+  gap: var(--jx-space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.jx-plat-people__tab {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-plat-people__tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-plat-people__tab--active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+.jx-plat-people__search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jx-space-2);
+  align-items: center;
+}
+
+.jx-plat-people__field {
+  display: flex;
+  flex-direction: column;
+}
+
+.jx-plat-people__input {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font-size: var(--jx-text-base);
+}
+
+.jx-plat-people__input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-plat-people__input--num {
+  width: 140px;
+  font-family: var(--jx-font-mono);
+}
+
+.jx-plat-people__cta {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: var(--jx-radius-lg);
+  color: var(--brand-contrast);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-plat-people__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-plat-people__num {
+  text-align: right;
+  font-family: var(--jx-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.jx-plat-people__rowbtn {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--brand);
+  font: inherit;
+  font-weight: var(--jx-weight-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.jx-plat-people__rowbtn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--jx-radius-sm);
+}
+
+.jx-plat-people__no-score {
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+// --- Drawer / breakdown ----------------------------------------------------
+.jx-plat-people__drawer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--surface-sunken);
+  z-index: 50;
+}
+
+.jx-plat-people__drawer-card {
+  width: min(480px, 100%);
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--jx-space-5);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-plat-people__drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--jx-space-2);
+}
+
+.jx-plat-people__drawer-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-plat-people__drawer-close {
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  font-size: var(--jx-text-xl);
+  cursor: pointer;
+}
+
+.jx-plat-people__drawer-close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-plat-people__drawer-badge {
+  display: flex;
+}
+
+.jx-plat-people__drawer-loading {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.jx-plat-people__drawer-error {
+  margin: 0;
+  color: var(--error);
+}
+
+// Visually-hidden helper (component-scoped — accessibility-pro).
+.jx-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

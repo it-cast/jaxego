@@ -192,6 +192,57 @@ export const routes: Routes = [
             (m) => m.AdminApiKeysPage
           ),
       },
+      // Phase 13 (tela 09 / D-08): disputas + suspensões da área.
+      {
+        path: 'disputas',
+        loadComponent: () =>
+          import('../features/admin/governanca/disputas.page').then(
+            (m) => m.AdminGovernancaDisputasPage
+          ),
+      },
+      // Phase 13 (telas 19/20 / D-04/D-05): detalhe do entregador + score + suspensão.
+      {
+        path: 'entregadores/:courierId',
+        loadComponent: () =>
+          import('../features/admin/governanca/entregador-detalhe.page').then(
+            (m) => m.AdminEntregadorDetalhePage
+          ),
+      },
+    ],
+  },
+  // Phase 13 (D-06): platform-admin shell (telas 23-25). Lazy, auth-guarded; the
+  // backend enforces require_platform_admin + TOTP (ADR-005) on every endpoint, so
+  // a non-platform admin simply sees empty/error states. Cross-area reads are audited.
+  {
+    path: 'plataforma',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('../layouts/plataforma-shell.component').then(
+        (m) => m.PlataformaShellComponent,
+      ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'visao-geral' },
+      {
+        path: 'visao-geral',
+        loadComponent: () =>
+          import('../features/admin-plataforma/visao-geral.page').then(
+            (m) => m.PlataformaVisaoGeralPage,
+          ),
+      },
+      {
+        path: 'pessoas',
+        loadComponent: () =>
+          import('../features/admin-plataforma/pessoas.page').then(
+            (m) => m.PlataformaPessoasPage,
+          ),
+      },
+      {
+        path: 'disputas',
+        loadComponent: () =>
+          import('../features/admin-plataforma/disputas.page').then(
+            (m) => m.PlataformaDisputasPage,
+          ),
+      },
     ],
   },
   // Public tracking (tela 26, F-06 / Phase 9): token-only, NO auth guard. The map

@@ -1,0 +1,169 @@
+<main class="jx-plat-people">
+  <h1 class="jx-plat-people__title">Entregadores e <em>lojas</em></h1>
+
+  <jx-notice
+    tone="info"
+    message="Score não afeta despacho nem cobrança no piloto — é informativo."
+  />
+
+  <!-- Abas -->
+  <div class="jx-plat-people__tabs" role="tablist" aria-label="Tipo de pessoa">
+    <button
+      type="button"
+      role="tab"
+      class="jx-plat-people__tab"
+      [class.jx-plat-people__tab--active]="tab() === 'couriers'"
+      [attr.aria-selected]="tab() === 'couriers'"
+      (click)="setTab('couriers')"
+    >
+      Entregadores
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="jx-plat-people__tab"
+      [class.jx-plat-people__tab--active]="tab() === 'merchants'"
+      [attr.aria-selected]="tab() === 'merchants'"
+      (click)="setTab('merchants')"
+    >
+      Lojas
+    </button>
+  </div>
+
+  <!-- Busca / filtro -->
+  <form
+    class="jx-plat-people__search"
+    [formGroup]="searchForm"
+    (ngSubmit)="search()"
+  >
+    <label class="jx-plat-people__field">
+      <span class="jx-sr-only">Buscar por nome</span>
+      <input
+        class="jx-plat-people__input"
+        type="search"
+        placeholder="Buscar por nome…"
+        formControlName="q"
+      />
+    </label>
+    <label class="jx-plat-people__field">
+      <span class="jx-sr-only">Filtrar por área (id)</span>
+      <input
+        class="jx-plat-people__input jx-plat-people__input--num"
+        type="number"
+        inputmode="numeric"
+        placeholder="Área (id)"
+        formControlName="areaId"
+      />
+    </label>
+    <button type="submit" class="jx-plat-people__cta">Buscar</button>
+  </form>
+
+  <!-- Entregadores -->
+  @if (tab() === 'couriers') {
+    <jx-data-table
+      [columns]="courierColumns"
+      [rows]="couriers()"
+      [state]="couriersState()"
+      [trackBy]="trackCourier"
+      caption="Entregadores cross-área com score"
+      emptyIcon="◍"
+      emptyTitle="Nenhum entregador encontrado"
+      emptyMessage="Ajuste a busca ou o filtro de área."
+      errorMessage="Não conseguimos buscar os entregadores. Tente de novo."
+      (retry)="search()"
+    >
+      <ng-template #row let-item>
+        <td>
+          <button
+            type="button"
+            class="jx-plat-people__rowbtn"
+            (click)="openBreakdown(item)"
+            [attr.aria-label]="'Ver score de ' + item.full_name"
+          >
+            {{ item.full_name }}
+          </button>
+        </td>
+        <td class="jx-plat-people__num">{{ item.area_id }}</td>
+        <td>{{ statusLabel(item.status) }}</td>
+        <td>
+          @if (item.score_level) {
+            <jx-score-badge
+              [level]="item.score_level"
+              [value]="item.score_total"
+            />
+          } @else {
+            <span class="jx-plat-people__no-score">Sem score ainda</span>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
+  } @else {
+    <!-- Lojas -->
+    <jx-data-table
+      [columns]="merchantColumns"
+      [rows]="merchants()"
+      [state]="merchantsState()"
+      [trackBy]="trackMerchant"
+      caption="Lojas cross-área"
+      emptyIcon="◍"
+      emptyTitle="Nenhuma loja encontrada"
+      emptyMessage="Ajuste a busca ou o filtro de área."
+      errorMessage="Não conseguimos buscar as lojas. Tente de novo."
+      (retry)="search()"
+    >
+      <ng-template #row let-item>
+        <td>{{ item.name }}</td>
+        <td class="jx-plat-people__num">{{ item.area_id }}</td>
+        <td>{{ statusLabel(item.status) }}</td>
+      </ng-template>
+    </jx-data-table>
+  }
+
+  <!-- Drawer: breakdown do score -->
+  @if (selectedCourier(); as courier) {
+    <div
+      class="jx-plat-people__drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="breakdown-title"
+      (keydown.escape)="closeBreakdown()"
+    >
+      <div class="jx-plat-people__drawer-card">
+        <header class="jx-plat-people__drawer-head">
+          <h2 id="breakdown-title" class="jx-plat-people__drawer-title">
+            Score de {{ courier.full_name }}
+          </h2>
+          <button
+            #breakdownClose
+            type="button"
+            class="jx-plat-people__drawer-close"
+            aria-label="Fechar"
+            (click)="closeBreakdown()"
+          >
+            ×
+          </button>
+        </header>
+
+        @if (scoreState() === 'loading') {
+          <p class="jx-plat-people__drawer-loading" aria-busy="true">
+            Carregando score…
+          </p>
+        } @else if (scoreState() === 'error') {
+          <p class="jx-plat-people__drawer-error" role="alert">
+            Não conseguimos carregar o score. Feche e tente de novo.
+          </p>
+        } @else {
+          @if (score(); as s) {
+            <div class="jx-plat-people__drawer-badge">
+              <jx-score-badge [level]="s.level" [value]="s.total_score" size="lg" />
+            </div>
+            <jx-score-breakdown
+              [components]="s.components"
+              [total]="s.total_score"
+            />
+          }
+        }
+      </div>
+    </div>
+  }
+</main>

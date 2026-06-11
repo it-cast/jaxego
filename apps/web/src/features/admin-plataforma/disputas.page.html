@@ -1,0 +1,60 @@
+<main class="jx-plat-disputes">
+  <h1 class="jx-plat-disputes__title">Disputas e <em>suspensões</em></h1>
+  <p class="jx-plat-disputes__lead">
+    Visão global de todas as áreas. A decisão administrativa de cada caso é tomada
+    pelo admin da área. A resolução financeira fica no módulo financeiro.
+  </p>
+
+  <!-- Disputas -->
+  <section class="jx-plat-disputes__section" aria-labelledby="disputes-heading">
+    <h2 id="disputes-heading" class="jx-plat-disputes__section-title">
+      Disputas de pagamento
+    </h2>
+    <jx-data-table
+      [columns]="disputeColumns"
+      [rows]="disputes()"
+      [state]="disputesState()"
+      [trackBy]="trackDispute"
+      caption="Disputas de pagamento de todas as áreas"
+      emptyIcon="⚖"
+      emptyTitle="Nenhuma disputa"
+      emptyMessage="Quando uma entrega gerar disputa, ela aparece aqui."
+      errorMessage="Não conseguimos carregar as disputas. Tente de novo."
+      (retry)="loadDisputes()"
+    >
+      <ng-template #row let-item>
+        <td class="jx-plat-disputes__num">{{ item.id }}</td>
+        <td class="jx-plat-disputes__num">{{ item.delivery_id }}</td>
+        <td class="jx-plat-disputes__num">{{ item.courier_id }}</td>
+        <td>{{ disputeStatusLabel(item.status) }}</td>
+        <td>{{ formatDate(item.opened_at) }}</td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+
+  <!-- Suspensões -->
+  <section class="jx-plat-disputes__section" aria-labelledby="susp-heading">
+    <h2 id="susp-heading" class="jx-plat-disputes__section-title">
+      Suspensões e recursos
+    </h2>
+
+    @if (suspensionsState() === 'loading') {
+      <p class="jx-plat-disputes__loading" aria-busy="true">
+        Carregando suspensões…
+      </p>
+    } @else if (suspensionsState() === 'error') {
+      <p class="jx-plat-disputes__error" role="alert">
+        Não conseguimos carregar as suspensões.
+        <button type="button" (click)="loadSuspensions()">Tentar de novo</button>
+      </p>
+    } @else if (suspensionsState() === 'empty') {
+      <p class="jx-plat-disputes__empty">Nenhuma suspensão ativa.</p>
+    } @else {
+      <div class="jx-plat-disputes__panels">
+        @for (appeal of suspensions(); track trackSuspension(appeal)) {
+          <jx-suspension-panel [appeal]="appeal" />
+        }
+      </div>
+    }
+  </section>
+</main>
