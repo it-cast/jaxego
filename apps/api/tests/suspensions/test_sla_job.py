@@ -11,6 +11,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
+import structlog
 from app.couriers.models import Courier
 from app.suspensions.models import SuspensionAppeal
 from app.suspensions.service import decide_appeal, open_suspension
@@ -26,7 +27,6 @@ async def test_overdue_undecided_appeal_is_reverted_with_alert(
     db_session: AsyncSession,
     session_factory: async_sessionmaker[AsyncSession],
     suspension_world: SuspensionWorld,
-    capsys: pytest.CaptureFixture[str],
 ) -> None:
     # Open a suspension whose SLA already lapsed (negative window = overdue clock).
     appeal = await open_suspension(
@@ -40,7 +40,9 @@ async def test_overdue_undecided_appeal_is_reverted_with_alert(
     )
     await db_session.commit()
 
-    reverted = await enforce_appeal_sla({"session_factory": session_factory})
+    # Capture structlog events directly (robust vs. stdout/capsys ordering).
+    with structlog.testing.capture_logs() as logs:
+        reverted = await enforce_appeal_sla({"session_factory": session_factory})
     assert reverted == 1
 
     async with session_factory() as s:
@@ -49,8 +51,9 @@ async def test_overdue_undecided_appeal_is_reverted_with_alert(
         row = await s.get(SuspensionAppeal, appeal.id)
         assert row.reverted_at is not None
 
-    # The alert is emitted (structlog warning event in stdout).
-    assert "sla_auto_reverted" in capsys.readouterr().out
+    # The alert is emitted (structlog warning event 'sla_auto_reverted').
+    events = {entry.get("event") for entry in logs}
+    assert "appeals.sla_auto_reverted" in events
 
 
 @pytest.mark.asyncio
