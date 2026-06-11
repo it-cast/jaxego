@@ -1,0 +1,68 @@
+// jx-offer-timer — ring that empties + mono seconds. Cosmetic (ADR-104). Tokens
+// only — no hex (Gate 2). Color is reinforcement; the mono number is the truth.
+
+.jx-offer-timer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  --timer-color: var(--info);
+}
+
+// The emptying ring. The conic-gradient sweep is driven by --timer-fraction
+// (1 → 0). The color follows the phase below.
+.jx-offer-timer__ring {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--jx-radius-full);
+  background: conic-gradient(
+    var(--timer-color) calc(var(--timer-fraction, 1) * 360deg),
+    var(--surface-sunken) 0deg
+  );
+  // Punch a hole in the middle so it reads as a ring, not a pie.
+  -webkit-mask: radial-gradient(circle 8px at center, transparent 98%, #000 100%);
+  mask: radial-gradient(circle 8px at center, transparent 98%, #000 100%);
+  transition: background var(--jx-motion-fast) var(--jx-motion-easing-out);
+}
+
+.jx-offer-timer__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--timer-color);
+}
+
+// The seconds are editorial-technical (mono) — UI-SPEC §4.1.
+.jx-offer-timer__seconds {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-bold);
+}
+
+// Urgency phases (UI-SPEC §4.2) — color accelerates, never a neon pulse.
+.jx-offer-timer--attention {
+  --timer-color: var(--warning);
+}
+
+.jx-offer-timer--urgent {
+  --timer-color: var(--error);
+}
+
+// reduced-motion → no animated transition on the ring (static count + color).
+@media (prefers-reduced-motion: reduce) {
+  .jx-offer-timer__ring {
+    transition: none;
+  }
+}
+
+.jx-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
