@@ -1,11 +1,22 @@
 """THE race test (REQ-024 — critério nº 1): 2 simultaneous accepts → 1 wins.
 
 MySQL + real Redis only. Two coroutines accept the SAME offer at the same instant;
-exactly ONE wins (delivery → ACEITA) and the other gets OfferAlreadyTakenError
-(409) WITHOUT penalty (F-05 E3 — no cancellation, no extra transition for the
-loser). The defense in depth is real here: the redis `Lock` short-circuits between
-the contenders and the `SELECT ... FOR UPDATE` (Phase 7 `transition()`) serializes
-at the DB; the idempotent CRIADA→ACEITA machine decides the single winner.
+exactly ONE wins (delivery → ACEITA) and the OTHER is rejected WITHOUT penalty
+(F-05 E3 — no cancellation, no extra transition for the loser).
+
+We assert the *invariant*, not one specific exception type. The defense in depth
+(D-05) is real and the loser can legitimately land on ANY layer depending on the
+interleaving: (a) `NotOfferTargetError` (404) — the winner already cleared
+`offer:{id}` in Redis before the loser's A01 target check ran; (b) the redis `Lock`
+not acquired in time, OR (c) `state != CRIADA` after the `SELECT ... FOR UPDATE`
+(Phase 7 `transition()`), OR (d) the CRIADA→ACEITA machine rejecting — all three of
+which surface as `OfferAlreadyTakenError` (409). EVERY one of these is a
+"rejected without penalty" outcome (F-05 E3); the production logic is correct as-is.
+
+The invariant that ALWAYS holds for ANY interleaving:
+    * exactly 1 success (Delivery in ACEITA) and exactly 1 rejection exception;
+    * the delivery is ACEITA, bound to exactly 1 courier, `cancelled_at` is NULL;
+    * exactly 1 CRIADA→ACEITA row in `delivery_state_transitions`.
 
 Run live:
     cd apps/api && uv run pytest -m mysql tests/dispatch/test_accept_race.py
@@ -30,13 +41,14 @@ from app.auth.models import User
 from app.core.config import settings
 from app.core.security import hash_password
 from app.couriers.models import Courier
-from app.deliveries.models import Delivery, Recipient
+from app.deliveries.models import Delivery, DeliveryStateTransition, Recipient
+from app.deliveries.state_machine import InvalidTransitionError
 from app.dispatch import offer_state
-from app.dispatch.exceptions import OfferAlreadyTakenError
+from app.dispatch.exceptions import NotOfferTargetError, OfferAlreadyTakenError
 from app.dispatch.service import accept_offer
 from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 pytestmark = pytest.mark.mysql
@@ -187,6 +199,19 @@ async def _cleanup(engine: AsyncEngine, *, area_id: int) -> None:
         await s.commit()
 
 
+# The set of rejections that are ALL "rejected without penalty" (F-05 E3). The loser
+# can legitimately land on any of the D-05 defense layers depending on interleaving:
+#   * NotOfferTargetError (404)  — winner already cleared offer:{id} before A01 check
+#   * OfferAlreadyTakenError (409) — lock not acquired / state != CRIADA / machine reject
+#   * InvalidTransitionError (422) — the CRIADA→ACEITA machine itself rejected
+# None of them is a cancellation; none costs the loser anything.
+_REJECTION_EXCEPTIONS = (
+    NotOfferTargetError,
+    OfferAlreadyTakenError,
+    InvalidTransitionError,
+)
+
+
 @pytest.mark.asyncio
 async def test_two_concurrent_accepts_one_wins(
     mysql_engine: AsyncEngine, real_redis: aioredis.Redis
@@ -194,22 +219,24 @@ async def test_two_concurrent_accepts_one_wins(
     area_id, did, c1, c2 = await _seed(mysql_engine)
     sm = async_sessionmaker(bind=mysql_engine, expire_on_commit=False, autoflush=False)
 
-    # Both couriers are (momentarily) the target — the offer is opened twice in a
-    # row so both pass the A01 target check; the Lock + FOR UPDATE pick ONE winner.
-    await offer_state.open_offer(real_redis, delivery_id=did, courier_id=c1, timeout_s=30)
-    # Make the offer payload accept BOTH by writing each id's target just before the
-    # race: simplest is to let each coroutine open its own target, then race accept.
+    # A barrier maximises overlap so the two accepts truly contend; the invariant
+    # below holds for ANY interleaving regardless of who reaches each layer first.
     barrier = asyncio.Barrier(2)
 
-    async def accept(courier_id: int) -> str:
+    async def accept(courier_id: int) -> Delivery:
+        """Each contender uses its OWN session/connection — the real race needs it.
+
+        Each (re)asserts itself as the current offer target just before the race so
+        BOTH pass the A01 check at open; the Lock + FOR UPDATE then pick ONE winner.
+        Returns the ACEITA Delivery on success; raises on rejection (caught by gather).
+        """
         async with sm() as s:
-            # Each contender (re)asserts itself as the current target, then races.
             await offer_state.open_offer(
                 real_redis, delivery_id=did, courier_id=courier_id, timeout_s=30
             )
             await barrier.wait()
             try:
-                await accept_offer(
+                delivery = await accept_offer(
                     s,
                     real_redis,
                     area_id=area_id,
@@ -219,23 +246,62 @@ async def test_two_concurrent_accepts_one_wins(
                     ip=None,
                 )
                 await s.commit()
-                return "ok"
-            except OfferAlreadyTakenError:
+                return delivery
+            except Exception:
                 await s.rollback()
-                return "taken"
+                raise
 
     try:
-        results = await asyncio.gather(accept(c1), accept(c2))
-        # Exactly one wins; the other is "taken" — 409 without penalty.
-        assert sorted(results) == ["ok", "taken"]
+        results = await asyncio.gather(accept(c1), accept(c2), return_exceptions=True)
 
-        # The delivery is ACEITA, bound to exactly one courier, no cancellation.
+        successes = [r for r in results if isinstance(r, Delivery)]
+        failures = [r for r in results if isinstance(r, BaseException)]
+
+        # INVARIANT 1 — exactly one wins, exactly one is rejected. NEVER 2 successes.
+        assert len(successes) == 1, (
+            f"expected exactly 1 winner, got {len(successes)} "
+            f"(double-accept bug?) — results={results!r}"
+        )
+        assert len(failures) == 1, (
+            f"expected exactly 1 rejection, got {len(failures)} — results={results!r}"
+        )
+
+        # The winning return value is the ACEITA delivery bound to a real courier.
+        winner = successes[0]
+        assert winner.state == "ACEITA"
+        assert winner.courier_id in (c1, c2)
+
+        # INVARIANT 2 — the loser is a rejection WITHOUT penalty (any D-05 layer).
+        loser_exc = failures[0]
+        assert isinstance(loser_exc, _REJECTION_EXCEPTIONS), (
+            f"loser raised an unexpected exception type: {loser_exc!r}"
+        )
+
+        # INVARIANT 3 — DB truth: ACEITA, exactly 1 courier, NO cancellation (F-05 E3),
+        # and exactly ONE CRIADA→ACEITA transition row (no extra transition for loser).
         async with sm() as s:
             delivery = await s.get(Delivery, did)
             assert delivery is not None
             assert delivery.state == "ACEITA"
             assert delivery.courier_id in (c1, c2)
-            assert delivery.cancelled_at is None
+            assert delivery.courier_id == winner.courier_id
+            assert delivery.cancelled_at is None  # no penalty for the loser
+
+            accepted_transitions = (
+                await s.execute(
+                    select(func.count())
+                    .select_from(DeliveryStateTransition)
+                    .where(
+                        DeliveryStateTransition.delivery_id == did,
+                        DeliveryStateTransition.from_state == "CRIADA",
+                        DeliveryStateTransition.to_state == "ACEITA",
+                    )
+                )
+            ).scalar_one()
+            assert accepted_transitions == 1, (
+                f"expected exactly 1 CRIADA→ACEITA transition, got "
+                f"{accepted_transitions} (loser left a transition?)"
+            )
     finally:
         await offer_state.close_offer(real_redis, did)
         await offer_state.clear_candidates(real_redis, did)
