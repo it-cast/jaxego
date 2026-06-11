@@ -315,6 +315,14 @@ async def create_delivery(
 
     await assert_subscription_active(session, merchant_id=merchant_id, area_id=area_id)
 
+    # Overdue-invoice guard (F-03 E5 / Phase 15): a platform-fee invoice overdue more
+    # than the parametrised threshold (>7d) blocks creation server-side (TH-08). Same
+    # point as the subscription guard (D-02).
+    from app.invoices.service import InvoiceOverdueError, is_blocked_by_overdue_invoice
+
+    if await is_blocked_by_overdue_invoice(session, area_id=area_id, merchant_id=merchant_id):
+        raise InvoiceOverdueError()
+
     # E1: the dropoff neighborhood must be in the area catalog.
     await _resolve_dropoff_neighborhood(
         session, area_id=area_id, nbhd_id=body.dropoff_neighborhood_id
@@ -392,6 +400,13 @@ async def create_delivery(
             customer_email=customer_email or (recipient.email or ""),
         )
         delivery.fee_cents = taxa_cents
+    elif method == "direct":
+        # Phase 15 (RN-025): direct deliveries carry NO online charge, but the platform
+        # fee is RECORDED here so the monthly invoice (`invoices/`) can aggregate it (the
+        # effective charge is the Phase 15 invoice). Derived from the active plan — never
+        # user input (TH-03).
+        plan = await _active_plan(session, merchant_id=merchant_id, area_id=area_id)
+        delivery.fee_cents = plan.fee_cents
 
     # Initial transition None → CRIADA (the single writer of state).
     await transition(

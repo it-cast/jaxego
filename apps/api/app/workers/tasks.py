@@ -62,6 +62,48 @@ async def reconcile_safe2pay(ctx: dict[str, Any]) -> int:
     return len(divergences)
 
 
+# ---------------------------------------------------------------------------
+# Phase 15 — back-office financial crons (idempotent; aware-UTC). Each resolves the
+# session factory (+ PaymentPort where money moves) from the worker ctx.
+# ---------------------------------------------------------------------------
+async def close_platform_invoices(ctx: dict[str, Any]) -> int:
+    """Cron (dia 1º): close last month's platform-fee invoice per merchant (REQ-037)."""
+    from app.invoices import service
+
+    return await service.close_invoices_for_month(ctx["session_factory"])
+
+
+async def mark_invoices_overdue(ctx: dict[str, Any]) -> int:
+    """Cron: flip OPEN platform invoices past their due date to OVERDUE (F-03 E5)."""
+    from app.invoices import service
+
+    return await service.mark_overdue(ctx["session_factory"])
+
+
+async def expire_dispute_blocks(ctx: dict[str, Any]) -> int:
+    """Cron: expire dispute blocks past their 90-day window (RN-027). Idempotent."""
+    from app.payments_direct import disputes
+
+    return await disputes.expire_blocks(ctx["session_factory"])
+
+
+async def reconcile_finance_daily(ctx: dict[str, Any]) -> int:
+    """Cron: daily back-office reconciliation (charges/payouts/refunds × extrato — D-05)."""
+    from datetime import UTC, datetime, timedelta
+
+    from app.payments import reconcile
+    from app.payments.factory import get_payment_adapter
+
+    now = datetime.now(UTC)
+    divergences = await reconcile.reconcile(
+        ctx["session_factory"],
+        get_payment_adapter(),
+        since=now - timedelta(days=1),
+        until=now,
+    )
+    return len(divergences)
+
+
 async def process_safe2pay_event(
     ctx: dict[str, Any], transaction_id: str, event_status: str
 ) -> str:

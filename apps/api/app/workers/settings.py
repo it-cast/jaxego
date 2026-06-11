@@ -38,8 +38,12 @@ from app.workers.revalidate import revalidate_receita
 from app.workers.scores import snapshot_scores
 from app.workers.tasks import (
     charge_subscriptions_daily,
+    close_platform_invoices,
+    expire_dispute_blocks,
     healthcheck,
+    mark_invoices_overdue,
     process_safe2pay_event,
+    reconcile_finance_daily,
     reconcile_safe2pay,
     release_escrow,
     sync_delinquency,
@@ -86,6 +90,11 @@ class WorkerSettings:
         snapshot_scores,
         # Phase 13: appeal SLA enforcement (auto-revert + alert, idempotent — LOW-1).
         enforce_appeal_sla,
+        # Phase 15: back-office financial crons (fatura/bloqueio/conciliação — idempotent).
+        close_platform_invoices,
+        mark_invoices_overdue,
+        expire_dispute_blocks,
+        reconcile_finance_daily,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).
@@ -117,4 +126,13 @@ class WorkerSettings:
         # hard-delete ephemeral (30d) daily at 03:50 UTC. Idempotent, audited (D-01/D-02).
         cron(anonymize_inactive, hour={3}, minute={30}),
         cron(delete_ephemeral, hour={3}, minute={50}),
+        # Phase 15 — close last month's platform-fee invoices on the 1st at 02:00 UTC
+        # (REQ-037, idempotent — 1/loja/competência).
+        cron(close_platform_invoices, day={1}, hour={2}, minute={0}),
+        # Flip invoices past their due date to OVERDUE daily at 02:30 UTC (F-03 E5).
+        cron(mark_invoices_overdue, hour={2}, minute={30}),
+        # Expire 90-day dispute blocks daily at 02:40 UTC (RN-027, idempotent).
+        cron(expire_dispute_blocks, hour={2}, minute={40}),
+        # Daily back-office reconciliation at 07:30 UTC (D-05, divergence → alert).
+        cron(reconcile_finance_daily, hour={7}, minute={30}),
     ]

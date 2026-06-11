@@ -134,6 +134,19 @@ class Settings(BaseSettings):
     # Revenue share default (OQ-1 / A7) — parametrised, never hardcoded in code.
     revenue_share_default_pct: int = Field(default=20)
 
+    # --- Phase 15 back-office financials (D-07 / DRV-009) — parametrised, never hardcoded.
+    # Days from invoice close to its due date (F-03 E5 blocking counts from here).
+    invoice_due_days: int = Field(default=7)
+    # Days overdue past the due date before delivery creation is blocked (F-03 E5).
+    invoice_overdue_block_days: int = Field(default=7)
+    # Minimum withdrawal amount in cents ([ASSUMIDO R$ 20] — D-04).
+    withdrawal_min_cents: int = Field(default=2000)
+    # Dispute-block rule (RN-027): N procedente disputes within `window` days → block for
+    # `block` days of the direct modality.
+    dispute_block_threshold: int = Field(default=2)
+    dispute_block_window_days: int = Field(default=30)
+    dispute_block_duration_days: int = Field(default=90)
+
     # --- LLM infra (Phase 14 — REQ-053 / D-03) — INFRA ONLY, no AI feature in M1 ---
     # The router selects a provider/model per task. In dev/test the factory returns the
     # deterministic StubProvider (no network, no key). The ANTHROPIC_API_KEY is a SECRET
