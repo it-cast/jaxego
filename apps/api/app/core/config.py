@@ -105,6 +105,35 @@ class Settings(BaseSettings):
     vapid_public_key: str | None = Field(default=None)
     vapid_claim_sub: str = Field(default="mailto:ops@jaxego.com.br")
 
+    # --- Safe2Pay payment core (Phase 10) — SECRETS only via env (Gate 8) ---
+    # In dev/test the factory returns the PaymentStubAdapter (no network, no sandbox);
+    # these are consulted only by the real httpx adapter in staging/production. Every
+    # one of the secrets below is `Field(default=None)` — a real value committed to the
+    # repo is a Gate 8 FAIL-BLOCK and MUST be ROTATED, not just removed from history.
+    safe2pay_api_key: str | None = Field(default=None)
+    safe2pay_sandbox: bool = Field(default=True)
+    # 64 hex chars (32 bytes) for AES-256-GCM of the card token at rest (TH-B).
+    safe2pay_token_encrypt_key: str | None = Field(default=None)
+    # HMAC secret for the webhook signature ([ASSUMIDO A4] — confirm at T-13).
+    safe2pay_webhook_secret: str | None = Field(default=None)
+    # RSA-2048 keypair: private decrypts the card blob (backend only); public is served
+    # to the client via GET /v1/payments/chave-publica. PEM or base64(PEM).
+    rsa_private_key: str | None = Field(default=None)
+    rsa_public_key: str | None = Field(default=None)
+    # The 3 Safe2Pay subdomains (payment creates / api administers / services queries).
+    # Separate base URLs — never concatenate a subdomain (skill A1). Each host is in the
+    # SSRF allowlist (TH-L).
+    safe2pay_payment_url: str = Field(default="https://payment.safe2pay.com.br")
+    safe2pay_api_url: str = Field(default="https://api.safe2pay.com.br")
+    safe2pay_services_url: str = Field(default="https://services.safe2pay.com.br")
+    safe2pay_allowlist_hosts: str = Field(
+        default="payment.safe2pay.com.br,api.safe2pay.com.br,services.safe2pay.com.br"
+    )
+    # The Jaxegô recipient id (the platform's own Safe2Pay subaccount for the fee).
+    safe2pay_jaxego_recipient: str | None = Field(default=None)
+    # Revenue share default (OQ-1 / A7) — parametrised, never hardcoded in code.
+    revenue_share_default_pct: int = Field(default=20)
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -27,6 +27,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -104,8 +105,20 @@ class MerchantUser(Base, TimestampMixin):
     role: Mapped[str] = mapped_column(String(32), nullable=False, default="owner")
 
 
+# Recurring-billing state machine (Phase 10 / SAAS-BILLING §10). Separate from the
+# legacy `status` (active/pending/canceled) which gates delivery creation today.
+SUBSCRIPTION_BILLING_STATUSES = ("trial", "active", "blocked", "cancelado")
+
+
 class MerchantSubscription(Base, AreaScopedMixin, TimestampMixin):
-    """A merchant's subscription to a plan (status: active / pending / canceled)."""
+    """A merchant's subscription to a plan + recurring-billing state (Phase 10).
+
+    The legacy `status` (active/pending/canceled) gates delivery creation (Phase 7).
+    Phase 10 adds the recurring-billing columns: `billing_status` (trial/active/blocked/
+    cancelado), the AES-encrypted card token, the aware-UTC `due_at`, the cycle/amount,
+    the PIX-automatic state, and the scheduled-downgrade plan. Card/CVV are NEVER stored;
+    only the Safe2Pay token, AES-256-GCM at rest (TH-B).
+    """
 
     __tablename__ = "merchant_subscriptions"
 
@@ -124,6 +137,23 @@ class MerchantSubscription(Base, AreaScopedMixin, TimestampMixin):
     )
     # active (Free or paid confirmed) | pending (paid not yet confirmed) | canceled
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+
+    # --- Recurring billing (Phase 10) ---
+    billing_status: Mapped[str] = mapped_column(String(16), nullable=False, default="trial")
+    payment_method: Mapped[str | None] = mapped_column(String(8), nullable=True)  # card | pix
+    cycle: Mapped[str | None] = mapped_column(String(10), nullable=True)  # mensal | anual
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    due_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+    # Safe2Pay card token, AES-256-GCM at rest (TH-B). NEVER the card number.
+    safe2pay_token: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Scheduled downgrade (RN-029): the plan to switch to at cycle end; NULL otherwise.
+    scheduled_plan_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True)
+
+    # --- PIX Automático (Phase 10 / SAAS-BILLING §5.5) — pending until webhook APROVADA ---
+    pix_autorizacao_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    pix_autorizacao_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    pix_qr_code: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    pix_qr_code_base64: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class MerchantCourierFavorite(Base, AreaScopedMixin, TimestampMixin):

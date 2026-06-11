@@ -109,6 +109,10 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
     mei_cnpj: Mapped[str | None] = mapped_column(String(14), nullable=True)
     mei_pending: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    # Safe2Pay subaccount/recipient id (Phase 10, RN-010): set when the MEI is approved
+    # so the delivery split can pay the courier's corrida. NULL → no platform repasse.
+    s2p_recipient_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
     # Availability (Phase 6, D-06): online/offline is persisted; `busy` is DERIVED
     # from the load (active deliveries vs max_concurrent) — NOT a column. Only an
     # `active` courier may go online (guarded in availability.py).
