@@ -13,6 +13,7 @@ The methods cover the whole Safe2Pay surface this phase needs:
   - refund                             — distinct Pix vs Card route (A9)
   - register_subaccount                — courier subaccount on MEI approval (RN-010)
   - get_statement                      — daily reconciliation (D-08)
+  - payout                             — courier withdrawal repasse (Phase 15 — REQ-038)
 """
 
 from __future__ import annotations
@@ -69,6 +70,14 @@ class StatementEntry:
     amount_cents: int
 
 
+@dataclass(frozen=True)
+class PayoutResult:
+    """Outcome of a courier withdrawal repasse (Phase 15 — REQ-038)."""
+
+    transaction_id: str
+    status: str  # paid | pending
+
+
 class PaymentPort(Protocol):
     """Safe2Pay surface behind a stable interface (D-09). Never raises card PII."""
 
@@ -99,3 +108,7 @@ class PaymentPort(Protocol):
     ) -> str: ...
 
     async def get_statement(self, *, since: datetime, until: datetime) -> list[StatementEntry]: ...
+
+    async def payout(
+        self, *, recipient: str, amount_cents: int, reference: str
+    ) -> PayoutResult: ...

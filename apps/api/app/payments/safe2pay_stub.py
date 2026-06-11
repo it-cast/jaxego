@@ -21,6 +21,7 @@ from app.payments.port import (
     CardData,
     ChargeResult,
     Customer,
+    PayoutResult,
     Split,
     StatementEntry,
 )
@@ -29,12 +30,15 @@ from app.payments.port import (
 class PaymentStubAdapter:
     """In-memory deterministic Safe2Pay stand-in (no network)."""
 
-    def __init__(self, *, scenario: str = "approved") -> None:
+    def __init__(self, *, scenario: str = "approved", payout_fails: bool = False) -> None:
         self.scenario = scenario
+        # When True, `payout` raises PaymentGatewayError (saque falha → restitui — D-04).
+        self.payout_fails = payout_fails
         self._seq = count(1)
         self.refund_routes: dict[str, str] = {}
         self.statement_entries: list[tuple[str, int]] = []
         self.subaccount_seq = count(1)
+        self.payouts: list[tuple[str, int, str]] = []  # (recipient, cents, reference)
 
     def _tx(self) -> str:
         return f"stub_tx_{next(self._seq)}"
@@ -101,3 +105,13 @@ class PaymentStubAdapter:
             StatementEntry(transaction_id=tx, amount_cents=amt)
             for tx, amt in self.statement_entries
         ]
+
+    async def payout(
+        self, *, recipient: str, amount_cents: int, reference: str
+    ) -> PayoutResult:
+        self._guard()
+        if self.payout_fails:
+            # The repasse failed at the PSP — the caller must restore the balance (D-04).
+            raise PaymentGatewayError("repasse recusado (stub payout_fails).", code="payout_failed")
+        self.payouts.append((recipient, amount_cents, reference))
+        return PayoutResult(transaction_id=self._tx(), status="paid")

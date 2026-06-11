@@ -27,6 +27,7 @@ from app.payments.port import (
     CardData,
     ChargeResult,
     Customer,
+    PayoutResult,
     Split,
     StatementEntry,
 )
@@ -227,3 +228,24 @@ class Safe2PayHttpAdapter:
             )
             for r in rows
         ]
+
+    async def payout(
+        self, *, recipient: str, amount_cents: int, reference: str
+    ) -> PayoutResult:
+        # [ASSUMIDO — TD-15-01] Courier withdrawal repasse (transfer to subaccount). The
+        # exact Safe2Pay endpoint/shape for a payout/transfer is NOT confirmed (the cutover
+        # depends on the contract — DEC-003). Isolated HERE behind `PaymentPort`; the Stub
+        # drives dev/test. Validated against the real contract at cutover; an ADR then
+        # supersedes DEC-003 and only this file changes.
+        data = await self._call_safe2pay(
+            f"{self._api_url}/v2/marketplace/transfer",
+            {
+                "Recipient": recipient,
+                "Amount": amount_cents / 100,
+                "Reference": reference,
+            },
+        )
+        return PayoutResult(
+            transaction_id=str(data.get("IdTransaction", "")),
+            status="paid" if str(data.get("Status", "")) in _APPROVED else "pending",
+        )
