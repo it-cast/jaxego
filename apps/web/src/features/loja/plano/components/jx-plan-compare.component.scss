@@ -1,0 +1,97 @@
+// jx-plan-compare — tokens only, no hex (Gate 2). Anti-dark-pattern: equal weights.
+
+.jx-plan-compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-plan-compare__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--jx-space-3);
+}
+
+@media (min-width: 560px) {
+  .jx-plan-compare__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.jx-plan-compare__cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+}
+
+.jx-plan-compare__cta {
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-4);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  border: 1px solid var(--brand);
+  color: var(--brand);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-plan-compare__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-plan-compare__confirm {
+  padding: var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.jx-plan-compare__confirm p {
+  margin: 0 0 var(--jx-space-3);
+  font-size: var(--jx-text-base);
+  line-height: 1.5;
+}
+
+.jx-plan-compare__mono {
+  font-family: var(--jx-font-mono);
+}
+
+.jx-plan-compare__actions {
+  display: flex;
+  gap: var(--jx-space-3);
+  flex-wrap: wrap;
+}
+
+// Equal visual weight: confirm + cancel share the same size; cancel is not de-emphasised
+// beyond a neutral fill (anti-dark-pattern).
+.jx-plan-compare__confirm-btn,
+.jx-plan-compare__cancel {
+  min-height: 44px;
+  flex: 1 1 auto;
+  padding: var(--jx-space-2) var(--jx-space-4);
+  border-radius: var(--jx-radius-md);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-plan-compare__confirm-btn {
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-plan-compare__cancel {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.jx-plan-compare__confirm-btn:focus-visible,
+.jx-plan-compare__cancel:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

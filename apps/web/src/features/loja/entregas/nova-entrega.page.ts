@@ -12,6 +12,7 @@ import { FieldComponent } from '../../../shared/components/field/field.component
 import { EstimateBoxComponent } from '../../../shared/components/estimate-box/estimate-box.component';
 import { UpgradeModalComponent } from '../../../shared/components/upgrade-modal/upgrade-modal.component';
 import { ErrorStateComponent, WarnBannerComponent } from '../../../shared/state';
+import { CardFormComponent } from '../plano/components/jx-card-form.component';
 import { Plan } from '../../../shared/components/plan-card/plan-card.component';
 import {
   isCepComplete,
@@ -49,6 +50,7 @@ interface NeighborhoodOption {
     UpgradeModalComponent,
     ErrorStateComponent,
     WarnBannerComponent,
+    CardFormComponent,
   ],
   templateUrl: './nova-entrega.page.html',
   styleUrl: './nova-entrega.page.scss',
@@ -92,6 +94,12 @@ export class NovaEntregaPage {
   protected readonly showUpgrade = signal(false);
   protected readonly upgradePlans = signal<Plan[]>([]);
 
+  // Phase 10 — online payment (card/pix). F-03 E3: a refusal does NOT create the
+  // delivery; the store gets retry or switch-to-direct (no form data lost).
+  protected readonly paymentMethod = signal<'direct' | 'pix' | 'card'>('direct');
+  protected readonly deliveryRefused = signal(false);
+  private cardBlob: string | null = null;
+
   constructor() {
     void this.loadNeighborhoods();
     // Apply BR masks reactively (no raw type="number"; mask on every keystroke).
@@ -116,6 +124,28 @@ export class NovaEntregaPage {
         this.form.controls.declared_value.setValue(masked, { emitEvent: false });
       }
     });
+    this.form.controls.payment_method.valueChanges.subscribe((v) => {
+      this.paymentMethod.set((v as 'direct' | 'pix' | 'card') ?? 'direct');
+      this.deliveryRefused.set(false);
+      if (v !== 'card') this.cardBlob = null;
+    });
+  }
+
+  /** The card is RSA-encrypted by jx-card-form; only the opaque blob arrives here. */
+  protected onDeliveryCardEncrypted(blob: string): void {
+    this.cardBlob = blob;
+    void this.submit();
+  }
+
+  protected retryPayment(): void {
+    this.deliveryRefused.set(false);
+  }
+
+  /** F-03 E3 exit: switch to direct WITHOUT losing the filled form. */
+  protected switchToDirect(): void {
+    this.deliveryRefused.set(false);
+    this.cardBlob = null;
+    this.form.controls.payment_method.setValue('direct');
   }
 
   private async loadNeighborhoods(): Promise<void> {
@@ -150,8 +180,16 @@ export class NovaEntregaPage {
       this.form.markAllAsTouched();
       return;
     }
+    const method = this.paymentMethod();
+    // Card requires the encrypted blob first — the form's submit triggers
+    // onDeliveryCardEncrypted, which re-enters submit() with the blob set.
+    if (method === 'card' && !this.cardBlob) {
+      return;
+    }
+
     this.submitting.set(true);
     this.submitError.set(null);
+    this.deliveryRefused.set(false);
 
     const v = this.form.getRawValue();
     const declared = v.declared_value ? Math.round(parseBrl(v.declared_value) * 100) : null;
@@ -168,7 +206,8 @@ export class NovaEntregaPage {
       reference_number: v.reference_number || null,
       notes: v.notes || null,
       proof_method: 'photo',
-      payment_method: 'direct',
+      payment_method: method,
+      card_blob: method === 'card' ? this.cardBlob : null,
     };
 
     const result = await this.service.create(req);
@@ -189,6 +228,13 @@ export class NovaEntregaPage {
     }
     if (result.code === 'dropoff_out_of_area') {
       this.outOfArea.set(true);
+      return;
+    }
+    // F-03 E3: card/pix refused/gateway error → the delivery was NOT created. Offer
+    // retry or switch-to-direct without losing the filled form. The blob is single-use.
+    if (method !== 'direct' && result.code === 'payment_gateway_error') {
+      this.cardBlob = null;
+      this.deliveryRefused.set(true);
       return;
     }
     this.submitError.set(

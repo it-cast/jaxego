@@ -124,23 +124,39 @@
   <fieldset class="jx-nova__section">
     <legend>Pagamento da corrida</legend>
     <div role="radiogroup" aria-label="Forma de pagamento" class="jx-nova__radios">
-      <label class="jx-nova__radio jx-nova__radio--sel">
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="paymentMethod() === 'direct'">
         <input type="radio" formControlName="payment_method" value="direct" />
         <span>Direto ao entregador <small>dinheiro ou seu PIX</small></span>
       </label>
-      <label class="jx-nova__radio jx-nova__radio--off">
-        <input type="radio" disabled aria-disabled="true" />
-        <span>PIX <small class="jx-nova__soon">em breve</small></span>
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="paymentMethod() === 'pix'">
+        <input type="radio" formControlName="payment_method" value="pix" />
+        <span>PIX <small>QR na hora</small></span>
       </label>
-      <label class="jx-nova__radio jx-nova__radio--off">
-        <input type="radio" disabled aria-disabled="true" />
-        <span>Cartão <small class="jx-nova__soon">em breve</small></span>
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="paymentMethod() === 'card'">
+        <input type="radio" formControlName="payment_method" value="card" />
+        <span>Cartão <small>cobrança online</small></span>
       </label>
     </div>
     <p class="jx-nova__paymicro">
-      No direto, você acerta a corrida com o entregador. A taxa da plataforma entra na sua
-      fatura do mês.
+      No direto, você acerta a corrida com o entregador. No cartão/PIX, cobramos corrida + taxa
+      agora; a entrega só nasce com o pagamento aprovado.
     </p>
+
+    @if (paymentMethod() === 'card') {
+      <jx-card-form ctaLabel="Pagar e chamar entregador" (cardEncrypted)="onDeliveryCardEncrypted($event)" />
+    }
+
+    @if (deliveryRefused()) {
+      <div class="jx-nova__refused" role="alert">
+        <p>Cartão recusado. A entrega não foi criada.</p>
+        <div class="jx-nova__refused-actions">
+          <button type="button" class="jx-nova__retry" (click)="retryPayment()">Tentar de novo</button>
+          <button type="button" class="jx-nova__direct" (click)="switchToDirect()">
+            Pagar direto ao entregador
+          </button>
+        </div>
+      </div>
+    }
   </fieldset>
 
   @if (noCouriersWarning()) {

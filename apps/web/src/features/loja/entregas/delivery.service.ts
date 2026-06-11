@@ -92,6 +92,11 @@ export class DeliveryService {
       if (err.status === 402 || code === 'plan_limit_reached') {
         return { ok: false, code, message, planLimit: true };
       }
+      // F-03 E3 (Phase 10): a card/pix refusal/outage is a 502 with this code; surface it
+      // so the form offers retry / switch-to-direct (the delivery was NOT created).
+      if (code === 'payment_gateway_error') {
+        return { ok: false, code, message };
+      }
       if (err.status >= 500) {
         return {
           ok: false,

@@ -20,6 +20,7 @@ import {
 } from './components/jx-checkout-method-toggle.component';
 import { CardFormComponent } from './components/jx-card-form.component';
 import { PixQrComponent } from './components/jx-pix-qr.component';
+import { PlanCompareComponent } from './components/jx-plan-compare.component';
 
 /**
  * Seleção de plano (tela 16, UI-SPEC §6) — plan management + subscription status +
@@ -40,6 +41,7 @@ import { PixQrComponent } from './components/jx-pix-qr.component';
     CheckoutMethodToggleComponent,
     CardFormComponent,
     PixQrComponent,
+    PlanCompareComponent,
   ],
   template: `
     <main class="jx-plano">
@@ -56,13 +58,25 @@ import { PixQrComponent } from './components/jx-pix-qr.component';
         />
       }
 
-      <section class="jx-plano__grid" aria-label="Planos disponíveis">
-        @for (plan of plans(); track plan.codename) {
-          <jx-plan-card [plan]="plan" [selected]="plan.codename === current()" />
-        } @empty {
-          <jx-loading-skeleton variant="block" height="160px" />
-        }
-      </section>
+      @if (plans().length === 0) {
+        <jx-loading-skeleton variant="block" height="160px" />
+      } @else if (subscription()?.billing_status === 'active') {
+        <section class="jx-plano__compare" aria-label="Mudar de plano">
+          <jx-plan-compare
+            [planList]="plans()"
+            [current]="current()"
+            [currentPrice]="subscription()?.amount_cents ?? 0"
+            (upgrade)="onPlanChange($event.codename)"
+            (downgrade)="onPlanChange($event.codename)"
+          />
+        </section>
+      } @else {
+        <section class="jx-plano__grid" aria-label="Planos disponíveis">
+          @for (plan of plans(); track plan.codename) {
+            <jx-plan-card [plan]="plan" [selected]="plan.codename === current()" />
+          }
+        </section>
+      }
 
       <section class="jx-plano__checkout" aria-label="Pagamento da assinatura">
         <h2 class="jx-h2">Pagamento</h2>
@@ -114,6 +128,22 @@ export class PlanoPage {
 
   protected onMethodChange(m: CheckoutMethod): void {
     this.method.set(m);
+  }
+
+  /** Upgrade (pro-rata now) or downgrade (scheduled) — RN-029. */
+  protected async onPlanChange(codename: string): Promise<void> {
+    const plan = this.plans().find((p) => p.codename === codename);
+    if (!plan) return;
+    // The plan id is the SubscriptionPlan id; the page maps codename→id via the catalog.
+    const planId = (plan as unknown as { id?: number }).id;
+    if (planId == null) return;
+    try {
+      await this.billing.changePlan(planId);
+      this.subscription.set(await this.billing.subscription());
+      this.charges.set(await this.billing.charges());
+    } catch {
+      // The backend rejects an invalid change; the page state is unchanged.
+    }
   }
 
   /**

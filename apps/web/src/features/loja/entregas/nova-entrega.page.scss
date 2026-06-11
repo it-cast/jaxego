@@ -176,3 +176,53 @@
     box-shadow: var(--focus-ring);
   }
 }
+
+// Phase 10 — F-03 E3: card/pix refused → delivery not created. Two equal-weight exits.
+.jx-nova__refused {
+  margin-top: var(--jx-space-3);
+  padding: var(--jx-space-3);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-sunken);
+  border: 1px solid var(--error);
+  color: var(--error);
+}
+
+.jx-nova__refused p {
+  margin: 0 0 var(--jx-space-2);
+  font-weight: var(--jx-weight-semibold);
+}
+
+.jx-nova__refused-actions {
+  display: flex;
+  gap: var(--jx-space-3);
+  flex-wrap: wrap;
+}
+
+.jx-nova__retry,
+.jx-nova__direct {
+  min-height: 44px;
+  flex: 1 1 auto;
+  padding: var(--jx-space-2) var(--jx-space-4);
+  border-radius: var(--jx-radius-md);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-nova__retry {
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  color: var(--brand-contrast);
+}
+
+.jx-nova__direct {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.jx-nova__retry:focus-visible,
+.jx-nova__direct:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
