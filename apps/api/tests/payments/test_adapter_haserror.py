@@ -42,6 +42,8 @@ async def test_call_safe2pay_haserror_raises(monkeypatch) -> None:
             return _Resp()
 
     monkeypatch.setattr("app.payments.safe2pay_adapter.build_client", lambda *a, **k: _Client())
+    # Isolate the HasError-check (SSRF is covered by its own test below).
+    monkeypatch.setattr("app.payments.safe2pay_adapter.assert_safe_url", lambda *a, **k: None)
     with pytest.raises(PaymentGatewayError):
         await adapter._call_safe2pay("https://payment.safe2pay.example/v2/Payment", {"Amount": 0.5})
 
