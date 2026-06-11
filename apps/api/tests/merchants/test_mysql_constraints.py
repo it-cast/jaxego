@@ -64,17 +64,32 @@ async def _insert_merchant(engine: AsyncEngine, area_id: int, *, doc: str, phone
         )
 
 
+async def _delete_merchants_by_document(engine: AsyncEngine, doc: str) -> None:
+    async with engine.begin() as conn:
+        await conn.execute(text("DELETE FROM merchants WHERE document = :doc"), {"doc": doc})
+
+
 @pytest.mark.asyncio
 async def test_duplicate_document_violates_unique(mysql_engine: AsyncEngine) -> None:
-    area_id = await _ensure_area(mysql_engine)
-    await _insert_merchant(
-        mysql_engine, area_id, doc="11222333000181", phone="+5522900000001", email="m1@ex.com"
-    )
-    with pytest.raises(IntegrityError):
+    # Self-isolate: the CNPJ 11222333000181 is a shared fixture document inserted by
+    # several other @mysql merchant tests in the same session against this shared DB.
+    # Clean it before AND after so this test is idempotent regardless of run order
+    # (otherwise a leftover row makes the FIRST insert below blow up instead of the
+    # intended duplicate, breaking the suite on re-runs / cross-test pollution).
+    doc = "11222333000181"
+    await _delete_merchants_by_document(mysql_engine, doc)
+    try:
+        area_id = await _ensure_area(mysql_engine)
         await _insert_merchant(
-            mysql_engine,
-            area_id,
-            doc="11222333000181",  # same (account_type, document) — RN-011
-            phone="+5522900000002",
-            email="m2@ex.com",
+            mysql_engine, area_id, doc=doc, phone="+5522900000001", email="m1@ex.com"
         )
+        with pytest.raises(IntegrityError):
+            await _insert_merchant(
+                mysql_engine,
+                area_id,
+                doc=doc,  # same (account_type, document) — RN-011
+                phone="+5522900000002",
+                email="m2@ex.com",
+            )
+    finally:
+        await _delete_merchants_by_document(mysql_engine, doc)
