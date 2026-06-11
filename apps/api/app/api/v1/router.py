@@ -89,3 +89,15 @@ api_router.include_router(ratings_router)
 api_router.include_router(suspensions_admin_router)
 api_router.include_router(disputes_admin_router)
 api_router.include_router(platform_admin_router)
+
+# Phase 15 domain sub-routers (financeiro back-office — fatura, saque, decisão de disputa).
+# - invoices.router: /v1/invoices (loja: listar + pagar fatura) — F-03 E5 / REQ-037.
+# - withdrawals.router: /v1/withdrawals (entregador: saldo + solicitar saque) — REQ-038.
+# - disputes_router: /v1/platform/disputes (admin: decisão financeira) — REQ-039 (TOTP).
+from app.invoices.router import router as invoices_router  # noqa: E402
+from app.payments_direct.disputes_router import router as platform_disputes_router  # noqa: E402
+from app.withdrawals.router import router as withdrawals_router  # noqa: E402
+
+api_router.include_router(invoices_router)
+api_router.include_router(withdrawals_router)
+api_router.include_router(platform_disputes_router)
