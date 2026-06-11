@@ -18,6 +18,7 @@ from arq.connections import RedisSettings
 
 from app.core.config import settings
 from app.db.session import async_session_factory
+from app.notifications.tasks import notify_task
 from app.workers.dispatch import dispatch_offer_task, send_push_task
 from app.workers.document_expiry import (
     escalate_stale_reviews_task,
@@ -51,4 +52,6 @@ class WorkerSettings:
         # Phase 8: cascade orchestration + Web Push send (LOW-1 / D-08).
         dispatch_offer_task,
         send_push_task,
+        # Phase 9: multichannel recipient notifications (RN-018 / RN-031).
+        notify_task,
     ]

@@ -44,6 +44,14 @@ from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
 )
 from app.neighborhoods.models import Neighborhood  # noqa: F401 (Phase 6 mapper)
 from app.plans.models import SubscriptionPlan  # noqa: F401
+from app.notifications.models import (  # noqa: F401 (Phase 9 mappers)
+    Notification,
+    PushSubscription,
+)
+from app.payments_direct.models import (  # noqa: F401 (Phase 9 mappers)
+    DirectPaymentConfirmation,
+    PaymentDispute,
+)
 from app.proofs.models import DeliveryProof  # noqa: F401 (Phase 9 mapper)
 from app.tracking.models import DeliveryLocation  # noqa: F401 (Phase 9 mapper)
 from fastapi import FastAPI
