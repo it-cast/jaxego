@@ -58,3 +58,59 @@ Frontend (Wave 3 / T-11..T-13) e integration-check (Wave 4 / T-14) NÃO executad
 - Wave 3 (frontend tela 22 / T-11..T-13).
 - Wave 4 (gsd-integration-checker round-trip / T-14).
 - Execução do `pytest -m mysql` (precisa de DB live em CI).
+
+---
+
+# Phase 12 — EXECUTION-LOG (frontend, Wave 3 / T-11..T-13)
+
+**Escopo executado:** SOMENTE frontend (`apps/web`), Wave 3 do PLAN (T-11, T-12, T-13).
+**Branch:** master · **Data:** 2026-06-11 · **Executor:** Claude Opus 4.8
+
+## T-11 — jx-secret-reveal (componente compartilhado)
+
+- `apps/web/src/shared/components/secret-reveal/` (component + scss + spec + stories).
+- Exibe o segredo UMA vez (D-01/D-10): campo `<code>` mono read-only + botão Copiar com
+  feedback textual "Copiado" + aviso PERMANENTE em `aria-live="polite"` (UI-SPEC §a11y).
+- `focus()` move o foco ao campo do segredo (foco gerenciado pelo modal foco-preso).
+- Fallback `execCommand('copy')` quando a Clipboard API não está disponível (contexto
+  não-seguro); não marca "Copiado" se a cópia falhar.
+- Exportado no barrel `shared/components/index.ts`. **7 testes.** Commit `5666b4e`.
+
+## T-12 / T-13 — Tela 22 + serviço Angular
+
+- `apps/web/src/features/admin/api-keys/` (page ts/html/scss + service + spec + stories).
+- **Lista de chaves** (jx-data-table): Nome | key_id (mono) | Escopos | Criada | Último uso |
+  Status (pílula ativa/revogada) | Ações. Empty state com CTA "Criar primeira chave".
+- **Criar chave** (modal foco-preso, Esc fecha, aria-modal, retorno de foco ao gatilho):
+  nome + escopos; sucesso mostra o segredo 1× via jx-secret-reveal. Key nova destacada
+  com `--brand-wash` por ~2s.
+- **Revogar**: confirmação sensível before→after (padrão Phase 6) com nome + key_id e copy
+  "...em até 1 minuto. Esta ação não pode ser desfeita."
+- **Painel de webhook**: URL https com validação anti-SSRF inline (`pattern ^https://`),
+  eventos (checkboxes pt-BR), secret atual + rotação (segredo novo exibido 1×), e histórico
+  de entregas (jx-data-table paginado, badges entregue/pendente/falhou via tokens semânticos).
+- **Estados** empty/loading/error em chaves, webhook e histórico (signals + jx-data-table).
+- **AdminApiKeysService** + signals; tipos espelham `apps/api/app/api_keys/schemas.py` e
+  `apps/api/app/webhooks/schemas.py`. Rota lazy `/admin/api-keys` em `app.routes.ts`.
+- **11 testes** (service HTTP + estados de signals). Commit `5043a6a`.
+
+## Desvios (deviation rules)
+
+- Nenhum desvio de arquitetura. Ajuste menor de teste (microtask entre flushes) — não é desvio.
+- **Path da API pública (TD-12-01):** o serviço Angular consome as rotas **admin** de área
+  (`/v1/admin/areas/{id}/...`), que não sofreram a colisão de path do TD-12-01 (esse afeta só
+  o endpoint público de criação). Sem impacto no frontend.
+
+## Resultados (Gate 7)
+
+- `npm run test` (apps/web): **139 passed** (121 anteriores + 18 novos). Verde.
+- `npm run build` (ng build): **OK**. Chunk lazy `api-keys-page` 28.39 kB / 6.73 kB transfer.
+  (Warning maplibre-gl CommonJS é pré-existente, não relacionado.)
+- `npm run lint` (ng lint): **All files pass linting.**
+- Zero hex: `grep "#[0-9A-Fa-f]{3,6}" apps/web/src/features/admin/api-keys/` → **0**;
+  idem em `shared/components/secret-reveal/` → **0**. Só tokens semânticos.
+
+## Não feito (fora do escopo desta execução)
+
+- Wave 4 (gsd-integration-checker round-trip / T-14).
+- Execução do `pytest -m mysql` (precisa de DB live em CI).
