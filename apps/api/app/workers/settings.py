@@ -35,6 +35,7 @@ from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import (
     charge_subscriptions_daily,
     healthcheck,
+    process_safe2pay_event,
     reconcile_safe2pay,
     release_escrow,
     sync_delinquency,
@@ -71,6 +72,8 @@ class WorkerSettings:
         sync_delinquency,
         release_escrow,
         reconcile_safe2pay,
+        # Phase 10: webhook event processing (enqueued from the public webhook endpoint).
+        process_safe2pay_event,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).

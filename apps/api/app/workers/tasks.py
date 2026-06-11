@@ -60,3 +60,30 @@ async def reconcile_safe2pay(ctx: dict[str, Any]) -> int:
         until=now,
     )
     return len(divergences)
+
+
+async def process_safe2pay_event(
+    ctx: dict[str, Any], transaction_id: str, event_status: str
+) -> str:
+    """Process a deduped Safe2Pay webhook event (heavy work off the request path).
+
+    NEVER releases money on the webhook alone (TH-E): for an approved status it marks the
+    matching charge paid (the escrow release stays with the 24h cron). A business error is
+    swallowed (logged) — the event was already deduped, and re-processing must not loop.
+    A real impl confirms via `GET Transaction/{id}` before any financial effect; with the
+    Stub there is no network, so we trust the deduped status.
+    """
+    import structlog
+
+    from app.payments import repo
+
+    logger = structlog.get_logger("workers.payments")
+    session_factory = ctx["session_factory"]
+    approved = event_status in {"3", "4", "APROVADA", "ATIVA", "CONCLUIDA", "PAGO"}
+    async with session_factory() as session:
+        charge = await repo.get_charge_by_transaction(session, transaction_id=transaction_id)
+        if charge is not None and approved and charge.status == "open":
+            charge.status = "paid"
+        await session.commit()
+    logger.info("payments.process_event", transaction_id=transaction_id, approved=approved)
+    return "ok"
