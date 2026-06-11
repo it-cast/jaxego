@@ -36,7 +36,9 @@ def test_prorata_never_negative() -> None:
 
 
 @pytest.mark.asyncio
-async def test_upgrade_charges_now(payments_seed, payment_stub, session_factory) -> None:
+async def test_upgrade_charges_now(
+    payments_seed, payment_stub, session_factory, crypto_keys
+) -> None:
     from app.merchants.models import MerchantSubscription
     from app.payments import subscriptions
 

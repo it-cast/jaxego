@@ -14,7 +14,7 @@ from app.merchants.models import MerchantSubscription
 
 @pytest.mark.asyncio
 async def test_activate_card_sets_active_and_token(
-    payments_seed, payment_stub, session_factory
+    payments_seed, payment_stub, session_factory, crypto_keys
 ) -> None:
     from app.payments import subscriptions
 
@@ -63,7 +63,9 @@ async def test_activate_pix_pending_until_webhook(
 
 
 @pytest.mark.asyncio
-async def test_recurring_charge_idempotent(payments_seed, payment_stub, session_factory) -> None:
+async def test_recurring_charge_idempotent(
+    payments_seed, payment_stub, session_factory, crypto_keys
+) -> None:
     from app.payments import subscriptions
 
     # Make the subscription a card-active subscription due today.

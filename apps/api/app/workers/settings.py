@@ -32,7 +32,13 @@ from app.workers.lifecycle import (
     purge_locations,
 )
 from app.workers.revalidate import revalidate_receita
-from app.workers.tasks import healthcheck
+from app.workers.tasks import (
+    charge_subscriptions_daily,
+    healthcheck,
+    reconcile_safe2pay,
+    release_escrow,
+    sync_delinquency,
+)
 
 
 async def _on_startup(ctx: dict[str, Any]) -> None:
@@ -60,6 +66,11 @@ class WorkerSettings:
         send_push_task,
         # Phase 9: multichannel recipient notifications (RN-018 / RN-031).
         notify_task,
+        # Phase 10: recurring billing + escrow + reconciliation crons (idempotent).
+        charge_subscriptions_daily,
+        sync_delinquency,
+        release_escrow,
+        reconcile_safe2pay,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).
@@ -70,4 +81,13 @@ class WorkerSettings:
         cron(purge_locations, minute={7}),
         # "ausente" >10min → enable return (D-07 E2) — every minute.
         cron(absent_timeout, minute=set(range(0, 60))),
+        # Phase 10 — recurring billing crons (aware-UTC, idempotent).
+        # Charge due card subscriptions daily at 06:00 UTC (SAAS-BILLING §7).
+        cron(charge_subscriptions_daily, hour={6}, minute={0}),
+        # Sync delinquency (10/20d) daily at 06:10 UTC.
+        cron(sync_delinquency, hour={6}, minute={10}),
+        # Release escrow FINALIZADA+24h without dispute — every 10 min (RN-006).
+        cron(release_escrow, minute=set(range(0, 60, 10))),
+        # Reconcile extrato × platform_charges daily at 07:00 UTC (D-08).
+        cron(reconcile_safe2pay, hour={7}, minute={0}),
     ]
