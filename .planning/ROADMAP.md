@@ -331,7 +331,8 @@
 
 ## Phase 12: API pública + integração Menu Certo
 
-**Milestone:** MS-04 · **Tipo:** integration · **Status:** not_started · **Estimativa:** M (3-5d)
+**Milestone:** MS-04 · **Tipo:** integration · **Status:** complete (2026-06-11, dev/test) · **Estimativa:** M (3-5d)
+> ✅ Executada 2026-06-11 (autopilot). API key por área (argon2id), POST /v1/public/deliveries idempotente 24h, webhooks outbound HMAC + retry 8× exato, tela 22. 59 testes backend + 18 frontend (139 total), zero hex. TD-12-01/02. Pendente ao vivo: `pytest -m mysql` migration 0010. Ver `phases/12-.../RECONCILIATION.md`.
 
 ### REQs cobertos
 - REQ-041: `POST /v1/deliveries` idempotente · REQ-042: API keys (RN-020) · REQ-043: webhooks HMAC com retry

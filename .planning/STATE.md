@@ -41,12 +41,12 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 ## Current Position
 
 - **Milestone:** MS-04 (Financeiro checkout + integrações) — em andamento
-- **Phase atual:** 10 of 14 — Safe2Pay núcleo (checkout) — ✅ COMPLETA dev/test (Stub); produção pendente contrato (TD-10-01..04)
-- **Próxima Phase:** 12 of 14 — API pública + integração Menu Certo (sem pagamento; pronta — depende de [10] ✓)
-- **Ordem de build pós-DEC-004:** 12 → 13 → 14 (deploy) → 15 (Safe2Pay financeiro back-office, pós-deploy)
-- **Last activity:** 2026-06-11 — DEC-004 resequenciamento aplicado (ROADMAP/MILESTONES/DECISIONS/STATE). Safe2Pay financeiro pesado → Phase 15 pós-deploy.
+- **Phase atual:** 12 of 14 — API pública + Menu Certo — ✅ COMPLETA dev/test (autopilot). API keys/idempotência/webhooks HMAC + tela 22. 59+18 testes. Pendente `pytest -m mysql` 0010.
+- **Próxima Phase:** 13 of 14 — Governança (admin plataforma, score, avaliações, suspensão) — religada a [9] por DEC-004
+- **Ordem de build pós-DEC-004:** ~~12~~ → 13 → 14 (deploy) → 15 (Safe2Pay financeiro back-office, pós-deploy)
+- **Last activity:** 2026-06-11 — Phase 12 fechada (autopilot): API pública idempotente + webhooks outbound + tela 22 admin. TD-12-01 (path) / TD-12-02 (cache auth).
 
-**Progress:** [███████░░░] 71%
+**Progress:** [████████░░] 79%
 
 ## MS-01 — entregue
 
