@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_session
 from app.dispatch.dependencies import CourierScopeDep
 from app.payments.factory import get_payment_adapter
-from app.withdrawals import service
+from app.withdrawals import repo, service
 
 router = APIRouter(prefix="/withdrawals", tags=["withdrawals"])
 
@@ -47,6 +47,29 @@ class WithdrawalOut(BaseModel):
     transaction_id: str | None
 
 
+class ExtractEntry(BaseModel):
+    """One row of the courier's extract (tela 16) — a released corrida (credit)."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: int
+    kind: str  # always "credit" here (released escrow); debits come from withdrawals.
+    delivery_id: int
+    amount_cents: int
+    at: datetime | None
+
+
+class WithdrawalHistoryRow(BaseModel):
+    """One row of the withdrawal history (tela 16) — status badge + amount."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: int
+    amount_cents: int
+    status: str
+    transaction_id: str | None
+    settled_at: datetime | None
+    requested_at: datetime | None
+
+
 @router.get("/balance", response_model=BalanceOut)
 async def get_balance(scope: CourierScopeDep, session: SessionDep) -> BalanceOut:
     """The courier's withdrawable balance + the minimum (scoped to the courier — TH-01)."""
@@ -56,6 +79,55 @@ async def get_balance(scope: CourierScopeDep, session: SessionDep) -> BalanceOut
         session, area_id=scope.area_id, courier_id=scope.courier_id
     )
     return BalanceOut(balance_cents=balance, minimum_cents=settings.withdrawal_min_cents)
+
+
+@router.get("/extract", response_model=list[ExtractEntry])
+async def get_extract(
+    scope: CourierScopeDep, session: SessionDep, limit: int = 20, offset: int = 0
+) -> list[ExtractEntry]:
+    """The courier's extract: released corridas (credits), scoped to the courier (TH-01)."""
+    holds = await repo.released_holds(
+        session,
+        area_id=scope.area_id,
+        courier_id=scope.courier_id,
+        limit=limit,
+        offset=offset,
+    )
+    return [
+        ExtractEntry(
+            id=h.id,
+            kind="credit",
+            delivery_id=h.delivery_id,
+            amount_cents=h.amount_cents,
+            at=h.released_at,
+        )
+        for h in holds
+    ]
+
+
+@router.get("/history", response_model=list[WithdrawalHistoryRow])
+async def get_history(
+    scope: CourierScopeDep, session: SessionDep, limit: int = 20, offset: int = 0
+) -> list[WithdrawalHistoryRow]:
+    """The courier's withdrawal history (status/amount), scoped to the courier (TH-01)."""
+    rows = await repo.withdrawals_for_courier(
+        session,
+        area_id=scope.area_id,
+        courier_id=scope.courier_id,
+        limit=limit,
+        offset=offset,
+    )
+    return [
+        WithdrawalHistoryRow(
+            id=w.id,
+            amount_cents=w.amount_cents,
+            status=w.status,
+            transaction_id=w.transaction_id,
+            settled_at=w.settled_at,
+            requested_at=w.created_at,
+        )
+        for w in rows
+    ]
 
 
 @router.post("", response_model=WithdrawalOut)

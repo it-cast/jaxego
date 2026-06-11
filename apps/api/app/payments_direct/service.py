@@ -91,6 +91,27 @@ async def confirm_direct_payment(
     return confirmation, dispute
 
 
+async def get_confirmation_for_delivery(
+    session: AsyncSession, *, area_id: int, delivery_id: int
+) -> DirectPaymentConfirmation | None:
+    """The latest direct-payment confirmation of a delivery (tela 08 receipt), scoped.
+
+    Area-scoped read (IDOR closed in the WHERE clause). Returns None if the delivery
+    was never confirmed (the host shows a "sem recibo ainda" empty state).
+    """
+    from sqlalchemy import select
+
+    stmt = (
+        select(DirectPaymentConfirmation)
+        .where(
+            DirectPaymentConfirmation.area_id == area_id,
+            DirectPaymentConfirmation.delivery_id == delivery_id,
+        )
+        .order_by(DirectPaymentConfirmation.id.desc())
+    )
+    return (await session.execute(stmt)).scalars().first()
+
+
 async def has_open_dispute(session: AsyncSession, *, delivery_id: int) -> bool:
     """True if the delivery has an OPEN payment dispute (blocks 24h finalisation)."""
     from sqlalchemy import select

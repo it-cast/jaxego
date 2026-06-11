@@ -16,9 +16,10 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import NotFoundError
 from app.db.session import get_session
 from app.deliveries.dependencies import MerchantScopeDep
-from app.invoices import service
+from app.invoices import repo, service
 from app.invoices.models import PlatformInvoice
 from app.payments.factory import get_payment_adapter
 
@@ -35,6 +36,16 @@ class InvoiceRow(BaseModel):
     status: str
     due_at: datetime
     paid_at: datetime | None
+
+
+class InvoiceLineRow(BaseModel):
+    """One line of an invoice (tela 15 — entrega/taxa). Derived, never user input (TH-03)."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: int
+    delivery_id: int | None
+    description: str
+    amount_cents: int
 
 
 def _row(inv: PlatformInvoice) -> InvoiceRow:
@@ -61,6 +72,28 @@ async def list_invoices(scope: MerchantScopeDep, session: SessionDep) -> list[In
     )
     rows = (await session.execute(stmt)).scalars().all()
     return [_row(r) for r in rows]
+
+
+@router.get("/{invoice_id}/lines", response_model=list[InvoiceLineRow])
+async def list_invoice_lines(
+    invoice_id: int, scope: MerchantScopeDep, session: SessionDep
+) -> list[InvoiceLineRow]:
+    """List the line items of one invoice (tela 15). Area-scoped (IDOR → 404)."""
+    invoice = await repo.get_invoice_for_area(
+        session, invoice_id=invoice_id, area_id=scope.area_id
+    )
+    if invoice is None or invoice.merchant_id != scope.merchant_id:
+        raise NotFoundError("Fatura não encontrada.")
+    lines = await repo.line_items_for_invoice(session, invoice_id=invoice.id)
+    return [
+        InvoiceLineRow(
+            id=ln.id,
+            delivery_id=ln.delivery_id,
+            description=ln.description,
+            amount_cents=ln.amount_cents,
+        )
+        for ln in lines
+    ]
 
 
 @router.post("/{invoice_id}/pay", response_model=InvoiceRow)

@@ -52,6 +52,45 @@ async def get_by_reference(
     return (await session.execute(stmt)).scalars().first()
 
 
+async def released_holds(
+    session: AsyncSession, *, area_id: int, courier_id: int, limit: int, offset: int
+) -> list[EscrowLedger]:
+    """The courier's RELEASED escrow rows (extract credits) — read-only, scoped (TH-01).
+
+    No `FOR UPDATE`: this is the display extract (tela 16), not a balance mutation.
+    Index-backed by (area_id, courier_id); newest first; paginated.
+    """
+    stmt = (
+        select(EscrowLedger)
+        .where(
+            EscrowLedger.area_id == area_id,
+            EscrowLedger.courier_id == courier_id,
+            EscrowLedger.state == "RELEASED",
+        )
+        .order_by(EscrowLedger.released_at.desc(), EscrowLedger.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def withdrawals_for_courier(
+    session: AsyncSession, *, area_id: int, courier_id: int, limit: int, offset: int
+) -> list[Withdrawal]:
+    """The courier's withdrawal history (extract debits), scoped (TH-01). Newest first."""
+    stmt = (
+        select(Withdrawal)
+        .where(
+            Withdrawal.area_id == area_id,
+            Withdrawal.courier_id == courier_id,
+        )
+        .order_by(Withdrawal.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return list((await session.execute(stmt)).scalars().all())
+
+
 async def available_balance_cents(
     session: AsyncSession, *, area_id: int, courier_id: int
 ) -> int:
