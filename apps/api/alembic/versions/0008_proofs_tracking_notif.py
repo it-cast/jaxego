@@ -10,7 +10,7 @@ table being dropped (`drop_table` removes them, and dropping a FK-backing index 
 trips MySQL errno 1553). No append-only triggers here (none of these tables is
 immutable — that pattern is for delivery_state_transitions / audit_log).
 
-Revision ID: 0008_proofs_tracking_notifications
+Revision ID: 0008_proofs_tracking_notif
 Revises: 0007_dispatch_favorites_blocks
 Create Date: 2026-06-11
 """
@@ -23,7 +23,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import mysql
 
-revision: str = "0008_proofs_tracking_notifications"
+revision: str = "0008_proofs_tracking_notif"
 down_revision: str | None = "0007_dispatch_favorites_blocks"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
