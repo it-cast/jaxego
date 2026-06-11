@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.couriers.constants import MAX_UPLOAD_BYTES  # noqa: F401 (size budget shared)
 from app.db.session import get_session
+from app.deliveries.dependencies import MerchantScopeDep
 from app.dispatch.dependencies import CourierScopeDep
 from app.integrations.factory import get_storage_adapter
 from app.proofs import service
@@ -137,6 +138,29 @@ async def submit_reference(
 
         await enqueue_notification(delivery_id=delivery.id, moment="delivered")
     return result
+
+
+@router.post("/{delivery_id}/proof/manual-release", response_model=ProofResponse)
+async def manual_release_delivery(
+    delivery_id: int,
+    request: Request,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> ProofResponse:
+    """Store releases a reference-locked delivery manually (E4 — auditable)."""
+    from app.deliveries.service import get_delivery
+    from app.proofs.reference import manual_release
+
+    delivery = await get_delivery(
+        session, area_id=scope.area_id, merchant_id=scope.merchant_id, delivery_id=delivery_id
+    )
+    await manual_release(
+        session, delivery=delivery, actor_user_id=scope.user_id, ip=_client_ip(request)
+    )
+    await session.commit()
+    return ProofResponse(
+        delivery_id=delivery.id, state=delivery.state, geofence_ok=True, low_confidence=False
+    )
 
 
 __all__ = ["router"]
