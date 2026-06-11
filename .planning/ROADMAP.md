@@ -363,7 +363,8 @@
 
 ## Phase 13: Governança — admin plataforma, score, avaliações, suspensão/recurso
 
-**Milestone:** MS-05 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-05 · **Tipo:** core · **Status:** complete (2026-06-11, dev/test) · **Estimativa:** L (1-2sem)
+> ✅ Executada 2026-06-11 (autopilot). Score explicável (snapshot diário, peso ZERO no ranking — ADR-013), avaliações, suspensão/recurso com reversão automática por SLA, admin plataforma cross-área auditado (TOTP), shell de disputas (financeiro → Phase 15). Migration 0011. 25+39 testes; isolamento ADR-013 provado. TD-13-01/02/03. Ver `phases/13-.../RECONCILIATION.md`.
 
 ### REQs cobertos
 - REQ-046: admin plataforma (telas 23–25) · REQ-020: score explicável · REQ-033: avaliações · REQ-045: suspensão/recurso com reversão automática · REQ-047: revenue share `[DECIDIR %]` · REQ-044 (completo): disputas/suspensões na UI do admin de área

@@ -41,12 +41,12 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 ## Current Position
 
 - **Milestone:** MS-04 (Financeiro checkout + integrações) — em andamento
-- **Phase atual:** 12 of 14 — API pública + Menu Certo — ✅ COMPLETA dev/test (autopilot). API keys/idempotência/webhooks HMAC + tela 22. 59+18 testes. Pendente `pytest -m mysql` 0010.
-- **Próxima Phase:** 13 of 14 — Governança (admin plataforma, score, avaliações, suspensão) — religada a [9] por DEC-004
-- **Ordem de build pós-DEC-004:** ~~12~~ → 13 → 14 (deploy) → 15 (Safe2Pay financeiro back-office, pós-deploy)
-- **Last activity:** 2026-06-11 — Phase 12 fechada (autopilot): API pública idempotente + webhooks outbound + tela 22 admin. TD-12-01 (path) / TD-12-02 (cache auth).
+- **Phase atual:** 13 of 14 — Governança — ✅ COMPLETA dev/test (autopilot). Score explicável (peso 0 no M1), avaliações, suspensão/recurso+SLA, admin plataforma cross-área auditado, shell de disputas. 25+39 testes. Pendente `pytest -m mysql` 0011.
+- **Próxima Phase:** 14 of 14 — Hardening, APK, LGPD e release piloto (**deploy**) — depende de [12, 13] ✓
+- **Ordem de build pós-DEC-004:** ~~12~~ → ~~13~~ → 14 (deploy) → 15 (Safe2Pay financeiro back-office, pós-deploy)
+- **Last activity:** 2026-06-11 — Phase 13 fechada (autopilot): governança completa. ADR-013 isolamento provado. TD-13-01 (revenue share %), TD-13-02/03.
 
-**Progress:** [████████░░] 79%
+**Progress:** [█████████░] 86%
 
 ## MS-01 — entregue
 
