@@ -64,6 +64,14 @@ export const routes: Routes = [
             '../features/entregador/cobertura-precos/cobertura-precos.page'
           ).then((m) => m.CoberturaPrecosPage),
       },
+      // Phase 9 (F-06): proof capture for an active delivery (telas 06/07).
+      {
+        path: 'entrega/:id/comprovar/:kind',
+        loadComponent: () =>
+          import('../features/entregador/comprovacao/comprovacao.page').then(
+            (m) => m.ComprovacaoPage,
+          ),
+      },
     ],
   },
   // Public courier onboarding (F-02): the wizard + post-submit "em análise" are
@@ -124,6 +132,14 @@ export const routes: Routes = [
         path: 'entregas',
         loadComponent: () =>
           import('../features/loja/entregas/entregas-list.page').then((m) => m.EntregasListPage),
+      },
+      // Phase 9 (F-06): store delivery detail (tela 13) — timeline + cancel + link.
+      {
+        path: 'entregas/:id',
+        loadComponent: () =>
+          import('../features/loja/entrega-detalhe/entrega-detalhe.page').then(
+            (m) => m.EntregaDetalhePage,
+          ),
       },
       // Phase 8 (F-05): favoritos e bloqueados (tela 15).
       {

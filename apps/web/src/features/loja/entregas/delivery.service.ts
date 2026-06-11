@@ -5,6 +5,7 @@ import { ApiErrorEnvelope } from '../../../core/auth/auth.models';
 import {
   CreateDeliveryRequest,
   CreateDeliveryResponse,
+  DeliveryListItem,
   DeliveryListResponse,
 } from './delivery.models';
 
@@ -47,6 +48,17 @@ export class DeliveryService {
     return firstValueFrom(
       this.http.get<DeliveryListResponse>('/v1/deliveries', { params }),
     );
+  }
+
+  /** Read a single delivery the store owns (404 if not owned — TH-03). */
+  async get(deliveryId: number): Promise<DeliveryListItem | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<DeliveryListItem>(`/v1/deliveries/${deliveryId}`),
+      );
+    } catch {
+      return null;
+    }
   }
 
   async cancel(deliveryId: number, reason?: string): Promise<boolean> {

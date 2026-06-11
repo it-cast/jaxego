@@ -1,0 +1,31 @@
+// Comprovação (tela 07) — full-screen focus on the active proof task. Tokens only.
+
+.jx-proof-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: var(--jx-space-5) var(--jx-space-4);
+  min-height: 100dvh;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.jx-proof-page__title {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-bold);
+  margin: 0;
+}
+
+.jx-proof-page__lowconf {
+  padding: var(--jx-space-3);
+  border-radius: var(--jx-radius-md);
+  background: var(--info-bg);
+  border: 1px solid var(--info);
+  color: var(--text);
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-sm);
+  line-height: 1.4;
+}
