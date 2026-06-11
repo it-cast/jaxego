@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  EventEmitter,
   Input,
+  Output,
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -52,7 +54,7 @@ function noop(): void {
         [disabled]="disabled"
         [value]="value"
         (input)="onInput($event)"
-        (blur)="onTouched()"
+        (blur)="onBlur()"
       />
       @if (hint && !error) {
         <p class="jx-field__hint">{{ hint }}</p>
@@ -77,6 +79,8 @@ export class FieldComponent implements ControlValueAccessor {
   @Input() error?: string | null;
   /** Mono display for data fields (CNPJ, OTP, values). */
   @Input() mono = false;
+  /** Emits on blur (in addition to marking touched) — inline validation hook. */
+  @Output() blurred = new EventEmitter<void>();
 
   protected readonly id = `jx-field-${_uid++}`;
   protected value = '';
@@ -88,6 +92,11 @@ export class FieldComponent implements ControlValueAccessor {
   protected onInput(event: Event): void {
     this.value = (event.target as HTMLInputElement).value;
     this._onChange(this.value);
+  }
+
+  protected onBlur(): void {
+    this.onTouched();
+    this.blurred.emit();
   }
 
   writeValue(value: string | null): void {

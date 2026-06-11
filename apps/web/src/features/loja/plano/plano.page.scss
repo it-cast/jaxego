@@ -40,6 +40,25 @@
   margin-top: var(--jx-space-5);
 }
 
+.jx-plano__checkout {
+  margin-top: var(--jx-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  max-width: 480px;
+}
+
+.jx-plano__checkout h2 {
+  font-size: var(--jx-text-lg);
+  margin: 0;
+}
+
+.jx-plano__pix-hint {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
 .jx-plano__history,
 .jx-plano__invoices {
   margin-top: var(--jx-space-6);

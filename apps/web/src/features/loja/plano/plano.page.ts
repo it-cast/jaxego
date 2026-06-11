@@ -14,6 +14,12 @@ import {
 } from './billing.service';
 import { SubscriptionStatusComponent } from './components/jx-subscription-status.component';
 import { ChargeHistoryComponent } from './components/jx-charge-history.component';
+import {
+  CheckoutMethodToggleComponent,
+  type CheckoutMethod,
+} from './components/jx-checkout-method-toggle.component';
+import { CardFormComponent } from './components/jx-card-form.component';
+import { PixQrComponent } from './components/jx-pix-qr.component';
 
 /**
  * Seleção de plano (tela 16, UI-SPEC §6) — plan management + subscription status +
@@ -31,6 +37,9 @@ import { ChargeHistoryComponent } from './components/jx-charge-history.component
     LoadingSkeletonComponent,
     SubscriptionStatusComponent,
     ChargeHistoryComponent,
+    CheckoutMethodToggleComponent,
+    CardFormComponent,
+    PixQrComponent,
   ],
   template: `
     <main class="jx-plano">
@@ -55,6 +64,27 @@ import { ChargeHistoryComponent } from './components/jx-charge-history.component
         }
       </section>
 
+      <section class="jx-plano__checkout" aria-label="Pagamento da assinatura">
+        <h2 class="jx-h2">Pagamento</h2>
+        <jx-checkout-method-toggle
+          [method]="method()"
+          (methodChange)="onMethodChange($event)"
+        />
+        @if (method() === 'card') {
+          <jx-card-form ctaLabel="Confirmar pagamento" (cardEncrypted)="onCardEncrypted($event)" />
+        } @else {
+          @if (subscription()?.qr_code; as qr) {
+            <jx-pix-qr
+              [copyPaste]="qr"
+              [image]="subscription()?.qr_code_base64 ?? null"
+              pixState="aguardando"
+            />
+          } @else {
+            <p class="jx-plano__pix-hint">Gere o PIX ao confirmar para ativar por aprovação automática.</p>
+          }
+        }
+      </section>
+
       <section class="jx-plano__history" aria-label="Histórico de cobranças">
         <h2 class="jx-h2">Cobranças</h2>
         <jx-charge-history [charges]="charges()" />
@@ -76,9 +106,38 @@ export class PlanoPage {
   protected readonly current = signal<string>('free');
   protected readonly subscription = signal<SubscriptionView | null>(null);
   protected readonly charges = signal<ChargeHistoryItem[]>([]);
+  protected readonly method = signal<CheckoutMethod>('card');
 
   constructor() {
     void this.load();
+  }
+
+  protected onMethodChange(m: CheckoutMethod): void {
+    this.method.set(m);
+  }
+
+  /**
+   * The card is already RSA-OAEP-encrypted by jx-card-form — only the opaque blob
+   * arrives here. We forward it to the backend; the plaintext card never touched this
+   * page (TH-A). The customer document/email come from the merchant profile.
+   */
+  protected async onCardEncrypted(blob: string): Promise<void> {
+    const sub = this.subscription();
+    if (!sub) return;
+    try {
+      const updated = await this.billing.subscribe({
+        plan_id: sub.plan_id,
+        cycle: 'mensal',
+        method: 'card',
+        card_blob: blob,
+        customer_document: '',
+        customer_email: '',
+      });
+      this.subscription.set(updated);
+      this.charges.set(await this.billing.charges());
+    } catch {
+      // The jx-card-form surfaces the refusal; the page state is unchanged.
+    }
   }
 
   private async load(): Promise<void> {

@@ -1,0 +1,85 @@
+// jx-pix-qr — tokens only, no hex (Gate 2).
+
+.jx-pix {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+}
+
+.jx-pix__img {
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+}
+
+.jx-pix__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--jx-space-2);
+  width: 100%;
+}
+
+.jx-pix__code {
+  display: block;
+  width: 100%;
+  padding: var(--jx-space-2);
+  border-radius: var(--jx-radius-sm);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  word-break: break-all;
+  color: var(--text);
+}
+
+.jx-pix__copy-btn,
+.jx-pix__regen {
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-4);
+  border-radius: var(--jx-radius-md);
+  background: var(--brand);
+  border: 1px solid var(--brand);
+  color: var(--brand-contrast);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-pix__copy-btn:focus-visible,
+.jx-pix__regen:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-pix__deep {
+  color: var(--brand);
+  font-weight: var(--jx-weight-medium);
+  text-decoration: underline;
+}
+
+.jx-pix__waiting {
+  margin: 0;
+  text-align: center;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-pix__ok {
+  margin: 0;
+  color: var(--success);
+  font-weight: var(--jx-weight-semibold);
+}
+
+.jx-pix__expired {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+  align-items: center;
+  color: var(--error);
+  text-align: center;
+}
