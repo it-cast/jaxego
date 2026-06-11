@@ -13,3 +13,4 @@ export { ScoreChipComponent, type ScoreLevel } from './score-chip/score-chip.com
 export { AcceptedCourierCardComponent } from './accepted-courier-card/accepted-courier-card.component';
 export { FavoriteRowComponent } from './favorite-row/favorite-row.component';
 export { BlockedRowComponent } from './blocked-row/blocked-row.component';
+export { SecretRevealComponent } from './secret-reveal/secret-reveal.component';
