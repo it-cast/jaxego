@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-06-11T02:50:00.000Z"
-last_activity: "2026-06-11 — Phase 9 EXECUTADA (a maior do MS-03, 19 tasks): comprovação foto+EXIF/GPS antifraude (oposto do KYC), tracking público sem auth + mapa MapLibre lazy, notificações multicanal, jobs de ciclo, migration 0008 reversível. 326 testes backend (not-mysql) + 121 frontend. Pendente ao vivo: geofence ST_Distance_Sphere + migration 0008 (pytest -m mysql)."
+last_updated: "2026-06-11T02:00:00.000Z"
+last_activity: "2026-06-11 — MS-03 (Coracao transacional) COMPLETO. Phase 9 fechada e verificada ao vivo (migration 0008 reversivel apos fix revision-id; geofence ST_Distance_Sphere; tracking publico sem PII). 326+5+121 testes. Mapa ao vivo DEC-002 entregue. Proximo: MS-04 (Phase 10 Safe2Pay) — BLOQUEADO por OQ-3."
 progress:
   total_phases: 14
   completed_phases: 9
@@ -23,7 +23,7 @@ progress:
 ```yaml
 milestone: MS-03
 milestone_name: Coração transacional (entregas)
-status: in_progress
+status: complete
 release_target: v1.0 (piloto Pádua)
 progress:
   total_phases: 14

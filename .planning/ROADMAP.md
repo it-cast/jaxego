@@ -260,7 +260,7 @@
 
 ## Phase 9: Execução, comprovação, tracking público e notificações
 
-**Milestone:** MS-03 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-03 · **Tipo:** core · **Status:** complete (2026-06-10) · **Estimativa:** L (1-2sem)
 
 ### REQs cobertos
 - REQ-026: F-06 com 6 exceções · REQ-027: foto+EXIF/GPS geofence · REQ-028: número de referência · REQ-029: cancelamentos RN-004 · REQ-030: tracking público **com mapa em tempo real (DEC-002 — promove ADR-101 ao M1)** · REQ-031: notificações 3 momentos · REQ-032: janela de telefones · REQ-035 (parcial): confirmação de pagamento direto na comprovação · REQ-049: multicanal com fallback · REQ-055: estados de UI
