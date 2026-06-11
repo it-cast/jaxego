@@ -107,7 +107,6 @@ export class LiveMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       },
       center,
       zoom: 14,
-      attributionControl: true,
     }) as unknown as { setCenter: (c: [number, number]) => void; remove: () => void };
     this.marker = new maplibre.Marker().setLngLat(center).addTo(this.map as never) as unknown as {
       setLngLat: (c: [number, number]) => void;

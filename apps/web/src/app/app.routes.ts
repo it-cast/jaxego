@@ -170,6 +170,15 @@ export const routes: Routes = [
       },
     ],
   },
+  // Public tracking (tela 26, F-06 / Phase 9): token-only, NO auth guard. The map
+  // (MapLibre) is lazy inside the page so it never bloats this route's chunk.
+  {
+    path: 'r/:token',
+    loadComponent: () =>
+      import('../features/public-tracking/public-tracking.page').then(
+        (m) => m.PublicTrackingPage,
+      ),
+  },
   {
     path: '**',
     loadComponent: () =>
