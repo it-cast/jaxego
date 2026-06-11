@@ -1,0 +1,35 @@
+// jx-money — monetary value in the MONO family (ui-ux-pro-max: tabular numbers
+// align and read as money). Sign colour is REINFORCEMENT only — the +/− glyph
+// (rendered in the template) carries the meaning, never colour alone (a11y).
+// Tokens only — no hex (Gate 2).
+
+.jx-money {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--jx-space-1);
+  font-family: var(--jx-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+// Large highlight (e.g. the courier's available balance, the invoice total).
+.jx-money--display {
+  font-size: var(--jx-text-3xl);
+  font-weight: var(--jx-weight-extrabold);
+  letter-spacing: -0.01em;
+}
+
+// Credit / debit colour is reinforcement of the textual +/− glyph (never alone).
+.jx-money--credit {
+  color: var(--success);
+}
+
+.jx-money--debit {
+  color: var(--error);
+}
+
+.jx-money__sign {
+  font-weight: var(--jx-weight-bold);
+}

@@ -36,3 +36,17 @@ export function formatBrl(value: number): string {
     maximumFractionDigits: 2,
   })}`;
 }
+
+/**
+ * Format INTEGER cents into pt-BR currency (e.g. `9990` → `R$ 99,90`). The single
+ * source of cents→reais formatting for the whole app — money crosses the API as
+ * integer cents (DRV-009) and is formatted only at the display edge. Reused by
+ * jx-money, jx-invoice-summary and the Phase 15 financial screens; supersedes the
+ * ad-hoc `formatCents` that lived in billing.service.ts (Phase 10).
+ */
+export function formatCents(cents: number): string {
+  return (cents / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+}

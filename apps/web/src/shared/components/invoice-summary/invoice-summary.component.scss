@@ -1,0 +1,119 @@
+// jx-invoice-summary — elevated card (radius.lg + shadow.sm, UI-SPEC §Tokens).
+// Status badge = vivid semantic colour (text + border) over a neutral surface
+// (dark-mode-theming pattern); the badge text + icon carry the meaning, never
+// colour alone (a11y). Tokens only — no hex (Gate 2).
+
+.jx-inv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.jx-inv__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+}
+
+.jx-inv__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jx-inv__overline {
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.jx-inv__competence {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.jx-inv__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  flex-shrink: 0;
+  padding: 3px var(--jx-space-2);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  border: 1px solid currentColor;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.jx-inv__badge--success {
+  color: var(--success);
+}
+
+.jx-inv__badge--warning {
+  color: var(--warning);
+}
+
+.jx-inv__badge--error {
+  color: var(--error);
+}
+
+.jx-inv__badge-icon {
+  font-size: var(--jx-text-xs);
+  line-height: 1;
+}
+
+.jx-inv__total {
+  margin-top: var(--jx-space-1);
+}
+
+.jx-inv__due {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-inv__cta {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: var(--jx-space-1);
+  padding: var(--jx-space-2) var(--jx-space-5);
+  border: 1px solid var(--brand);
+  border-radius: var(--jx-radius-md);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+}
+
+.jx-inv__cta:hover:not(:disabled) {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+}
+
+.jx-inv__cta:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.jx-inv__cta:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
