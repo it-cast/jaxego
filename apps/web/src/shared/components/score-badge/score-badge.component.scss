@@ -1,0 +1,40 @@
+// jx-score-badge — neutral surface + vivid score color (dark-mode-theming pattern).
+// Level name + (optional) mono value carry the meaning; color is reinforcement,
+// never the only signal (a11y / daltonismo). Tokens only — no hex (Gate 2).
+
+.jx-score-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-1) var(--jx-space-3);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  border: 1px solid var(--score-color);
+  color: var(--score-color);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+// The numeric score is editorial-technical (mono) — UI-SPEC §Score.
+.jx-score-badge__value {
+  font-family: var(--jx-font-mono);
+  font-weight: var(--jx-weight-bold);
+  font-size: var(--jx-text-base);
+}
+
+.jx-score-badge__level {
+  font-weight: var(--jx-weight-semibold);
+}
+
+// Larger variant for detail headers (telas 19/20).
+.jx-score-badge--lg {
+  padding: var(--jx-space-2) var(--jx-space-4);
+  font-size: var(--jx-text-base);
+}
+
+.jx-score-badge--lg .jx-score-badge__value {
+  font-size: var(--jx-text-xl);
+}

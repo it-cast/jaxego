@@ -1,0 +1,97 @@
+// jx-score-breakdown — explainable score table (UI-SPEC §Score, ADR-013).
+// Semantic table; numbers in mono; AA in both themes. Tokens only — no hex.
+
+.jx-score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-score-breakdown table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  overflow: hidden;
+}
+
+.jx-score-breakdown thead th {
+  text-align: left;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.jx-score-breakdown tbody th[scope='row'] {
+  text-align: left;
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-score-breakdown tbody td,
+.jx-score-breakdown tbody th {
+  padding: var(--jx-space-2) var(--jx-space-3);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.jx-score-breakdown tbody tr:last-child td,
+.jx-score-breakdown tbody tr:last-child th {
+  border-bottom: 0;
+}
+
+.jx-score-breakdown__num {
+  text-align: right;
+  font-family: var(--jx-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.jx-score-breakdown__contrib {
+  font-weight: var(--jx-weight-semibold);
+}
+
+.jx-score-breakdown tfoot th,
+.jx-score-breakdown tfoot td {
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-top: 1px solid var(--border-strong);
+  background: var(--surface-sunken);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-score-breakdown tfoot th[scope='row'] {
+  text-align: left;
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-score-breakdown__total {
+  font-family: var(--jx-font-mono);
+  font-weight: var(--jx-weight-bold);
+  text-align: right;
+}
+
+.jx-score-breakdown__note {
+  margin: 0;
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+// Visually-hidden caption (component-scoped — accessibility-pro).
+.jx-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

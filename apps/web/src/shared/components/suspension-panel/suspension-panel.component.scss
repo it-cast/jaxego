@@ -1,0 +1,154 @@
+// jx-suspension-panel — suspension + appeal panel (UI-SPEC §Tela 25/09, REQ-045).
+// Semantic tones (error/warning/success/info) over neutral surfaces; AA in both
+// themes. Tokens only — no hex (Gate 2).
+
+.jx-suspension-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-4);
+  background: var(--surface-elevated);
+  border: 1px solid var(--error);
+  border-radius: var(--jx-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.jx-suspension-panel--resolved {
+  border-color: var(--border);
+}
+
+.jx-suspension-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-2);
+}
+
+.jx-suspension-panel__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-suspension-panel__status {
+  padding: 2px var(--jx-space-2);
+  border-radius: var(--jx-radius-full);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.jx-suspension-panel__status--active {
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.jx-suspension-panel__status--reverted {
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.jx-suspension-panel__status--upheld {
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+
+.jx-suspension-panel__meta {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--jx-space-2);
+  margin: 0;
+}
+
+@media (min-width: 560px) {
+  .jx-suspension-panel__meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.jx-suspension-panel__meta dt {
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.jx-suspension-panel__meta dd {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+}
+
+.jx-suspension-panel__sla {
+  margin: 0;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-radius: var(--jx-radius-lg);
+  background: var(--info-bg);
+  color: var(--info);
+  font-size: var(--jx-text-sm);
+}
+
+.jx-suspension-panel__sla strong {
+  font-family: var(--jx-font-mono);
+  font-weight: var(--jx-weight-bold);
+}
+
+.jx-suspension-panel__sla--risk {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.jx-suspension-panel__sla--overdue {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.jx-suspension-panel__hint,
+.jx-suspension-panel__resolved-note {
+  margin: 0;
+  font-size: var(--jx-text-2xs);
+  color: var(--text-muted);
+}
+
+.jx-suspension-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jx-space-2);
+}
+
+.jx-suspension-panel__btn {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  border-radius: var(--jx-radius-lg);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-suspension-panel__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-suspension-panel__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-suspension-panel__btn--keep {
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.jx-suspension-panel__btn--revert {
+  background: var(--success);
+  border: 1px solid var(--success);
+  color: var(--brand-contrast);
+}
