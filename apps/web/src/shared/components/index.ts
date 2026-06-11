@@ -9,3 +9,5 @@ export {
   type DocUploadState,
 } from './doc-upload/doc-upload.component';
 export { DocCardComponent, type DocStatus } from './doc-card/doc-card.component';
+export { ScoreChipComponent, type ScoreLevel } from './score-chip/score-chip.component';
+export { AcceptedCourierCardComponent } from './accepted-courier-card/accepted-courier-card.component';

@@ -1,0 +1,34 @@
+// jx-score-chip — neutral surface + vivid score color (dark-mode-theming pattern).
+// Glyph + mono value + level text carry the meaning; color is reinforcement, never
+// the only signal (a11y). Tokens only — no hex (Gate 2).
+
+.jx-score-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  padding: 2px var(--jx-space-2);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  border: 1px solid var(--score-color);
+  color: var(--score-color);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-semibold);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.jx-score-chip__glyph {
+  font-size: var(--jx-text-xs);
+  line-height: 1;
+}
+
+// The numeric score is editorial-technical (mono) — UI-SPEC §7.2.
+.jx-score-chip__value {
+  font-family: var(--jx-font-mono);
+  font-weight: var(--jx-weight-bold);
+}
+
+.jx-score-chip__level {
+  text-transform: lowercase;
+}

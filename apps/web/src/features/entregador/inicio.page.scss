@@ -1,0 +1,86 @@
+// Início do entregador (tela 04). Tokens only — no hex (Gate 2).
+
+.jx-home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-4);
+}
+
+.jx-home-greeting {
+  display: flex;
+  flex-direction: column;
+}
+
+.jx-home-greeting__hi {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-home-greeting__name {
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-home-dispatch {
+  padding: var(--jx-space-4);
+}
+
+.jx-home-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-3);
+}
+
+// Discreet activity dot — slow, calm pulse (UI-SPEC §2.3). Not a spinner.
+.jx-home-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--jx-radius-full);
+  background: var(--success);
+  animation: jx-home-pulse var(--jx-motion-slow) ease-in-out infinite alternate;
+}
+
+@keyframes jx-home-pulse {
+  from {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// reduced-motion → static dot (no pulse).
+@media (prefers-reduced-motion: reduce) {
+  .jx-home-pulse {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+.jx-home-busy {
+  padding: var(--jx-space-4);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+}
+
+.jx-home-busy__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-home-busy__where {
+  margin: var(--jx-space-1) 0 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
