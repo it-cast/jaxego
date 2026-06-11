@@ -46,8 +46,6 @@ def estimate_route(
 class RoutingStubAdapter:
     """Deterministic haversine routing — no network (dev/test)."""
 
-    async def route(
-        self, *, origin: tuple[float, float], dest: tuple[float, float]
-    ) -> RouteResult:
+    async def route(self, *, origin: tuple[float, float], dest: tuple[float, float]) -> RouteResult:
         """Return a deterministic haversine ×1.4 estimate (degraded=False)."""
         return estimate_route(origin, dest, degraded=False)

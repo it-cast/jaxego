@@ -26,9 +26,7 @@ class RoutingHttpAdapter:
         self._profile = profile
         self._allowlist = allowlist
 
-    async def route(
-        self, *, origin: tuple[float, float], dest: tuple[float, float]
-    ) -> RouteResult:
+    async def route(self, *, origin: tuple[float, float], dest: tuple[float, float]) -> RouteResult:
         """ETA/distance via OSRM; haversine ×1.4 + degraded on any failure."""
         # OSRM coordinate order is lng,lat (not lat,lng).
         coords = f"{origin[1]},{origin[0]};{dest[1]},{dest[0]}"

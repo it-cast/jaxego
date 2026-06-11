@@ -25,9 +25,7 @@ logger = structlog.get_logger("integrations.push")
 class PushVapidAdapter:
     """Web Push VAPID sender (pywebpush). Degrades silently on failure."""
 
-    def __init__(
-        self, *, private_key: str | None, public_key: str | None, claim_sub: str
-    ) -> None:
+    def __init__(self, *, private_key: str | None, public_key: str | None, claim_sub: str) -> None:
         self._private_key = private_key
         self._public_key = public_key
         self._claim_sub = claim_sub
@@ -59,7 +57,5 @@ class PushVapidAdapter:
             return True
         except Exception as exc:  # noqa: BLE001 — degrade silently (skill push)
             # No PII to log — only the failure shape and the delivery id (A09).
-            logger.warning(
-                "push.failed", delivery_id=message.delivery_id, error=type(exc).__name__
-            )
+            logger.warning("push.failed", delivery_id=message.delivery_id, error=type(exc).__name__)
             return False
