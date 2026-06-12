@@ -1,0 +1,76 @@
+<section class="jx-fatura" aria-labelledby="fatura-heading">
+  <header class="jx-fatura__head">
+    <h1 id="fatura-heading" class="jx-fatura__title">Faturas</h1>
+    <p class="jx-fatura__subtitle">
+      A taxa de plataforma das suas entregas diretas, fechada todo dia 1º.
+    </p>
+  </header>
+
+  @if (pageState() === 'loading') {
+    <p class="jx-fatura__loading" role="status" aria-busy="true">
+      Carregando suas faturas…
+    </p>
+  } @else if (pageState() === 'error') {
+    <jx-error-state
+      message="Não conseguimos carregar suas faturas. Tente de novo."
+      retryLabel="Tentar de novo"
+      (retry)="load()"
+    />
+  } @else if (pageState() === 'empty') {
+    <div class="jx-fatura__empty" role="status">
+      <span class="jx-fatura__empty-icon" aria-hidden="true">◌</span>
+      <h2 class="jx-fatura__empty-title">Nenhuma fatura ainda</h2>
+      <p class="jx-fatura__empty-msg">
+        Sua primeira fatura aparece aqui depois do fechamento do mês.
+      </p>
+    </div>
+  } @else if (pageState() === 'ready' && current()) {
+    @if (current(); as invoice) {
+    <!-- Banner de vencimento (F-03 E5) — vencida bloqueia novas entregas após 7 dias. -->
+    @if (isOverdue()) {
+      <div class="jx-fatura__banner" role="alert">
+        <span class="jx-fatura__banner-icon" aria-hidden="true">!</span>
+        <p class="jx-fatura__banner-text">
+          Fatura vencida. Novas entregas ficam bloqueadas 7 dias após o vencimento —
+          pague para continuar operando.
+        </p>
+      </div>
+    }
+
+    <jx-invoice-summary
+      [invoice]="invoice"
+      [paying]="paying()"
+      (pay)="pay($event)"
+    />
+
+    @if (payDone()) {
+      <p class="jx-fatura__paid" role="status">Pagamento confirmado. Obrigado!</p>
+    }
+    @if (payError()) {
+      <jx-error-state [message]="payError()!" />
+    }
+
+    <section class="jx-fatura__lines" aria-labelledby="lines-heading">
+      <h2 id="lines-heading" class="jx-fatura__lines-title">O que está na fatura</h2>
+      <jx-data-table
+        caption="Linhas da fatura"
+        [columns]="lineColumns"
+        [rows]="lines()"
+        [state]="linesState()"
+        [trackBy]="trackLine"
+        emptyIcon="◌"
+        emptyTitle="Sem linhas nesta fatura"
+        emptyMessage="Nenhuma entrega direta foi cobrada nesta competência."
+        (retry)="loadLines(invoice.id)"
+      >
+        <ng-template #row let-line>
+          <td>{{ line.description }}</td>
+          <td class="jx-fatura__num">
+            <jx-money [cents]="line.amount_cents" />
+          </td>
+        </ng-template>
+      </jx-data-table>
+    </section>
+    }
+  }
+</section>

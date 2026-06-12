@@ -1,0 +1,122 @@
+// Tela 15 — Fatura da loja. Tokens semânticos; zero hex (Gate 2). Banner de
+// vencimento usa --error-bg/--error (texto + ícone, nunca cor sozinha — a11y).
+
+.jx-fatura {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--jx-space-5);
+}
+
+.jx-fatura__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-fatura__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-fatura__subtitle {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-fatura__loading {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+// Banner de vencimento (F-03 E5).
+.jx-fatura__banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3) var(--jx-space-4);
+  background: var(--error-bg);
+  border: 1px solid var(--error);
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-fatura__banner-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--jx-radius-full);
+  background: var(--error);
+  color: var(--brand-contrast);
+  font-weight: var(--jx-weight-bold);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-fatura__banner-text {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  color: var(--error);
+}
+
+.jx-fatura__paid {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--success);
+}
+
+.jx-fatura__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-7) var(--jx-space-4);
+  text-align: center;
+}
+
+.jx-fatura__empty-icon {
+  font-size: var(--jx-text-3xl);
+  color: var(--text-subtle);
+}
+
+.jx-fatura__empty-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-fatura__empty-msg {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-fatura__lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-fatura__lines-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-fatura__num {
+  text-align: right;
+}

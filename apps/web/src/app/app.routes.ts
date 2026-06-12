@@ -72,6 +72,14 @@ export const routes: Routes = [
             (m) => m.ComprovacaoPage,
           ),
       },
+      // Phase 15 (tela 16 / D-06): extrato/saldo + solicitar saque (REQ-038).
+      {
+        path: 'saldo',
+        loadComponent: () =>
+          import('../features/entregador/saldo/saldo.page').then(
+            (m) => m.EntregadorSaldoPage,
+          ),
+      },
     ],
   },
   // Public courier onboarding (F-02): the wizard + post-submit "em análise" are
@@ -146,6 +154,22 @@ export const routes: Routes = [
         path: 'favoritos',
         loadComponent: () =>
           import('../features/loja/favoritos/favoritos.page').then((m) => m.FavoritosPage),
+      },
+      // Phase 15 (tela 15 / D-06): fatura mensal da loja (REQ-037).
+      {
+        path: 'faturas',
+        loadComponent: () =>
+          import('../features/loja/financeiro/fatura.page').then(
+            (m) => m.LojaFaturaPage,
+          ),
+      },
+      // Phase 15 (tela 08 / D-06): recibo do pagamento direto de uma entrega (RN-026).
+      {
+        path: 'entregas/:id/recibo',
+        loadComponent: () =>
+          import('../features/loja/financeiro/recibo.page').then(
+            (m) => m.LojaReciboPage,
+          ),
       },
     ],
   },

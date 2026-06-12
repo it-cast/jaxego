@@ -1,0 +1,69 @@
+<section class="jx-recibo" aria-labelledby="recibo-heading">
+  <header class="jx-recibo__head">
+    <h1 id="recibo-heading" class="jx-recibo__title">Recibo</h1>
+    <p class="jx-recibo__subtitle">Pagamento direto desta entrega.</p>
+  </header>
+
+  @if (state() === 'loading') {
+    <p class="jx-recibo__loading" role="status" aria-busy="true">
+      Carregando o recibo…
+    </p>
+  } @else if (state() === 'error') {
+    <jx-error-state
+      message="Não conseguimos carregar o recibo. Tente de novo."
+      retryLabel="Tentar de novo"
+      (retry)="load()"
+    />
+  } @else if (state() === 'empty') {
+    <div class="jx-recibo__empty" role="status">
+      <span class="jx-recibo__empty-icon" aria-hidden="true">◌</span>
+      <h2 class="jx-recibo__empty-title">Sem recibo ainda</h2>
+      <p class="jx-recibo__empty-msg">
+        O recibo aparece aqui quando o entregador confirmar o pagamento.
+      </p>
+    </div>
+  } @else if (state() === 'ready' && receipt()) {
+    @if (receipt(); as r) {
+    <article class="jx-recibo__card">
+      <div class="jx-recibo__value">
+        @if (r.amount_cents !== null) {
+          <jx-money
+            variant="display"
+            [cents]="r.amount_cents"
+            [label]="'Valor recebido'"
+          />
+        } @else {
+          <span class="jx-recibo__no-value">Valor não informado</span>
+        }
+      </div>
+
+      <span
+        class="jx-recibo__status"
+        [class.jx-recibo__status--success]="outcomeTone(r.outcome) === 'success'"
+        [class.jx-recibo__status--warning]="outcomeTone(r.outcome) === 'warning'"
+      >
+        <span class="jx-recibo__status-icon" aria-hidden="true">
+          {{ outcomeTone(r.outcome) === 'success' ? '✓' : '!' }}
+        </span>
+        {{ outcomeLabel(r.outcome) }}
+      </span>
+
+      <dl class="jx-recibo__details">
+        <div class="jx-recibo__row">
+          <dt>Referência</dt>
+          <dd class="jx-recibo__mono">{{ referenceLabel(r) }}</dd>
+        </div>
+        <div class="jx-recibo__row">
+          <dt>Data</dt>
+          <dd>{{ formatDate(r.confirmed_at) }}</dd>
+        </div>
+      </dl>
+
+      <p class="jx-recibo__trust">
+        Este recibo confirma o que foi pago direto ao entregador. A taxa da
+        plataforma é cobrada à parte, na sua fatura mensal.
+      </p>
+    </article>
+    }
+  }
+</section>

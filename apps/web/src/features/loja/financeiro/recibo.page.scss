@@ -1,0 +1,153 @@
+// Tela 08 — Recibo do pagamento direto. trust-safety-ux: transparência do valor.
+// Tokens semânticos; zero hex (Gate 2). Status = texto + ícone + cor (nunca cor só).
+
+.jx-recibo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: var(--jx-space-5);
+}
+
+.jx-recibo__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-recibo__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-recibo__subtitle {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-recibo__loading {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-recibo__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  padding: var(--jx-space-5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.jx-recibo__value {
+  display: flex;
+  justify-content: center;
+}
+
+.jx-recibo__no-value {
+  font-size: var(--jx-text-md);
+  color: var(--text-muted);
+}
+
+.jx-recibo__status {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  padding: var(--jx-space-1) var(--jx-space-3);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
+  border: 1px solid currentColor;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.jx-recibo__status--success {
+  color: var(--success);
+}
+
+.jx-recibo__status--warning {
+  color: var(--warning);
+}
+
+.jx-recibo__status-icon {
+  font-size: var(--jx-text-sm);
+  line-height: 1;
+}
+
+.jx-recibo__details {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+}
+
+.jx-recibo__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  padding-bottom: var(--jx-space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.jx-recibo__row dt {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-recibo__row dd {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  color: var(--text);
+}
+
+.jx-recibo__mono {
+  font-family: var(--jx-font-mono);
+}
+
+.jx-recibo__trust {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.jx-recibo__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-7) var(--jx-space-4);
+  text-align: center;
+}
+
+.jx-recibo__empty-icon {
+  font-size: var(--jx-text-3xl);
+  color: var(--text-subtle);
+}
+
+.jx-recibo__empty-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-recibo__empty-msg {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}

@@ -15,17 +15,21 @@ describe('MoneyComponent', () => {
     return (fixture.nativeElement.textContent ?? '').replace(/\s+/g, ' ').trim();
   }
 
+  /** Normalise the non-breaking space (U+00A0) that toLocaleString inserts. */
+  function normSpace(s: string | null): string {
+    return (s ?? '').replace(/\u00A0/g, ' ');
+  }
+
   it('formats integer cents as pt-BR currency (cents→reais at the edge)', () => {
     component.cents = 9990;
     fixture.detectChanges();
-    // toLocaleString uses a non-breaking space between R$ and the number.
-    expect(text().replace(/ /g, ' ')).toContain('R$ 99,90');
+    expect(normSpace(text())).toContain('R$ 99,90');
   });
 
   it('renders zero as R$ 0,00 (never blank)', () => {
     component.cents = 0;
     fixture.detectChanges();
-    expect(text().replace(/ /g, ' ')).toContain('R$ 0,00');
+    expect(normSpace(text())).toContain('R$ 0,00');
   });
 
   it('adds a textual + glyph for a credit (never colour-only)', () => {
@@ -52,7 +56,7 @@ describe('MoneyComponent', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement.querySelector('.jx-money');
     expect(el.getAttribute('aria-label')).toContain('Saldo disponível');
-    expect(el.getAttribute('aria-label')?.replace(/ /g, ' ')).toContain('R$ 120,00');
+    expect(normSpace(el.getAttribute('aria-label'))).toContain('R$ 120,00');
   });
 
   it('announces the sign in words in the aria-label for ledger rows', () => {

@@ -64,10 +64,10 @@ describe('InvoiceSummaryComponent', () => {
   it('emits the invoice id when paying', () => {
     component.invoice = OPEN;
     fixture.detectChanges();
-    let emitted: number | null = null;
-    component.pay.subscribe((id) => (emitted = id));
+    const received: number[] = [];
+    component.pay.subscribe((id) => received.push(id));
     fixture.nativeElement.querySelector('.jx-inv__cta').click();
-    expect(emitted).toBe(1);
+    expect(received).toEqual([1]);
   });
 
   it('hides the pay CTA for a paid invoice and shows the paid date', () => {

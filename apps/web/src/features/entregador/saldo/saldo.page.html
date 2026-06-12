@@ -1,0 +1,171 @@
+<section class="jx-saldo" aria-labelledby="saldo-heading">
+  <header class="jx-saldo__head">
+    <h1 id="saldo-heading" class="jx-saldo__title">Saldo</h1>
+  </header>
+
+  <!-- ================= Saldo disponível ================= -->
+  @if (balanceState() === 'loading') {
+    <p class="jx-saldo__loading" role="status" aria-busy="true">
+      Carregando seu saldo…
+    </p>
+  } @else if (balanceState() === 'error') {
+    <jx-error-state
+      message="Não conseguimos carregar seu saldo. Tente de novo."
+      retryLabel="Tentar de novo"
+      (retry)="loadBalance()"
+    />
+  } @else if (balanceState() === 'ready' && balance()) {
+    @if (balance(); as b) {
+    <div class="jx-saldo__card">
+      <span class="jx-saldo__label">Disponível para saque</span>
+      <jx-money
+        variant="display"
+        [cents]="b.balance_cents"
+        [label]="'Saldo disponível'"
+      />
+      <p class="jx-saldo__min" role="note">Saque mínimo de {{ minimumLabel() }}.</p>
+
+      <button
+        #confirmTrigger
+        type="button"
+        class="jx-saldo__cta"
+        [disabled]="!canWithdraw()"
+        (click)="openConfirm()"
+      >
+        Solicitar saque
+      </button>
+
+      <!-- Erro de mínimo: aria-live para anunciar sem mover foco (a11y). -->
+      <p class="jx-saldo__amount-error" role="alert" aria-live="assertive">
+        @if (amountError()) {
+          {{ amountError() }}
+        }
+      </p>
+
+      @if (lastResult(); as r) {
+        <p class="jx-saldo__done" role="status">
+          <span>Saque de</span>
+          <jx-money [cents]="r.amount_cents" />
+          <span>solicitado. Acompanhe no histórico abaixo.</span>
+        </p>
+      }
+    </div>
+    }
+  }
+
+  <!-- ================= Extrato ================= -->
+  <section class="jx-saldo__section" aria-labelledby="extract-heading">
+    <h2 id="extract-heading" class="jx-saldo__section-title">Extrato</h2>
+    <jx-data-table
+      caption="Extrato de corridas liberadas"
+      [columns]="extractColumns"
+      [rows]="extract()"
+      [state]="extractState()"
+      [trackBy]="trackExtract"
+      emptyIcon="◌"
+      emptyTitle="Sem movimentações ainda"
+      emptyMessage="Suas corridas liberadas aparecem aqui."
+      (retry)="loadExtract()"
+    >
+      <ng-template #row let-entry>
+        <td>{{ formatDate(entry.at) }}</td>
+        <td class="jx-saldo__num">
+          <jx-money [cents]="entry.amount_cents" sign="credit" [label]="'Corrida'" />
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+
+  <!-- ================= Histórico de saques ================= -->
+  <section class="jx-saldo__section" aria-labelledby="history-heading">
+    <h2 id="history-heading" class="jx-saldo__section-title">Saques</h2>
+    <jx-data-table
+      caption="Histórico de saques"
+      [columns]="historyColumns"
+      [rows]="history()"
+      [state]="historyState()"
+      [trackBy]="trackHistory"
+      emptyIcon="◌"
+      emptyTitle="Nenhum saque ainda"
+      emptyMessage="Quando você sacar, o histórico aparece aqui."
+      (retry)="loadHistory()"
+    >
+      <ng-template #row let-w>
+        <td>{{ formatDate(w.requested_at) }}</td>
+        <td class="jx-saldo__num">
+          <jx-money [cents]="w.amount_cents" />
+        </td>
+        <td>
+          <span
+            class="jx-saldo__status"
+            [class.jx-saldo__status--success]="statusTone(w.status) === 'success'"
+            [class.jx-saldo__status--warning]="statusTone(w.status) === 'warning'"
+            [class.jx-saldo__status--error]="statusTone(w.status) === 'error'"
+          >
+            <span class="jx-saldo__status-icon" aria-hidden="true">
+              {{
+                statusTone(w.status) === 'success'
+                  ? '✓'
+                  : statusTone(w.status) === 'error'
+                    ? '×'
+                    : '◷'
+              }}
+            </span>
+            {{ statusLabel(w.status) }}
+          </span>
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+
+  <!-- ================= Confirmação sensível de saque ================= -->
+  @if (confirming()) {
+    <div
+      class="jx-saldo__modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="withdraw-title"
+      (keydown.escape)="closeConfirm()"
+    >
+      <div class="jx-saldo__modal-card">
+        <h3 id="withdraw-title" class="jx-saldo__modal-title">Confirmar saque</h3>
+        <p class="jx-saldo__modal-copy">
+          Você vai sacar todo o seu saldo disponível:
+        </p>
+        @if (balance(); as b) {
+          <jx-money
+            class="jx-saldo__modal-value"
+            variant="display"
+            [cents]="b.balance_cents"
+            [label]="'Valor do saque'"
+          />
+        }
+        <p class="jx-saldo__modal-hint">
+          Se o saque falhar, o valor volta para o seu saldo.
+        </p>
+        @if (submitError()) {
+          <jx-error-state [message]="submitError()!" />
+        }
+        <div class="jx-saldo__modal-actions">
+          <button
+            type="button"
+            class="jx-saldo__secondary"
+            (click)="closeConfirm()"
+          >
+            Cancelar
+          </button>
+          <button
+            #confirmAction
+            type="button"
+            class="jx-saldo__confirm"
+            [disabled]="submitting()"
+            [attr.aria-busy]="submitting() ? 'true' : null"
+            (click)="confirmWithdrawal()"
+          >
+            {{ submitting() ? 'Solicitando…' : 'Confirmar saque' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>
