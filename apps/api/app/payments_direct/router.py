@@ -7,13 +7,12 @@ opens a `PaymentDispute` (mediação Phase 11). `commit()` in the router.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from datetime import datetime
 
 from app.db.session import get_session
 from app.deliveries.dependencies import MerchantScopeDep

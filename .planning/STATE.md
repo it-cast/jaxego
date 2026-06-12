@@ -41,12 +41,12 @@ See: `.planning/PROJECT.md` (ingest em 2026-06-10)
 ## Current Position
 
 - **Milestone:** MS-04 (Financeiro checkout + integrações) — em andamento
-- **Phase atual:** 14 of 14 — Hardening/release — ✅ COMPLETA dev/test (autopilot). LGPD jobs, infra LLM, refino ETA, CI gates web+APK, RELEASE-CHECKLIST. +18 testes; suíte completa verde. **Deploy gated por RELEASE-CHECKLIST (B-01 contrato Safe2Pay).**
-- **Próxima Phase:** 15 of 15 — Safe2Pay financeiro back-office (fatura/disputas/saques) [PÓS-DEPLOY, MS-06] — depende de [14] ✓
-- **Ordem de build pós-DEC-004:** ~~12~~ → ~~13~~ → ~~14~~ (deploy) → 15 (Safe2Pay financeiro, pós-deploy) ← ÚLTIMA
-- **Last activity:** 2026-06-11 — Phase 14 fechada (autopilot): hardening/release. MS-05 completo. TD-14-01..04. Falta só a Phase 15 (back-office financeiro).
+- **Phase atual:** 15 of 15 — Safe2Pay financeiro back-office — ✅ COMPLETA dev/test (autopilot, ÚLTIMA). Fatura+bloqueio, disputa financeira (90d), saques (R$20/payout), conciliação. 26+27 testes. **Produção gated pelo contrato (TD-10-0x/15-01).**
+- **Próxima Phase:** — (todas as 14 phases distintas completas em dev/test)
+- **Ordem de build pós-DEC-004:** ~~12~~ → ~~13~~ → ~~14~~ (deploy) → ~~15~~ (Safe2Pay financeiro) ✅ TODAS FECHADAS
+- **Last activity:** 2026-06-12 — Phase 15 fechada (autopilot). **TODAS as MS (01-06) com escopo completo em dev/test.** Deploy de produção gated pelo RELEASE-CHECKLIST (contrato Safe2Pay + verificação ao vivo MySQL).
 
-**Progress:** [█████████░] 93%
+**Progress:** [██████████] 100% (dev/test) — deploy gated por contrato
 
 ## MS-01 — entregue
 

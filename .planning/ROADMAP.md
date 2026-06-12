@@ -429,7 +429,8 @@
 
 ## Phase 15: Safe2Pay financeiro (back-office) — fatura, disputas, saques [PÓS-DEPLOY]
 
-**Milestone:** MS-06 · **Tipo:** core · **Status:** not_started · **Estimativa:** L (1-2sem)
+**Milestone:** MS-06 · **Tipo:** core · **Status:** complete (2026-06-12, dev/test; produção gated contrato TD-10-0x/15-01) · **Estimativa:** L (1-2sem)
+> ✅ Executada 2026-06-12 (autopilot, última do projeto). Fatura mensal + bloqueio F-03 E5, disputa financeira (2 procedentes/30d → 90d), saques (mín. R$20, `PaymentPort.payout`, falha→restitui), conciliação diária. Migration 0013. 26+27 testes; round-trip financeiro (Stub) coberto. Billing canônico (CLAUDE.md §18). TD-15-01. Ver `phases/15-.../RECONCILIATION.md`.
 > **DEC-004 (2026-06-11):** ex-Phase 11, movida para DEPOIS do deploy do piloto (decisão do dono). É a **última phase** do projeto. Toda a parte financeira pesada de Safe2Pay (fatura mensal, resolução de disputas, saques, conciliação) só ativa em produção após o piloto estar no ar e o contrato Safe2Pay confirmado. Código nasce verde com Stub + valores parametrizados (DEC-003), produção atrás das TDs do contrato (TD-10-01..04).
 
 ### REQs cobertos
