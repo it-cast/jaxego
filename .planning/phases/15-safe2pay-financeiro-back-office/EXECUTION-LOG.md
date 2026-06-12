@@ -52,7 +52,55 @@
 
 ## Pendências (fora do escopo deste executor)
 
-- Wave 3 (frontend telas 08/15/16) — NÃO feito (outro executor).
 - T-11 (integration check / Gate 5) — NÃO feito.
 - Teste @mysql 0013 escrito mas NÃO executado (rodar `-m mysql` contra MySQL 8 real).
 - TD-15-01 (cutover do repasse) — bloqueia deploy de produção do saque; tudo verde com Stub.
+
+---
+
+## Wave 3 — Frontend (telas 15/16/08) — 2026-06-12
+
+Executor de frontend (apps/web). Angular 19 + Ionic standalone, signals, OnPush, rotas lazy.
+
+### T-08 — Componentes governados
+- `jx-money` (`shared/components/money/`) — valor monetário no mono (`font-variant-numeric: tabular-nums`),
+  centavos→reais via `formatCents` **centralizado** em `shared/util/money` (supersede o `formatCents`
+  ad-hoc do `billing.service`). Sinal crédito/débito por **texto (+/−) + cor** (nunca cor sozinha),
+  `aria-label` descritivo. Variantes `inline`/`display`. stories + spec.
+- `jx-invoice-summary` (`shared/components/invoice-summary/`) — cartão da fatura (competência pt-BR,
+  total mono via jx-money, vencimento, badge status em aberto/vencida/paga **texto+ícone+cor**, CTA pagar
+  suprimido quando paga). stories + spec. Ambos exportados no barrel.
+
+### T-09 — Telas
+- **Tela 15 — Fatura da loja** (`features/loja/financeiro/fatura.page`, rota lazy `/loja/faturas`):
+  jx-invoice-summary + jx-data-table das linhas (entrega/taxa) + banner de vencimento (`error_bg`/`error`,
+  texto+ícone) "novas entregas bloqueadas 7 dias após o vencimento" + CTA pagar (reusa o fluxo de checkout
+  via serviço). Empty "Nenhuma fatura ainda". Estados loading/empty/error.
+- **Tela 16 — Extrato/saldo + saque (entregador, mobile)** (`features/entregador/saldo/saldo.page`, rota
+  lazy `/entregador/saldo`): saldo em destaque (mono), extrato (jx-data-table, crédito), CTA "Solicitar
+  saque" com **confirmação sensível** (foco-preso/Esc/aria-modal), **mínimo do backend** citado ("Saque
+  mínimo de R$ 20,00"), abaixo do mínimo → erro semântico com `aria-live="assertive"`, "Se o saque falhar,
+  o valor volta para o seu saldo", histórico de saques com status. Touch targets ≥44px (CTA 48px). Empty
+  "Sem movimentações ainda".
+- **Tela 08 — Recibo do pagamento direto** (`features/loja/financeiro/recibo.page`, rota lazy
+  `/loja/entregas/:id/recibo`): valor (mono), referência (public_token/número), data, status; trust-safety
+  (transparência do valor) sem PII além do RN-013. Empty "Sem recibo ainda".
+
+### T-10 — Serviços + signals + testes
+- `LojaFinanceiroService` (faturas/linhas/pagar/recibo) e `SaldoService` (saldo/extrato/histórico/saque).
+  Estado por **signals** (`DataTableState` loading/empty/error/ready), OnPush. O **mínimo de saque vem do
+  backend** (`minimum_cents`), nunca reimplementado no cliente.
+- Specs: jx-money (6), jx-invoice-summary (8), financeiro.service (4), saldo.service (4), saldo.page (5).
+
+### Desvio — endpoints de leitura no backend (Rule 3, bloqueante)
+- As telas precisavam de reads que não existiam (só havia list/pay de fatura, balance/saque, e a confirmação
+  do direto). Adicionei endpoints **thin, read-only, escopados** reusando repos/models existentes:
+  `GET /v1/invoices/{id}/lines`, `GET /v1/withdrawals/extract`, `GET /v1/withdrawals/history`,
+  `GET /v1/deliveries/{id}/receipt`. Mantém o consumo de API real pelo frontend.
+
+### Verificação (Gate 7)
+- `npm test` (apps/web): **204/204 SUCCESS**. `npm run build`: **complete** (verde). `npm run lint`: **All
+  files pass**. **Zero hex** nas pastas novas (money, invoice-summary, financeiro, saldo) — verificado.
+- Dark mode (DEC-001): todas as superfícies novas usam apenas vars semânticas (`--success/--error/--warning/
+  --info` + `_bg`, `--surface*`, `--text*`, `--border*`, `--brand*`, `--jx-font-mono`), que já têm overrides
+  dark no `_semantic.scss`.
