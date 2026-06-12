@@ -4,12 +4,12 @@
 
 | ID | Nome | Critério de Done | Phases | Release alvo | Status |
 |----|------|------------------|--------|--------------|--------|
-| MS-01 | Foundation | API skeleton + multi-área + auth + shell Angular/Ionic com design system de tokens.json; `docker compose up` + CI verdes; testes de isolamento 2 áreas passando | 1–3 | T+3 semanas | not_started |
-| MS-02 | Cadastros & malha | Loja cadastra e ativa (Free, Receita validada); entregador completa wizard KYC 2 níveis; admin de área aprova item a item; cobertura + tabela de frete + catálogo de bairros operacionais | 4–6 | T+7 semanas | not_started |
-| MS-03 | Core de entregas | Entrega manual (pagamento direto) nasce, despacha em cascata, é aceita, coletada, comprovada com foto+GPS e finalizada; tracking público no ar; notificações nos 3 momentos | 7–9 | T+12 semanas | not_started |
-| MS-04 | Financeiro (checkout) & integrações | Cartão/PIX com split Safe2Pay + escrow 24h + estornos (Phase 10); `POST /v1/deliveries` + webhooks HMAC prontos para o Menu Certo (Phase 12). **Fatura/disputas-resolução/saques movidos para MS-06 pós-deploy (DEC-004)** | 10, 12 | T+17 semanas | not_started |
-| MS-05 | Operação & release piloto | Admin plataforma completo; score explicável; suspensão/recurso com reversão automática; APK Android distribuível; jobs LGPD; auditoria pré-release verde; **deploy do piloto** | 13–14 | T+20 semanas | not_started |
-| MS-06 | Pós-piloto — Safe2Pay financeiro (back-office) | **DEC-004:** fatura mensal com bloqueio; resolução de disputas (2 procedentes/30d → bloqueio 90d); saques; conciliação diária. Última do projeto, ativada após o piloto no ar + contrato Safe2Pay confirmado | 15 | pós-deploy | not_started |
+| MS-01 | Foundation | API skeleton + multi-área + auth + shell Angular/Ionic com design system de tokens.json; `docker compose up` + CI verdes; testes de isolamento 2 áreas passando | 1–3 | T+3 semanas | ✅ complete (dev/test) |
+| MS-02 | Cadastros & malha | Loja cadastra e ativa (Free, Receita validada); entregador completa wizard KYC 2 níveis; admin de área aprova item a item; cobertura + tabela de frete + catálogo de bairros operacionais | 4–6 | T+7 semanas | ✅ complete (dev/test) |
+| MS-03 | Core de entregas | Entrega manual (pagamento direto) nasce, despacha em cascata, é aceita, coletada, comprovada com foto+GPS e finalizada; tracking público no ar; notificações nos 3 momentos | 7–9 | T+12 semanas | ✅ complete (dev/test) |
+| MS-04 | Financeiro (checkout) & integrações | Cartão/PIX com split Safe2Pay + escrow 24h + estornos (Phase 10); `POST /v1/deliveries` + webhooks HMAC prontos para o Menu Certo (Phase 12). **Fatura/disputas-resolução/saques movidos para MS-06 pós-deploy (DEC-004)** | 10, 12 | T+17 semanas | ✅ complete (dev/test) |
+| MS-05 | Operação & release piloto | Admin plataforma completo; score explicável; suspensão/recurso com reversão automática; APK Android distribuível; jobs LGPD; auditoria pré-release verde; **deploy do piloto** | 13–14 | T+20 semanas | ✅ complete (dev/test) |
+| MS-06 | Pós-piloto — Safe2Pay financeiro (back-office) | **DEC-004:** fatura mensal com bloqueio; resolução de disputas (2 procedentes/30d → bloqueio 90d); saques; conciliação diária. Última do projeto, ativada após o piloto no ar + contrato Safe2Pay confirmado | 15 | pós-deploy | ✅ complete (dev/test) |
 
 ## Mapeamento REQs → Milestones
 
