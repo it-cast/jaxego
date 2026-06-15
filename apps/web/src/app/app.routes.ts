@@ -234,6 +234,15 @@ export const routes: Routes = [
       },
     ],
   },
+  // TOTP enrollment gate (Correção #018): shown when admin_plataforma hasn't enrolled
+  // yet. Auth-guarded (needs a valid access token) but NOT inside the shell so the
+  // enrollment page is fully accessible before TOTP is set up.
+  {
+    path: 'plataforma/totp-setup',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('../features/auth/totp-setup.page').then((m) => m.TotpSetupPage),
+  },
   // Phase 13 (D-06): platform-admin shell (telas 23-25). Lazy, auth-guarded; the
   // backend enforces require_platform_admin + TOTP (ADR-005) on every endpoint, so
   // a non-platform admin simply sees empty/error states. Cross-area reads are audited.

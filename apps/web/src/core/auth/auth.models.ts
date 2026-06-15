@@ -31,9 +31,10 @@ export interface LoginRequest {
   totp?: string;
 }
 
-/** Machine error codes the login flow reacts to (app/auth/service.py). */
+/** Machine error codes the auth flow reacts to (app/auth/service.py + dependencies.py). */
 export const ERROR_CODE = {
   TOTP_REQUIRED: 'totp_required',
+  TOTP_ENROLLMENT_REQUIRED: 'totp_enrollment_required',
   INVALID_CREDENTIALS: 'invalid_credentials',
   ACCOUNT_LOCKED: 'account_locked',
 } as const;
