@@ -11,7 +11,7 @@
 | B-01 | **Contrato Safe2Pay assinado** — habilita cutover de produção do cartão/PIX com split + escrow | 🔴 PENDENTE | TD-10-01..04 (DEC-003/004). Dono escolheu cartão/PIX live no deploy → **exige contrato antes do go-live**. Sem contrato: subir só com pagamento direto e flag de cartão/PIX OFF. |
 | B-02 | Segredos de produção configurados (`ANTHROPIC_API_KEY` opcional/infra, `safe2pay_*`, SMTP/SES, B2, Zenvia/Twilio, JWT secret, MySQL/Redis) | 🔴 VERIFICAR | settings; nunca em git. Conferir no ambiente de deploy. |
 | B-03 | Migrations aplicadas em produção: `alembic upgrade head` (até 0012) com smoke `pytest -m mysql` das reversíveis (0004/0005/0006/0008/0010/0011/0012) | 🔴 VERIFICAR | CI roda `alembic upgrade head` + mysql; rodar contra a base de produção/staging antes do deploy. |
-| B-04 | Seed de **admin de plataforma** criado (login end-to-end + governança) | 🔴 PENDENTE | STATE "Atenção MS-02+ item 4" — necessário para operar. |
+| B-04 | Seed de **admin de plataforma** | ✅ EXISTE — só rodar `uv run python -m tools.seed` (idempotente: Pádua + 4 planos + pesos score + revenue share + `admin@jaxego.com.br` + admin de área). Trocar senha bootstrap no 1º login. | `apps/api/tools/seed.py` |
 
 ## 🟡 WARNINGS (resolver idealmente antes do piloto)
 
