@@ -1,10 +1,21 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   signal,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import {
+  faBars,
+  faGaugeHigh,
+  faUsers,
+  faScaleBalanced,
+  faRightFromBracket,
+  type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
 import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
+import { AuthService } from '../core/auth/auth.service';
 
 /**
  * Platform-admin shell (UI-SPEC telas 23-25 / D-06) — desktop-first, collapsible
@@ -21,6 +32,7 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
     RouterLink,
     RouterLinkActive,
     ThemeToggleComponent,
+    FaIconComponent,
   ],
   template: `
     <div class="jx-plat" [class.jx-plat--collapsed]="collapsed()">
@@ -32,7 +44,7 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
           aria-label="Alternar menu lateral"
           (click)="collapsed.set(!collapsed())"
         >
-          ☰
+          <fa-icon [icon]="iconBars" />
         </button>
         @if (!collapsed()) {
           <span class="jx-plat__brand">Jaxegô plataforma</span>
@@ -46,9 +58,7 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
                 class="jx-plat__link"
                 [attr.aria-label]="link.label"
               >
-                <span class="jx-plat__link-glyph" aria-hidden="true">{{
-                  link.glyph
-                }}</span>
+                <fa-icon [icon]="link.icon" [fixedWidth]="true" aria-hidden="true" />
                 @if (!collapsed()) {
                   <span>{{ link.label }}</span>
                 }
@@ -58,6 +68,12 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         </ul>
         <div class="jx-plat__spacer"></div>
         <jx-theme-toggle />
+        <button type="button" class="jx-plat__logout" (click)="logout()">
+          <fa-icon [icon]="iconLogout" [fixedWidth]="true" aria-hidden="true" />
+          @if (!collapsed()) {
+            <span>Sair</span>
+          }
+        </button>
       </nav>
       <main class="jx-plat__content">
         <router-outlet />
@@ -129,9 +145,6 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         background: var(--brand-wash);
         color: var(--brand);
       }
-      .jx-plat__link-glyph {
-        font-size: var(--jx-text-base);
-      }
       .jx-plat__spacer {
         flex: 1 1 auto;
       }
@@ -139,15 +152,49 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         padding: var(--jx-space-5);
         background: var(--surface);
       }
+      .jx-plat__logout {
+        display: flex;
+        align-items: center;
+        gap: var(--jx-space-2);
+        min-height: 44px;
+        width: 100%;
+        padding: 0 var(--jx-space-2);
+        border: 0;
+        border-radius: var(--jx-radius-lg);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: var(--jx-text-sm);
+        font-weight: var(--jx-weight-semibold);
+        cursor: pointer;
+        text-align: left;
+      }
+      .jx-plat__logout:hover {
+        background: var(--surface-elevated);
+        color: var(--error);
+      }
+      .jx-plat__logout:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
     `,
   ],
 })
 export class PlataformaShellComponent {
-  protected readonly collapsed = signal(false);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
-  protected readonly links = [
-    { path: 'visao-geral', label: 'Visão geral', glyph: '◧' },
-    { path: 'pessoas', label: 'Entregadores e lojas', glyph: '◍' },
-    { path: 'disputas', label: 'Disputas e suspensões', glyph: '⚖' },
+  protected readonly collapsed = signal(false);
+  protected readonly iconBars = faBars;
+  protected readonly iconLogout = faRightFromBracket;
+
+  protected readonly links: { path: string; label: string; icon: IconDefinition }[] = [
+    { path: 'visao-geral', label: 'Visão geral',          icon: faGaugeHigh },
+    { path: 'pessoas',     label: 'Entregadores e lojas', icon: faUsers },
+    { path: 'disputas',    label: 'Disputas e suspensões', icon: faScaleBalanced },
   ];
+
+  protected async logout(): Promise<void> {
+    await this.auth.logout();
+    void this.router.navigate(['/entrar']);
+  }
 }

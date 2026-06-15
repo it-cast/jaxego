@@ -13,7 +13,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import AreaScopeDep, CurrentUser, require_role
+from app.auth.dependencies import AreaScopeDep, CurrentUser, ForbiddenError, require_role
 from app.db.session import get_session
 from app.neighborhoods import service
 from app.neighborhoods.schemas import (
@@ -46,6 +46,23 @@ def _require_scope(scope: int | None) -> int:
 
         raise NotFoundError("Bairro não encontrado.")
     return scope
+
+
+@router.get("/catalog", response_model=list[NeighborhoodRead])
+async def list_neighborhoods_catalog(
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> list[NeighborhoodRead]:
+    """Read-only neighborhood list for any authenticated user scoped to an area.
+
+    Used by merchants selecting the delivery neighborhood (tela 12 / F-03).
+    Platform admins (scope=None) are not supported here — they have no single area.
+    """
+    if scope is None:
+        raise ForbiddenError("Sem área definida para listagem de bairros.")
+    rows = await service.list_neighborhoods(session, area_id=scope)
+    return [_read(n, status_) for n, status_ in rows]
 
 
 @router.post("", response_model=NeighborhoodRead, status_code=status.HTTP_201_CREATED)

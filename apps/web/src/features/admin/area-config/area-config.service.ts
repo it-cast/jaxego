@@ -31,13 +31,13 @@ export interface AreaRead {
 export class AdminAreaConfigService {
   private readonly http = inject(HttpClient);
 
-  async get(areaId: number): Promise<AreaRead> {
-    return firstValueFrom(this.http.get<AreaRead>(`/v1/areas/${areaId}`));
+  async get(_areaId: number): Promise<AreaRead> {
+    return firstValueFrom(this.http.get<AreaRead>('/v1/admin/area'));
   }
 
-  async patchConfig(areaId: number, config: AreaConfig): Promise<AreaRead> {
+  async patchConfig(_areaId: number, config: AreaConfig): Promise<AreaRead> {
     return firstValueFrom(
-      this.http.patch<AreaRead>(`/v1/areas/${areaId}`, { config })
+      this.http.patch<AreaRead>('/v1/admin/area/config', { config })
     );
   }
 }

@@ -45,3 +45,10 @@ body {
   box-shadow: var(--focus-ring);
   border-radius: var(--jx-radius-sm);
 }
+
+// jx-data-table: td padding must live in global styles because <td> elements
+// are projected content (ng-template from parent) and don't carry the
+// data-table component's encapsulation attribute.
+.jx-data-table tbody td {
+  padding: var(--jx-space-3) var(--jx-space-4);
+}

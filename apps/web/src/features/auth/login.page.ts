@@ -13,6 +13,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/auth/auth.service';
 import {
   ErrorStateComponent,
@@ -23,7 +25,7 @@ import {
   selector: 'jx-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ErrorStateComponent, LoadingSkeletonComponent],
+  imports: [ReactiveFormsModule, ErrorStateComponent, LoadingSkeletonComponent, FaIconComponent],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -34,7 +36,7 @@ export class LoginPage implements AfterViewInit {
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(10)]],
+    password: ['', [Validators.required]],
     totp: [''],
   });
 
@@ -42,6 +44,8 @@ export class LoginPage implements AfterViewInit {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly totpRequired = signal(false);
   protected readonly showPassword = signal(false);
+  protected readonly faEye = faEye;
+  protected readonly faEyeSlash = faEyeSlash;
 
   private readonly errorRef =
     viewChild<ElementRef<HTMLElement>>('errorBlock');
@@ -59,6 +63,10 @@ export class LoginPage implements AfterViewInit {
   }
 
   protected async submit(): Promise<void> {
+    console.log('[login] submit clicado — form válido:', this.form.valid, this.form.value);
+    console.log('[login] erros email:', this.form.controls.email.errors);
+    console.log('[login] erros password:', this.form.controls.password.errors);
+    console.log('[login] erros totp:', this.form.controls.totp.errors);
     if (this.loading()) return; // no double submit
     this.errorMessage.set(null);
 
@@ -81,10 +89,22 @@ export class LoginPage implements AfterViewInit {
       totp: totp ? totp : undefined,
     });
     this.loading.set(false);
+    console.log('[login] resultado da API:', result);
 
     if (result.ok) {
-      // No festive toast — redirect to the app shell (surface routing in T-06).
-      void this.router.navigate(['/']);
+      const role = this.auth.role;
+      console.log('[login] autenticado, role:', role);
+      if (role === 'admin_plataforma') {
+        void this.router.navigate(['/plataforma/visao-geral']);
+      } else if (role?.startsWith('admin_area')) {
+        void this.router.navigate(['/admin/inicio']);
+      } else if (role === 'courier') {
+        void this.router.navigate(['/entregador/inicio']);
+      } else if (role === 'merchant') {
+        void this.router.navigate(['/loja/painel']);
+      } else {
+        void this.router.navigate(['/entrar']);
+      }
       return;
     }
 

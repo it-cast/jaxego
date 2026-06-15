@@ -153,9 +153,7 @@ export class NovaEntregaPage {
     // backend enforces E1 on submit (graceful degradation).
     try {
       const res = await firstValueFrom(
-        this.http.get<NeighborhoodOption[] | { id: number; name: string }[]>(
-          '/v1/neighborhoods',
-        ),
+        this.http.get<NeighborhoodOption[]>('/v1/neighborhoods/catalog'),
       );
       this.neighborhoods.set(res as NeighborhoodOption[]);
     } catch {

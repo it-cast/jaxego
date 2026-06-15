@@ -29,6 +29,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
 
   private readonly _accessToken = signal<string | null>(null);
+  private readonly _role = signal<string | null>(null);
 
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
 
@@ -36,23 +37,55 @@ export class AuthService {
     return this._accessToken();
   }
 
+  get role(): string | null {
+    return this._role();
+  }
+
+  private decodeRole(token: string): string | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload['role'] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async tryRestoreSession(): Promise<boolean> {
+    try {
+      const pair = await firstValueFrom(
+        this.http.post<TokenPair>('/v1/auth/refresh', {}, { withCredentials: true })
+      );
+      this._accessToken.set(pair.access_token);
+      this._role.set(this.decodeRole(pair.access_token));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async login(req: LoginRequest): Promise<LoginResult> {
     try {
       const pair = await firstValueFrom(
-        // withCredentials so the browser stores/sends the refresh cookie.
         this.http.post<TokenPair>('/v1/auth/login', req, {
           withCredentials: true,
         })
       );
       this._accessToken.set(pair.access_token);
+      this._role.set(this.decodeRole(pair.access_token));
       return { ok: true };
     } catch (err) {
       return this.mapError(err);
     }
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.http.post('/v1/auth/logout', {}, { withCredentials: true })
+      );
+    } catch { /* revogação best-effort — token limpo no cliente independente */ }
     this._accessToken.set(null);
+    this._role.set(null);
   }
 
   private mapError(err: unknown): LoginResult {
