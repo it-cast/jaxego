@@ -20,17 +20,47 @@ jobs:
     steps:
       - name: Deploy no servidor
         uses: appleboy/ssh-action@v1.2.0
+        # Os secrets entram como env do runner aqui; `envs:` abaixo os encaminha ao servidor.
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          REPO_URL: ${{ secrets.REPO_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          B2_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          B2_APP_KEY: ${{ secrets.B2_APP_KEY }}
+          B2_KYC_BUCKET: ${{ secrets.B2_KYC_BUCKET }}
+          SES_API_TOKEN: ${{ secrets.SES_API_TOKEN }}
+          SMS_ZENVIA_TOKEN: ${{ secrets.SMS_ZENVIA_TOKEN }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          SAFE2PAY_TOKEN_ENCRYPT_KEY: ${{ secrets.SAFE2PAY_TOKEN_ENCRYPT_KEY }}
+          SAFE2PAY_WEBHOOK_SECRET: ${{ secrets.SAFE2PAY_WEBHOOK_SECRET }}
+          RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
+          RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
+          REVENUE_SHARE_DEFAULT_PCT: ${{ secrets.REVENUE_SHARE_DEFAULT_PCT }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          # Encaminha os secrets como env para o script remoto (não aparecem em log).
-          envs: JWT_SECRET,DATABASE_URL,SENTRY_DSN,B2_KEY_ID,B2_APP_KEY,B2_KYC_BUCKET,SES_API_TOKEN,SMS_ZENVIA_TOKEN,VAPID_PRIVATE_KEY,VAPID_PUBLIC_KEY,SAFE2PAY_TOKEN_ENCRYPT_KEY,SAFE2PAY_WEBHOOK_SECRET,RSA_PRIVATE_KEY,RSA_PUBLIC_KEY,REVENUE_SHARE_DEFAULT_PCT
+          # Encaminha os env acima ao script remoto (não aparecem em log).
+          envs: DEPLOY_PATH,REPO_URL,JWT_SECRET,DATABASE_URL,SENTRY_DSN,B2_KEY_ID,B2_APP_KEY,B2_KYC_BUCKET,SES_API_TOKEN,SMS_ZENVIA_TOKEN,VAPID_PRIVATE_KEY,VAPID_PUBLIC_KEY,SAFE2PAY_TOKEN_ENCRYPT_KEY,SAFE2PAY_WEBHOOK_SECRET,RSA_PRIVATE_KEY,RSA_PUBLIC_KEY,REVENUE_SHARE_DEFAULT_PCT
           script_stop: true
           script: |
             set -euo pipefail
-            cd ~/jaxego
+            # Caminho do repo no servidor: secret/var DEPLOY_PATH, ou ~/jaxego por padrão.
+            TARGET="${DEPLOY_PATH:-$HOME/jaxego}"
+            # URL do repo p/ o primeiro deploy (clone). Default ao origin público.
+            REPO_URL="${REPO_URL:-https://github.com/it-cast/jaxego.git}"
+
+            # Bootstrap idempotente: se ainda não é um repo git, clona; senão, atualiza.
+            if [ ! -d "$TARGET/.git" ]; then
+              echo "Repo ausente em $TARGET — clonando (primeiro deploy)."
+              mkdir -p "$TARGET"
+              git clone "$REPO_URL" "$TARGET"
+            fi
+            cd "$TARGET"
             git fetch --all
             git reset --hard origin/master
 
