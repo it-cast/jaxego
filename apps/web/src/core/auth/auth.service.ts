@@ -42,6 +42,28 @@ export class AuthService {
   }
 
   /**
+   * Restore the session on app boot using the httpOnly refresh cookie (R0.5).
+   * Without this, a page reload loses the in-memory token and the guard bounces
+   * the user to /entrar. Returns true when a fresh access token was obtained.
+   */
+  async tryRefresh(): Promise<boolean> {
+    try {
+      const pair = await firstValueFrom(
+        this.http.post<TokenPair>(
+          '/v1/auth/refresh',
+          {},
+          { withCredentials: true }
+        )
+      );
+      this._accessToken.set(pair.access_token);
+      return true;
+    } catch {
+      this._accessToken.set(null);
+      return false;
+    }
+  }
+
+  /**
    * Fetch the resolved surface for the authenticated user. Called right after
    * login to route to the correct shell. Returns null on failure (caller decides
    * the fallback). The Bearer token is attached by authInterceptor.
