@@ -66,3 +66,21 @@ class TotpVerifyBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     code: str = Field(min_length=6, max_length=10)
+
+
+class MeResponse(BaseModel):
+    """Resolved identity + surface for post-login routing (R0.4).
+
+    `surface` tells the SPA which app/shell to send the user to:
+    'entregador' | 'loja' | 'admin' (area admin) | 'plataforma' | 'none'.
+    Carries the scoped ids so the destination shell can load without a 2nd call.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: int
+    surface: str
+    area_id: int | None = None
+    courier_id: int | None = None
+    merchant_id: int | None = None
+    status: str | None = None

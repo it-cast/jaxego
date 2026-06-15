@@ -6,6 +6,8 @@ import {
   ERROR_CODE,
   LoginErrorKind,
   LoginRequest,
+  Me,
+  Surface,
   TokenPair,
 } from './auth.models';
 
@@ -29,11 +31,46 @@ export class AuthService {
   private readonly http = inject(HttpClient);
 
   private readonly _accessToken = signal<string | null>(null);
+  private readonly _me = signal<Me | null>(null);
 
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
+  /** Resolved identity/surface (null until loadMe() runs). */
+  readonly me = computed(() => this._me());
 
   get accessToken(): string | null {
     return this._accessToken();
+  }
+
+  /**
+   * Fetch the resolved surface for the authenticated user. Called right after
+   * login to route to the correct shell. Returns null on failure (caller decides
+   * the fallback). The Bearer token is attached by authInterceptor.
+   */
+  async loadMe(): Promise<Me | null> {
+    try {
+      const me = await firstValueFrom(this.http.get<Me>('/v1/auth/me'));
+      this._me.set(me);
+      return me;
+    } catch {
+      this._me.set(null);
+      return null;
+    }
+  }
+
+  /** Map a surface to its shell route. 'none' has no home (caller handles it). */
+  surfaceHome(surface: Surface): string {
+    switch (surface) {
+      case 'entregador':
+        return '/entregador';
+      case 'loja':
+        return '/loja';
+      case 'admin':
+        return '/admin';
+      case 'plataforma':
+        return '/plataforma';
+      default:
+        return '/entrar';
+    }
   }
 
   async login(req: LoginRequest): Promise<LoginResult> {
@@ -53,6 +90,7 @@ export class AuthService {
 
   logout(): void {
     this._accessToken.set(null);
+    this._me.set(null);
   }
 
   private mapError(err: unknown): LoginResult {

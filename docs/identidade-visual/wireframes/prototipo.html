@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jaxegô — Protótipo interativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500;1,9..144,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-50:#FFF1E8;--brand-100:#FFDEC1;--brand-200:#FFC396;--brand-300:#FFA56B;--brand-400:#FB813D;
+  --brand-500:#E84E1B;--brand-600:#C73E0F;--brand-700:#A0300A;--brand-800:#6F2308;--brand-900:#421405;
+  --n50:#FAF6EE;--n100:#F2EBE0;--n200:#E5DBCC;--n300:#C8BAA5;--n400:#9D8E7A;--n500:#6B5F50;--n600:#4A4136;--n700:#2D261F;--n800:#181410;--n900:#0A0805;
+  --success:#1B998B;--success-bg:#D6F1ED;--warning:#E89B0E;--warning-bg:#FFF1D2;--error:#C71D1D;--error-bg:#F9DCDC;--info:#0A66C2;--info-bg:#DDEBFA;
+  --gold:#D4A017;--direct:#FFF8C2;--direct-ink:#8B5A05;
+  --font:'Inter Tight',system-ui,sans-serif;--serif:'Fraunces',serif;--mono:'JetBrains Mono',monospace;
+  --r-sm:4px;--r-md:6px;--r-lg:10px;--r-xl:16px;
+  --sh-sm:0 1px 3px rgba(24,20,16,.06),0 1px 2px rgba(24,20,16,.04);
+  --sh-md:0 4px 12px -2px rgba(24,20,16,.10),0 2px 4px -1px rgba(24,20,16,.06);
+  --sh-lg:0 16px 32px -8px rgba(24,20,16,.14),0 4px 8px -2px rgba(24,20,16,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--font);background:var(--n100);color:var(--n800);-webkit-font-smoothing:antialiased}
+.accent{font-family:var(--serif);font-style:italic;color:var(--brand-500);font-weight:500}
+.mono{font-family:var(--mono)}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--info);text-decoration:none}
+input,select,textarea{font-family:inherit}
+
+/* ===== SHELL: device chooser sidebar + stage ===== */
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.rail{background:var(--n800);color:var(--n100);padding:20px 16px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.rail__brand{font-family:var(--font);font-weight:800;font-size:22px;letter-spacing:-.03em;color:#fff;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.rail__brand .glyph{width:34px;height:34px;background:var(--brand-500);border-radius:9px;display:grid;place-items:center}
+.rail__sub{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--n400);margin-bottom:20px}
+.rail__group{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-300);margin:18px 0 6px;font-weight:600}
+.rail__link{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r-md);color:var(--n300);font-size:13px;font-weight:500;cursor:pointer;transition:background .12s}
+.rail__link:hover{background:var(--n700);color:var(--n50)}
+.rail__link.on{background:var(--n700);color:var(--brand-300);font-weight:700}
+.rail__link .ic{width:18px;text-align:center}
+.rail__note{font-size:11px;color:var(--n500);line-height:1.5;margin-top:24px;border-top:1px solid var(--n700);padding-top:14px}
+
+.stage{padding:24px;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;height:100vh}
+
+/* phone frame */
+.phone{width:390px;min-height:780px;background:var(--n50);border-radius:36px;box-shadow:var(--sh-lg);overflow:hidden;position:relative;border:10px solid var(--n900)}
+.phone__notch{height:28px;background:var(--n900);border-radius:0 0 16px 16px;width:140px;margin:0 auto;position:relative;z-index:30}
+.phone__screen{height:740px;overflow-y:auto;position:relative;background:var(--n50)}
+.phone__screen::-webkit-scrollbar{width:0}
+
+/* desktop frame */
+.desktop{width:100%;max-width:1100px;background:var(--n50);border-radius:14px;box-shadow:var(--sh-lg);overflow:hidden;min-height:720px}
+.desktop__bar{height:38px;background:var(--n200);display:flex;align-items:center;gap:6px;padding:0 14px}
+.desktop__bar i{width:11px;height:11px;border-radius:50%;background:var(--n400);display:block}
+.desktop__url{margin-left:12px;background:var(--n50);border-radius:6px;padding:3px 12px;font-family:var(--mono);font-size:11px;color:var(--n500);flex:1;max-width:340px}
+
+/* ===== generic UI ===== */
+.scr{display:none;animation:fade .25s ease}
+.scr.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pad{padding:18px}
+h1.t{font-size:26px;letter-spacing:-.02em;margin:0 0 2px}
+h2.t{font-size:18px;letter-spacing:-.01em;margin:0 0 8px}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--n500);font-weight:600}
+.card{background:#fff;border:1px solid var(--n200);border-radius:var(--r-lg);padding:16px;margin-bottom:12px;box-shadow:var(--sh-sm)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:9px;padding:13px 18px;font-size:15px;font-weight:700;transition:.12s;width:100%}
+.btn--primary{background:var(--brand-500);color:#fff}
+.btn--primary:hover{background:var(--brand-600)}
+.btn--primary:active{transform:translateY(1px)}
+.btn--ink{background:var(--n800);color:#fff}
+.btn--ink:hover{background:var(--n900)}
+.btn--ghost{background:#fff;color:var(--n600);border:1px solid var(--n300)}
+.btn--ghost:hover{background:var(--n50);border-color:var(--n400)}
+.btn--sm{padding:8px 14px;font-size:13px;width:auto;border-radius:7px}
+.btn--danger{background:#fff;color:var(--error);border:1px solid var(--error)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:11px;border:1px solid var(--n300);border-radius:8px;font-size:14px;background:#fff;transition:.12s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:0;border-color:var(--brand-400);box-shadow:0 0 0 3px rgba(232,78,27,.14)}
+.row{display:flex;gap:10px;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center}
+.pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-block}
+.pill--direct{background:var(--direct);color:var(--direct-ink)}
+.pill--plat{background:var(--info-bg);color:var(--info)}
+.pill--ok{background:var(--success-bg);color:var(--success)}
+.pill--warn{background:var(--warning-bg);color:var(--direct-ink)}
+.pill--err{background:var(--error-bg);color:var(--error)}
+.toast{position:absolute;left:50%;transform:translateX(-50%);bottom:24px;background:var(--n800);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--sh-lg);z-index:80;opacity:0;pointer-events:none;transition:.3s;max-width:85%;text-align:center}
+.toast.show{opacity:1;bottom:36px}
+.divider{height:1px;background:var(--n200);margin:14px 0;border:0}
+
+/* tabbar */
+.tabbar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--n200);display:flex;z-index:20}
+.tabbar button{flex:1;background:0;border:0;padding:10px 4px 12px;font-size:10px;color:var(--n500);font-weight:600;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar button .ic{font-size:19px}
+.tabbar button.on{color:var(--brand-500)}
+
+/* courier header */
+.chead{padding:16px 18px;display:flex;justify-content:space-between;align-items:center;background:var(--n50)}
+.toggle{border:0;padding:9px 16px;border-radius:999px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:7px}
+.toggle.online{background:var(--success-bg);color:var(--success)}
+.toggle.offline{background:var(--n200);color:var(--n500)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* offer modal */
+.offer-overlay{position:absolute;inset:0;background:rgba(10,8,5,.55);z-index:60;display:none;align-items:flex-end}
+.offer-overlay.show{display:flex}
+.offer{background:var(--n50);border-radius:22px 22px 0 0;padding:22px;width:100%;animation:slideup .35s cubic-bezier(.16,1,.3,1)}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+.offer__timer{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--brand-600)}
+.ring{--p:100;width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--brand-500) calc(var(--p)*1%),var(--n200) 0);display:grid;place-items:center;position:relative}
+.ring::before{content:"";position:absolute;inset:5px;background:var(--n50);border-radius:50%}
+.ring span{position:relative;font-family:var(--mono);font-weight:700;font-size:14px}
+.stop{display:flex;gap:10px;align-items:flex-start;padding:11px;border-radius:10px;margin:8px 0}
+.stop .pin{width:26px;height:26px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0}
+.stop--a{background:var(--n100)}.stop--b{background:var(--brand-50);border:1px solid var(--brand-100)}
+
+/* map placeholder */
+.map{background:linear-gradient(135deg,#EAE3D6,#DDD2BE);position:relative;display:grid;place-items:center;color:var(--n400);font-size:12px;overflow:hidden}
+.map::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(157,142,122,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(157,142,122,.12) 1px,transparent 1px);background-size:26px 26px}
+.map .route{position:absolute;z-index:2;font-size:24px}
+
+/* timeline */
+.tl{list-style:none;padding:0;margin:0}
+.tl li{padding:7px 0 7px 22px;border-left:2px solid var(--n200);margin-left:7px;position:relative;font-size:14px;color:var(--n500)}
+.tl li::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--n300);position:absolute;left:-6.5px;top:11px;border:2px solid var(--n50)}
+.tl li.done{color:var(--n800)}.tl li.done::before{background:var(--success)}
+.tl li.cur{color:var(--n800);font-weight:700}.tl li.cur::before{background:var(--brand-500);box-shadow:0 0 0 4px var(--brand-50)}
+.tl time{display:block;font-family:var(--mono);font-size:11px;color:var(--n400)}
+
+/* stat grid */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat{background:#fff;border:1px solid var(--n200);border-radius:var(--r-lg);padding:14px}
+.stat b{font-size:23px;font-family:var(--mono);font-weight:700;display:block;letter-spacing:-.02em}
+.stat span{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--n500);font-weight:600}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:9px 8px;border-bottom:1px solid var(--n200);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--n500)}
+.tbl td{padding:11px 8px;border-bottom:1px solid var(--n100)}
+.tbl tr:hover{background:var(--n50)}
+
+/* score bars */
+.sbar{height:7px;background:var(--n100);border-radius:999px;overflow:hidden;flex:1}
+.sbar>i{display:block;height:100%;border-radius:999px}
+
+/* admin layout inside desktop */
+.adm{display:grid;grid-template-columns:190px 1fr;min-height:680px}
+.adm__side{background:var(--n800);color:var(--n100);padding:16px 12px}
+.adm__side .b{font-weight:800;font-size:16px;color:#fff;margin-bottom:2px}
+.adm__side .s{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-300);margin-bottom:16px}
+.adm__nav{display:block;padding:8px 10px;border-radius:7px;color:var(--n300);font-size:13px;cursor:pointer;margin-bottom:2px}
+.adm__nav:hover{background:var(--n700);color:#fff}
+.adm__nav.on{background:var(--n700);color:var(--brand-300);font-weight:700}
+.adm__main{padding:22px;overflow-y:auto}
+.queue{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--n100);font-size:14px}
+.qcount{font-family:var(--mono);font-weight:700;background:var(--brand-50);color:var(--brand-600);padding:2px 11px;border-radius:999px;cursor:pointer}
+.qcount.zero{background:var(--n100);color:var(--n400)}
+.doc-review{display:grid;grid-template-columns:84px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--n100)}
+.thumb{width:84px;height:60px;background:var(--n100);border-radius:7px;display:grid;place-items:center;font-size:10px;color:var(--n400);border:1px solid var(--n200)}
+
+.seg{display:inline-flex;background:var(--n100);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:0;padding:7px 13px;border-radius:7px;font-size:12px;font-weight:600;color:var(--n500)}
+.seg button.on{background:#fff;color:var(--n800);box-shadow:var(--sh-sm)}
+
+.help{background:var(--info-bg);border-left:3px solid var(--info);padding:9px 12px;border-radius:6px;font-size:12px;color:var(--n700);margin:8px 0}
+.help--direct{background:var(--direct);border-color:var(--warning);color:var(--direct-ink)}
+.empty{text-align:center;color:var(--n500);padding:30px;font-size:14px}
+@media(max-width:960px){.app{grid-template-columns:1fr}.rail{position:static;height:auto}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ===================== NAV RAIL ===================== -->
+  <nav class="rail">
+    <div class="rail__brand"><span class="glyph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="6" cy="6" r="2.5" fill="#fff"/><circle cx="18" cy="18" r="2.5" fill="#fff"/><path d="M7.5 7.5 16.5 16.5" stroke="#fff" stroke-width="2" stroke-dasharray="2 2" stroke-linecap="round"/><path d="M14 16.5 17 18 15.5 15" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg></span>Jaxegô</div>
+    <div class="rail__sub">protótipo navegável · v2</div>
+
+    <div class="rail__group">📱 App do entregador</div>
+    <div class="rail__link" data-go="c-home"><span class="ic">🏠</span> Início / ganhos</div>
+    <div class="rail__link" data-go="c-home" data-act="sim-offer"><span class="ic">🔔</span> Simular oferta chegando</div>
+    <div class="rail__link" data-go="c-profile"><span class="ic">⭐</span> Perfil & score</div>
+    <div class="rail__link" data-go="c-earnings"><span class="ic">💰</span> Extrato & saque</div>
+    <div class="rail__link" data-go="c-coverage"><span class="ic">📍</span> Bairros & preços</div>
+
+    <div class="rail__group">🏪 Painel da loja</div>
+    <div class="rail__link" data-go="m-dash"><span class="ic">📊</span> Dashboard</div>
+    <div class="rail__link" data-go="m-new"><span class="ic">➕</span> Nova entrega</div>
+    <div class="rail__link" data-go="m-list"><span class="ic">📦</span> Entregas</div>
+    <div class="rail__link" data-go="m-plan"><span class="ic">💳</span> Plano & faturas</div>
+
+    <div class="rail__group">🛠 Admin da área</div>
+    <div class="rail__link" data-go="a-dash"><span class="ic">📈</span> Painel Pádua</div>
+    <div class="rail__link" data-go="a-kyc"><span class="ic">✅</span> Fila de validação</div>
+    <div class="rail__link" data-go="a-config"><span class="ic">⚙️</span> Configurações</div>
+
+    <div class="rail__group">🌐 Público</div>
+    <div class="rail__link" data-go="track"><span class="ic">🛵</span> Rastreio do destinatário</div>
+
+    <div class="rail__note">Protótipo de referência para o Claude Code. Os fluxos centrais são interativos: criar entrega na loja dispara a oferta no app do entregador; aceitar → coletar → comprovar percorre os 7 estados reais.</div>
+  </nav>
+
+  <!-- ===================== STAGE ===================== -->
+  <div class="stage" id="stage"></div>
+</div>
+
+<!-- ===================== TEMPLATES ===================== -->
+<script type="text/template" id="tpl-c-home">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="chead">
+    <div><div style="font-size:12px;color:var(--n500)">Bom dia,</div><strong style="font-size:17px">João Silva</strong></div>
+    <button class="toggle online" id="onlineToggle"><span class="dot"></span> Online</button>
+  </div>
+  <div class="pad" style="padding-top:4px">
+    <div class="card" style="background:linear-gradient(135deg,var(--n800),var(--n700));color:#fff;border:0">
+      <div class="eyebrow" style="color:var(--brand-300)">Ganhos hoje</div>
+      <div class="mono" style="font-size:34px;font-weight:800;letter-spacing:-.02em">R$ 187,50</div>
+      <div style="font-size:12px;color:var(--n300)">14 entregas · 4h online</div>
+      <hr class="divider" style="background:var(--n600)">
+      <div class="between" style="font-size:13px">
+        <span style="color:var(--n200)">Saldo p/ saque: <strong class="mono" style="color:#fff">R$ 643,20</strong></span>
+        <a data-go="c-earnings" style="color:var(--brand-300)">Extrato →</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="between">
+        <div><div class="eyebrow">Seu score</div><span class="mono" style="font-size:26px;font-weight:700;color:var(--gold)">87,4</span> <span class="pill" style="background:#FBF0D5;color:var(--gold)">OURO</span></div>
+        <a data-go="c-profile" style="font-size:12px">Por quê? →</a>
+      </div>
+    </div>
+    <div class="eyebrow" style="margin:16px 0 8px">Entregas recentes</div>
+    <div class="card" style="padding:13px">
+      <div class="between"><strong>Pizzaria do José</strong><span class="mono" style="color:var(--success);font-weight:700">+R$ 8,50</span></div>
+      <div style="font-size:12px;color:var(--n500)">14:12 · Centro → Vila Nova · <span class="pill pill--plat">PLATAFORMA</span></div>
+    </div>
+    <div class="card" style="padding:13px">
+      <div class="between"><strong>Mercado Bom Preço</strong><span class="mono" style="color:var(--n600);font-weight:700">R$ 12,00</span></div>
+      <div style="font-size:12px;color:var(--n500)">13:48 · Centro → Sereno · <span class="pill pill--direct">DIRETO 💵</span></div>
+    </div>
+    <button class="btn btn--ghost" data-act="sim-offer" style="margin-top:6px">🔔 Simular oferta chegando</button>
+  </div>
+  <div class="tabbar" data-tabbar="courier">
+    <button class="on" data-go="c-home"><span class="ic">🏠</span>Início</button>
+    <button data-go="c-earnings"><span class="ic">💰</span>Ganhos</button>
+    <button data-go="c-coverage"><span class="ic">📍</span>Bairros</button>
+    <button data-go="c-profile"><span class="ic">⭐</span>Perfil</button>
+  </div>
+  <!-- offer modal lives here -->
+  <div class="offer-overlay" id="offerOverlay">
+    <div class="offer">
+      <div class="between"><span class="eyebrow" style="color:var(--brand-600)">● Nova oferta</span><div class="ring" id="offerRing"><span id="offerSec">20</span></div></div>
+      <h1 class="t" style="margin:6px 0 2px">Pizzaria do José</h1>
+      <div style="font-size:12px;color:var(--n500);margin-bottom:8px">⭐ Você já entregou 14× para essa loja</div>
+      <div class="stop stop--a"><span class="pin" style="background:var(--n800)">A</span><div><div class="eyebrow">Coleta</div><strong>Rua das Flores, 123 · Centro</strong></div></div>
+      <div class="stop stop--b"><span class="pin" style="background:var(--brand-500)">B</span><div><div class="eyebrow" style="color:var(--brand-700)">Entrega</div><strong>Vila Nova · ~2,8 km</strong><div style="font-size:11px;color:var(--n500)">endereço exato após a coleta</div></div></div>
+      <div class="between" style="padding:11px 0;border-top:1px solid var(--n200);border-bottom:1px solid var(--n200);margin:10px 0">
+        <div><span style="font-size:12px;color:var(--n500)">Você ganha</span><div class="mono" style="font-size:24px;font-weight:800;color:var(--brand-500)">R$ 8,50</div></div>
+        <div style="text-align:right"><span class="pill pill--direct">PAGAMENTO DIRETO 💵</span><div style="font-size:11px;color:var(--n500);margin-top:4px">2,8 km · ~15 min</div></div>
+      </div>
+      <button class="btn btn--primary" data-act="accept-offer">Aceitar entrega</button>
+      <button class="btn btn--ghost" data-act="refuse-offer" style="margin-top:8px">Recusar</button>
+    </div>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-c-active">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="map" style="height:280px"><span class="route" id="activeRouteIcon">🛵</span><span style="position:absolute;bottom:12px;right:12px;background:#fff;padding:4px 9px;border-radius:6px" class="mono">dlv_01HXAQ3K9P</span><span class="pill" id="activeState" style="position:absolute;top:12px;left:12px;background:var(--info-bg);color:var(--info)">ACEITA</span></div>
+  <div class="pad">
+    <div class="eyebrow" id="activeStep">Indo coletar · ~4 min · 0,8 km</div>
+    <h1 class="t" id="activeTitle">Pizzaria do José</h1>
+    <p style="font-size:14px;color:var(--n600);margin:2px 0 14px" id="activeAddr">Rua das Flores, 123 · Centro</p>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn btn--ghost btn--sm" style="flex:1">📞 Ligar</button>
+      <button class="btn btn--ghost btn--sm" style="flex:1">💬 Mensagem</button>
+    </div>
+    <button class="btn btn--ink" id="activePrimary" data-act="advance-delivery">Cheguei na coleta</button>
+    <ol class="tl" id="activeTl" style="margin-top:18px">
+      <li class="done">Aceita às 14:30 <time>há 2 min</time></li>
+      <li class="cur">Indo coletar</li>
+      <li>Coletar e fotografar</li>
+      <li>Entregar em Vila Nova</li>
+      <li>Comprovar entrega</li>
+    </ol>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-c-proof">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="pad">
+    <div class="eyebrow">No destino · Vila Nova</div>
+    <h1 class="t">Comprovar entrega</h1>
+    <p style="font-size:13px;color:var(--n500);margin-bottom:12px">Destinatária: Maria Silva</p>
+    <div class="pill pill--ok" style="display:block;padding:9px;text-align:center;margin-bottom:10px" id="gpsBadge">📍 GPS confirmado · você está no endereço</div>
+    <div id="photoBox" style="border:2px dashed var(--n300);border-radius:10px;padding:30px;text-align:center;color:var(--n500);font-size:13px;cursor:pointer" data-act="take-photo">
+      📷 Toque para fotografar a entrega<br><span style="font-size:11px">enquadre a fachada, número ou porta</span>
+    </div>
+    <div class="field" style="margin-top:14px"><label>Número do pedido (pergunte ao destinatário)</label><input class="mono" style="text-align:center;letter-spacing:.3em;font-size:18px" placeholder="0000" maxlength="6" value="2851"></div>
+    <div class="card" style="background:var(--direct);border-color:var(--warning)">
+      <div class="pill pill--direct" style="margin-bottom:8px">PAGAMENTO DIRETO</div>
+      <label style="display:block;font-size:14px;padding:7px 0"><input type="radio" name="dpr" checked> Recebi <strong>R$ 8,50</strong> em dinheiro</label>
+      <label style="display:block;font-size:14px;padding:7px 0"><input type="radio" name="dpr"> Recebi <strong>R$ 8,50</strong> por PIX</label>
+      <label style="display:block;font-size:14px;padding:7px 0;color:var(--error)"><input type="radio" name="dpr"> Não recebi o pagamento</label>
+    </div>
+    <button class="btn btn--primary" data-act="confirm-delivery">Confirmar entrega</button>
+    <div class="row" style="margin-top:8px">
+      <button class="btn btn--ghost btn--sm" style="flex:1;color:var(--error);border-color:var(--n300)">Ausente</button>
+      <button class="btn btn--ghost btn--sm" style="flex:1;color:var(--error);border-color:var(--n300)">Recusou</button>
+    </div>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-c-done">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="pad" style="text-align:center;padding-top:60px">
+    <div style="width:80px;height:80px;background:var(--success-bg);border-radius:50%;display:grid;place-items:center;margin:0 auto 20px;font-size:38px">✓</div>
+    <h1 class="t">Entrega <span class="accent">concluída.</span></h1>
+    <p style="color:var(--n500);font-size:14px">Pizzaria do José · Vila Nova</p>
+    <div class="card" style="text-align:left;margin-top:20px">
+      <div class="between" style="padding:6px 0"><span style="color:var(--n500)">Recebido em dinheiro</span><span class="mono" style="font-weight:700">R$ 8,50</span></div>
+      <div class="between" style="padding:6px 0"><span style="color:var(--n500)">Taxa Jaxegô (na fatura da loja)</span><span class="mono">R$ 1,50</span></div>
+      <div class="between" style="padding:6px 0;border-top:1px solid var(--n200);margin-top:4px"><span style="color:var(--n500)">Seu score</span><span class="mono" style="color:var(--success);font-weight:700">+0,1 ▲</span></div>
+    </div>
+    <button class="btn btn--primary" data-go="c-home" style="margin-top:16px">Voltar ao início</button>
+    <button class="btn btn--ghost" data-act="sim-offer" style="margin-top:8px">Receber nova oferta</button>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-c-profile">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="pad">
+    <h1 class="t">João Silva</h1>
+    <p style="font-size:12px;color:var(--n500);margin-bottom:14px" class="mono">CPF 123.***.***-09 · Pádua · Moto ABC1D23</p>
+    <div class="card">
+      <div class="between"><h2 class="t" style="margin:0">Seu score</h2><div><span class="mono" style="font-size:22px;font-weight:700;color:var(--gold)">87,4</span> <span class="pill" style="background:#FBF0D5;color:var(--gold)">OURO</span></div></div>
+      <div style="font-size:12px;color:var(--error);margin:4px 0 10px">▼ −1,2 esta semana</div>
+      <div class="row" style="margin-bottom:4px"><span style="font-size:12px;width:130px;color:var(--n600)">No prazo · 30%</span><div class="sbar"><i style="width:94%;background:var(--success)"></i></div><span class="mono" style="font-size:12px;width:38px;text-align:right">94%</span></div>
+      <div class="row" style="margin-bottom:4px"><span style="font-size:12px;width:130px;color:var(--n600)">Aceite · 20%</span><div class="sbar"><i style="width:87%;background:var(--success)"></i></div><span class="mono" style="font-size:12px;width:38px;text-align:right">87%</span></div>
+      <div class="row" style="margin-bottom:4px"><span style="font-size:12px;width:130px;color:var(--n600)">Cancelou · 15%</span><div class="sbar"><i style="width:22%;background:var(--error)"></i></div><span class="mono" style="font-size:12px;width:38px;text-align:right;color:var(--error)">2×</span></div>
+      <div class="row" style="margin-bottom:4px"><span style="font-size:12px;width:130px;color:var(--n600)">Comprovação · 15%</span><div class="sbar"><i style="width:98%;background:var(--success)"></i></div><span class="mono" style="font-size:12px;width:38px;text-align:right">98%</span></div>
+      <div class="row"><span style="font-size:12px;width:130px;color:var(--n600)">Avaliações · 20%</span><div class="sbar"><i style="width:96%;background:var(--gold)"></i></div><span class="mono" style="font-size:12px;width:38px;text-align:right">★4.8</span></div>
+      <div class="help">Por que caiu: 2 cancelamentos após aceite na terça. No M1 o score é só seu histórico público — não muda suas taxas.</div>
+    </div>
+    <div class="card">
+      <h2 class="t">Documentos · validação completa</h2>
+      <div class="between" style="padding:9px 0;border-bottom:1px solid var(--n100)"><span>CPF + Selfie</span><span class="pill pill--ok">✓ Aprovado</span></div>
+      <div class="between" style="padding:9px 0;border-bottom:1px solid var(--n100)"><span>CNH com EAR <span style="color:var(--n500);font-size:12px">· val. 12/2027</span></span><span class="pill pill--ok">✓ Aprovado</span></div>
+      <div class="between" style="padding:9px 0;border-bottom:1px solid var(--n100)"><span>CRLV</span><span class="pill pill--ok">✓ Aprovado</span></div>
+      <div class="between" style="padding:9px 0"><span>MEI <span style="color:var(--warning);font-size:12px">· vence em 30 dias</span></span><button class="btn btn--sm btn--ink">Renovar</button></div>
+    </div>
+    <div class="card">
+      <h2 class="t">Chave PIX para saque</h2>
+      <div class="field" style="margin:0"><input value="joao@email.com"></div>
+      <button class="btn btn--primary btn--sm" data-act="toast" data-msg="Chave PIX salva" style="margin-top:8px;width:100%">Salvar chave</button>
+    </div>
+  </div>
+  <div class="tabbar" data-tabbar="courier">
+    <button data-go="c-home"><span class="ic">🏠</span>Início</button>
+    <button data-go="c-earnings"><span class="ic">💰</span>Ganhos</button>
+    <button data-go="c-coverage"><span class="ic">📍</span>Bairros</button>
+    <button class="on" data-go="c-profile"><span class="ic">⭐</span>Perfil</button>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-c-earnings">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="pad">
+    <h1 class="t">Ganhos</h1>
+    <div class="card" style="background:linear-gradient(135deg,var(--n800),var(--n700));color:#fff;border:0">
+      <div class="eyebrow" style="color:var(--brand-300)">Saldo disponível para saque</div>
+      <div class="mono" style="font-size:32px;font-weight:800">R$ 643,20</div>
+      <div style="font-size:12px;color:var(--n300)">+ R$ 36,50 liberando em 24h (escrow)</div>
+      <button class="btn btn--primary" data-act="toast" data-msg="Saque de R$ 643,20 solicitado via PIX" style="margin-top:12px">Sacar via PIX (mín. R$ 20)</button>
+      <div style="font-size:11px;color:var(--n400);margin-top:8px">Saque automático toda terça · chave ***@email.com</div>
+    </div>
+    <div class="help help--direct">💡 Corridas com pagamento direto não entram no saldo — você já recebeu na mão. Aparecem abaixo só para controle.</div>
+    <h2 class="t" style="margin-top:8px">Movimentações</h2>
+    <div class="card" style="padding:6px 14px">
+      <table class="tbl">
+        <tr><td class="mono">25/04</td><td>Pizzaria do José <span class="pill pill--plat">PLAT</span></td><td class="mono" style="text-align:right;color:var(--success)">+8,50</td></tr>
+        <tr><td class="mono">25/04</td><td>Mercado B.P. <span class="pill pill--direct">DIRETO</span></td><td class="mono" style="text-align:right;color:var(--n500)">8,00 ✓</td></tr>
+        <tr><td class="mono">23/04</td><td>Saque PIX</td><td class="mono" style="text-align:right;color:var(--error)">−250,00</td></tr>
+        <tr><td class="mono">22/04</td><td>Farmácia Central <span class="pill pill--plat">PLAT</span></td><td class="mono" style="text-align:right;color:var(--success)">+9,00</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="tabbar" data-tabbar="courier">
+    <button data-go="c-home"><span class="ic">🏠</span>Início</button>
+    <button class="on" data-go="c-earnings"><span class="ic">💰</span>Ganhos</button>
+    <button data-go="c-coverage"><span class="ic">📍</span>Bairros</button>
+    <button data-go="c-profile"><span class="ic">⭐</span>Perfil</button>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-c-coverage">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div class="pad">
+    <h1 class="t">Bairros & preços</h1>
+    <div class="help help--direct">Você só recebe ofertas quando a coleta E a entrega estão nos seus bairros. Piso da cidade: <strong>R$ 6,00</strong>.</div>
+    <div class="card">
+      <h2 class="t">Onde atendo · preço por entrega</h2>
+      <div class="between" style="padding:10px 0;border-bottom:1px solid var(--n100)"><label class="row" style="gap:8px"><input type="checkbox" checked> Centro</label><input class="mono" style="width:80px;text-align:right;padding:7px;border:1px solid var(--n300);border-radius:6px" value="7.00"></div>
+      <div class="between" style="padding:10px 0;border-bottom:1px solid var(--n100)"><label class="row" style="gap:8px"><input type="checkbox" checked> Vila Nova</label><input class="mono" style="width:80px;text-align:right;padding:7px;border:1px solid var(--n300);border-radius:6px" value="8.50"></div>
+      <div class="between" style="padding:10px 0;border-bottom:1px solid var(--n100)"><label class="row" style="gap:8px"><input type="checkbox" checked> Sereno</label><input class="mono" style="width:80px;text-align:right;padding:7px;border:1px solid var(--n300);border-radius:6px" value="10.00"></div>
+      <div class="between" style="padding:10px 0"><label class="row" style="gap:8px;color:var(--n400)"><input type="checkbox"> Cidade Nova</label><input class="mono" style="width:80px;text-align:right;padding:7px;border:1px solid var(--n200);border-radius:6px;color:var(--n400)" placeholder="—" disabled></div>
+    </div>
+    <div class="card">
+      <div class="between"><span style="font-size:14px;font-weight:600">% de retorno (destinatário recusa)</span><input class="mono" style="width:70px;text-align:right;padding:7px;border:1px solid var(--n300);border-radius:6px" value="50"></div>
+    </div>
+    <button class="btn btn--primary" data-act="toast" data-msg="Bairros e preços salvos">Salvar bairros e preços</button>
+  </div>
+  <div class="tabbar" data-tabbar="courier">
+    <button data-go="c-home"><span class="ic">🏠</span>Início</button>
+    <button data-go="c-earnings"><span class="ic">💰</span>Ganhos</button>
+    <button class="on" data-go="c-coverage"><span class="ic">📍</span>Bairros</button>
+    <button data-go="c-profile"><span class="ic">⭐</span>Perfil</button>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-m-dash">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/loja</span></div>
+<div style="padding:24px 32px">
+  <div style="border-bottom:1px solid var(--n200);padding-bottom:14px;margin-bottom:20px" class="between">
+    <div><strong style="font-size:17px">Jaxegô</strong> <span style="color:var(--n400)">·</span> Pizzaria do José</div>
+    <div class="row" style="gap:18px;font-size:14px">
+      <a class="on" style="color:var(--brand-500);font-weight:700">Painel</a>
+      <a data-go="m-list">Entregas</a><a data-go="m-plan">Plano & faturas</a>
+    </div>
+  </div>
+  <div class="between"><h1 class="t">Hoje na sua loja. Tudo <span class="accent">certinho.</span></h1><button class="btn btn--primary btn--sm" data-go="m-new">+ Nova entrega</button></div>
+  <div class="stats" style="margin:18px 0">
+    <div class="stat"><b>7</b><span>entregas hoje</span></div>
+    <div class="stat"><b class="mono">14 min</b><span>tempo médio</span></div>
+    <div class="stat"><b class="mono">R$ 61,50</b><span>fretes hoje</span></div>
+    <div class="stat"><b>12/40</b><span>plano Início</span></div>
+  </div>
+  <div class="card">
+    <h2 class="t">Em curso agora</h2>
+    <table class="tbl" id="liveTable">
+      <thead><tr><th>Nº</th><th>Destino</th><th>Entregador</th><th>Status</th><th>Pagamento</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="mono">#2851</td><td>Vila Nova</td><td>João Silva ★87</td><td><span class="pill pill--warn">A CAMINHO</span></td><td><span class="pill pill--direct">DIRETO</span></td><td><a data-go="m-detail">ver</a></td></tr>
+        <tr><td class="mono">#2850</td><td>Centro</td><td>Ana Costa ★91</td><td><span class="pill pill--plat">INDO COLETAR</span></td><td>PIX</td><td><a data-go="m-detail">ver</a></td></tr>
+        <tr><td class="mono">#2849</td><td>Sereno</td><td style="color:var(--n400)">procurando…</td><td><span class="pill" style="background:var(--n100);color:var(--n500)">PROCURANDO</span></td><td>cartão</td><td><a data-go="m-detail">ver</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-m-new">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/loja/entregas/nova</span></div>
+<div style="padding:24px 32px;max-width:640px;margin:0 auto">
+  <a data-go="m-dash" style="font-size:13px">← Painel</a>
+  <h1 class="t" style="margin:8px 0 16px">Nova entrega</h1>
+  <div class="card">
+    <div class="eyebrow" style="margin-bottom:8px">Entrega</div>
+    <div class="field"><label>Endereço de entrega</label><input id="newAddr" placeholder="Rua, número" value="Rua Sete, 88"></div>
+    <div class="field"><label>Bairro</label><select id="newNb"><option>Vila Nova</option><option>Centro</option><option>Sereno</option></select></div>
+    <div class="row"><div class="field" style="flex:1"><label>Destinatário</label><input value="Maria Silva"></div><div class="field" style="flex:1"><label>Telefone</label><input value="(22) 99999-1234"></div></div>
+    <div class="field"><label>Itens</label><input value="1 pizza grande, 1 refri 2L"></div>
+  </div>
+  <div class="card">
+    <div class="eyebrow" style="margin-bottom:10px">Pagamento da corrida</div>
+    <div class="row" style="gap:8px" id="payChoice">
+      <label class="card" style="flex:1;text-align:center;margin:0;cursor:pointer;border-color:var(--brand-500);background:var(--brand-50)" data-pay="direct"><input type="radio" name="pm" checked><br>💵 <strong>Direto</strong><br><span style="font-size:11px;color:var(--n500)">dinheiro/PIX</span></label>
+      <label class="card" style="flex:1;text-align:center;margin:0;cursor:pointer" data-pay="pix"><input type="radio" name="pm"><br><strong>PIX</strong><br><span style="font-size:11px;color:var(--n500)">plataforma</span></label>
+      <label class="card" style="flex:1;text-align:center;margin:0;cursor:pointer" data-pay="card"><input type="radio" name="pm"><br><strong>Cartão</strong><br><span style="font-size:11px;color:var(--n500)">plataforma</span></label>
+    </div>
+  </div>
+  <div class="card" style="background:var(--brand-50);border-color:var(--brand-100)">
+    <div class="between"><span style="font-size:14px">Frete estimado <span style="color:var(--n500);font-size:12px">(3 entregadores online)</span></span><span class="mono" style="font-weight:700">R$ 8,00–9,50 + taxa R$ 1,50</span></div>
+  </div>
+  <button class="btn btn--primary" data-act="create-delivery">Chamar entregador</button>
+  <p style="font-size:12px;color:var(--n500);text-align:center;margin-top:10px">Ao chamar, a oferta vai para os entregadores online. Veja no app (menu lateral) a oferta chegando. 👈</p>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-m-searching">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/loja/entregas/2852</span></div>
+<div style="padding:40px 32px;max-width:560px;margin:0 auto;text-align:center">
+  <div class="map" style="height:200px;border-radius:12px;margin-bottom:20px"><span style="font-size:30px" class="route">🔎</span></div>
+  <div id="searchState">
+    <div style="width:54px;height:54px;border:4px solid var(--n200);border-top-color:var(--brand-500);border-radius:50%;margin:0 auto 16px;animation:spin 1s linear infinite"></div>
+    <h1 class="t">Procurando entregador…</h1>
+    <p style="color:var(--n500)">Oferta enviada para <strong>João Silva</strong> (seu favorito). Aguardando aceite.</p>
+    <div class="help" style="display:inline-block;text-align:left">💡 Abra o <strong>app do entregador</strong> no menu lateral — a oferta está chegando lá agora.</div>
+  </div>
+</div></div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</script>
+
+<script type="text/template" id="tpl-m-detail">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/loja/entregas/2851</span></div>
+<div style="padding:24px 32px">
+  <a data-go="m-dash" style="font-size:13px">← Entregas</a>
+  <div class="between" style="margin:8px 0 16px"><h1 class="t">Entrega <span class="mono">#2851</span> <span class="pill pill--warn" id="detailState">A CAMINHO</span> <span class="pill pill--direct">DIRETO 💵</span></h1><button class="btn btn--danger btn--sm">Cancelar (100% + retorno)</button></div>
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
+    <div>
+      <div class="card"><div class="map" style="height:220px;border-radius:8px"><span class="route" id="detailRoute">🛵</span></div></div>
+      <div class="card">
+        <h2 class="t">Linha do tempo</h2>
+        <ol class="tl" id="detailTl">
+          <li class="done">Criada <time>14:28:03</time></li>
+          <li class="done">Aceita por João Silva <time>14:28:41 · 38s</time></li>
+          <li class="done">Coletada · foto ✓ · GPS ✓ <time>14:36:12</time></li>
+          <li class="cur">A caminho de Vila Nova <time>agora</time></li>
+          <li>Entregue</li><li>Finalizada (em 24h)</li>
+        </ol>
+      </div>
+    </div>
+    <div>
+      <div class="card"><h2 class="t">Entregador</h2><strong>João Silva</strong> · <span style="color:var(--gold)">★87,4 ouro</span><br><span style="font-size:12px;color:var(--n500)">Moto <span class="mono">ABC1D23</span> · 14 entregas pra você</span><br><br><a>📞 Ligar</a> · <a>💬 Mensagem</a></div>
+      <div class="card"><h2 class="t">Valores</h2><div class="between" style="padding:4px 0"><span style="color:var(--n500)">Corrida (direto)</span><span class="mono">R$ 8,50</span></div><div class="between" style="padding:4px 0"><span style="color:var(--n500)">Taxa Jaxegô (fatura)</span><span class="mono">R$ 1,50</span></div></div>
+      <div class="card"><h2 class="t">Destinatário</h2>Maria Silva · <span class="mono">(22) 9****-1234</span><br><a data-go="track">Link de rastreio →</a></div>
+    </div>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-m-list">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/loja/entregas</span></div>
+<div style="padding:24px 32px">
+  <a data-go="m-dash" style="font-size:13px">← Painel</a>
+  <h1 class="t" style="margin:8px 0 14px">Entregas</h1>
+  <div class="row" style="gap:8px;margin-bottom:14px">
+    <select class="field" style="margin:0"><option>Todos os status</option></select>
+    <select class="field" style="margin:0"><option>Todo pagamento</option></select>
+    <input class="field" style="margin:0" type="date">
+    <input class="field" style="margin:0;flex:1" placeholder="Buscar nº, destinatário…">
+  </div>
+  <div class="card" style="padding:6px 16px">
+    <table class="tbl">
+      <thead><tr><th>Nº</th><th>Data</th><th>Destino</th><th>Entregador</th><th>Frete</th><th>Pgto</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="mono"><a data-go="m-detail">#2851</a></td><td class="mono">25/04 14:28</td><td>Vila Nova</td><td>João Silva</td><td class="mono">R$ 8,50</td><td>direto</td><td><span class="pill pill--ok">ENTREGUE</span></td></tr>
+        <tr><td class="mono">#2848</td><td class="mono">25/04 12:02</td><td>Centro</td><td>Ana Costa</td><td class="mono">R$ 7,00</td><td>PIX</td><td><span class="pill" style="background:var(--success-bg);color:#0F6E62">FINALIZADA</span></td></tr>
+        <tr><td class="mono">#2840</td><td class="mono">24/04 19:45</td><td>Sereno</td><td>Pedro Lima</td><td class="mono">R$ 10,00</td><td>cartão</td><td><span class="pill pill--err">RECUSADA</span></td></tr>
+        <tr><td class="mono">#2833</td><td class="mono">24/04 11:10</td><td>Centro</td><td style="color:var(--n400)">—</td><td class="mono">—</td><td>—</td><td><span class="pill" style="background:var(--n100);color:var(--n500)">CANCELADA</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-m-plan">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/loja/plano</span></div>
+<div style="padding:24px 32px">
+  <a data-go="m-dash" style="font-size:13px">← Painel</a>
+  <h1 class="t" style="margin:8px 0 14px">Plano & faturas</h1>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+    <div class="card" style="text-align:center"><strong>Free</strong><div class="mono" style="font-size:22px;font-weight:800">R$ 0</div><span style="font-size:12px;color:var(--n500)">2/mês · taxa R$2,00</span><button class="btn btn--ghost btn--sm" style="width:100%;margin-top:8px">Downgrade</button></div>
+    <div class="card" style="text-align:center;border:2px solid var(--brand-500);position:relative"><span class="pill pill--err" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--brand-500);color:#fff">SEU PLANO</span><strong>Início</strong><div class="mono" style="font-size:22px;font-weight:800">R$ 49</div><span style="font-size:12px;color:var(--n500)">40/mês · taxa R$1,50</span><button class="btn btn--ghost btn--sm" disabled style="width:100%;margin-top:8px;opacity:.5">12/40 usadas</button></div>
+    <div class="card" style="text-align:center"><strong>Profissional</strong><div class="mono" style="font-size:22px;font-weight:800">R$ 129</div><span style="font-size:12px;color:var(--n500)">150/mês · taxa R$1,00</span><button class="btn btn--primary btn--sm" data-act="toast" data-msg="Upgrade para Profissional (pro-rata) confirmado" style="width:100%;margin-top:8px">Upgrade</button></div>
+    <div class="card" style="text-align:center"><strong>Sem Limite</strong><div class="mono" style="font-size:22px;font-weight:800">R$ 299</div><span style="font-size:12px;color:var(--n500)">∞ · taxa R$0,50</span><button class="btn btn--primary btn--sm" data-act="toast" data-msg="Upgrade para Sem Limite confirmado" style="width:100%;margin-top:8px">Upgrade</button></div>
+  </div>
+  <div class="card">
+    <h2 class="t">Faturas de taxas <span style="font-size:12px;color:var(--n500);font-weight:400">(entregas com pagamento direto)</span></h2>
+    <table class="tbl">
+      <thead><tr><th>Mês</th><th>Entregas diretas</th><th>Taxas</th><th>Vence</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Abril (aberto)</td><td class="mono">23</td><td class="mono">R$ 34,50</td><td class="mono">08/05</td><td><span class="pill pill--warn">FECHA 01/05</span></td><td>—</td></tr>
+        <tr><td>Março</td><td class="mono">31</td><td class="mono">R$ 46,50</td><td class="mono">08/04</td><td><span class="pill pill--ok">PAGA · PIX</span></td><td><a>2ª via</a></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--n500)">Fecha dia 1º, vence dia 8. PIX/cartão/boleto. Atraso &gt;7 dias bloqueia novas entregas.</p>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-a-dash">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/admin/padua</span></div>
+<div class="adm">
+  <div class="adm__side">
+    <div class="b">Jaxegô</div><div class="s">Admin · Pádua</div>
+    <a class="adm__nav on">Painel</a>
+    <a class="adm__nav" data-go="a-kyc">Entregadores</a>
+    <a class="adm__nav" data-go="a-config">Configurações</a>
+    <a class="adm__nav">Lojas</a><a class="adm__nav">Disputas</a><a class="adm__nav">API keys</a>
+  </div>
+  <div class="adm__main">
+    <h1 class="t">Pádua · hoje</h1>
+    <div class="stats" style="margin:16px 0">
+      <div class="stat"><b>34</b><span>entregas hoje</span></div>
+      <div class="stat"><b>11</b><span>online agora</span></div>
+      <div class="stat"><b class="mono">42s</b><span>mediana aceite</span></div>
+      <div class="stat"><b class="mono">R$ 51</b><span>taxas hoje</span></div>
+    </div>
+    <div class="card">
+      <h2 class="t">Filas que precisam de você</h2>
+      <div class="queue"><span>Validações de entregador aguardando</span><span class="qcount" data-go="a-kyc">4</span></div>
+      <div class="queue"><span>Disputas de pagamento direto</span><span class="qcount">2</span></div>
+      <div class="queue"><span>Comprovações em revisão (baixa confiança)</span><span class="qcount">1</span></div>
+      <div class="queue"><span>Recursos de suspensão (SLA 5 dias úteis)</span><span class="qcount zero">0</span></div>
+      <div class="queue"><span>Lojas com fatura vencida</span><span class="qcount">3</span></div>
+    </div>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-a-kyc">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/admin/padua/entregadores/cou_01HYR9KX</span></div>
+<div class="adm">
+  <div class="adm__side">
+    <div class="b">Jaxegô</div><div class="s">Admin · Pádua</div>
+    <a class="adm__nav" data-go="a-dash">Painel</a>
+    <a class="adm__nav on">Entregadores</a>
+    <a class="adm__nav" data-go="a-config">Configurações</a>
+    <a class="adm__nav">Lojas</a><a class="adm__nav">Disputas</a><a class="adm__nav">API keys</a>
+  </div>
+  <div class="adm__main">
+    <a data-go="a-dash" style="font-size:13px">← Painel</a>
+    <h1 class="t" style="margin:8px 0 2px">Roberto Paula <span class="mono" style="font-size:13px;color:var(--n500)">cou_01HYR9KX</span></h1>
+    <p style="font-size:13px;color:var(--n500)">Validação exigida em Pádua: <strong>completa</strong> · cadastro há 2 dias</p>
+    <div class="card">
+      <h2 class="t">Itens da validação · <span id="kycCount">2</span> de 4 aprovados</h2>
+      <div class="doc-review"><div class="thumb">selfie</div><div><strong>CPF + Selfie</strong><br><span class="mono" style="font-size:12px;color:var(--n500)">123.***.***-09</span></div><span class="pill pill--ok">✓ Aprovado</span></div>
+      <div class="doc-review"><div class="thumb">MEI</div><div><strong>MEI</strong><br><span class="mono" style="font-size:12px;color:var(--n500)">CNAE 5320-2/02 · Receita: ATIVO</span></div><span class="pill pill--ok">✓ Auto</span></div>
+      <div class="doc-review" id="kycCnh"><div class="thumb">CNH</div><div><strong>CNH com EAR</strong><br><span style="font-size:12px;color:var(--n500)">enviada há 5h</span></div><div class="row" style="gap:6px"><button class="btn btn--sm" style="background:var(--success);color:#fff" data-act="kyc-approve">Aprovar</button><button class="btn btn--sm btn--danger" data-act="kyc-reject">Reprovar</button></div></div>
+      <div class="doc-review" id="kycCrlv"><div class="thumb">CRLV</div><div><strong>CRLV</strong><br><span style="font-size:12px;color:var(--n500)">Honda Biz · ABC1D23</span></div><div class="row" style="gap:6px"><button class="btn btn--sm" style="background:var(--success);color:#fff" data-act="kyc-approve">Aprovar</button><button class="btn btn--sm btn--danger" data-act="kyc-reject">Reprovar</button></div></div>
+      <div class="help">Reprovação notifica o entregador com o motivo e libera reenvio só do item. Tudo no audit log.</div>
+      <div id="kycDone" style="display:none"><button class="btn btn--primary" data-act="toast" data-msg="Roberto Paula ativado — agora recebe ofertas">Ativar entregador</button></div>
+    </div>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-a-config">
+<div class="desktop"><div class="desktop__bar"><i></i><i></i><i></i><span class="desktop__url">jaxego.com.br/admin/padua/config</span></div>
+<div class="adm">
+  <div class="adm__side">
+    <div class="b">Jaxegô</div><div class="s">Admin · Pádua</div>
+    <a class="adm__nav" data-go="a-dash">Painel</a>
+    <a class="adm__nav" data-go="a-kyc">Entregadores</a>
+    <a class="adm__nav on">Configurações</a>
+    <a class="adm__nav">Lojas</a><a class="adm__nav">Disputas</a><a class="adm__nav">API keys</a>
+  </div>
+  <div class="adm__main" style="max-width:560px">
+    <h1 class="t">Configurações da área</h1>
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:10px">Validação de entregadores</div>
+      <div class="field"><label>Nível exigido</label><select><option>Completa (CNH + CRLV + MEI)</option><option>Simples (CPF + selfie)</option></select></div>
+      <label class="row" style="gap:8px;font-size:14px"><input type="checkbox"> Exigir certidão de antecedentes</label>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:10px">Preços & geofence</div>
+      <div class="row"><div class="field" style="flex:1"><label>Piso de frete (R$)</label><input class="mono" value="6.00"></div><div class="field" style="flex:1"><label>Raio GPS (m)</label><input class="mono" value="80"></div></div>
+      <div class="field"><label>Retorno default (% da corrida)</label><input class="mono" value="50"></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:10px">Despacho</div>
+      <div class="row"><div class="field" style="flex:1"><label>Tempo por oferta (s)</label><input class="mono" value="20"></div><div class="field" style="flex:1"><label>Janela favoritos (s)</label><input class="mono" value="60"></div></div>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:10px">Catálogo de bairros</div>
+      <div class="between" style="padding:7px 0;border-bottom:1px solid var(--n100)"><span>Centro</span><button class="btn btn--sm btn--danger">Remover</button></div>
+      <div class="between" style="padding:7px 0;border-bottom:1px solid var(--n100)"><span>Vila Nova</span><button class="btn btn--sm btn--danger">Remover</button></div>
+      <div class="between" style="padding:7px 0"><span>Divinéia <span style="font-size:12px;color:var(--n500)">(informal — incluído pelo gestor)</span></span><button class="btn btn--sm btn--danger">Remover</button></div>
+    </div>
+    <button class="btn btn--primary" data-act="toast" data-msg="Configurações salvas (auditado)">Salvar configurações</button>
+  </div>
+</div></div>
+</script>
+
+<script type="text/template" id="tpl-track">
+<div class="phone"><div class="phone__notch"></div><div class="phone__screen">
+  <div style="padding:16px;text-align:center"><strong style="font-size:17px">Jaxegô. Chegou <span class="accent">rapidinho.</span></strong></div>
+  <div class="map" style="height:230px;margin:0 16px;border-radius:12px"><span class="route" style="font-size:26px">🛵</span></div>
+  <div class="pad">
+    <div class="pill pill--warn" style="display:block;text-align:center;padding:12px;font-size:15px;margin-bottom:12px">🛵 Sua entrega está a caminho — chega em ~6 min</div>
+    <div class="card">
+      <ol class="tl">
+        <li class="done">Pedido pronto na Pizzaria do José <time>14:28</time></li>
+        <li class="done">João aceitou sua entrega <time>14:29</time></li>
+        <li class="done">Saiu para entrega <time>14:36</time></li>
+        <li class="cur">Chegando em Vila Nova <time>agora</time></li>
+        <li>Entregue</li>
+      </ol>
+    </div>
+    <div class="card row" style="gap:12px"><div style="width:46px;height:46px;border-radius:50%;background:var(--n100);display:grid;place-items:center;font-weight:700">JS</div><div><strong>João Silva</strong> · ★4.8<br><span style="font-size:12px;color:var(--n500)">Moto Honda Biz · ABC1D23</span></div></div>
+    <p style="font-size:11px;color:var(--n400);text-align:center">Você recebeu este link por SMS porque a Pizzaria do José enviou uma entrega via Jaxegô.</p>
+  </div>
+</div></div>
+</script>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var offerTimer = null, activeState = 'accepted';
+
+  function tpl(id){ var el = document.getElementById('tpl-'+id); return el ? el.innerHTML : '<div class="pad">Tela '+id+' não encontrada</div>'; }
+
+  function render(id){
+    stage.innerHTML = tpl(id);
+    // mark rail active
+    document.querySelectorAll('.rail__link').forEach(function(l){ l.classList.toggle('on', l.getAttribute('data-go')===id && !l.getAttribute('data-act')); });
+    window.scrollTo(0,0);
+    if(id==='m-searching') startSearch();
+    if(id==='c-active') resetActive();
+  }
+
+  function toast(msg){
+    var ph = stage.querySelector('.phone__screen') || stage.querySelector('.desktop') || stage;
+    var t = document.createElement('div'); t.className='toast'; t.textContent=msg; ph.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add('show'); });
+    setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){t.remove();},300); }, 2600);
+  }
+
+  // ---------- OFFER (timer + accept) ----------
+  function simOffer(){
+    if(!stage.querySelector('#offerOverlay')) render('c-home');
+    setTimeout(function(){
+      var ov = stage.querySelector('#offerOverlay'); if(!ov) return;
+      ov.classList.add('show');
+      var sec = 20, ring = stage.querySelector('#offerRing'), lbl = stage.querySelector('#offerSec');
+      clearInterval(offerTimer);
+      offerTimer = setInterval(function(){
+        sec--; if(lbl) lbl.textContent = sec;
+        if(ring) ring.style.setProperty('--p', (sec/20*100));
+        if(sec<=0){ clearInterval(offerTimer); ov.classList.remove('show'); toast('Oferta expirou — passou para o próximo da fila'); }
+      }, 1000);
+    }, 60);
+  }
+  function closeOffer(){ clearInterval(offerTimer); var ov=stage.querySelector('#offerOverlay'); if(ov) ov.classList.remove('show'); }
+
+  // ---------- ACTIVE DELIVERY STATE MACHINE ----------
+  var activeFlow = [
+    {state:'ACEITA', step:'Indo coletar · ~4 min · 0,8 km', title:'Pizzaria do José', addr:'Rua das Flores, 123 · Centro', btn:'Cheguei na coleta', icon:'🛵', cls:'pill--plat', tl:1},
+    {state:'NA COLETA', step:'Confira os itens e fotografe', title:'Pizzaria do José', addr:'Rua das Flores, 123 · Centro', btn:'Coletei — tirar foto', icon:'📦', cls:'pill--warn', tl:2},
+    {state:'COLETADA', step:'A caminho · Vila Nova · 2,8 km', title:'Entregar para Maria Silva', addr:'Rua Sete, 88 · Vila Nova', btn:'Cheguei no destino', icon:'🛵', cls:'pill--warn', tl:3}
+  ];
+  var activeIdx = 0;
+  function resetActive(){ activeIdx = 0; paintActive(); }
+  function paintActive(){
+    var f = activeFlow[activeIdx]; if(!f) return;
+    var s=stage.querySelector('#activeState'); if(s){s.textContent=f.state; s.className='pill '+f.cls;}
+    var st=stage.querySelector('#activeStep'); if(st) st.textContent=f.step;
+    var ti=stage.querySelector('#activeTitle'); if(ti) ti.textContent=f.title;
+    var ad=stage.querySelector('#activeAddr'); if(ad) ad.textContent=f.addr;
+    var b=stage.querySelector('#activePrimary'); if(b) b.textContent=f.btn;
+    var ic=stage.querySelector('#activeRouteIcon'); if(ic) ic.textContent=f.icon;
+    var items=stage.querySelectorAll('#activeTl li');
+    items.forEach(function(li,i){ li.classList.remove('cur','done'); if(i<f.tl) li.classList.add('done'); else if(i===f.tl) li.classList.add('cur'); });
+  }
+  function advanceDelivery(){
+    if(activeIdx < activeFlow.length-1){ activeIdx++; paintActive(); }
+    else { render('c-proof'); } // chegou no destino → comprovar
+  }
+
+  // ---------- SEARCH → auto offer ----------
+  function startSearch(){
+    setTimeout(function(){
+      var box = stage.querySelector('#searchState');
+      if(box) box.innerHTML = '<div style="width:64px;height:64px;background:var(--success-bg);border-radius:50%;display:grid;place-items:center;margin:0 auto 16px;font-size:30px">✓</div><h1 class="t">João Silva aceitou!</h1><p style="color:var(--n500)">Indo coletar na sua loja. Acompanhe na entrega.</p><button class="btn btn--primary btn--sm" data-go="m-detail" style="width:auto;margin-top:8px">Ver entrega #2851</button>';
+    }, 3200);
+  }
+
+  // ---------- KYC review ----------
+  var kycApproved = 2;
+  function kycAct(approve, el){
+    var row = el.closest('.doc-review'); if(!row) return;
+    row.querySelector('.row').outerHTML = approve ? '<span class="pill pill--ok">✓ Aprovado</span>' : '<span class="pill pill--err">✗ Reprovado</span>';
+    if(approve) kycApproved++;
+    var c=stage.querySelector('#kycCount'); if(c) c.textContent=kycApproved;
+    if(kycApproved>=4){ var d=stage.querySelector('#kycDone'); if(d) d.style.display='block'; }
+    toast(approve?'Item aprovado':'Item reprovado — entregador notificado');
+  }
+
+  // ---------- payment choice highlight ----------
+  function pickPay(label){
+    stage.querySelectorAll('#payChoice label').forEach(function(l){ l.style.borderColor='var(--n200)'; l.style.background='#fff'; });
+    label.style.borderColor='var(--brand-500)'; label.style.background='var(--brand-50)';
+    label.querySelector('input').checked=true;
+  }
+
+  // ---------- delegated clicks ----------
+  document.addEventListener('click', function(e){
+    var go = e.target.closest('[data-go]');
+    var act = e.target.closest('[data-act]');
+    if(act){
+      var a = act.getAttribute('data-act');
+      if(a==='sim-offer'){ simOffer(); return; }
+      if(a==='accept-offer'){ closeOffer(); toast('Entrega aceita! Indo coletar.'); render('c-active'); return; }
+      if(a==='refuse-offer'){ closeOffer(); toast('Oferta recusada'); return; }
+      if(a==='advance-delivery'){ advanceDelivery(); return; }
+      if(a==='take-photo'){ var pb=stage.querySelector('#photoBox'); if(pb){ pb.style.background='var(--success-bg)'; pb.style.borderColor='var(--success)'; pb.innerHTML='✓ Foto capturada · GPS embutido<br><span style="font-size:11px">14:42 · -21.54, -42.18</span>'; } return; }
+      if(a==='confirm-delivery'){ render('c-done'); return; }
+      if(a==='create-delivery'){ toast('Entrega #2852 criada — procurando entregador'); render('m-searching'); return; }
+      if(a==='kyc-approve'){ kycAct(true, act); return; }
+      if(a==='kyc-reject'){ kycAct(false, act); return; }
+      if(a==='toast'){ toast(act.getAttribute('data-msg')||'Feito'); return; }
+    }
+    var payLabel = e.target.closest('#payChoice label');
+    if(payLabel){ pickPay(payLabel); return; }
+    if(go){ render(go.getAttribute('data-go')); if(go.getAttribute('data-act')==='sim-offer') simOffer(); return; }
+  });
+
+  // online toggle
+  document.addEventListener('click', function(e){
+    var t = e.target.closest('#onlineToggle'); if(!t) return;
+    var on = t.classList.contains('online');
+    t.classList.toggle('online', !on); t.classList.toggle('offline', on);
+    t.innerHTML = on ? '<span class="dot"></span> Offline' : '<span class="dot"></span> Online';
+  });
+
+  // boot
+  render('c-home');
+})();
+</script>
+</body>
+</html>

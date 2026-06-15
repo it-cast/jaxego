@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import RefreshToken, User
-from app.auth.schemas import TokenPair
+from app.auth.schemas import MeResponse, TokenPair
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.core.security import (
@@ -139,6 +139,54 @@ async def _resolve_session_context(session: AsyncSession, user: User) -> tuple[i
     if membership is None:
         return None, "user"
     return membership.area_id, f"admin_area:{membership.role}"
+
+
+async def resolve_surface(session: AsyncSession, user: User) -> MeResponse:
+    """Resolve which SPA surface the user belongs to (R0.4 post-login routing).
+
+    Priority: platform admin > area admin > courier > merchant. A user with no
+    binding gets surface='none' (the SPA shows a neutral "no access" state rather
+    than looping back to /entrar). Single query per candidate; no N+1.
+    """
+    from app.areas.models import AreaAdmin
+    from app.couriers.models import Courier
+    from app.merchants.models import Merchant, MerchantUser
+
+    if user.platform_role == "admin_plataforma":
+        return MeResponse(user_id=user.id, surface="plataforma")
+
+    membership = (
+        await session.execute(select(AreaAdmin).where(AreaAdmin.user_id == user.id).limit(1))
+    ).scalar_one_or_none()
+    if membership is not None:
+        return MeResponse(user_id=user.id, surface="admin", area_id=membership.area_id)
+
+    courier = (
+        await session.execute(select(Courier).where(Courier.user_id == user.id).limit(1))
+    ).scalar_one_or_none()
+    if courier is not None:
+        return MeResponse(
+            user_id=user.id,
+            surface="entregador",
+            area_id=courier.area_id,
+            courier_id=courier.id,
+            status=courier.status,
+        )
+
+    link = (
+        await session.execute(select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1))
+    ).scalar_one_or_none()
+    if link is not None:
+        merchant = await session.get(Merchant, link.merchant_id)
+        return MeResponse(
+            user_id=user.id,
+            surface="loja",
+            area_id=merchant.area_id if merchant else None,
+            merchant_id=link.merchant_id,
+            status=merchant.status if merchant else None,
+        )
+
+    return MeResponse(user_id=user.id, surface="none")
 
 
 async def issue_token_pair(

@@ -45,3 +45,16 @@ export type LoginErrorKind =
   | 'network'
   | 'server'
   | 'unknown';
+
+/** Surface the authenticated user belongs to (post-login routing, R0.4). */
+export type Surface = 'entregador' | 'loja' | 'admin' | 'plataforma' | 'none';
+
+/** GET /v1/auth/me response (app/auth/schemas.py MeResponse). */
+export interface Me {
+  user_id: number;
+  surface: Surface;
+  area_id: number | null;
+  courier_id: number | null;
+  merchant_id: number | null;
+  status: string | null;
+}

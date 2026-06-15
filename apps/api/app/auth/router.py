@@ -21,6 +21,7 @@ from app.auth.dependencies import CurrentUser
 from app.auth.schemas import (
     LoginBody,
     LogoutBody,
+    MeResponse,
     RefreshBody,
     TokenPair,
     TotpEnrollResponse,
@@ -106,6 +107,16 @@ async def logout(
     _clear_refresh_cookie(response)
     response.status_code = 204
     return response
+
+
+@router.get("/me", response_model=MeResponse)
+async def me(user: CurrentUser, session: SessionDep) -> MeResponse:
+    """Resolved identity + surface for the authenticated user (R0.4).
+
+    The SPA calls this right after login to route the user to the correct shell
+    (entregador / loja / admin / plataforma) and on app boot to restore context.
+    """
+    return await service.resolve_surface(session, user)
 
 
 @router.post("/totp/enroll", response_model=TotpEnrollResponse)

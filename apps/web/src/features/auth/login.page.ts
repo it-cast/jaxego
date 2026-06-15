@@ -83,8 +83,17 @@ export class LoginPage implements AfterViewInit {
     this.loading.set(false);
 
     if (result.ok) {
-      // No festive toast — redirect to the app shell (surface routing in T-06).
-      void this.router.navigate(['/']);
+      // Resolve the user's surface and route to the right shell (R0.4). Replaces
+      // the old navigate(['/']) which looped back to /entrar (no surface routing).
+      const me = await this.auth.loadMe();
+      if (!me || me.surface === 'none') {
+        this.errorMessage.set(
+          'Sua conta ainda não tem acesso a nenhuma área. Fale com o suporte.'
+        );
+        queueMicrotask(() => this.errorRef()?.nativeElement.focus());
+        return;
+      }
+      void this.router.navigate([this.auth.surfaceHome(me.surface)]);
       return;
     }
 
