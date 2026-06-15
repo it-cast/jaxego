@@ -75,4 +75,4 @@ async def purge_expired_idempotency(session: AsyncSession, *, now: datetime) -> 
     result = await session.execute(
         delete(ApiIdempotencyKey).where(ApiIdempotencyKey.expires_at < now)
     )
-    return int(result.rowcount or 0)
+    return int(result.rowcount or 0)  # pyright: ignore[reportAttributeAccessIssue]

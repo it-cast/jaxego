@@ -229,9 +229,7 @@ class Safe2PayHttpAdapter:
             for r in rows
         ]
 
-    async def payout(
-        self, *, recipient: str, amount_cents: int, reference: str
-    ) -> PayoutResult:
+    async def payout(self, *, recipient: str, amount_cents: int, reference: str) -> PayoutResult:
         # [ASSUMIDO — TD-15-01] Courier withdrawal repasse (transfer to subaccount). The
         # exact Safe2Pay endpoint/shape for a payout/transfer is NOT confirmed (the cutover
         # depends on the contract — DEC-003). Isolated HERE behind `PaymentPort`; the Stub

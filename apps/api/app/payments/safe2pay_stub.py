@@ -106,9 +106,7 @@ class PaymentStubAdapter:
             for tx, amt in self.statement_entries
         ]
 
-    async def payout(
-        self, *, recipient: str, amount_cents: int, reference: str
-    ) -> PayoutResult:
+    async def payout(self, *, recipient: str, amount_cents: int, reference: str) -> PayoutResult:
         self._guard()
         if self.payout_fails:
             # The repasse failed at the PSP — the caller must restore the balance (D-04).

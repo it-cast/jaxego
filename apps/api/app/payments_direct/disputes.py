@@ -181,9 +181,7 @@ async def _refund_dispute(
     from app.deliveries.models import Delivery
     from app.payments import repo as pay_repo
 
-    charge = await pay_repo.get_charge_by_key(
-        session, idempotency_key=f"dlv_{dispute.delivery_id}"
-    )
+    charge = await pay_repo.get_charge_by_key(session, idempotency_key=f"dlv_{dispute.delivery_id}")
     if charge is not None and charge.transaction_id is not None and charge.status == "paid":
         await payment.refund(
             transaction_id=charge.transaction_id,

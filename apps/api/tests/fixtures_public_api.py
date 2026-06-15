@@ -188,7 +188,10 @@ async def public_api_seed(
         s.add(courier_user_a)
         await s.flush()
         await _make_courier_online(
-            s, area_id=area_a.id, user_id=courier_user_a.id, dropoff_id=dropoff.id,
+            s,
+            area_id=area_a.id,
+            user_id=courier_user_a.id,
+            dropoff_id=dropoff.id,
             price=Decimal("10.00"),
         )
 

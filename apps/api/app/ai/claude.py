@@ -31,7 +31,7 @@ class ClaudeAdapter:
     def __init__(self, *, api_key: str) -> None:
         # Lazy import: the SDK is a v1.1 dependency (TD-14-01); this module must
         # import without it. The key is held only by the SDK client (TH-01).
-        import anthropic
+        import anthropic  # pyright: ignore[reportMissingImports]
 
         self._client = anthropic.AsyncAnthropic(api_key=api_key)
 

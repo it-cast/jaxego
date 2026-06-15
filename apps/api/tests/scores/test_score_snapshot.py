@@ -67,9 +67,7 @@ async def test_compose_sums_weighted_contributions() -> None:
 
 
 @pytest.mark.asyncio
-async def test_snapshot_is_idempotent_per_day(
-    db_session: AsyncSession, courier: Courier
-) -> None:
+async def test_snapshot_is_idempotent_per_day(db_session: AsyncSession, courier: Courier) -> None:
     """Running the snapshot twice on the same day updates ONE row (1/dia/courier)."""
     await seed_weights_if_missing(db_session)
     signals = CourierSignals(0.8, 0.8, 0.8, 1.0, 0.75)
@@ -104,9 +102,7 @@ async def test_snapshot_is_idempotent_per_day(
 
 
 @pytest.mark.asyncio
-async def test_snapshot_level_reflects_signals(
-    db_session: AsyncSession, courier: Courier
-) -> None:
+async def test_snapshot_level_reflects_signals(db_session: AsyncSession, courier: Courier) -> None:
     await seed_weights_if_missing(db_session)
     high = await build_snapshot(
         db_session,

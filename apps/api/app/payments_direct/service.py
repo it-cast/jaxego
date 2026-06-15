@@ -31,9 +31,7 @@ class DirectModalityBlockedError(AppError):
     code = "direct_modality_blocked"
 
     def __init__(self) -> None:
-        super().__init__(
-            "Sua modalidade direta está bloqueada por disputas procedentes (RN-027)."
-        )
+        super().__init__("Sua modalidade direta está bloqueada por disputas procedentes (RN-027).")
 
 
 async def confirm_direct_payment(

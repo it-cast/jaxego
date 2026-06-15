@@ -24,9 +24,7 @@ from app.merchants.models import Merchant
 from app.scores.models import CourierScoreSnapshot
 
 
-async def _audit_cross_area(
-    session: AsyncSession, *, actor_id: int, action: str
-) -> None:
+async def _audit_cross_area(session: AsyncSession, *, actor_id: int, action: str) -> None:
     """Record a platform-admin cross-area read (TH-02 — never silent)."""
     await write_audit(
         session,
@@ -41,32 +39,31 @@ async def area_overview(session: AsyncSession, *, actor_id: int) -> list[dict]:
     """Per-area headline counts (couriers/merchants/deliveries). Cross-area → audited."""
     await _audit_cross_area(session, actor_id=actor_id, action="platform.area_overview")
 
-    areas = (
-        (await session.execute(select(Area).where(Area.deleted_at.is_(None))))
-        .scalars()
-        .all()
-    )
-    courier_counts = dict(
-        (
+    areas = (await session.execute(select(Area).where(Area.deleted_at.is_(None)))).scalars().all()
+    courier_counts: dict[int, int] = {
+        row[0]: row[1]
+        for row in (
             await session.execute(
                 select(Courier.area_id, func.count(Courier.id)).group_by(Courier.area_id)
             )
         ).all()
-    )
-    merchant_counts = dict(
-        (
+    }
+    merchant_counts: dict[int, int] = {
+        row[0]: row[1]
+        for row in (
             await session.execute(
                 select(Merchant.area_id, func.count(Merchant.id)).group_by(Merchant.area_id)
             )
         ).all()
-    )
-    delivery_counts = dict(
-        (
+    }
+    delivery_counts: dict[int, int] = {
+        row[0]: row[1]
+        for row in (
             await session.execute(
                 select(Delivery.area_id, func.count(Delivery.id)).group_by(Delivery.area_id)
             )
         ).all()
-    )
+    }
     return [
         {
             "area_id": a.id,

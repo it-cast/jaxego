@@ -66,9 +66,7 @@ def competence_for(moment: datetime) -> str:
 def _previous_competence(now: datetime) -> tuple[str, datetime, datetime]:
     """(competence, since, until) for the month BEFORE `now` (dia 1º close)."""
     now = ensure_aware_utc(now)
-    first_of_this_month = now.replace(
-        day=1, hour=0, minute=0, second=0, microsecond=0
-    )
+    first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     # `since` = first instant of the previous month; `until` = first of this month.
     until = first_of_this_month
     prev_last = first_of_this_month - timedelta(days=1)

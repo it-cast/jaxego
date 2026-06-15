@@ -12,7 +12,7 @@ Formatos (validados contra o código):
 - SAFE2PAY_WEBHOOK_SECRET   : token_urlsafe (HMAC do webhook)
 - RSA_PRIVATE_KEY/PUBLIC    : base64(PEM) single-line (crypto.py aceita PEM ou base64(PEM))
 - VAPID_PRIVATE_KEY         : base64url do escalar privado (32 bytes) — pywebpush from_string
-- VAPID_PUBLIC_KEY          : base64url do ponto público não-comprimido (65 bytes) — applicationServerKey
+- VAPID_PUBLIC_KEY          : base64url do ponto público (65 bytes) — applicationServerKey
 
 Os valores `__PREENCHER__` são de CONTA EXTERNA (você fornece): DATABASE_URL, B2, SES, SMS.
 Safe2Pay fica em sandbox/desligado no piloto direto (DEC-004); ligar com o contrato.
@@ -142,12 +142,12 @@ def main() -> None:
     env_path = Path(__file__).resolve().parents[1] / ".env"
     if env_path.exists():
         print(f"[!] {env_path} ja existe -- NAO sobrescrevi.")
-        print("    Rode com --print para ver os secrets e cole manualmente, ou apague o .env primeiro.")
+        print("    Rode com --print para ver os secrets, ou apague o .env primeiro.")
         return
 
     env_path.write_text(_env_body(secs), encoding="utf-8")
     print(f"[OK] Escrito {env_path}")
-    print("     Proximo: preencha os valores __PREENCHER__ (DATABASE_URL, B2_*, SES_*, SMS opcional).")
+    print("     Proximo: preencha os __PREENCHER__ (DATABASE_URL, B2_*, SES_*).")
     print("     Conferir: nenhum __PREENCHER__ deve sobrar antes de subir a API.")
 
 

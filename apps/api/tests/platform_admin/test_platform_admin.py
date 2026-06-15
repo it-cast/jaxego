@@ -34,9 +34,7 @@ async def enrolled_admin_token(
 
 
 @pytest.mark.asyncio
-async def test_platform_admin_without_totp_is_blocked(
-    auth_client: AsyncClient, seed: Seed
-) -> None:
+async def test_platform_admin_without_totp_is_blocked(auth_client: AsyncClient, seed: Seed) -> None:
     """A platform admin not yet TOTP-enrolled cannot reach platform routes (TH-01)."""
     token = encode_access(seed.platform_admin.id, area_scope=None, role="admin_plataforma")
     resp = await auth_client.get("/v1/platform/overview", headers=bearer(token))
@@ -45,9 +43,7 @@ async def test_platform_admin_without_totp_is_blocked(
 
 
 @pytest.mark.asyncio
-async def test_non_platform_admin_forbidden(
-    auth_client: AsyncClient, seed: Seed
-) -> None:
+async def test_non_platform_admin_forbidden(auth_client: AsyncClient, seed: Seed) -> None:
     """An area admin cannot reach platform routes (TH-04 — privilege escalation)."""
     token = encode_access(seed.admin_a.id, area_scope=seed.area_a.id, role="admin_area")
     resp = await auth_client.get("/v1/platform/overview", headers=bearer(token))
@@ -61,18 +57,12 @@ async def test_overview_audits_cross_area_access(
     enrolled_admin_token: str,
 ) -> None:
     """A cross-area read writes an audit_log row with cross_area_bypass (TH-02)."""
-    resp = await auth_client.get(
-        "/v1/platform/overview", headers=bearer(enrolled_admin_token)
-    )
+    resp = await auth_client.get("/v1/platform/overview", headers=bearer(enrolled_admin_token))
     assert resp.status_code == 200
 
     async with session_factory() as s:
         rows = (
-            (
-                await s.execute(
-                    select(AuditLog).where(AuditLog.action == "platform.area_overview")
-                )
-            )
+            (await s.execute(select(AuditLog).where(AuditLog.action == "platform.area_overview")))
             .scalars()
             .all()
         )

@@ -49,8 +49,10 @@ async def decide(
     """Decide a dispute financially (D-03). procedente → refund/credit + maybe block."""
     # Resolve the dispute's area (platform-admin is cross-area; service audits the action).
     dispute = (
-        await session.execute(select(PaymentDispute).where(PaymentDispute.id == dispute_id))
-    ).scalars().first()
+        (await session.execute(select(PaymentDispute).where(PaymentDispute.id == dispute_id)))
+        .scalars()
+        .first()
+    )
     if dispute is None:
         raise NotFoundError("Disputa não encontrada.")
 

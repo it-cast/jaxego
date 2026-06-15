@@ -32,9 +32,7 @@ async def compute_signals(session: AsyncSession, *, courier_id: int) -> CourierS
     # Ratings average (1..5 → 0..1). Neutral 0.5 prior when there are no ratings yet.
     avg_stars = (
         await session.execute(
-            select(func.avg(CourierRating.stars)).where(
-                CourierRating.courier_id == courier_id
-            )
+            select(func.avg(CourierRating.stars)).where(CourierRating.courier_id == courier_id)
         )
     ).scalar_one_or_none()
     ratings_signal = ((float(avg_stars) - 1.0) / 4.0) if avg_stars is not None else 0.5

@@ -10,9 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.webhooks.models import WebhookDelivery, WebhookEndpoint
 
 
-async def get_endpoint_for_area(
-    session: AsyncSession, *, area_id: int
-) -> WebhookEndpoint | None:
+async def get_endpoint_for_area(session: AsyncSession, *, area_id: int) -> WebhookEndpoint | None:
     """The area's single configured endpoint, or None (D-06)."""
     stmt = select(WebhookEndpoint).where(WebhookEndpoint.area_id == area_id)
     return (await session.execute(stmt)).scalars().first()

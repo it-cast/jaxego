@@ -17,9 +17,7 @@ from tests.suspensions.conftest import SuspensionWorld
 
 
 async def _audit_actions(session: AsyncSession) -> list[str]:
-    return [
-        r[0] for r in (await session.execute(select(AuditLog.action))).all()
-    ]
+    return [r[0] for r in (await session.execute(select(AuditLog.action))).all()]
 
 
 @pytest.mark.asyncio

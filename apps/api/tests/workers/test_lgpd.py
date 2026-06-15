@@ -141,11 +141,7 @@ async def test_anonymizes_inactive_12m(
         from app.audit.models import AuditLog
 
         audits = (
-            (
-                await s.execute(
-                    select(AuditLog).where(AuditLog.action.like("lgpd.anonymize.%"))
-                )
-            )
+            (await s.execute(select(AuditLog).where(AuditLog.action.like("lgpd.anonymize.%"))))
             .scalars()
             .all()
         )
@@ -327,7 +323,5 @@ async def test_delete_ephemeral_expired_refresh_token(
     await delete_ephemeral({"session_factory": session_factory})
 
     async with session_factory() as s:
-        remaining = (
-            await s.execute(select(func.count()).select_from(RefreshToken))
-        ).scalar_one()
+        remaining = (await s.execute(select(func.count()).select_from(RefreshToken))).scalar_one()
         assert remaining == 1  # only the live token survives

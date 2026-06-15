@@ -112,7 +112,5 @@ async def test_sla_job_is_idempotent(
     assert second == 0  # already reverted — not touched again
 
     async with session_factory() as s:
-        count = len(
-            (await s.execute(select(SuspensionAppeal))).scalars().all()
-        )
+        count = len((await s.execute(select(SuspensionAppeal))).scalars().all())
         assert count == 1

@@ -174,8 +174,10 @@ async def test_procedente_records_adjustment_and_audits(
 
     async with session_factory() as s:
         audits = (
-            await s.execute(select(AuditLog).where(AuditLog.action == "dispute.decided"))
-        ).scalars().all()
+            (await s.execute(select(AuditLog).where(AuditLog.action == "dispute.decided")))
+            .scalars()
+            .all()
+        )
         assert len(audits) == 1
 
 
@@ -312,9 +314,7 @@ async def test_procedentes_outside_window_do_not_block(
 
 
 @pytest.mark.asyncio
-async def test_blocked_courier_cannot_confirm_direct(
-    dispute_seed, session_factory
-) -> None:
+async def test_blocked_courier_cannot_confirm_direct(dispute_seed, session_factory) -> None:
     from app.payments_direct.service import DirectModalityBlockedError, confirm_direct_payment
 
     now = datetime(2026, 5, 1, 12, 0, tzinfo=UTC)

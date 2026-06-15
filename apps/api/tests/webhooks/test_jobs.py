@@ -61,9 +61,7 @@ async def _make_pending_webhook(public_api_seed, session_factory) -> int:
         await webhook_service.configure_endpoint(
             s, area_id=public_api_seed.area_a_id, url="https://1.1.1.1/webhook", events=[]
         )
-        endpoint = await __import_repo().get_endpoint_for_area(
-            s, area_id=public_api_seed.area_a_id
-        )
+        endpoint = await __import_repo().get_endpoint_for_area(s, area_id=public_api_seed.area_a_id)
         row = WebhookDelivery(
             area_id=public_api_seed.area_a_id,
             endpoint_id=endpoint.id,
