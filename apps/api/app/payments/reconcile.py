@@ -49,9 +49,7 @@ async def reconcile(
         # Phase 15 (D-05): paid courier repasses (withdrawals) also appear on the extrato.
         from app.withdrawals import reconcile_repo
 
-        payouts = await reconcile_repo.paid_withdrawals_between(
-            session, since=since, until=until
-        )
+        payouts = await reconcile_repo.paid_withdrawals_between(session, since=since, until=until)
 
     # The local ledger side keyed by Safe2Pay transaction id (charges + payouts).
     local_by_tx: dict[str, int] = {}

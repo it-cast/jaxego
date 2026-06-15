@@ -40,9 +40,7 @@ class WithdrawalBelowMinimumError(AppError):
 
     def __init__(self, minimum_cents: int) -> None:
         self.minimum_cents = minimum_cents
-        super().__init__(
-            f"O valor mínimo para saque é de R$ {minimum_cents / 100:.2f}."
-        )
+        super().__init__(f"O valor mínimo para saque é de R$ {minimum_cents / 100:.2f}.")
 
 
 class InsufficientBalanceError(AppError):
@@ -55,13 +53,9 @@ class InsufficientBalanceError(AppError):
         super().__init__("Saldo insuficiente para o saque solicitado.")
 
 
-async def available_balance(
-    session: AsyncSession, *, area_id: int, courier_id: int
-) -> int:
+async def available_balance(session: AsyncSession, *, area_id: int, courier_id: int) -> int:
     """The courier's withdrawable balance in cents (locks the released holds — TH-02)."""
-    return await repo.available_balance_cents(
-        session, area_id=area_id, courier_id=courier_id
-    )
+    return await repo.available_balance_cents(session, area_id=area_id, courier_id=courier_id)
 
 
 async def request_withdrawal(
@@ -92,9 +86,7 @@ async def request_withdrawal(
         raise WithdrawalBelowMinimumError(settings.withdrawal_min_cents)
 
     # Balance under FOR UPDATE on the released holds (TH-02 — serialise concurrent saques).
-    balance = await repo.available_balance_cents(
-        session, area_id=area_id, courier_id=courier_id
-    )
+    balance = await repo.available_balance_cents(session, area_id=area_id, courier_id=courier_id)
     if amount_cents > balance:
         raise InsufficientBalanceError()
 

@@ -44,9 +44,7 @@ async def non_failed_withdrawals(
     return list((await session.execute(stmt)).scalars().all())
 
 
-async def get_by_reference(
-    session: AsyncSession, *, reference: str
-) -> Withdrawal | None:
+async def get_by_reference(session: AsyncSession, *, reference: str) -> Withdrawal | None:
     """Load a withdrawal by its idempotency reference (UNIQUE — TH-02)."""
     stmt = select(Withdrawal).where(Withdrawal.reference == reference)
     return (await session.execute(stmt)).scalars().first()
@@ -91,9 +89,7 @@ async def withdrawals_for_courier(
     return list((await session.execute(stmt)).scalars().all())
 
 
-async def available_balance_cents(
-    session: AsyncSession, *, area_id: int, courier_id: int
-) -> int:
+async def available_balance_cents(session: AsyncSession, *, area_id: int, courier_id: int) -> int:
     """Released escrow minus non-failed withdrawals, in integer cents (locks the holds)."""
     holds = await released_holds_for_update(session, area_id=area_id, courier_id=courier_id)
     withdrawn = await non_failed_withdrawals(session, area_id=area_id, courier_id=courier_id)

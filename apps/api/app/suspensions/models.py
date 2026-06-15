@@ -71,9 +71,7 @@ class AreaRevenueShare(Base, AreaScopedMixin, TimestampMixin):
     __tablename__ = "area_revenue_share"
     __table_args__ = (
         # One row per (area, effective_from) — versioned config (ADR-103 style).
-        UniqueConstraint(
-            "area_id", "effective_from", name="uq_area_revenue_share_area_effective"
-        ),
+        UniqueConstraint("area_id", "effective_from", name="uq_area_revenue_share_area_effective"),
         Base.__table_args__,
     )
 

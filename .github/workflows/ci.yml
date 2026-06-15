@@ -87,6 +87,10 @@ jobs:
           enable-cache: true
       - name: Install (frozen lockfile)
         run: uv sync --frozen
+      - name: Habilita criação de trigger (log_bin_trust_function_creators)
+        # O service MySQL liga binlog e o user de app não tem SUPER; as triggers
+        # append-only (RN-012) exigem esta flag. Setada via root (CI only).
+        run: mysql -h 127.0.0.1 -P 3306 -uroot -pci-root -e "SET GLOBAL log_bin_trust_function_creators=1;"
       - name: Apply migrations (catches broken migration chain)
         run: uv run alembic upgrade head
       - name: Run tests (health + sentry + naive-datetime guard)
@@ -119,9 +123,12 @@ jobs:
         run: npm run build
       - name: Zero hex hardcoded (design tokens integrity)
         run: |
-          # Exceções técnicas conhecidas: #000 em CSS mask (offer-timer) e theme-color do manifest.
+          # Camada de tokens (src/styles/) DEFINE as cores — hex ali é a fonte canônica.
+          # Exceções técnicas: #000 em CSS mask (offer-timer), theme-color do manifest, hex em comentário.
           HITS=$(grep -rnE "#[0-9A-Fa-f]{3,6}\b" src --include="*.scss" \
-            | grep -viE "mask:|radial-gradient|theme-color" | grep -vE "//|/\*" | wc -l)
+            | grep -v "src/styles/" \
+            | grep -viE "mask:|radial-gradient|theme-color" \
+            | grep -vE "//|/\*" | wc -l)
           echo "hex suspeitos: $HITS"; test "$HITS" -eq 0
       - name: Lighthouse CI (perf budget — informativo)
         run: npx --yes @lhci/cli autorun --config=../../tooling/ci/lighthouserc.json || true

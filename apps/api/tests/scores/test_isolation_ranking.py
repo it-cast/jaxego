@@ -23,15 +23,11 @@ def _imports_module(py_file: Path, forbidden_prefix: str) -> bool:
     tree = ast.parse(py_file.read_text(encoding="utf-8"))
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module:
-            if node.module == forbidden_prefix or node.module.startswith(
-                forbidden_prefix + "."
-            ):
+            if node.module == forbidden_prefix or node.module.startswith(forbidden_prefix + "."):
                 return True
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name == forbidden_prefix or alias.name.startswith(
-                    forbidden_prefix + "."
-                ):
+                if alias.name == forbidden_prefix or alias.name.startswith(forbidden_prefix + "."):
                     return True
     return False
 

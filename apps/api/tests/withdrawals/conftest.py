@@ -82,9 +82,7 @@ async def withdrawal_seed(session_factory: async_sessionmaker[AsyncSession]) -> 
         await s.flush()
 
         courier = await _courier(s, area_id=area_a.id, email="c@example.com", cpf="39053344705")
-        other = await _courier(
-            s, area_id=area_b.id, email="o@example.com", cpf="11144477735"
-        )
+        other = await _courier(s, area_id=area_b.id, email="o@example.com", cpf="11144477735")
 
         # Released balance for the main courier: 1000 + 1500 = 2500 cents.
         for amt, did in ((1000, 101), (1500, 102)):

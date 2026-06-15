@@ -79,9 +79,7 @@ async def list_invoice_lines(
     invoice_id: int, scope: MerchantScopeDep, session: SessionDep
 ) -> list[InvoiceLineRow]:
     """List the line items of one invoice (tela 15). Area-scoped (IDOR → 404)."""
-    invoice = await repo.get_invoice_for_area(
-        session, invoice_id=invoice_id, area_id=scope.area_id
-    )
+    invoice = await repo.get_invoice_for_area(session, invoice_id=invoice_id, area_id=scope.area_id)
     if invoice is None or invoice.merchant_id != scope.merchant_id:
         raise NotFoundError("Fatura não encontrada.")
     lines = await repo.line_items_for_invoice(session, invoice_id=invoice.id)
@@ -97,9 +95,7 @@ async def list_invoice_lines(
 
 
 @router.post("/{invoice_id}/pay", response_model=InvoiceRow)
-async def pay_invoice(
-    invoice_id: int, scope: MerchantScopeDep, session: SessionDep
-) -> InvoiceRow:
+async def pay_invoice(invoice_id: int, scope: MerchantScopeDep, session: SessionDep) -> InvoiceRow:
     """Pay an open/overdue invoice via the PaymentPort (TH-07). Area-scoped (IDOR → 404)."""
     invoice = await service.pay_invoice(
         session,

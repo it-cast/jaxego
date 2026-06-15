@@ -109,12 +109,8 @@ def upgrade() -> None:
         ),
         **_TABLE_KW,
     )
-    op.create_index(
-        op.f("ix_api_idempotency_keys_area_id"), "api_idempotency_keys", ["area_id"]
-    )
-    op.create_index(
-        "ix_api_idempotency_keys_expires_at", "api_idempotency_keys", ["expires_at"]
-    )
+    op.create_index(op.f("ix_api_idempotency_keys_area_id"), "api_idempotency_keys", ["area_id"])
+    op.create_index("ix_api_idempotency_keys_expires_at", "api_idempotency_keys", ["expires_at"])
 
     # --- webhook_endpoints (one per area — URL + signing secret + events) ---
     op.create_table(
@@ -176,9 +172,7 @@ def upgrade() -> None:
         "webhook_deliveries",
         ["status", "next_retry_at"],
     )
-    op.create_index(
-        "ix_webhook_deliveries_endpoint_id", "webhook_deliveries", ["endpoint_id"]
-    )
+    op.create_index("ix_webhook_deliveries_endpoint_id", "webhook_deliveries", ["endpoint_id"])
 
 
 def downgrade() -> None:

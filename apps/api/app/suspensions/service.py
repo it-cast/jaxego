@@ -261,10 +261,7 @@ async def list_disputes(
 ) -> list[PaymentDispute]:
     """List payment disputes (Phase 9 primitive) within scope (cursor-friendly)."""
     stmt = (
-        select(PaymentDispute)
-        .order_by(PaymentDispute.opened_at.desc())
-        .limit(limit)
-        .offset(offset)
+        select(PaymentDispute).order_by(PaymentDispute.opened_at.desc()).limit(limit).offset(offset)
     )
     if area_id is not None:
         stmt = stmt.where(PaymentDispute.area_id == area_id)
@@ -336,9 +333,7 @@ async def seed_revenue_share_if_missing(session: AsyncSession, *, area_id: int) 
         await session.flush()
 
 
-async def current_revenue_share(
-    session: AsyncSession, *, area_id: int
-) -> AreaRevenueShare | None:
+async def current_revenue_share(session: AsyncSession, *, area_id: int) -> AreaRevenueShare | None:
     """The latest effective revenue-share config for an area (no money — config only)."""
     stmt = (
         select(AreaRevenueShare)

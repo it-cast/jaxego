@@ -356,9 +356,7 @@ async def delete_ephemeral(ctx: dict[str, Any]) -> int:
     count = 0
     async with session_factory() as session:
         # --- Expired refresh tokens (consumed/expired credentials). ---
-        result = await session.execute(
-            delete(RefreshToken).where(RefreshToken.expires_at < cutoff)
-        )
+        result = await session.execute(delete(RefreshToken).where(RefreshToken.expires_at < cutoff))
         count += result.rowcount or 0
 
         # --- Abandoned signups: inactive, never anonymised, no attachments. ---
@@ -394,18 +392,14 @@ async def delete_ephemeral(ctx: dict[str, Any]) -> int:
                 ).scalar_one()
                 has_courier = (
                     await session.execute(
-                        select(func.count())
-                        .select_from(Courier)
-                        .where(Courier.user_id == user.id)
+                        select(func.count()).select_from(Courier).where(Courier.user_id == user.id)
                     )
                 ).scalar_one()
                 if has_area or has_merchant or has_courier:
                     continue  # attached → not an abandoned signup
                 if await _user_has_legal_retention(session, user_id=user.id):
                     continue  # defensive — financial trail
-                await session.execute(
-                    delete(RefreshToken).where(RefreshToken.user_id == user.id)
-                )
+                await session.execute(delete(RefreshToken).where(RefreshToken.user_id == user.id))
                 await session.delete(user)
                 count += 1
             except Exception:  # noqa: BLE001 — one bad row never derails the sweep

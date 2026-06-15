@@ -17,9 +17,7 @@ def _bearer(jwt: str) -> dict[str, str]:
 
 
 @pytest.mark.asyncio
-async def test_create_key_returns_secret_once(
-    public_api_seed, auth_client: AsyncClient
-) -> None:
+async def test_create_key_returns_secret_once(public_api_seed, auth_client: AsyncClient) -> None:
     resp = await auth_client.post(
         f"/v1/admin/areas/{public_api_seed.area_a_id}/api-keys",
         json={"name": "Integração X", "scopes": ["deliveries:write"]},
@@ -31,9 +29,7 @@ async def test_create_key_returns_secret_once(
 
 
 @pytest.mark.asyncio
-async def test_list_never_leaks_secret(
-    public_api_seed, auth_client: AsyncClient
-) -> None:
+async def test_list_never_leaks_secret(public_api_seed, auth_client: AsyncClient) -> None:
     resp = await auth_client.get(
         f"/v1/admin/areas/{public_api_seed.area_a_id}/api-keys",
         headers=_bearer(public_api_seed.admin_a_jwt),
@@ -47,9 +43,7 @@ async def test_list_never_leaks_secret(
 
 
 @pytest.mark.asyncio
-async def test_cross_area_admin_is_403(
-    public_api_seed, auth_client: AsyncClient
-) -> None:
+async def test_cross_area_admin_is_403(public_api_seed, auth_client: AsyncClient) -> None:
     # Area B admin trying to manage Area A keys → 403 (A01).
     resp = await auth_client.get(
         f"/v1/admin/areas/{public_api_seed.area_a_id}/api-keys",
@@ -59,9 +53,7 @@ async def test_cross_area_admin_is_403(
 
 
 @pytest.mark.asyncio
-async def test_revoke_key_flips_status(
-    public_api_seed, auth_client: AsyncClient
-) -> None:
+async def test_revoke_key_flips_status(public_api_seed, auth_client: AsyncClient) -> None:
     created = await auth_client.post(
         f"/v1/admin/areas/{public_api_seed.area_a_id}/api-keys",
         json={"name": "To Revoke", "scopes": ["deliveries:write"]},

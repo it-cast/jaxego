@@ -81,12 +81,8 @@ def upgrade() -> None:
         **_TABLE_KW,
     )
     op.create_index(op.f("ix_platform_invoices_area_id"), "platform_invoices", ["area_id"])
-    op.create_index(
-        "ix_platform_invoices_merchant_id", "platform_invoices", ["merchant_id"]
-    )
-    op.create_index(
-        "ix_platform_invoices_status_due_at", "platform_invoices", ["status", "due_at"]
-    )
+    op.create_index("ix_platform_invoices_merchant_id", "platform_invoices", ["merchant_id"])
+    op.create_index("ix_platform_invoices_status_due_at", "platform_invoices", ["status", "due_at"])
 
     # --- invoice_line_items ---
     op.create_table(
@@ -108,9 +104,7 @@ def upgrade() -> None:
             ondelete="RESTRICT",
             onupdate="RESTRICT",
         ),
-        sa.UniqueConstraint(
-            "invoice_id", "delivery_id", name="uq_invoice_line_items_inv_delivery"
-        ),
+        sa.UniqueConstraint("invoice_id", "delivery_id", name="uq_invoice_line_items_inv_delivery"),
         **_TABLE_KW,
     )
     op.create_index(op.f("ix_invoice_line_items_area_id"), "invoice_line_items", ["area_id"])
@@ -176,14 +170,10 @@ def upgrade() -> None:
     )
 
     # --- payment_disputes: financial-decision columns (Phase 15 — D-03) ---
-    op.add_column(
-        "payment_disputes", sa.Column("decision", sa.String(length=16), nullable=True)
-    )
+    op.add_column("payment_disputes", sa.Column("decision", sa.String(length=16), nullable=True))
     op.add_column("payment_disputes", sa.Column("decided_at", _dt(), nullable=True))
     op.add_column("payment_disputes", sa.Column("decided_by", sa.BigInteger(), nullable=True))
-    op.add_column(
-        "payment_disputes", sa.Column("adjustment_cents", sa.Integer(), nullable=True)
-    )
+    op.add_column("payment_disputes", sa.Column("adjustment_cents", sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:

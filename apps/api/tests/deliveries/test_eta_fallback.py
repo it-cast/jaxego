@@ -29,9 +29,7 @@ class _FakeRouting:
         self._results = results
         self.calls = 0
 
-    async def route(
-        self, *, origin: tuple[float, float], dest: tuple[float, float]
-    ) -> RouteResult:
+    async def route(self, *, origin: tuple[float, float], dest: tuple[float, float]) -> RouteResult:
         self.calls += 1
         item = self._results.pop(0) if self._results else RouteResult(0, 0, degraded=True)
         if isinstance(item, Exception):
@@ -83,9 +81,7 @@ async def test_raising_adapter_still_falls_back() -> None:
 async def test_breaker_opens_and_short_circuits() -> None:
     clock = _Clock()
     # 3 consecutive degraded calls open the breaker (threshold=3).
-    routing = _FakeRouting(
-        results=[RouteResult(0, 0, degraded=True) for _ in range(3)]
-    )
+    routing = _FakeRouting(results=[RouteResult(0, 0, degraded=True) for _ in range(3)])
     resolver = EtaResolver(routing, failure_threshold=3, cooloff_seconds=30.0, clock=clock)
 
     for _ in range(3):

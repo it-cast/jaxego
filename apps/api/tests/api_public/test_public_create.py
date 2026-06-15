@@ -47,7 +47,8 @@ async def test_create_succeeds_and_returns_delivery(
     public_api_seed, auth_client: AsyncClient
 ) -> None:
     resp = await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers=_headers(public_api_seed.token),
     )
     assert resp.status_code == 201, resp.text
@@ -62,11 +63,13 @@ async def test_idempotency_replay_returns_same_response(
     public_api_seed, auth_client: AsyncClient
 ) -> None:
     first = await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers=_headers(public_api_seed.token, "same-key"),
     )
     second = await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers=_headers(public_api_seed.token, "same-key"),
     )
     assert first.status_code == 201
@@ -81,7 +84,8 @@ async def test_idempotency_same_key_different_body_is_409(
     public_api_seed, auth_client: AsyncClient
 ) -> None:
     await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers=_headers(public_api_seed.token, "conflict-key"),
     )
     resp = await auth_client.post(
@@ -94,11 +98,10 @@ async def test_idempotency_same_key_different_body_is_409(
 
 
 @pytest.mark.asyncio
-async def test_missing_idempotency_key_is_422(
-    public_api_seed, auth_client: AsyncClient
-) -> None:
+async def test_missing_idempotency_key_is_422(public_api_seed, auth_client: AsyncClient) -> None:
     resp = await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers=_headers(public_api_seed.token, idem=None),
     )
     assert resp.status_code == 422
@@ -107,7 +110,8 @@ async def test_missing_idempotency_key_is_422(
 @pytest.mark.asyncio
 async def test_missing_key_is_stable_401(public_api_seed, auth_client: AsyncClient) -> None:
     resp = await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers={"Idempotency-Key": "x"},
     )
     assert resp.status_code == 401
@@ -128,13 +132,12 @@ async def test_cross_area_store_is_404(public_api_seed, auth_client: AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_cross_area_merchant_id_is_404(
-    public_api_seed, auth_client: AsyncClient
-) -> None:
+async def test_cross_area_merchant_id_is_404(public_api_seed, auth_client: AsyncClient) -> None:
     resp = await auth_client.post(
         "/v1/public/deliveries",
         json=_body(
-            public_api_seed, merchant_external_ref=None,
+            public_api_seed,
+            merchant_external_ref=None,
             merchant_id=public_api_seed.other_merchant_id,
         ),
         headers=_headers(public_api_seed.token),
@@ -161,7 +164,8 @@ async def test_rate_limit_returns_429_with_retry_after(
     for _ in range(public_create_limiter._limit):
         public_create_limiter.check(f"api_key:{public_api_seed.api_key_id}")
     resp = await auth_client.post(
-        "/v1/public/deliveries", json=_body(public_api_seed),
+        "/v1/public/deliveries",
+        json=_body(public_api_seed),
         headers=_headers(public_api_seed.token, "rl-key"),
     )
     assert resp.status_code == 429

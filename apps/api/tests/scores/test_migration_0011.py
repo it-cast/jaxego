@@ -31,9 +31,7 @@ def _alembic_cfg() -> Config:
 
     cfg = Config("alembic.ini")
     # Alembic uses a sync driver; strip the async driver suffix if present.
-    url = settings.database_url.replace("+aiomysql", "+pymysql").replace(
-        "+asyncmy", "+pymysql"
-    )
+    url = settings.database_url.replace("+aiomysql", "+pymysql").replace("+asyncmy", "+pymysql")
     cfg.set_main_option("sqlalchemy.url", url)
     return cfg
 
@@ -50,9 +48,7 @@ def test_migration_0011_round_trips() -> None:
 
     from app.core.config import settings
 
-    url = settings.database_url.replace("+aiomysql", "+pymysql").replace(
-        "+asyncmy", "+pymysql"
-    )
+    url = settings.database_url.replace("+aiomysql", "+pymysql").replace("+asyncmy", "+pymysql")
     engine = sa.create_engine(url)
     insp = sa.inspect(engine)
     tables_after_down = set(insp.get_table_names())

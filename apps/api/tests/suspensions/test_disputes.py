@@ -20,9 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tests.suspensions.conftest import SuspensionWorld
 
 
-async def _make_dispute(
-    db_session: AsyncSession, world: SuspensionWorld
-) -> PaymentDispute:
+async def _make_dispute(db_session: AsyncSession, world: SuspensionWorld) -> PaymentDispute:
     nbhd = Neighborhood(area_id=world.area_id, name="Centro", is_informal=False)
     db_session.add(nbhd)
     await db_session.flush()

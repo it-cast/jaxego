@@ -54,9 +54,7 @@ async def create_public_delivery(
         raise ValidationAppError("O cabeçalho Idempotency-Key é obrigatório.")
 
     # Per-key rate limit → 429 with Retry-After (D-05 / TH-08).
-    public_create_limiter.check(
-        f"api_key:{scope.api_key_id}", retry_after=_RETRY_AFTER_SECONDS
-    )
+    public_create_limiter.check(f"api_key:{scope.api_key_id}", retry_after=_RETRY_AFTER_SECONDS)
 
     status_code, result, replayed = await service.create_public_delivery(
         session,

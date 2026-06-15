@@ -21,6 +21,7 @@ shape is implicit — the log carries `eta_source` and metrics, not addresses).
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Literal
 
@@ -66,13 +67,13 @@ class EtaResolver:
         *,
         failure_threshold: int = _FAILURE_THRESHOLD,
         cooloff_seconds: float = _COOLOFF_SECONDS,
-        clock: object | None = None,
+        clock: Callable[[], float] | None = None,
     ) -> None:
         self._routing = routing
         self._failure_threshold = failure_threshold
         self._cooloff_seconds = cooloff_seconds
         # `clock` is an injectable monotonic time source (tests control cool-off).
-        self._now = clock if callable(clock) else time.monotonic
+        self._now: Callable[[], float] = clock if clock is not None else time.monotonic
         self._consecutive_failures = 0
         self._opened_at: float | None = None
 
@@ -97,9 +98,7 @@ class EtaResolver:
             self._opened_at = self._now()
             logger.warning("eta.breaker_opened", consecutive_failures=self._consecutive_failures)
 
-    async def resolve(
-        self, *, origin: tuple[float, float], dest: tuple[float, float]
-    ) -> EtaResult:
+    async def resolve(self, *, origin: tuple[float, float], dest: tuple[float, float]) -> EtaResult:
         """Resolve the road ETA. NEVER raises; always returns a usable result (D-04)."""
         # Breaker OPEN → short-circuit to the haversine fallback (no OSRM call).
         if self.breaker_open:

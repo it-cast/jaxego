@@ -138,8 +138,9 @@ async def attempt_delivery(session, *, webhook_delivery_id: int, now: datetime) 
 
     row = await repo.get_delivery(session, delivery_pk=webhook_delivery_id)
     if row is None or row.status != "pending":
-        return AttemptOutcome(status=(row.status if row else "missing"), next_retry_at=None,
-                              terminal=True)
+        return AttemptOutcome(
+            status=(row.status if row else "missing"), next_retry_at=None, terminal=True
+        )
 
     from app.webhooks.models import WebhookEndpoint
 

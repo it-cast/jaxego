@@ -107,9 +107,7 @@ async def list_disputes(
     offset: int = Query(default=0, ge=0),
 ) -> list[DisputeRead]:
     """List the area's payment disputes (Phase 9 primitive)."""
-    disputes = await service.list_disputes(
-        session, area_id=scope, limit=limit, offset=offset
-    )
+    disputes = await service.list_disputes(session, area_id=scope, limit=limit, offset=offset)
     return [DisputeRead.model_validate(d) for d in disputes]
 
 

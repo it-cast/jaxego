@@ -34,6 +34,4 @@ async def suspension_world(db_session: AsyncSession, seed: Seed) -> SuspensionWo
     db_session.add(courier)
     await db_session.flush()
     await db_session.commit()
-    return SuspensionWorld(
-        area_id=seed.area_a.id, courier_id=courier.id, admin_id=seed.admin_a.id
-    )
+    return SuspensionWorld(area_id=seed.area_a.id, courier_id=courier.id, admin_id=seed.admin_a.id)
