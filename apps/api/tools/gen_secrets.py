@@ -141,14 +141,14 @@ def main() -> None:
 
     env_path = Path(__file__).resolve().parents[1] / ".env"
     if env_path.exists():
-        print(f"⚠  {env_path} já existe — NÃO sobrescrevi.")
-        print("   Rode com --print para ver os secrets e cole manualmente, ou apague o .env primeiro.")
+        print(f"[!] {env_path} ja existe -- NAO sobrescrevi.")
+        print("    Rode com --print para ver os secrets e cole manualmente, ou apague o .env primeiro.")
         return
 
     env_path.write_text(_env_body(secs), encoding="utf-8")
-    print(f"✓ Escrito {env_path}")
-    print("  Próximo: preencha os valores __PREENCHER__ (DATABASE_URL, B2_*, SES_*, SMS opcional).")
-    print("  Conferir: nenhum __PREENCHER__ deve sobrar antes de subir a API.")
+    print(f"[OK] Escrito {env_path}")
+    print("     Proximo: preencha os valores __PREENCHER__ (DATABASE_URL, B2_*, SES_*, SMS opcional).")
+    print("     Conferir: nenhum __PREENCHER__ deve sobrar antes de subir a API.")
 
 
 if __name__ == "__main__":
