@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from typing import Literal, cast
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas.models import Area
@@ -453,3 +453,31 @@ async def review_document(
         )
 
     return doc, cast(CourierStatus, courier.status)
+
+
+async def list_area_couriers(
+    session: AsyncSession,
+    *,
+    area_id: int | None,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[Courier], int]:
+    """List couriers in the admin's area (F2.0 — KYC queue + courier list).
+
+    Area in the WHERE clause (TH-09). `area_id is None` is the platform-admin
+    cross-area bypass (audited at the caller). Optional `status` filter powers the
+    KYC queue (status='pending_kyc'). Single query + COUNT, no N+1.
+    """
+    base = select(Courier).where(Courier.deleted_at.is_(None))
+    count_stmt = select(func.count(Courier.id)).where(Courier.deleted_at.is_(None))
+    if area_id is not None:
+        base = base.where(Courier.area_id == area_id)
+        count_stmt = count_stmt.where(Courier.area_id == area_id)
+    if status is not None:
+        base = base.where(Courier.status == status)
+        count_stmt = count_stmt.where(Courier.status == status)
+    base = base.order_by(Courier.created_at.desc()).limit(limit).offset(offset)
+    rows = list((await session.execute(base)).scalars().all())
+    total = int((await session.execute(count_stmt)).scalar_one())
+    return rows, total

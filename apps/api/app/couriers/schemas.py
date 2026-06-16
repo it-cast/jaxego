@@ -232,3 +232,35 @@ class AvailabilityResponse(BaseModel):
 
     is_online: bool
     busy: bool
+
+
+def mask_cpf_display(cpf: str) -> str:
+    """Mask a CPF for admin display: keep first 3 + last 2 (123.***.***-09)."""
+    digits = normalize_cpf(cpf)
+    if len(digits) < 5:
+        return "***"
+    return f"{digits[:3]}.***.***-{digits[-2:]}"
+
+
+class CourierAdminListItem(BaseModel):
+    """One courier row in the area admin's queue/list (F2.0). CPF masked (TH-05)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    full_name: str
+    cpf_masked: str
+    status: str
+    kyc_level: str
+    created_at: str | None
+
+
+class CourierAdminListOut(BaseModel):
+    """Paginated area courier list (single query + COUNT — no N+1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[CourierAdminListItem]
+    total: int
+    limit: int
+    offset: int

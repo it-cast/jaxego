@@ -31,6 +31,8 @@ from app.couriers.models import Courier
 from app.couriers.schemas import (
     AvailabilityBody,
     AvailabilityResponse,
+    CourierAdminListItem,
+    CourierAdminListOut,
     CourierSignupBody,
     CourierSignupResponse,
     CoverageBody,
@@ -45,6 +47,7 @@ from app.couriers.schemas import (
     PricingBody,
     PricingRowRead,
     ViewUrlResponse,
+    mask_cpf_display,
 )
 from app.couriers.view import view_document_url
 from app.db.session import get_session
@@ -371,6 +374,41 @@ async def get_courier_delivery(
 # ---------------------------------------------------------------------------
 # Admin of the area — review item-a-item (TH-09: area in the WHERE clause).
 # ---------------------------------------------------------------------------
+@admin_router.get("", response_model=CourierAdminListOut)
+async def list_area_couriers(
+    session: SessionDep,
+    admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
+    scope: AreaScopeDep,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> CourierAdminListOut:
+    """List couriers in the area (F2.0). `status=pending_kyc` powers the KYC queue;
+    no filter lists everyone. Area in the WHERE clause (TH-09); platform admin
+    (scope=None) sees all areas. CPF masked (TH-05)."""
+    rows, total = await service.list_area_couriers(
+        session,
+        area_id=scope,
+        status=status,
+        limit=min(limit, 100),
+        offset=max(offset, 0),
+    )
+    items = [
+        CourierAdminListItem(
+            id=c.id,
+            full_name=c.full_name,
+            cpf_masked=mask_cpf_display(c.cpf),
+            status=c.status,
+            kyc_level=c.kyc_level,
+            created_at=c.created_at.isoformat() if c.created_at else None,
+        )
+        for c in rows
+    ]
+    return CourierAdminListOut(
+        items=items, total=total, limit=min(limit, 100), offset=max(offset, 0)
+    )
+
+
 @admin_router.get(
     "/{courier_id}/documents/{document_id}/view-url",
     response_model=ViewUrlResponse,
