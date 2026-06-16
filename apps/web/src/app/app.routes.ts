@@ -73,6 +73,14 @@ export const routes: Routes = [
             (m) => m.ComprovacaoPage,
           ),
       },
+      // MR-1 F1.3b: delivery completed (tela tpl-c-done).
+      {
+        path: 'entrega/:id/concluida',
+        loadComponent: () =>
+          import('../features/entregador/concluida/concluida.page').then(
+            (m) => m.EntregadorConcluidaPage,
+          ),
+      },
       // Phase 15 (tela 16 / D-06): extrato/saldo + solicitar saque (REQ-038).
       {
         path: 'saldo',

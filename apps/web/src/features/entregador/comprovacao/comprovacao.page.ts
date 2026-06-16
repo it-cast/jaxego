@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   DirectPaymentConfirmComponent,
   DirectPaymentOutcome,
@@ -63,6 +63,7 @@ import { ProofKind, ProofService } from './proof.service';
 })
 export class ComprovacaoPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly proof = inject(ProofService);
   protected readonly pending = inject(PendingUploadService);
 
@@ -117,6 +118,13 @@ export class ComprovacaoPage implements OnInit {
       this.state.set(result.state);
       this.geofence.set(result.geofence_ok ? 'ok' : result.low_confidence ? 'low_confidence' : 'out');
       this.lowConfidence.set(result.low_confidence);
+      // Wire-through (F1.3): pickup → back to the active delivery (now COLETADA);
+      // refusal → done screen; delivery waits for the direct-payment confirm.
+      if (this.kind === 'pickup') {
+        void this.router.navigate(['/entregador/entrega-ativa']);
+      } else if (this.kind === 'refusal') {
+        void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
+      }
     } catch {
       this.uploadState.set('error');
       this.error.set('Não foi possível enviar a foto agora. Tente de novo.');
@@ -126,5 +134,6 @@ export class ComprovacaoPage implements OnInit {
 
   protected async onPaymentConfirm(outcome: DirectPaymentOutcome): Promise<void> {
     await this.proof.confirmPayment(this.deliveryId, outcome, null);
+    void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
   }
 }

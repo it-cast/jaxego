@@ -50,8 +50,9 @@ A superfície mais quebrada. Backend pronto: `dispatch/offers/*` (accept/decline
       courier self-profile (registrar como F1.6 backend).
 - [x] **F1.5 — Lista real + consolida ganhos→saldo**: `entregas.page` real;
       stub `ganhos` removido; tab aponta para `/saldo`.
-- [ ] **F1.3b — Tela de entrega concluída** (`tpl-c-done`): sucesso + resumo
-      (valor recebido, taxa, +score) + CTAs (voltar/nova).
+- [x] **F1.3b — Tela de entrega concluída** (`tpl-c-done`): sucesso + resumo
+      (valor recebido, taxa) + CTA voltar. Comprovação fiada: pickup→entrega ativa;
+      delivery+pgto→concluída; recusa→concluída. ng build OK.
 - [ ] **F1.6 — Backend: courier self-profile** — `GET /v1/couriers/{id}/profile`
       (nome, CPF mascarado, veículo, documentos, chave PIX) p/ completar o perfil + UI.
 - **Aceite:** loop online→oferta→aceite→coleta→foto→entrega navega ponta a ponta.
