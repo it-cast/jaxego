@@ -84,9 +84,12 @@ Backend: `platform_admin/*`, `invoices`, admin KYC (`couriers/admin`), `proofs/m
 
 Backend: `areas` (POST/PATCH/archive — sem UI), `platform_admin/areas/{id}/revenue-share`.
 
-- [ ] **F3.1 — CRUD de área**: criar/editar/arquivar (a tela que não existe).
-- [ ] **F3.2 — Revenue-share + designar admin de área** (fecha "criei área → quem opera").
-- **Aceite:** crio área nova, designo admin, defino revenue-share pela UI, auditado.
+- [x] **F3.1 — CRUD de área**: criar/editar/arquivar em `/plataforma/areas` +
+      link no shell. Sobre `/v1/areas` (backend já existia). ng build OK.
+- [x] **F3.2 — Revenue-share**: % por área (`setRevenueShare`) na mesma tela.
+- [ ] **F3.3 — Designar admin de área**: precisa endpoint backend para vincular
+      `area_admins` (não existe) + UI. _Gap descoberto._
+- **Aceite:** crio área nova e defino repasse pela UI ✅. Designar admin = F3.3.
 
 ---
 
