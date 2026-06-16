@@ -143,6 +143,11 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     items_description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     items_quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     declared_value_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Package size/weight (MG-1) — optional; drives multi-vehicle parity.
+    weight_g: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    length_cm: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    width_cm: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height_cm: Mapped[int | None] = mapped_column(Integer, nullable=True)
     reference_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
 

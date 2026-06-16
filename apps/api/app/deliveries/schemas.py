@@ -73,6 +73,11 @@ class CreateDeliveryBody(BaseModel):
     items_description: str | None = Field(default=None, max_length=500)
     items_quantity: int = Field(default=1, ge=1, le=999)
     declared_value_cents: int | None = Field(default=None, ge=0)
+    # Package size/weight (MG-1) — optional. Sane upper bounds (200kg / 300cm).
+    weight_g: int | None = Field(default=None, ge=0, le=200_000)
+    length_cm: int | None = Field(default=None, ge=0, le=300)
+    width_cm: int | None = Field(default=None, ge=0, le=300)
+    height_cm: int | None = Field(default=None, ge=0, le=300)
     reference_number: str | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=500)
 
@@ -115,6 +120,11 @@ class DeliveryOut(BaseModel):
     estimate_max_cents: int | None
     fee_cents: int
     reference_number: str | None
+    # Package size/weight (MG-1) — optional.
+    weight_g: int | None = None
+    length_cm: int | None = None
+    width_cm: int | None = None
+    height_cm: int | None = None
     # Recipient — name + MASKED phone only (TH-04 / LGPD).
     recipient_name: str | None = None
     recipient_phone_masked: str | None = None
@@ -209,6 +219,11 @@ class CourierDeliveryOut(BaseModel):
     reference_number: str | None
     items_description: str | None
     items_quantity: int
+    # Package size/weight (MG-1) — courier sees the size before accepting.
+    weight_g: int | None
+    length_cm: int | None
+    width_cm: int | None
+    height_cm: int | None
     created_at: str | None
 
 

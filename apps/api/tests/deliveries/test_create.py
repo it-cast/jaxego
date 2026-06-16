@@ -80,6 +80,31 @@ async def test_create_direct_starts_in_criada(delivery_seed, db_session) -> None
     assert transitions[0].to_state == "CRIADA"
 
 
+async def test_create_persists_package_size(delivery_seed, db_session) -> None:
+    """MG-1: weight + dimensions round-trip from body to the persisted delivery."""
+    body = _body(
+        dropoff_neighborhood_id=delivery_seed.dropoff_nbhd_id,
+        weight_g=2500,
+        length_cm=40,
+        width_cm=30,
+        height_cm=20,
+    )
+    result = await service.create_delivery(
+        db_session,
+        area_id=delivery_seed.area_a_id,
+        merchant_id=delivery_seed.merchant_id,
+        actor_user_id=delivery_seed.owner_user_id,
+        body=body,
+        ip="203.0.113.7",
+    )
+    await db_session.flush()
+    delivery = (
+        await db_session.execute(select(Delivery).where(Delivery.id == result.delivery_id))
+    ).scalar_one()
+    assert delivery.weight_g == 2500
+    assert (delivery.length_cm, delivery.width_cm, delivery.height_cm) == (40, 30, 20)
+
+
 def test_card_accepted_by_enum_rejected_by_rule(delivery_seed) -> None:
     # The narrow enum ACCEPTS card/pix (so the UI can offer them as "em breve"),
     # but the rule rejects them — the rejection is asserted in

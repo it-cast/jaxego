@@ -305,6 +305,10 @@ def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
         reference_number=delivery.reference_number,
         items_description=delivery.items_description,
         items_quantity=delivery.items_quantity,
+        weight_g=delivery.weight_g,
+        length_cm=delivery.length_cm,
+        width_cm=delivery.width_cm,
+        height_cm=delivery.height_cm,
         created_at=delivery.created_at.isoformat() if delivery.created_at else None,
     )
 
