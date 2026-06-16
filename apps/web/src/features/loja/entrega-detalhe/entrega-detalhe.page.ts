@@ -66,6 +66,10 @@ import { DeliveryService } from '../entregas/delivery.service';
 
           <aside class="jx-detail__aside">
             <dl class="jx-detail__meta">
+              @if (packageLabel(d)) {
+                <dt>Pacote</dt>
+                <dd>{{ packageLabel(d) }}</dd>
+              }
               <dt>Destinatário</dt>
               <dd>{{ d.recipient_name ?? '—' }}</dd>
               <dt>Telefone</dt>
@@ -171,6 +175,16 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   protected payOf(method: string): PaymentMethod {
     return method === 'pix' || method === 'card' ? method : 'direct';
+  }
+
+  /** "2,5 kg · 40×30×20 cm" — só as partes preenchidas. Vazio se nada. */
+  protected packageLabel(d: DeliveryListItem): string {
+    const parts: string[] = [];
+    if (d.weight_g) parts.push(`${(d.weight_g / 1000).toLocaleString('pt-BR')} kg`);
+    if (d.length_cm && d.width_cm && d.height_cm) {
+      parts.push(`${d.length_cm}×${d.width_cm}×${d.height_cm} cm`);
+    }
+    return parts.join(' · ');
   }
 
   protected canCancel(d: DeliveryListItem): boolean {

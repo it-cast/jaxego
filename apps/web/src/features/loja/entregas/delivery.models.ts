@@ -20,6 +20,11 @@ export interface CreateDeliveryRequest {
   items_description?: string | null;
   items_quantity: number;
   declared_value_cents?: number | null;
+  // Pacote (MG-1) — peso em gramas, dimensões em cm. Opcionais.
+  weight_g?: number | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
   reference_number?: string | null;
   notes?: string | null;
   proof_method: DeliveryProofMethod;
@@ -59,6 +64,11 @@ export interface DeliveryListItem {
   /** Coordenadas do destino (detalhe) — usadas para o mapa. */
   dropoff_lat?: number | null;
   dropoff_lng?: number | null;
+  /** Pacote (MG-1) — peso (g) + dimensões (cm). */
+  weight_g?: number | null;
+  length_cm?: number | null;
+  width_cm?: number | null;
+  height_cm?: number | null;
 }
 
 export interface DeliveryListResponse {

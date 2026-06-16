@@ -89,6 +89,39 @@
       formControlName="declared_value"
     />
     <jx-field
+      label="Peso (kg, opcional)"
+      inputmode="decimal"
+      [mono]="true"
+      placeholder="2,5"
+      formControlName="weight_kg"
+    />
+    <div class="jx-nova__dims">
+      <span class="jx-nova__dims-label">Dimensões (cm, opcional)</span>
+      <div class="jx-nova__dims-row">
+        <jx-field
+          label="Compr."
+          inputmode="numeric"
+          [mono]="true"
+          placeholder="40"
+          formControlName="length_cm"
+        />
+        <jx-field
+          label="Largura"
+          inputmode="numeric"
+          [mono]="true"
+          placeholder="30"
+          formControlName="width_cm"
+        />
+        <jx-field
+          label="Altura"
+          inputmode="numeric"
+          [mono]="true"
+          placeholder="20"
+          formControlName="height_cm"
+        />
+      </div>
+    </div>
+    <jx-field
       label="Nº do pedido (opcional)"
       formControlName="reference_number"
       [mono]="true"

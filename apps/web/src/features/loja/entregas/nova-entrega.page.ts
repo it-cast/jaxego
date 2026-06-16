@@ -72,6 +72,11 @@ export class NovaEntregaPage {
     items_description: ['', [Validators.required]],
     items_quantity: ['1'],
     declared_value: [''],
+    // Pacote (MG-1): peso em kg + dimensões em cm (opcionais).
+    weight_kg: [''],
+    length_cm: [''],
+    width_cm: [''],
+    height_cm: [''],
     reference_number: [''],
     notes: [''],
     proof_method: ['photo'],
@@ -193,6 +198,11 @@ export class NovaEntregaPage {
 
     const v = this.form.getRawValue();
     const declared = v.declared_value ? Math.round(parseBrl(v.declared_value) * 100) : null;
+    const toInt = (s: string | null | undefined): number | null => {
+      const n = s ? parseInt(s.replace(',', '.'), 10) : NaN;
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const weightKg = v.weight_kg ? parseFloat(v.weight_kg.replace(',', '.')) : NaN;
     const req: CreateDeliveryRequest = {
       pickup_address: v.pickup_address!,
       dropoff_neighborhood_id: v.dropoff_neighborhood_id!,
@@ -203,6 +213,10 @@ export class NovaEntregaPage {
       items_description: v.items_description || null,
       items_quantity: Math.max(parseInt(v.items_quantity || '1', 10) || 1, 1),
       declared_value_cents: declared,
+      weight_g: Number.isFinite(weightKg) && weightKg > 0 ? Math.round(weightKg * 1000) : null,
+      length_cm: toInt(v.length_cm),
+      width_cm: toInt(v.width_cm),
+      height_cm: toInt(v.height_cm),
       reference_number: v.reference_number || null,
       notes: v.notes || null,
       proof_method: 'photo',

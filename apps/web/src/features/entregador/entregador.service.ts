@@ -77,6 +77,10 @@ export interface CourierDelivery {
   reference_number: string | null;
   items_description: string | null;
   items_quantity: number;
+  weight_g: number | null;
+  length_cm: number | null;
+  width_cm: number | null;
+  height_cm: number | null;
   created_at: string | null;
 }
 

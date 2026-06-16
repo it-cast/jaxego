@@ -73,6 +73,9 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             @if (delivery()!.pickup_neighborhood) {
               <p class="jx-active__muted">{{ delivery()!.pickup_neighborhood }}</p>
             }
+            @if (packageLabel()) {
+              <p class="jx-active__muted">📦 {{ packageLabel() }}</p>
+            }
           </section>
 
           <section class="jx-active__card jx-active__card--dest">
@@ -264,6 +267,17 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     if (!d) return null;
     return d.state === 'COLETADA' && d.dropoff_lng != null ? d.dropoff_lng : d.pickup_lng;
   });
+
+  protected packageLabel(): string {
+    const d = this.delivery();
+    if (!d) return '';
+    const parts: string[] = [];
+    if (d.weight_g) parts.push(`${(d.weight_g / 1000).toLocaleString('pt-BR')} kg`);
+    if (d.length_cm && d.width_cm && d.height_cm) {
+      parts.push(`${d.length_cm}×${d.width_cm}×${d.height_cm} cm`);
+    }
+    return parts.join(' · ');
+  }
 
   protected payMethod(): PaymentMethod {
     const m = this.delivery()?.payment_method;

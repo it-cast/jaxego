@@ -226,3 +226,20 @@
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* Pacote (MG-1) — bloco de dimensões */
+.jx-nova__dims {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+.jx-nova__dims-label {
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-medium);
+  color: var(--text-muted);
+}
+.jx-nova__dims-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--jx-space-2);
+}
