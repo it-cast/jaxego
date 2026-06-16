@@ -120,7 +120,12 @@ const VALID_LEVELS: ScoreLevel[] = [
               </div>
 
               @if (recent().length) {
-                <span class="jx-home-card__eyebrow">Entregas recentes</span>
+                <div class="jx-home-card--row" style="padding:0">
+                  <span class="jx-home-card__eyebrow">Entregas recentes</span>
+                  <button type="button" class="jx-home-link" (click)="goEntregas()">
+                    Ver todas →
+                  </button>
+                </div>
                 @for (d of recent(); track d.id) {
                   <article class="jx-home-card jx-home-card--row">
                     <div>
@@ -376,5 +381,8 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   }
   protected goActive(): void {
     void this.router.navigate(['/entregador/entrega-ativa']);
+  }
+  protected goEntregas(): void {
+    void this.router.navigate(['/entregador/entregas']);
   }
 }

@@ -9,15 +9,15 @@ import {
 import { addIcons } from 'ionicons';
 import {
   homeOutline,
-  cubeOutline,
+  mapOutline,
   cashOutline,
   personOutline,
 } from 'ionicons/icons';
 
 /**
  * Entregador shell — mobile-first, Ionic bottom tabs (UI-SPEC §6.1).
- * Tabs: Início / Entregas / Ganhos / Perfil. aria-current handled by Ionic
- * router-link-active; safe-area insets via Ionic tab bar defaults.
+ * Tabs: Início / Ganhos / Bairros / Perfil (fiel ao tabbar do protótipo).
+ * aria-current handled by Ionic router-link-active; safe-area via Ionic defaults.
  */
 @Component({
   selector: 'jx-entregador-shell',
@@ -31,13 +31,13 @@ import {
           <ion-icon name="home-outline" aria-hidden="true" />
           <ion-label>Início</ion-label>
         </ion-tab-button>
-        <ion-tab-button tab="entregas">
-          <ion-icon name="cube-outline" aria-hidden="true" />
-          <ion-label>Entregas</ion-label>
-        </ion-tab-button>
         <ion-tab-button tab="saldo">
           <ion-icon name="cash-outline" aria-hidden="true" />
           <ion-label>Ganhos</ion-label>
+        </ion-tab-button>
+        <ion-tab-button tab="cobertura">
+          <ion-icon name="map-outline" aria-hidden="true" />
+          <ion-label>Bairros</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="perfil">
           <ion-icon name="person-outline" aria-hidden="true" />
@@ -59,6 +59,6 @@ import {
 })
 export class EntregadorShellComponent {
   constructor() {
-    addIcons({ homeOutline, cubeOutline, cashOutline, personOutline });
+    addIcons({ homeOutline, mapOutline, cashOutline, personOutline });
   }
 }
