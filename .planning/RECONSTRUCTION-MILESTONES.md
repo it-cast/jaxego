@@ -31,13 +31,16 @@ Destrava tudo (login→superfície, dados autenticados, sessão persistente).
 A superfície mais quebrada. Backend pronto: `dispatch/offers/*` (accept/decline),
 `proofs/*`, `withdrawals/*`, `scores/couriers/{id}/score`, `couriers/{id}/availability`.
 
-> ⚠️ **Lacuna cross-layer descoberta:** NÃO há endpoints do entregador para os
-> estados intermediários da entrega (ACEITA→NA COLETA→COLETADA). O fluxo da tela
-> `tpl-c-active` exige backend novo. Por isso o MR-1 começa por F1.0 (backend).
+> ⚠️ **Lacuna cross-layer descoberta (corrigida por leitura):** os estados JÁ são
+> avançados pelos proofs (`proofs/service`: coleta→COLETADA, entrega→ENTREGUE,
+> recusa→RECUSADA) — não falta endpoint de transição. O que falta é o entregador
+> **ler a própria entrega**: `deliveries GET /{id}` é só `merchant_scope`. A tela
+> `tpl-c-active` precisa de um GET courier-scoped. Por isso F1.0 é leitura, não transição.
 
-- [ ] **F1.0 — Backend: transições do entregador** — endpoints para avançar a
-      entrega (cheguei na coleta / coletei / cheguei no destino) sobre o `transition()`
-      server-side, com ownership (IDOR→404) e testes. Pré-requisito de F1.2.
+- [ ] **F1.0 — Backend: leitura de entrega pelo entregador** — `GET` da entrega
+      ativa + detalhe, escopado ao courier do usuário (IDOR→404), reusando a
+      serialização com minimização de PII por estado (endereço só pós-COLETADA).
+      Testes. Pré-requisito de F1.2/F1.5.
 - [ ] **F1.1 — Home real** (`tpl-c-home`): toggle online (`PATCH availability`),
       ganhos/saldo (`withdrawals/balance`), score+selo (`scores/{id}`), entregas
       recentes (`deliveries`), **offer overlay** fiado (`dispatch/active` → accept/decline).
