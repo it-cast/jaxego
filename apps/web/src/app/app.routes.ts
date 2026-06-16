@@ -64,6 +64,14 @@ export const routes: Routes = [
             '../features/entregador/cobertura-precos/cobertura-precos.page'
           ).then((m) => m.CoberturaPrecosPage),
       },
+      // MR-1 F1.2: active delivery (tela 05 / tpl-c-active).
+      {
+        path: 'entrega-ativa',
+        loadComponent: () =>
+          import(
+            '../features/entregador/entrega-ativa/entrega-ativa.page'
+          ).then((m) => m.EntregadorEntregaAtivaPage),
+      },
       // Phase 9 (F-06): proof capture for an active delivery (telas 06/07).
       {
         path: 'entrega/:id/comprovar/:kind',
