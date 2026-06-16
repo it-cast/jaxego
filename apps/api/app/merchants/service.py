@@ -23,7 +23,7 @@ from datetime import UTC, datetime
 from typing import Literal, cast
 
 import structlog
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas.models import Area
@@ -355,3 +355,27 @@ async def capture_interest(session: AsyncSession, *, email: str, cidade: str) ->
 def now_utc() -> datetime:
     """Aware UTC now (TD-010)."""
     return datetime.now(UTC)
+
+
+async def list_area_merchants(
+    session: AsyncSession,
+    *,
+    area_id: int | None,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> tuple[list[Merchant], int]:
+    """List stores in the admin's area (F2.4). Area in the WHERE clause (TH-09);
+    `area_id is None` is the platform-admin bypass. Single query + COUNT, no N+1."""
+    base = select(Merchant)
+    count_stmt = select(func.count(Merchant.id))
+    if area_id is not None:
+        base = base.where(Merchant.area_id == area_id)
+        count_stmt = count_stmt.where(Merchant.area_id == area_id)
+    if status is not None:
+        base = base.where(Merchant.status == status)
+        count_stmt = count_stmt.where(Merchant.status == status)
+    base = base.order_by(Merchant.created_at.desc()).limit(limit).offset(offset)
+    rows = list((await session.execute(base)).scalars().all())
+    total = int((await session.execute(count_stmt)).scalar_one())
+    return rows, total

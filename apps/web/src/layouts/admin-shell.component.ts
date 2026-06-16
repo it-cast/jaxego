@@ -138,6 +138,7 @@ export class AdminShellComponent {
     { path: '/admin/entregadores', label: 'Entregadores', icon: '✓' },
     { path: '/admin/config', label: 'Configurações', icon: '⚙' },
     { path: '/admin/bairros', label: 'Bairros', icon: '◰' },
+    { path: '/admin/lojas', label: 'Lojas', icon: '◫' },
     { path: '/admin/disputas', label: 'Disputas', icon: '⚖' },
     { path: '/admin/api-keys', label: 'API keys', icon: '⚿' },
   ];

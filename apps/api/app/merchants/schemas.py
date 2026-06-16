@@ -126,3 +126,36 @@ class PlanRead(BaseModel):
     taxa_entrega_cents: int
     is_free: bool
     is_unlimited: bool
+
+
+def mask_document_display(doc: str) -> str:
+    """Mask a CPF/CNPJ for admin display: keep first 2 + last 2 (TH-06)."""
+    digits = "".join(ch for ch in doc if ch.isdigit())
+    if len(digits) < 4:
+        return "***"
+    return f"{digits[:2]}•••{digits[-2:]}"
+
+
+class MerchantAdminListItem(BaseModel):
+    """One store row in the area admin's list (F2.4). Document masked (TH-06)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    trade_name: str
+    account_type: str
+    document_masked: str
+    category: str | None
+    status: str
+    created_at: str | None
+
+
+class MerchantAdminListOut(BaseModel):
+    """Paginated area store list (single query + COUNT — no N+1)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[MerchantAdminListItem]
+    total: int
+    limit: int
+    offset: int

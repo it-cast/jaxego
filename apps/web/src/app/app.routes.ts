@@ -217,6 +217,14 @@ export const routes: Routes = [
             (m) => m.NeighborhoodsPage
           ),
       },
+      // MR-2 F2.4: lista de lojas da área.
+      {
+        path: 'lojas',
+        loadComponent: () =>
+          import('../features/admin/lojas/lojas-list.page').then(
+            (m) => m.AdminLojasPage
+          ),
+      },
       // Phase 12 (tela 22 / D-10): chaves de API + webhook da área.
       {
         path: 'api-keys',

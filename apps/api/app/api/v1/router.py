@@ -15,6 +15,7 @@ from app.couriers.router import router as couriers_router
 from app.deliveries.router import router as deliveries_router
 from app.dispatch.router import router as dispatch_router
 from app.merchants.favorites import router as merchants_dispatch_router
+from app.merchants.router import admin_router as merchants_admin_router
 from app.merchants.router import interest_router
 from app.merchants.router import router as merchants_router
 from app.neighborhoods.router import router as neighborhoods_router
@@ -28,6 +29,7 @@ api_router.include_router(areas_router)
 
 # Phase 4 domain sub-routers (F-01).
 api_router.include_router(merchants_router)
+api_router.include_router(merchants_admin_router)
 api_router.include_router(plans_router)
 api_router.include_router(interest_router)
 

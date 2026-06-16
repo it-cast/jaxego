@@ -97,9 +97,10 @@ Backend: `areas` (POST/PATCH/archive — sem UI), `platform_admin/areas/{id}/rev
 
 Superfície mais completa; só refinos.
 
-- [ ] **F4.1 — "Procurando entregador"** (`tpl-m-searching`) com polling até aceite.
-- [ ] **F4.2 — Dashboard** (`tpl-m-dash`) com KPIs/em-curso reais.
-- **Aceite:** loja cria → procura → acompanha no detalhe.
+- [x] **F4.1 — "Procurando entregador"**: após criar → detalhe; banner + polling
+      5s enquanto CRIADA até o aceite (reduced-motion aware). ng build OK.
+- [x] **F4.2 — Dashboard** (`tpl-m-dash`): já real (DeliveryService + KPIs + em-curso).
+- **Aceite:** loja cria → procura → acompanha no detalhe. ✅
 
 ---
 

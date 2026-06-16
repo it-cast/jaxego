@@ -16,6 +16,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.dependencies import AreaScopeDep, CurrentUser, require_role
 from app.core.ratelimit import signup_rate_limit
 from app.db.session import get_session
 from app.integrations.factory import (
@@ -30,14 +31,53 @@ from app.merchants.schemas import (
     ConfirmPhoneBody,
     ConfirmPhoneResponse,
     InterestBody,
+    MerchantAdminListItem,
+    MerchantAdminListOut,
     MerchantSignupBody,
     SignupResponse,
+    mask_document_display,
 )
 
 router = APIRouter(prefix="/merchants", tags=["merchants"])
 interest_router = APIRouter(prefix="/interest", tags=["interest"])
+admin_router = APIRouter(prefix="/admin/merchants", tags=["merchants-admin"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+
+@admin_router.get("", response_model=MerchantAdminListOut)
+async def list_area_merchants(
+    session: SessionDep,
+    admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
+    scope: AreaScopeDep,
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> MerchantAdminListOut:
+    """List stores in the area (F2.4). Area in the WHERE clause (TH-09); platform
+    admin (scope=None) sees all areas. Document masked (TH-06)."""
+    rows, total = await service.list_area_merchants(
+        session,
+        area_id=scope,
+        status=status,
+        limit=min(limit, 100),
+        offset=max(offset, 0),
+    )
+    items = [
+        MerchantAdminListItem(
+            id=m.id,
+            trade_name=m.trade_name,
+            account_type=m.account_type,
+            document_masked=mask_document_display(m.document),
+            category=m.category,
+            status=m.status,
+            created_at=m.created_at.isoformat() if m.created_at else None,
+        )
+        for m in rows
+    ]
+    return MerchantAdminListOut(
+        items=items, total=total, limit=min(limit, 100), offset=max(offset, 0)
+    )
 
 
 def _client_ip(request: Request) -> str | None:
