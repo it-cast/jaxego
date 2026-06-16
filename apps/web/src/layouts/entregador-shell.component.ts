@@ -35,7 +35,7 @@ import {
           <ion-icon name="cube-outline" aria-hidden="true" />
           <ion-label>Entregas</ion-label>
         </ion-tab-button>
-        <ion-tab-button tab="ganhos">
+        <ion-tab-button tab="saldo">
           <ion-icon name="cash-outline" aria-hidden="true" />
           <ion-label>Ganhos</ion-label>
         </ion-tab-button>

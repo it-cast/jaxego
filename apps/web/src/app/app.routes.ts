@@ -44,13 +44,6 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'ganhos',
-        loadComponent: () =>
-          import('../features/entregador/ganhos.page').then(
-            (m) => m.EntregadorGanhosPage
-          ),
-      },
-      {
         path: 'perfil',
         loadComponent: () =>
           import('../features/entregador/perfil.page').then(
