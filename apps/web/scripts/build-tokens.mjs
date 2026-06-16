@@ -65,6 +65,11 @@ if (tokens.color?.score_level) {
     vars.push([`--jx-score-${key}`, value]);
   }
 }
+if (tokens.color?.payment) {
+  for (const [key, value] of Object.entries(tokens.color.payment)) {
+    vars.push([`--jx-payment-${key.replace(/_/g, '-')}`, value]);
+  }
+}
 
 // --- Spacing --------------------------------------------------------------
 if (tokens.spacing) {

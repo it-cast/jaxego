@@ -91,15 +91,17 @@ const VALID_LEVELS: ScoreLevel[] = [
           @case ('waiting') {
             <div class="jx-home-cards">
               <article class="jx-home-card jx-home-card--dark">
-                <span class="jx-home-card__eyebrow">Saldo para saque</span>
-                <jx-money
-                  [cents]="balance()?.balance_cents ?? 0"
-                  variant="display"
-                  label="Saldo disponível"
-                />
-                <button type="button" class="jx-home-link" (click)="goSaldo()">
-                  Ver extrato →
-                </button>
+                <span class="jx-home-card__eyebrow">Liberado hoje</span>
+                <jx-money [cents]="todayCents()" variant="display" label="Ganhos liberados hoje" />
+                <div class="jx-home-card--row" style="padding:0">
+                  <span class="jx-home-muted">
+                    Saldo p/ saque:
+                    <jx-money [cents]="balance()?.balance_cents ?? 0" />
+                  </span>
+                  <button type="button" class="jx-home-link" (click)="goSaldo()">
+                    Ver extrato →
+                  </button>
+                </div>
               </article>
 
               @if (score(); as sc) {
@@ -260,6 +262,7 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
 
   protected readonly online = signal(false);
   protected readonly balance = signal<Balance | null>(null);
+  protected readonly todayCents = signal(0);
   protected readonly score = signal<CourierScore | null>(null);
   protected readonly recent = signal<CourierDeliveryListItem[]>([]);
   protected readonly active = signal<CourierDelivery | null>(null);
@@ -294,13 +297,21 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     const id = this.courierId;
     if (!id) return;
-    const [balance, score, list, active] = await Promise.all([
+    const [balance, score, list, active, extract] = await Promise.all([
       this.saldo.balance().catch(() => null),
       this.svc.score(id),
       this.svc.listDeliveries(id).catch(() => null),
       this.svc.activeDelivery(id).catch(() => null),
+      this.saldo.extract().catch(() => []),
     ]);
     this.balance.set(balance);
+    // "Liberado hoje" = soma dos créditos liberados com data de hoje (sem endpoint novo).
+    const today = new Date().toDateString();
+    this.todayCents.set(
+      extract
+        .filter((e) => e.at && new Date(e.at).toDateString() === today)
+        .reduce((sum, e) => sum + e.amount_cents, 0)
+    );
     this.score.set(score);
     this.recent.set((list?.items ?? []).slice(0, 3));
     this.active.set(active);

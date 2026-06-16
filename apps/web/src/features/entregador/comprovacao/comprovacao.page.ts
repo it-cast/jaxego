@@ -44,6 +44,32 @@ import { ProofKind, ProofService } from './proof.service';
         (captured)="onCaptured($event)"
       />
 
+      @if (paymentNeeded()) {
+        <div class="jx-proof-page__ref">
+          <label for="refNum">Número do pedido (pergunte ao destinatário)</label>
+          <input
+            id="refNum"
+            class="jx-proof-page__refinput"
+            inputmode="numeric"
+            maxlength="6"
+            placeholder="0000"
+            [value]="reference()"
+            (input)="reference.set($any($event.target).value)"
+          />
+          <button
+            type="button"
+            class="jx-proof-page__refbtn"
+            [disabled]="reference().length < 3"
+            (click)="onReference()"
+          >
+            Enviar número do pedido
+          </button>
+          @if (referenceSent()) {
+            <p class="jx-proof-page__refok" role="status">Número registrado ✓</p>
+          }
+        </div>
+      }
+
       @if (state() === 'ENTREGUE' && paymentNeeded()) {
         <jx-direct-payment-confirm
           [amountLabel]="amountLabel"
@@ -73,6 +99,8 @@ export class ComprovacaoPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly state = signal<string>('');
   protected readonly lowConfidence = signal(false);
+  protected readonly reference = signal('');
+  protected readonly referenceSent = signal(false);
 
   private deliveryId = 0;
   private kind: ProofKind = 'pickup';
@@ -129,6 +157,17 @@ export class ComprovacaoPage implements OnInit {
       this.uploadState.set('error');
       this.error.set('Não foi possível enviar a foto agora. Tente de novo.');
       this.geofence.set('out');
+    }
+  }
+
+  protected async onReference(): Promise<void> {
+    const ref = this.reference().trim();
+    if (ref.length < 3) return;
+    try {
+      await this.proof.submitReference(this.deliveryId, ref);
+      this.referenceSent.set(true);
+    } catch {
+      this.referenceSent.set(false);
     }
   }
 

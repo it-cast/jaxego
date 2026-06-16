@@ -10,6 +10,7 @@ import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LiveMapComponent } from '../../../shared/components/live-map/live-map.component';
+import { PaymentBadgeComponent, type PaymentMethod } from '../../../shared/components';
 import { EmptyStateComponent, ErrorStateComponent } from '../../../shared/state';
 import { CourierDelivery, EntregadorService } from '../entregador.service';
 
@@ -26,7 +27,13 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
   selector: 'jx-entregador-entrega-ativa',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, EmptyStateComponent, ErrorStateComponent, LiveMapComponent],
+  imports: [
+    IonContent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    LiveMapComponent,
+    PaymentBadgeComponent,
+  ],
   template: `
     <ion-content>
       @if (loading()) {
@@ -53,7 +60,10 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
           }
 
           <div class="jx-active__head">
-            <span class="jx-active__state">{{ stateLabel() }}</span>
+            <div class="jx-active__staterow">
+              <span class="jx-active__state">{{ stateLabel() }}</span>
+              <jx-payment-badge [method]="payMethod()" />
+            </div>
             <span class="jx-active__step">{{ stepLabel() }}</span>
           </div>
 
@@ -135,6 +145,11 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         display: flex;
         flex-direction: column;
         gap: var(--jx-space-1);
+      }
+      .jx-active__staterow {
+        display: flex;
+        align-items: center;
+        gap: var(--jx-space-2);
       }
       .jx-active__state {
         font-family: var(--jx-font-mono);
@@ -249,6 +264,11 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     if (!d) return null;
     return d.state === 'COLETADA' && d.dropoff_lng != null ? d.dropoff_lng : d.pickup_lng;
   });
+
+  protected payMethod(): PaymentMethod {
+    const m = this.delivery()?.payment_method;
+    return m === 'pix' || m === 'card' ? m : 'direct';
+  }
 
   protected mapAria(): string {
     return this.delivery()?.state === 'COLETADA'

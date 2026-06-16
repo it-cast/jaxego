@@ -37,3 +37,7 @@ export {
   type InvoiceSummary,
   type InvoiceStatus,
 } from './invoice-summary/invoice-summary.component';
+export {
+  PaymentBadgeComponent,
+  type PaymentMethod,
+} from './payment-badge/payment-badge.component';

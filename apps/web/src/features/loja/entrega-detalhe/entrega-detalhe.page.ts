@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { StateBadgeComponent } from '../../../shared/components/state-badge/state-badge.component';
+import { PaymentBadgeComponent, type PaymentMethod } from '../../../shared/components';
 import {
   TrackingState,
   TrackingTimelineComponent,
@@ -27,7 +28,7 @@ import { DeliveryService } from '../entregas/delivery.service';
 @Component({
   selector: 'jx-entrega-detalhe-page',
   standalone: true,
-  imports: [TrackingTimelineComponent, StateBadgeComponent],
+  imports: [TrackingTimelineComponent, StateBadgeComponent, PaymentBadgeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="jx-detail">
@@ -35,6 +36,7 @@ import { DeliveryService } from '../entregas/delivery.service';
         <header class="jx-detail__header">
           <h1 class="jx-detail__title">Entrega #{{ d.id }}</h1>
           <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
+          <jx-payment-badge [method]="payOf(d.payment_method)" />
         </header>
 
         @if (trackingState(d) === 'CRIADA') {
@@ -152,6 +154,10 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   protected trackingState(d: DeliveryListItem): TrackingState {
     return d.state as TrackingState;
+  }
+
+  protected payOf(method: string): PaymentMethod {
+    return method === 'pix' || method === 'card' ? method : 'direct';
   }
 
   protected canCancel(d: DeliveryListItem): boolean {

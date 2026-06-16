@@ -8,7 +8,7 @@ import {
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
-import { MoneyComponent } from '../../shared/components';
+import { MoneyComponent, PaymentBadgeComponent, type PaymentMethod } from '../../shared/components';
 import {
   EmptyStateComponent,
   ErrorStateComponent,
@@ -31,6 +31,7 @@ import { CourierDeliveryListItem, EntregadorService } from './entregador.service
     ErrorStateComponent,
     LoadingSkeletonComponent,
     MoneyComponent,
+    PaymentBadgeComponent,
   ],
   template: `
     <ion-content>
@@ -59,7 +60,8 @@ import { CourierDeliveryListItem, EntregadorService } from './entregador.service
               <div>
                 <strong>{{ stateLabel(d.state) }}</strong>
                 <p class="jx-list__muted">
-                  {{ paymentLabel(d.payment_method) }} · {{ shortDate(d.created_at) }}
+                  <jx-payment-badge [method]="payOf(d.payment_method)" />
+                  · {{ shortDate(d.created_at) }}
                 </p>
               </div>
               <jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" />
@@ -157,13 +159,8 @@ export class EntregadorEntregasPage implements OnInit {
     return map[state] ?? state;
   }
 
-  protected paymentLabel(method: string): string {
-    const map: Record<string, string> = {
-      direct: 'Pagamento direto',
-      pix: 'PIX',
-      card: 'Cartão',
-    };
-    return map[method] ?? method;
+  protected payOf(method: string): PaymentMethod {
+    return method === 'pix' || method === 'card' ? method : 'direct';
   }
 
   protected shortDate(iso: string | null): string {
