@@ -107,6 +107,9 @@ class DeliveryOut(BaseModel):
     dropoff_complement: str | None
     dropoff_neighborhood_id: int
     distance_m: int | None
+    # Dropoff coords — store owns the address it typed; used to render the map.
+    dropoff_lat: float | None = None
+    dropoff_lng: float | None = None
     # Money (integer cents).
     estimate_min_cents: int | None
     estimate_max_cents: int | None

@@ -56,6 +56,9 @@ export interface DeliveryListItem {
   recipient_phone_masked: string | null;
   courier_id: number | null;
   created_at: string | null;
+  /** Coordenadas do destino (detalhe) — usadas para o mapa. */
+  dropoff_lat?: number | null;
+  dropoff_lng?: number | null;
 }
 
 export interface DeliveryListResponse {

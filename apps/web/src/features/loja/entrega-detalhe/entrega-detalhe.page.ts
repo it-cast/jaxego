@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { StateBadgeComponent } from '../../../shared/components/state-badge/state-badge.component';
+import { LiveMapComponent } from '../../../shared/components/live-map/live-map.component';
 import { PaymentBadgeComponent, type PaymentMethod } from '../../../shared/components';
 import {
   TrackingState,
@@ -28,7 +29,12 @@ import { DeliveryService } from '../entregas/delivery.service';
 @Component({
   selector: 'jx-entrega-detalhe-page',
   standalone: true,
-  imports: [TrackingTimelineComponent, StateBadgeComponent, PaymentBadgeComponent],
+  imports: [
+    TrackingTimelineComponent,
+    StateBadgeComponent,
+    PaymentBadgeComponent,
+    LiveMapComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="jx-detail">
@@ -48,6 +54,13 @@ import { DeliveryService } from '../entregas/delivery.service';
 
         <div class="jx-detail__grid">
           <section class="jx-detail__main">
+            @if (d.dropoff_lat != null && d.dropoff_lng != null) {
+              <jx-live-map
+                [lat]="d.dropoff_lat"
+                [lng]="d.dropoff_lng"
+                ariaLabel="Mapa do destino da entrega"
+              />
+            }
             <jx-tracking-timeline [state]="trackingState(d)" [entries]="[]" />
           </section>
 

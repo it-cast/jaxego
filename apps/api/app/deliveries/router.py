@@ -53,6 +53,8 @@ def _delivery_out(delivery, recipient) -> DeliveryOut:
         dropoff_complement=delivery.dropoff_complement,
         dropoff_neighborhood_id=delivery.dropoff_neighborhood_id,
         distance_m=delivery.distance_m,
+        dropoff_lat=delivery.dropoff_lat,
+        dropoff_lng=delivery.dropoff_lng,
         estimate_min_cents=delivery.estimate_min_cents,
         estimate_max_cents=delivery.estimate_max_cents,
         fee_cents=delivery.fee_cents,
