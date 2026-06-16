@@ -270,6 +270,14 @@ export const routes: Routes = [
             (m) => m.PlataformaVisaoGeralPage,
           ),
       },
+      // MR-3 F3.1/F3.2: criar/editar/arquivar área + % de repasse.
+      {
+        path: 'areas',
+        loadComponent: () =>
+          import('../features/admin-plataforma/areas.page').then(
+            (m) => m.PlataformaAreasPage,
+          ),
+      },
       {
         path: 'pessoas',
         loadComponent: () =>

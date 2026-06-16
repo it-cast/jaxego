@@ -147,6 +147,7 @@ export class PlataformaShellComponent {
 
   protected readonly links = [
     { path: 'visao-geral', label: 'Visão geral', glyph: '◧' },
+    { path: 'areas', label: 'Áreas', glyph: '◰' },
     { path: 'pessoas', label: 'Entregadores e lojas', glyph: '◍' },
     { path: 'disputas', label: 'Disputas e suspensões', glyph: '⚖' },
   ];

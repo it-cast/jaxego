@@ -59,6 +59,14 @@ export interface RevenueShare {
   effective_from: string;
 }
 
+/** Área (cidade) — CRUD em /v1/areas (require_platform_admin). */
+export interface Area {
+  id: number;
+  codename: string;
+  name: string;
+  config: Record<string, unknown>;
+}
+
 /** Snapshot de score com breakdown explicável (ADR-013). */
 export interface CourierScore {
   courier_id: number;
@@ -145,6 +153,39 @@ export class PlatformAdminService {
       this.http.put<RevenueShare>(`${this.base}/areas/${areaId}/revenue-share`, {
         share_pct: sharePct,
       }),
+    );
+  }
+
+  // --- Áreas (CRUD em /v1/areas — F3.1) ---
+
+  /** Lista todas as áreas (cidades) da plataforma. */
+  async listAreas(): Promise<Area[]> {
+    return firstValueFrom(this.http.get<Area[]>('/v1/areas'));
+  }
+
+  /** Cria uma área nova (codename único + nome + config inicial). */
+  async createArea(body: {
+    codename: string;
+    name: string;
+    config?: Record<string, unknown>;
+  }): Promise<Area> {
+    return firstValueFrom(
+      this.http.post<Area>('/v1/areas', { config: {}, ...body }),
+    );
+  }
+
+  /** Edita nome/config de uma área. */
+  async updateArea(
+    areaId: number,
+    body: { name?: string; config?: Record<string, unknown> },
+  ): Promise<Area> {
+    return firstValueFrom(this.http.patch<Area>(`/v1/areas/${areaId}`, body));
+  }
+
+  /** Arquiva (soft-delete) uma área. */
+  async archiveArea(areaId: number): Promise<Area> {
+    return firstValueFrom(
+      this.http.post<Area>(`/v1/areas/${areaId}/archive`, {}),
     );
   }
 
