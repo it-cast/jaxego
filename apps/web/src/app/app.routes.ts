@@ -233,6 +233,14 @@ export const routes: Routes = [
             (m) => m.AdminGovernancaDisputasPage
           ),
       },
+      // MR-2 F2.2/F2.3: lista de entregadores da área + fila de KYC.
+      {
+        path: 'entregadores',
+        loadComponent: () =>
+          import(
+            '../features/admin/entregadores/entregadores-list.page'
+          ).then((m) => m.AdminEntregadoresPage),
+      },
       // Phase 13 (telas 19/20 / D-04/D-05): detalhe do entregador + score + suspensão.
       {
         path: 'entregadores/:courierId',

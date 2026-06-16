@@ -3,7 +3,7 @@ import {
   Component,
   signal,
 } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
 
 /**
@@ -14,7 +14,7 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
   selector: 'jx-admin-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, ThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent],
   template: `
     <div class="jx-admin" [class.jx-admin--collapsed]="collapsed()">
       <nav class="jx-admin__sidebar" aria-label="Navegação do admin">
@@ -30,6 +30,23 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         @if (!collapsed()) {
           <span class="jx-admin__brand">Jaxegô admin</span>
         }
+        <ul class="jx-admin__nav">
+          @for (item of nav; track item.path) {
+            <li>
+              <a
+                [routerLink]="item.path"
+                routerLinkActive="jx-admin__link--on"
+                class="jx-admin__link"
+                [title]="item.label"
+              >
+                <span class="jx-admin__ic" aria-hidden="true">{{ item.icon }}</span>
+                @if (!collapsed()) {
+                  <span>{{ item.label }}</span>
+                }
+              </a>
+            </li>
+          }
+        </ul>
         <div class="jx-admin__spacer"></div>
         <jx-theme-toggle />
       </nav>
@@ -71,6 +88,38 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         font-weight: var(--jx-weight-bold);
         color: var(--text);
       }
+      .jx-admin__nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--jx-space-1);
+      }
+      .jx-admin__link {
+        display: flex;
+        align-items: center;
+        gap: var(--jx-space-2);
+        padding: var(--jx-space-2);
+        border-radius: var(--jx-radius-md);
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: var(--jx-text-sm);
+        font-weight: var(--jx-weight-medium);
+      }
+      .jx-admin__link:hover {
+        background: var(--surface-elevated);
+        color: var(--text);
+      }
+      .jx-admin__link--on {
+        background: var(--surface-elevated);
+        color: var(--brand);
+        font-weight: var(--jx-weight-bold);
+      }
+      .jx-admin__ic {
+        width: 18px;
+        text-align: center;
+      }
       .jx-admin__spacer {
         flex: 1 1 auto;
       }
@@ -83,4 +132,13 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
 })
 export class AdminShellComponent {
   protected readonly collapsed = signal(false);
+
+  protected readonly nav = [
+    { path: '/admin/inicio', label: 'Painel', icon: '▦' },
+    { path: '/admin/entregadores', label: 'Entregadores', icon: '✓' },
+    { path: '/admin/config', label: 'Configurações', icon: '⚙' },
+    { path: '/admin/bairros', label: 'Bairros', icon: '◰' },
+    { path: '/admin/disputas', label: 'Disputas', icon: '⚖' },
+    { path: '/admin/api-keys', label: 'API keys', icon: '⚿' },
+  ];
 }
