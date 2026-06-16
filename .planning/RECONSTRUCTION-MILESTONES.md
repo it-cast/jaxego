@@ -37,21 +37,21 @@ A superfície mais quebrada. Backend pronto: `dispatch/offers/*` (accept/decline
 > **ler a própria entrega**: `deliveries GET /{id}` é só `merchant_scope`. A tela
 > `tpl-c-active` precisa de um GET courier-scoped. Por isso F1.0 é leitura, não transição.
 
-- [ ] **F1.0 — Backend: leitura de entrega pelo entregador** — `GET` da entrega
-      ativa + detalhe, escopado ao courier do usuário (IDOR→404), reusando a
-      serialização com minimização de PII por estado (endereço só pós-COLETADA).
-      Testes. Pré-requisito de F1.2/F1.5.
-- [ ] **F1.1 — Home real** (`tpl-c-home`): toggle online (`PATCH availability`),
-      ganhos/saldo (`withdrawals/balance`), score+selo (`scores/{id}`), entregas
-      recentes (`deliveries`), **offer overlay** fiado (`dispatch/active` → accept/decline).
-- [ ] **F1.2 — Entrega ativa** (`tpl-c-active`): página nova + máquina de estados,
-      avanço, mapa lazy, timeline, liga `location-polling.service`.
-- [ ] **F1.3 — Comprovação + Concluída** (`tpl-c-proof`/`tpl-c-done`): fiar
-      `comprovacao.page` no fluxo; confirmar pgto direto; tela de sucesso.
-- [ ] **F1.4 — Perfil** (`tpl-c-profile`): breakdown de score, documentos, chave PIX.
-- [ ] **F1.5 — Ganhos/extrato + lista** (`tpl-c-earnings`): consolida `saldo.page`,
-      remove stub `ganhos`, lista de entregas real.
-- **Aceite:** loop online→oferta→aceite→coleta→foto→entrega→concluída fecha; zero stub.
+- [x] **F1.0 — Backend: leitura de entrega pelo entregador** — `GET active/{id}/lista`
+      courier-scoped (IDOR→404), PII por estado (RN-013). 3 testes verdes.
+- [x] **F1.1 — Home real** (`tpl-c-home`): toggle online, saldo, score+selo,
+      recentes, offer overlay (poll `/offers/active` → accept→entrega-ativa / decline).
+- [x] **F1.2 — Entrega ativa** (`tpl-c-active`): página + estados + timeline + CTA
+      que roteia para comprovação (pickup/delivery/refusal). `EntregadorService`.
+- [~] **F1.3 — Comprovação + Concluída**: `comprovacao.page` (já existia) **fiada**
+      no fluxo via CTA da entrega ativa. Falta a tela de sucesso dedicada (`tpl-c-done`).
+- [x] **F1.4 — Perfil** (`tpl-c-profile`): nível + breakdown do score (ADR-013) +
+      status do cadastro. _Pendência:_ identidade/docs/PIX exigem endpoint
+      courier self-profile (registrar como F1.6 backend).
+- [x] **F1.5 — Lista real + consolida ganhos→saldo**: `entregas.page` real;
+      stub `ganhos` removido; tab aponta para `/saldo`.
+- **Aceite:** loop online→oferta→aceite→coleta→foto→entrega navega ponta a ponta.
+  Tudo `ng build` OK e commitado. Falta: tela de sucesso + endpoint self-profile.
 
 ---
 
