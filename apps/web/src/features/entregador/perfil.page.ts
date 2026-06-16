@@ -15,7 +15,11 @@ import {
   type ScoreLevel,
 } from '../../shared/components';
 import { EmptyStateComponent } from '../../shared/state';
-import { CourierScore, EntregadorService } from './entregador.service';
+import {
+  CourierProfile,
+  CourierScore,
+  EntregadorService,
+} from './entregador.service';
 
 const VALID_LEVELS: ScoreLevel[] = [
   'probation',
@@ -47,10 +51,40 @@ const VALID_LEVELS: ScoreLevel[] = [
       <div class="jx-perfil">
         <h1 class="jx-perfil__title">Seu perfil</h1>
 
+        @if (profile(); as p) {
+          <section class="jx-perfil__card">
+            <strong class="jx-perfil__name">{{ p.full_name }}</strong>
+            <p class="jx-perfil__id">
+              CPF {{ p.cpf_masked }} · {{ vehicleLabel(p.vehicle_type) }}
+              @if (p.vehicle_plate) {
+                {{ p.vehicle_plate }}
+              }
+            </p>
+          </section>
+        }
+
         <section class="jx-perfil__card">
           <span class="jx-perfil__eyebrow">Situação do cadastro</span>
           <strong>{{ statusLabel() }}</strong>
         </section>
+
+        @if (profile(); as p) {
+          @if (p.documents.length) {
+            <section class="jx-perfil__card">
+              <span class="jx-perfil__eyebrow">Documentos</span>
+              @for (d of p.documents; track d.kind) {
+                <div class="jx-perfil__doc">
+                  <span>{{ docLabel(d.kind) }}</span>
+                  <span
+                    class="jx-perfil__doc-status"
+                    [class.jx-perfil__doc-status--ok]="d.status === 'approved'"
+                    >{{ docStatusLabel(d.status) }}</span
+                  >
+                </div>
+              }
+            </section>
+          }
+        }
 
         @if (score(); as sc) {
           <section class="jx-perfil__card">
@@ -111,6 +145,30 @@ const VALID_LEVELS: ScoreLevel[] = [
         letter-spacing: 0.08em;
         color: var(--jx-color-neutral-500);
       }
+      .jx-perfil__name {
+        font-size: var(--jx-text-md);
+      }
+      .jx-perfil__id {
+        margin: 0;
+        font-family: var(--jx-font-mono);
+        font-size: var(--jx-text-xs);
+        color: var(--jx-color-neutral-500);
+      }
+      .jx-perfil__doc {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: var(--jx-text-sm);
+        padding: var(--jx-space-1) 0;
+        border-bottom: 1px solid var(--surface-sunken);
+      }
+      .jx-perfil__doc-status {
+        color: var(--jx-color-neutral-500);
+        font-weight: var(--jx-weight-medium);
+      }
+      .jx-perfil__doc-status--ok {
+        color: var(--jx-color-semantic-success);
+      }
       .jx-perfil__note {
         margin: 0;
         font-size: var(--jx-text-sm);
@@ -129,6 +187,7 @@ export class EntregadorPerfilPage implements OnInit {
   private readonly svc = inject(EntregadorService);
 
   protected readonly score = signal<CourierScore | null>(null);
+  protected readonly profile = signal<CourierProfile | null>(null);
 
   protected readonly level = computed<ScoreLevel>(() => {
     const lvl = this.score()?.level as ScoreLevel | undefined;
@@ -149,6 +208,42 @@ export class EntregadorPerfilPage implements OnInit {
   async ngOnInit(): Promise<void> {
     const id = this.auth.me()?.courier_id;
     if (!id) return;
-    this.score.set(await this.svc.score(id));
+    const [score, profile] = await Promise.all([
+      this.svc.score(id),
+      this.svc.profile(id),
+    ]);
+    this.score.set(score);
+    this.profile.set(profile);
+  }
+
+  protected vehicleLabel(v: string): string {
+    const map: Record<string, string> = {
+      moto: 'Moto',
+      bicicleta: 'Bicicleta',
+      carro: 'Carro',
+      a_pe: 'A pé',
+    };
+    return map[v] ?? v;
+  }
+
+  protected docLabel(kind: string): string {
+    const map: Record<string, string> = {
+      selfie: 'CPF + Selfie',
+      cnh: 'CNH com EAR',
+      crlv: 'CRLV',
+      mei: 'MEI',
+      antecedentes: 'Antecedentes',
+    };
+    return map[kind] ?? kind;
+  }
+
+  protected docStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      approved: '✓ Aprovado',
+      rejected: 'Reprovado',
+      pending: 'Em análise',
+      pending_upload: 'Aguardando envio',
+    };
+    return map[status] ?? status;
   }
 }

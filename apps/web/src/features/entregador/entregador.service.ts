@@ -33,6 +33,25 @@ export interface AvailabilityResult {
   busy: boolean;
 }
 
+export interface CourierDocumentItem {
+  kind: string;
+  status: string;
+}
+
+export interface CourierProfile {
+  id: number;
+  full_name: string;
+  cpf_masked: string;
+  phone_masked: string;
+  email_masked: string;
+  vehicle_type: string;
+  vehicle_plate: string | null;
+  kyc_level: string;
+  status: string;
+  mei_pending: boolean;
+  documents: CourierDocumentItem[];
+}
+
 export interface CourierDelivery {
   id: number;
   public_token: string;
@@ -92,6 +111,17 @@ export class EntregadorService {
         { online }
       )
     );
+  }
+
+  /** The courier's own profile (identity + documents, PII masked) — F1.6. */
+  async profile(courierId: number): Promise<CourierProfile | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<CourierProfile>(`/v1/couriers/${courierId}/profile`)
+      );
+    } catch {
+      return null;
+    }
   }
 
   /** Latest score snapshot; null when none has been computed yet (404). */

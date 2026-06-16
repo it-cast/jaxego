@@ -481,3 +481,11 @@ async def list_area_couriers(
     rows = list((await session.execute(base)).scalars().all())
     total = int((await session.execute(count_stmt)).scalar_one())
     return rows, total
+
+
+async def list_courier_documents(
+    session: AsyncSession, *, courier_id: int
+) -> list[CourierDocument]:
+    """The courier's KYC documents (kind + status), for their own profile (F1.6)."""
+    stmt = select(CourierDocument).where(CourierDocument.courier_id == courier_id)
+    return list((await session.execute(stmt)).scalars().all())

@@ -264,3 +264,34 @@ class CourierAdminListOut(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class CourierDocumentItem(BaseModel):
+    """One KYC document's kind + status (D-04) for the courier's own profile."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str
+    status: str
+
+
+class CourierProfileOut(BaseModel):
+    """The courier's OWN profile (F1.6 — tpl-c-profile identity + documents).
+
+    PII masked (TH-05): CPF/phone/e-mail never returned raw. The score lives in a
+    separate endpoint (ADR-013). PIX key is not stored yet (F1.7 — needs migration).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    full_name: str
+    cpf_masked: str
+    phone_masked: str
+    email_masked: str
+    vehicle_type: str
+    vehicle_plate: str | None
+    kyc_level: str
+    status: str
+    mei_pending: bool
+    documents: list[CourierDocumentItem]

@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import AreaScopeDep, CurrentUser, require_role
 from app.auth.models import User
 from app.core.exceptions import NotFoundError
+from app.core.logging import mask_email, mask_phone
 from app.core.ratelimit import signup_rate_limit
 from app.couriers import availability as availability_svc
 from app.couriers import coverage as coverage_svc
@@ -33,6 +34,8 @@ from app.couriers.schemas import (
     AvailabilityResponse,
     CourierAdminListItem,
     CourierAdminListOut,
+    CourierDocumentItem,
+    CourierProfileOut,
     CourierSignupBody,
     CourierSignupResponse,
     CoverageBody,
@@ -369,6 +372,31 @@ async def get_courier_delivery(
         session, courier_id=courier.id, delivery_id=delivery_id
     )
     return _courier_delivery_out(delivery, recipient)
+
+
+@router.get("/{courier_id}/profile", response_model=CourierProfileOut)
+async def get_courier_profile(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> CourierProfileOut:
+    """The courier's OWN profile (F1.6): identity + documents, PII masked. Self-only."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    docs = await service.list_courier_documents(session, courier_id=courier.id)
+    return CourierProfileOut(
+        id=courier.id,
+        full_name=courier.full_name,
+        cpf_masked=mask_cpf_display(courier.cpf),
+        phone_masked=mask_phone(courier.phone_e164),
+        email_masked=mask_email(courier.email),
+        vehicle_type=courier.vehicle_type,
+        vehicle_plate=courier.vehicle_plate,
+        kyc_level=courier.kyc_level,
+        status=courier.status,
+        mei_pending=courier.mei_pending,
+        documents=[CourierDocumentItem(kind=d.kind, status=d.status) for d in docs],
+    )
 
 
 # ---------------------------------------------------------------------------
