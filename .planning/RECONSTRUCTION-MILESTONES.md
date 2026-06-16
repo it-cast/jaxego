@@ -50,8 +50,12 @@ A superfície mais quebrada. Backend pronto: `dispatch/offers/*` (accept/decline
       courier self-profile (registrar como F1.6 backend).
 - [x] **F1.5 — Lista real + consolida ganhos→saldo**: `entregas.page` real;
       stub `ganhos` removido; tab aponta para `/saldo`.
+- [ ] **F1.3b — Tela de entrega concluída** (`tpl-c-done`): sucesso + resumo
+      (valor recebido, taxa, +score) + CTAs (voltar/nova).
+- [ ] **F1.6 — Backend: courier self-profile** — `GET /v1/couriers/{id}/profile`
+      (nome, CPF mascarado, veículo, documentos, chave PIX) p/ completar o perfil + UI.
 - **Aceite:** loop online→oferta→aceite→coleta→foto→entrega navega ponta a ponta.
-  Tudo `ng build` OK e commitado. Falta: tela de sucesso + endpoint self-profile.
+  Tudo `ng build` OK e commitado. Restam F1.3b (tela sucesso) e F1.6 (perfil completo).
 
 ---
 
@@ -95,6 +99,85 @@ Feito depois que os fluxos existem, para não mover código quebrado. ADR-001.
 - [ ] **F5.2 — `apps/entregador`** (Ionic + Capacitor) consumindo shared.
 - [ ] **F5.3 — `apps/admin` + `apps/loja`** consumindo shared.
 - **Aceite:** os 4 apps buildam isolados; `apps/api` intacto.
+
+---
+
+## Matriz de cobertura do protótipo (autoridade de completude)
+
+> Cada tela do `prototipo.html` + caso de uso central → fase → status.
+> ✅ entregue · 🟡 parcial · ❌ falta. Atualizada em 2026-06-16.
+
+### App do entregador (mobile)
+
+| Tela protótipo | Rota | Fase | Status |
+|---|---|---|---|
+| `tpl-c-home` (início/ganhos/oferta) | `/entregador/inicio` | F1.1 | ✅ |
+| `tpl-c-active` (entrega ativa) | `/entregador/entrega-ativa` | F1.2 | ✅ |
+| `tpl-c-proof` (comprovação) | `/entregador/entrega/:id/comprovar/:kind` | Phase 9/F1.3 | ✅ (fiada) |
+| `tpl-c-done` (concluída) | — | **F1.3b** | ❌ falta tela de sucesso |
+| `tpl-c-profile` (perfil/score) | `/entregador/perfil` | F1.4 | 🟡 score✅; identidade/docs/PIX dependem de **F1.6** |
+| `tpl-c-earnings` (extrato/saque) | `/entregador/saldo` | — | ✅ |
+| `tpl-c-coverage` (bairros/preços) | `/entregador/cobertura` | — | ✅ |
+| oferta (sheet+timer) | overlay na home | F1.1 | ✅ |
+
+### Painel da loja (web)
+
+| Tela protótipo | Rota | Status |
+|---|---|---|
+| `tpl-m-dash` (dashboard+em curso) | `/loja/painel` | ✅ (KPIs reais via DeliveryService) |
+| `tpl-m-new` (nova entrega) | `/loja/entregas/nova` | ✅ |
+| `tpl-m-searching` (procurando entregador) | — | ❌ **F4.1** |
+| `tpl-m-detail` (detalhe+timeline) | `/loja/entregas/:id` | ✅ |
+| `tpl-m-list` (entregas) | `/loja/entregas` | ✅ |
+| `tpl-m-plan` (plano & faturas) | `/loja/plano` + `/loja/faturas` | ✅ |
+
+### Admin da área (web)
+
+| Tela protótipo | Rota | Fase | Status |
+|---|---|---|---|
+| `tpl-a-dash` (painel de filas) | `/admin/inicio` | F2.1 | ❌ stub |
+| fila de KYC (lista pendentes) | — | F2.2 | ❌ sem rota/página |
+| `tpl-a-kyc` (revisão item-a-item) | `/admin/kyc/:courierId` | — | ✅ (detalhe; falta como chegar) |
+| detalhe do entregador (score/suspensão) | `/admin/entregadores/:courierId` | — | ✅ (falta lista p/ chegar) |
+| lista de entregadores | — | F2.3 | ❌ |
+| lista de lojas | — | F2.3 | ❌ |
+| `tpl-a-config` (configurações) | `/admin/config` | — | ✅ |
+| disputas | `/admin/disputas` | — | ✅ |
+| API keys | `/admin/api-keys` | — | ✅ |
+
+### Admin da plataforma (web)
+
+| Função | Rota | Fase | Status |
+|---|---|---|---|
+| visão geral | `/plataforma/visao-geral` | — | ✅ |
+| pessoas | `/plataforma/pessoas` | — | ✅ |
+| disputas | `/plataforma/disputas` | — | ✅ |
+| **criar/editar/arquivar área** | — | F3.1 | ❌ backend existe, UI não |
+| revenue-share por área | — | F3.2 | ❌ |
+| designar admin de área | — | F3.2 | ❌ |
+
+### Público
+
+| Tela | Rota | Status |
+|---|---|---|
+| `tpl-track` (rastreio) | `/r/:token` | ✅ |
+
+### Casos de uso transversais
+
+| Caso de uso | Status |
+|---|---|
+| Login → superfície correta por papel | ✅ MR-0 |
+| Sessão sobrevive a F5 (refresh-on-load) | ✅ MR-0 |
+| Loja cria entrega → dispara oferta → entregador aceita → executa → comprova | ✅ (loja+entregador prontos; falta `tpl-m-searching` para o "ao vivo" da loja) |
+| Admin valida KYC → ativa entregador | 🟡 detalhe pronto; **falta a fila** (F2.2) |
+| Plataforma cria área → designa admin → define revenue-share | ❌ MR-3 |
+| Pagamento cartão/PIX com split (Safe2Pay) | 🟡 código contra Stub; **blocker de contrato** (MR-6 / TD-10) |
+| Validação ao vivo (MySQL/B2): migrations, triggers, geofence | ❌ MR-6 |
+
+### Fases novas/explicitadas para fechar 100%
+
+- **F1.3b** — Tela de entrega concluída (`tpl-c-done`): sucesso + resumo (valor, taxa, +score) + CTAs.
+- **F1.6** — Backend: courier self-profile (`GET /v1/couriers/{id}/profile`: nome, CPF mascarado, veículo, documentos, chave PIX) para completar o perfil.
 
 ---
 
