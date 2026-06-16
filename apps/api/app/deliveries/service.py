@@ -578,3 +578,70 @@ class DeliveryPage:
         self.total = total
         self.limit = limit
         self.offset = offset
+
+
+# ---------------------------------------------------------------------------
+# Courier-facing reads (F1.0 / MR-1): the ASSIGNED courier reads their own
+# delivery. Scoped by courier_id (the router proves the courier belongs to the
+# authenticated user — IDOR → 404). PII reveal-by-state is done in the router's
+# serializer (RN-013): full dropoff + recipient only AFTER pickup.
+# ---------------------------------------------------------------------------
+_COURIER_ACTIVE_STATES = frozenset({"ACEITA", "COLETADA"})
+
+
+async def get_courier_delivery(
+    session: AsyncSession, *, courier_id: int, delivery_id: int
+) -> tuple[Delivery, Recipient | None]:
+    """Read one delivery assigned to this courier (404 if not theirs — TH-03)."""
+    stmt = select(Delivery).where(
+        Delivery.id == delivery_id, Delivery.courier_id == courier_id
+    )
+    delivery = (await session.execute(stmt)).scalar_one_or_none()
+    if delivery is None:
+        raise NotFoundError("Entrega não encontrada.")
+    recipient = (
+        await session.get(Recipient, delivery.recipient_id)
+        if delivery.recipient_id is not None
+        else None
+    )
+    return delivery, recipient
+
+
+async def get_courier_active_delivery(
+    session: AsyncSession, *, courier_id: int
+) -> tuple[Delivery, Recipient | None] | None:
+    """The courier's single in-progress delivery (ACEITA/COLETADA), if any."""
+    stmt = (
+        select(Delivery)
+        .where(Delivery.courier_id == courier_id, Delivery.state.in_(_COURIER_ACTIVE_STATES))
+        .order_by(Delivery.accepted_at.desc())
+        .limit(1)
+    )
+    delivery = (await session.execute(stmt)).scalar_one_or_none()
+    if delivery is None:
+        return None
+    recipient = (
+        await session.get(Recipient, delivery.recipient_id)
+        if delivery.recipient_id is not None
+        else None
+    )
+    return delivery, recipient
+
+
+async def list_courier_deliveries(
+    session: AsyncSession, *, courier_id: int, limit: int = 20, offset: int = 0
+) -> DeliveryPage:
+    """Paginated history of the courier's deliveries (single query + COUNT)."""
+    base = (
+        select(Delivery, Recipient)
+        .outerjoin(Recipient, Recipient.id == Delivery.recipient_id)
+        .where(Delivery.courier_id == courier_id)
+        .order_by(Delivery.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    count_stmt = select(func.count(Delivery.id)).where(Delivery.courier_id == courier_id)
+    rows = list((await session.execute(base)).all())
+    total = int((await session.execute(count_stmt)).scalar_one())
+    items = [(d, r) for d, r in rows]
+    return DeliveryPage(items=items, total=total, limit=limit, offset=offset)

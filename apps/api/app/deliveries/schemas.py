@@ -165,3 +165,69 @@ class CreateDeliveryResponse(BaseModel):
     fee_cents: int
     # E2 (D-06): 0 eligible online couriers — non-blocking warning.
     no_couriers_warning: bool
+
+
+class CourierDeliveryOut(BaseModel):
+    """A delivery as seen by the ASSIGNED courier (F1.0 / MR-1).
+
+    PII minimisation (RN-013): the full dropoff address and the recipient are
+    revealed ONLY after pickup (state COLETADA+). Before that the courier sees
+    pickup (the store) + dropoff neighborhood/distance only — same contract as
+    the offer. The router enforces this at serialization.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    public_token: str
+    state: str
+    payment_method: str
+    proof_method: str
+    # Pickup (the store) — always visible to the assigned courier.
+    pickup_address: str
+    pickup_neighborhood: str | None
+    pickup_lat: float | None
+    pickup_lng: float | None
+    # Dropoff — neighborhood/distance always; full address only after pickup.
+    dropoff_neighborhood_id: int
+    distance_m: int | None
+    dropoff_address: str | None
+    dropoff_number: str | None
+    dropoff_complement: str | None
+    dropoff_lat: float | None
+    dropoff_lng: float | None
+    # Recipient — only after pickup (masked phone, never raw — TH-04).
+    recipient_name: str | None
+    recipient_phone_masked: str | None
+    # Money (centavos) + order metadata.
+    estimate_min_cents: int | None
+    estimate_max_cents: int | None
+    fee_cents: int
+    reference_number: str | None
+    items_description: str | None
+    items_quantity: int
+    created_at: str | None
+
+
+class CourierDeliveryListItem(BaseModel):
+    """A row in the courier's delivery history (no recipient PII in the list)."""
+
+    id: int
+    public_token: str
+    state: str
+    payment_method: str
+    dropoff_neighborhood_id: int
+    distance_m: int | None
+    estimate_min_cents: int | None
+    estimate_max_cents: int | None
+    fee_cents: int
+    created_at: str | None
+
+
+class CourierDeliveryListOut(BaseModel):
+    """Paginated courier delivery history (single query + COUNT — no N+1)."""
+
+    items: list[CourierDeliveryListItem]
+    total: int
+    limit: int
+    offset: int

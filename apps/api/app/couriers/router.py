@@ -48,6 +48,13 @@ from app.couriers.schemas import (
 )
 from app.couriers.view import view_document_url
 from app.db.session import get_session
+from app.deliveries import service as delivery_service
+from app.deliveries.schemas import (
+    CourierDeliveryListItem,
+    CourierDeliveryListOut,
+    CourierDeliveryOut,
+    mask_phone_display,
+)
 from app.integrations.factory import get_receita_adapter, get_storage_adapter
 
 router = APIRouter(prefix="/couriers", tags=["couriers"])
@@ -247,6 +254,118 @@ async def set_availability(
     # busy is DERIVED; the real active-delivery count arrives in Phase 7/8 (0 here).
     busy = availability_svc.compute_busy(active_deliveries=0, max_concurrent=updated.max_concurrent)
     return AvailabilityResponse(is_online=updated.is_online, busy=busy)
+
+
+# ---------------------------------------------------------------------------
+# Courier-facing delivery reads (F1.0 / MR-1). Self-only via _own_courier
+# (IDOR → 404). PII reveal-by-state (RN-013): full dropoff + recipient only
+# AFTER pickup (COLETADA+). `/active` is declared before `/{delivery_id}`.
+# ---------------------------------------------------------------------------
+_COURIER_DROPOFF_REVEALED = frozenset(
+    {"COLETADA", "ENTREGUE", "RECUSADA_NO_DESTINO", "FINALIZADA"}
+)
+
+
+def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
+    """Serialize a delivery for the assigned courier, hiding destination PII
+    until pickup (RN-013). The recipient phone is masked even when revealed."""
+    revealed = delivery.state in _COURIER_DROPOFF_REVEALED
+    return CourierDeliveryOut(
+        id=delivery.id,
+        public_token=delivery.public_token,
+        state=delivery.state,
+        payment_method=delivery.payment_method,
+        proof_method=delivery.proof_method,
+        pickup_address=delivery.pickup_address,
+        pickup_neighborhood=delivery.pickup_neighborhood,
+        pickup_lat=delivery.pickup_lat,
+        pickup_lng=delivery.pickup_lng,
+        dropoff_neighborhood_id=delivery.dropoff_neighborhood_id,
+        distance_m=delivery.distance_m,
+        dropoff_address=delivery.dropoff_address if revealed else None,
+        dropoff_number=delivery.dropoff_number if revealed else None,
+        dropoff_complement=delivery.dropoff_complement if revealed else None,
+        dropoff_lat=delivery.dropoff_lat if revealed else None,
+        dropoff_lng=delivery.dropoff_lng if revealed else None,
+        recipient_name=(recipient.name if recipient else None) if revealed else None,
+        recipient_phone_masked=(
+            mask_phone_display(recipient.phone_e164) if recipient else None
+        )
+        if revealed
+        else None,
+        estimate_min_cents=delivery.estimate_min_cents,
+        estimate_max_cents=delivery.estimate_max_cents,
+        fee_cents=delivery.fee_cents,
+        reference_number=delivery.reference_number,
+        items_description=delivery.items_description,
+        items_quantity=delivery.items_quantity,
+        created_at=delivery.created_at.isoformat() if delivery.created_at else None,
+    )
+
+
+@router.get("/{courier_id}/deliveries/active", response_model=CourierDeliveryOut | None)
+async def get_active_delivery(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> CourierDeliveryOut | None:
+    """The courier's current in-progress delivery (ACEITA/COLETADA), or null."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    result = await delivery_service.get_courier_active_delivery(session, courier_id=courier.id)
+    if result is None:
+        return None
+    return _courier_delivery_out(*result)
+
+
+@router.get("/{courier_id}/deliveries", response_model=CourierDeliveryListOut)
+async def list_courier_deliveries(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+    limit: int = 20,
+    offset: int = 0,
+) -> CourierDeliveryListOut:
+    """The courier's delivery history, paginated (screen lista; no recipient PII)."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    page = await delivery_service.list_courier_deliveries(
+        session, courier_id=courier.id, limit=min(limit, 100), offset=max(offset, 0)
+    )
+    items = [
+        CourierDeliveryListItem(
+            id=d.id,
+            public_token=d.public_token,
+            state=d.state,
+            payment_method=d.payment_method,
+            dropoff_neighborhood_id=d.dropoff_neighborhood_id,
+            distance_m=d.distance_m,
+            estimate_min_cents=d.estimate_min_cents,
+            estimate_max_cents=d.estimate_max_cents,
+            fee_cents=d.fee_cents,
+            created_at=d.created_at.isoformat() if d.created_at else None,
+        )
+        for d, _ in page.items
+    ]
+    return CourierDeliveryListOut(
+        items=items, total=page.total, limit=page.limit, offset=page.offset
+    )
+
+
+@router.get("/{courier_id}/deliveries/{delivery_id}", response_model=CourierDeliveryOut)
+async def get_courier_delivery(
+    courier_id: int,
+    delivery_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> CourierDeliveryOut:
+    """Read one delivery assigned to this courier (404 if not theirs — TH-03)."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery, recipient = await delivery_service.get_courier_delivery(
+        session, courier_id=courier.id, delivery_id=delivery_id
+    )
+    return _courier_delivery_out(delivery, recipient)
 
 
 # ---------------------------------------------------------------------------
