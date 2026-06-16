@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LiveMapComponent } from '../../../shared/components/live-map/live-map.component';
 import { EmptyStateComponent, ErrorStateComponent } from '../../../shared/state';
 import { CourierDelivery, EntregadorService } from '../entregador.service';
 
@@ -24,7 +26,7 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
   selector: 'jx-entregador-entrega-ativa',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, EmptyStateComponent, ErrorStateComponent],
+  imports: [IonContent, EmptyStateComponent, ErrorStateComponent, LiveMapComponent],
   template: `
     <ion-content>
       @if (loading()) {
@@ -42,6 +44,14 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         />
       } @else {
         <div class="jx-active">
+          @if (mapLat() !== null && mapLng() !== null) {
+            <jx-live-map
+              [lat]="mapLat()"
+              [lng]="mapLng()"
+              [ariaLabel]="mapAria()"
+            />
+          }
+
           <div class="jx-active__head">
             <span class="jx-active__state">{{ stateLabel() }}</span>
             <span class="jx-active__step">{{ stepLabel() }}</span>
@@ -227,6 +237,24 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly delivery = signal<CourierDelivery | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
+
+  /** Map focuses the destination after pickup (COLETADA), else the pickup point. */
+  protected readonly mapLat = computed<number | null>(() => {
+    const d = this.delivery();
+    if (!d) return null;
+    return d.state === 'COLETADA' && d.dropoff_lat != null ? d.dropoff_lat : d.pickup_lat;
+  });
+  protected readonly mapLng = computed<number | null>(() => {
+    const d = this.delivery();
+    if (!d) return null;
+    return d.state === 'COLETADA' && d.dropoff_lng != null ? d.dropoff_lng : d.pickup_lng;
+  });
+
+  protected mapAria(): string {
+    return this.delivery()?.state === 'COLETADA'
+      ? 'Mapa do destino da entrega'
+      : 'Mapa do ponto de coleta';
+  }
 
   async ngOnInit(): Promise<void> {
     await this.reload();

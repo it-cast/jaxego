@@ -10,6 +10,7 @@ import {
   inject,
 } from '@angular/core';
 import { ThemeService } from '../../../core/theme/theme.service';
+import { MAP_TILE_SOURCE } from '../../../core/map/map-tiles';
 
 /**
  * jx-live-map — MapLibre raster (OSM) map for the public tracker (tela 26).
@@ -97,10 +98,11 @@ export class LiveMapComponent implements AfterViewInit, OnChanges, OnDestroy {
         sources: {
           osm: {
             type: 'raster',
-            // Pilot tile source (TD-019 — single point of config, swap to self-host).
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap',
+            // Tile source vem de um ponto único de config (TD-019) — trocar para
+            // Mapbox/MapTiler/self-host em core/map/map-tiles.ts, sem tocar aqui.
+            tiles: MAP_TILE_SOURCE.tiles,
+            tileSize: MAP_TILE_SOURCE.tileSize,
+            attribution: MAP_TILE_SOURCE.attribution,
           },
         },
         layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
