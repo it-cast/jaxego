@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class AreaCreate(BaseModel):
@@ -37,3 +38,24 @@ class AreaRead(BaseModel):
     config: dict
     deleted_at: datetime | None
     created_at: datetime
+
+
+class AreaAdminAssignBody(BaseModel):
+    """Assign (or update the role of) an area admin by e-mail (F3.3)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_email: EmailStr
+    role: Literal["owner", "manager", "viewer"] = "manager"
+
+
+class AreaAdminRead(BaseModel):
+    """An area-admin membership projection."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    area_id: int
+    user_id: int
+    user_email: str
+    role: str

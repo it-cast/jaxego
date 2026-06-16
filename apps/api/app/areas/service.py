@@ -145,3 +145,37 @@ async def archive_area(session: AsyncSession, area_id: int) -> Area:
     area.deleted_at = datetime.now(UTC)  # AWARE — TD-010
     await session.flush()
     return area
+
+
+class AdminUserNotFoundError(NotFoundError):
+    """No user with the given e-mail to assign as area admin (F3.3)."""
+
+    def __init__(self) -> None:
+        super().__init__("Nenhum usuário com esse e-mail. Peça para a pessoa criar a conta antes.")
+
+
+async def assign_area_admin(
+    session: AsyncSession, *, area_id: int, user_email: str, role: str
+) -> tuple[AreaAdmin, str]:
+    """Link a user (by e-mail) to an area as admin, or update the role if it
+    already exists. The area must exist (404 otherwise). Returns (membership, email)."""
+    await get_area(session, area_id)  # 404 if missing/archived
+    user = (
+        await session.execute(select(User).where(User.email == user_email))
+    ).scalar_one_or_none()
+    if user is None:
+        raise AdminUserNotFoundError()
+    membership = (
+        await session.execute(
+            select(AreaAdmin).where(
+                AreaAdmin.area_id == area_id, AreaAdmin.user_id == user.id
+            )
+        )
+    ).scalar_one_or_none()
+    if membership is None:
+        membership = AreaAdmin(area_id=area_id, user_id=user.id, role=role)
+        session.add(membership)
+        await session.flush()
+    else:
+        membership.role = role
+    return membership, user.email

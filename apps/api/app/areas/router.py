@@ -15,7 +15,13 @@ from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas import service
-from app.areas.schemas import AreaCreate, AreaRead, AreaUpdate
+from app.areas.schemas import (
+    AreaAdminAssignBody,
+    AreaAdminRead,
+    AreaCreate,
+    AreaRead,
+    AreaUpdate,
+)
 from app.audit.service import write_audit
 from app.auth.dependencies import PlatformAdmin
 from app.auth.models import User
@@ -50,6 +56,40 @@ async def _audit_bypass(
         after=after,
         ip=_client_ip(request),
         cross_area_bypass=True,
+    )
+
+
+@router.post(
+    "/{area_id}/admins",
+    response_model=AreaAdminRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def assign_area_admin(
+    area_id: int,
+    body: AreaAdminAssignBody,
+    admin: PlatformAdmin,
+    request: Request,
+    session: SessionDep,
+) -> AreaAdminRead:
+    """Designar admin de área por e-mail (F3.3). Cria o vínculo ou atualiza o papel."""
+    membership, email = await service.assign_area_admin(
+        session, area_id=area_id, user_email=str(body.user_email), role=body.role
+    )
+    await _audit_bypass(
+        session,
+        actor=admin,
+        action="area.admin_assigned",
+        area_id=area_id,
+        request=request,
+        after={"user_id": membership.user_id, "role": membership.role},
+    )
+    await session.commit()
+    return AreaAdminRead(
+        id=membership.id,
+        area_id=membership.area_id,
+        user_id=membership.user_id,
+        user_email=email,
+        role=membership.role,
     )
 
 

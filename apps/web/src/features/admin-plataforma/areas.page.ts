@@ -99,6 +99,30 @@ import { Area, PlatformAdminService } from './platform-admin.service';
                 Arquivar
               </button>
             </div>
+            <div class="jx-areas__row">
+              <label class="jx-areas__grow">
+                <span>Designar admin (e-mail)</span>
+                <input
+                  type="email"
+                  [(ngModel)]="adminEmail[a.id]"
+                  placeholder="pessoa@exemplo.com"
+                />
+              </label>
+              <label>
+                <span>Papel</span>
+                <select [(ngModel)]="adminRole[a.id]">
+                  <option value="manager">Gestor</option>
+                  <option value="owner">Dono</option>
+                  <option value="viewer">Leitura</option>
+                </select>
+              </label>
+              <button type="button" class="jx-areas__ghost" (click)="assignAdmin(a)">
+                Designar
+              </button>
+            </div>
+            @if (adminMsg[a.id]) {
+              <p class="jx-areas__msg" role="status">{{ adminMsg[a.id] }}</p>
+            }
           </article>
         }
       }
@@ -187,6 +211,11 @@ import { Area, PlatformAdminService } from './platform-admin.service';
         font-size: var(--jx-text-sm);
         margin: 0;
       }
+      .jx-areas__msg {
+        color: var(--text-muted);
+        font-size: var(--jx-text-sm);
+        margin: 0;
+      }
     `,
   ],
 })
@@ -199,6 +228,9 @@ export class PlataformaAreasPage implements OnInit {
   protected readonly saving = signal(false);
   protected readonly createError = signal<string | null>(null);
   protected readonly revenue: Record<number, number | null> = {};
+  protected readonly adminEmail: Record<number, string> = {};
+  protected readonly adminRole: Record<number, string> = {};
+  protected readonly adminMsg: Record<number, string> = {};
 
   protected newCodename = '';
   protected newName = '';
@@ -262,5 +294,23 @@ export class PlataformaAreasPage implements OnInit {
   protected async archive(a: Area): Promise<void> {
     await this.svc.archiveArea(a.id);
     await this.reload();
+  }
+
+  protected async assignAdmin(a: Area): Promise<void> {
+    const email = (this.adminEmail[a.id] ?? '').trim();
+    if (!email) return;
+    const role = this.adminRole[a.id] ?? 'manager';
+    try {
+      await this.svc.assignAreaAdmin(a.id, email, role);
+      this.adminMsg[a.id] = `${email} designado como ${this.roleLabel(role)}.`;
+      this.adminEmail[a.id] = '';
+    } catch {
+      this.adminMsg[a.id] =
+        'Não foi possível designar (a pessoa precisa ter conta criada antes).';
+    }
+  }
+
+  protected roleLabel(role: string): string {
+    return { owner: 'dono', manager: 'gestor', viewer: 'leitura' }[role] ?? role;
   }
 }

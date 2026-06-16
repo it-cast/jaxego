@@ -189,6 +189,20 @@ export class PlatformAdminService {
     );
   }
 
+  /** Designa (ou atualiza o papel de) um admin de área por e-mail (F3.3). */
+  async assignAreaAdmin(
+    areaId: number,
+    userEmail: string,
+    role: string,
+  ): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`/v1/areas/${areaId}/admins`, {
+        user_email: userEmail,
+        role,
+      }),
+    );
+  }
+
   /** Breakdown de score de um entregador (admin de área — reusado na tela 24). */
   async courierScore(courierId: number): Promise<CourierScore> {
     return firstValueFrom(
