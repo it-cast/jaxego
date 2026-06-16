@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -49,6 +50,14 @@ import { AdminKycService, CourierListItem } from '../kyc/kyc.service';
             Todos
           </button>
         </div>
+        <input
+          type="search"
+          class="jx-couriers__search"
+          placeholder="Buscar por nome ou CPF…"
+          [value]="query()"
+          (input)="query.set($any($event.target).value)"
+          aria-label="Buscar entregador"
+        />
       </header>
 
       @if (loading()) {
@@ -72,7 +81,7 @@ import { AdminKycService, CourierListItem } from '../kyc/kyc.service';
             </tr>
           </thead>
           <tbody>
-            @for (c of items(); track c.id) {
+            @for (c of filtered(); track c.id) {
               <tr class="jx-couriers__row" (click)="open(c)">
                 <td>{{ c.full_name }}</td>
                 <td class="jx-couriers__mono">{{ c.cpf_masked }}</td>
@@ -125,6 +134,15 @@ import { AdminKycService, CourierListItem } from '../kyc/kyc.service';
         background: var(--surface);
         color: var(--text);
       }
+      .jx-couriers__search {
+        padding: var(--jx-space-2);
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-md);
+        background: var(--surface);
+        color: var(--text);
+        font-size: var(--jx-text-sm);
+        min-width: 240px;
+      }
       .jx-couriers__tbl {
         width: 100%;
         border-collapse: collapse;
@@ -163,6 +181,17 @@ export class AdminEntregadoresPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
   protected readonly filter = signal<'pending_kyc' | 'all'>('pending_kyc');
+  protected readonly query = signal('');
+
+  /** Busca client-side por nome ou CPF (a fila/lista vem filtrada por status no backend). */
+  protected readonly filtered = computed<CourierListItem[]>(() => {
+    const q = this.query().trim().toLowerCase();
+    if (!q) return this.items();
+    return this.items().filter(
+      (c) =>
+        c.full_name.toLowerCase().includes(q) || c.cpf_masked.toLowerCase().includes(q)
+    );
+  });
 
   async ngOnInit(): Promise<void> {
     await this.reload();

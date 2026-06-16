@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -41,7 +42,17 @@ interface MerchantListOut {
   imports: [EmptyStateComponent, ErrorStateComponent, LoadingSkeletonComponent],
   template: `
     <section class="jx-lojas">
-      <h1 class="jx-lojas__title">Lojas</h1>
+      <header class="jx-lojas__head">
+        <h1 class="jx-lojas__title">Lojas</h1>
+        <input
+          type="search"
+          class="jx-lojas__search"
+          placeholder="Buscar loja…"
+          [value]="query()"
+          (input)="query.set($any($event.target).value)"
+          aria-label="Buscar loja"
+        />
+      </header>
       @if (loading()) {
         <jx-loading-skeleton />
       } @else if (error()) {
@@ -59,7 +70,7 @@ interface MerchantListOut {
             </tr>
           </thead>
           <tbody>
-            @for (m of items(); track m.id) {
+            @for (m of filtered(); track m.id) {
               <tr>
                 <td>{{ m.trade_name }}</td>
                 <td class="jx-lojas__mono">{{ m.document_masked }}</td>
@@ -79,10 +90,26 @@ interface MerchantListOut {
         flex-direction: column;
         gap: var(--jx-space-3);
       }
+      .jx-lojas__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--jx-space-3);
+        flex-wrap: wrap;
+      }
       .jx-lojas__title {
         font-family: var(--jx-font-display);
         font-size: var(--jx-text-2xl);
         margin: 0;
+      }
+      .jx-lojas__search {
+        padding: var(--jx-space-2);
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-md);
+        background: var(--surface);
+        color: var(--text);
+        font-size: var(--jx-text-sm);
+        min-width: 220px;
       }
       .jx-lojas__tbl {
         width: 100%;
@@ -114,6 +141,17 @@ export class AdminLojasPage implements OnInit {
   protected readonly items = signal<MerchantListItem[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
+  protected readonly query = signal('');
+
+  protected readonly filtered = computed<MerchantListItem[]>(() => {
+    const q = this.query().trim().toLowerCase();
+    if (!q) return this.items();
+    return this.items().filter(
+      (m) =>
+        m.trade_name.toLowerCase().includes(q) ||
+        m.document_masked.toLowerCase().includes(q)
+    );
+  });
 
   async ngOnInit(): Promise<void> {
     await this.reload();
