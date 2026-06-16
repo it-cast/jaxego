@@ -49,7 +49,7 @@ interface MerchantListOut {
           class="jx-lojas__search"
           placeholder="Buscar loja…"
           [value]="query()"
-          (input)="query.set($any($event.target).value)"
+          (input)="onSearch($event)"
           aria-label="Buscar loja"
         />
       </header>
@@ -155,6 +155,10 @@ export class AdminLojasPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.reload();
+  }
+
+  protected onSearch(e: Event): void {
+    this.query.set((e.target as HTMLInputElement).value);
   }
 
   protected async reload(): Promise<void> {

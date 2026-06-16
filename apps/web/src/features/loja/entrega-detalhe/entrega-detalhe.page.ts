@@ -9,7 +9,11 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { StateBadgeComponent } from '../../../shared/components/state-badge/state-badge.component';
 import { LiveMapComponent } from '../../../shared/components/live-map/live-map.component';
-import { PaymentBadgeComponent, type PaymentMethod } from '../../../shared/components';
+import { PaymentBadgeComponent } from '../../../shared/components';
+import {
+  packageLabel as fmtPackage,
+  paymentMethodOf,
+} from '../../../shared/util/delivery-format';
 import {
   TrackingState,
   TrackingTimelineComponent,
@@ -54,12 +58,8 @@ import { DeliveryService } from '../entregas/delivery.service';
 
         <div class="jx-detail__grid">
           <section class="jx-detail__main">
-            @if (d.dropoff_lat != null && d.dropoff_lng != null) {
-              <jx-live-map
-                [lat]="d.dropoff_lat"
-                [lng]="d.dropoff_lng"
-                ariaLabel="Mapa do destino da entrega"
-              />
+            @if (coords(d); as c) {
+              <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
             }
             <jx-tracking-timeline [state]="trackingState(d)" [entries]="[]" />
           </section>
@@ -173,18 +173,14 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
     return d.state as TrackingState;
   }
 
-  protected payOf(method: string): PaymentMethod {
-    return method === 'pix' || method === 'card' ? method : 'direct';
-  }
+  protected readonly payOf = paymentMethodOf;
+  protected readonly packageLabel = fmtPackage;
 
-  /** "2,5 kg · 40×30×20 cm" — só as partes preenchidas. Vazio se nada. */
-  protected packageLabel(d: DeliveryListItem): string {
-    const parts: string[] = [];
-    if (d.weight_g) parts.push(`${(d.weight_g / 1000).toLocaleString('pt-BR')} kg`);
-    if (d.length_cm && d.width_cm && d.height_cm) {
-      parts.push(`${d.length_cm}×${d.width_cm}×${d.height_cm} cm`);
-    }
-    return parts.join(' · ');
+  /** Coords do destino para o mapa, ou null (lint/type-safe). */
+  protected coords(d: DeliveryListItem): { lat: number; lng: number } | null {
+    return typeof d.dropoff_lat === 'number' && typeof d.dropoff_lng === 'number'
+      ? { lat: d.dropoff_lat, lng: d.dropoff_lng }
+      : null;
   }
 
   protected canCancel(d: DeliveryListItem): boolean {

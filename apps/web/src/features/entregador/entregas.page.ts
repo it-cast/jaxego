@@ -8,7 +8,8 @@ import {
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '../../core/auth/auth.service';
-import { MoneyComponent, PaymentBadgeComponent, type PaymentMethod } from '../../shared/components';
+import { MoneyComponent, PaymentBadgeComponent } from '../../shared/components';
+import { deliveryStateLabel, paymentMethodOf } from '../../shared/util/delivery-format';
 import {
   EmptyStateComponent,
   ErrorStateComponent,
@@ -55,7 +56,11 @@ import { CourierDeliveryListItem, EntregadorService } from './entregador.service
             <article
               class="jx-list__row"
               [class.jx-list__row--active]="isActive(d.state)"
+              [attr.role]="isActive(d.state) ? 'button' : null"
+              [attr.tabindex]="isActive(d.state) ? 0 : null"
               (click)="open(d)"
+              (keydown.enter)="open(d)"
+              (keydown.space)="open(d)"
             >
               <div>
                 <strong>{{ stateLabel(d.state) }}</strong>
@@ -146,22 +151,8 @@ export class EntregadorEntregasPage implements OnInit {
     }
   }
 
-  protected stateLabel(state: string): string {
-    const map: Record<string, string> = {
-      CRIADA: 'Criada',
-      ACEITA: 'Aceita',
-      COLETADA: 'Coletada',
-      ENTREGUE: 'Entregue',
-      FINALIZADA: 'Finalizada',
-      RECUSADA_NO_DESTINO: 'Recusada',
-      CANCELADA: 'Cancelada',
-    };
-    return map[state] ?? state;
-  }
-
-  protected payOf(method: string): PaymentMethod {
-    return method === 'pix' || method === 'card' ? method : 'direct';
-  }
+  protected readonly stateLabel = deliveryStateLabel;
+  protected readonly payOf = paymentMethodOf;
 
   protected shortDate(iso: string | null): string {
     if (!iso) return '';

@@ -11,7 +11,16 @@ import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '../../../core/auth/auth.service';
 import { LiveMapComponent } from '../../../shared/components/live-map/live-map.component';
 import { PaymentBadgeComponent, type PaymentMethod } from '../../../shared/components';
-import { EmptyStateComponent, ErrorStateComponent } from '../../../shared/state';
+import {
+  deliveryStateLabel,
+  packageLabel as fmtPackage,
+  paymentMethodOf,
+} from '../../../shared/util/delivery-format';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  LoadingSkeletonComponent,
+} from '../../../shared/state';
 import { CourierDelivery, EntregadorService } from '../entregador.service';
 
 /**
@@ -31,13 +40,14 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     IonContent,
     EmptyStateComponent,
     ErrorStateComponent,
+    LoadingSkeletonComponent,
     LiveMapComponent,
     PaymentBadgeComponent,
   ],
   template: `
     <ion-content>
       @if (loading()) {
-        <div class="jx-active__skeleton" aria-busy="true">Carregando…</div>
+        <div class="jx-active" aria-busy="true"><jx-loading-skeleton /></div>
       } @else if (error()) {
         <jx-error-state
           message="Não foi possível carregar sua entrega agora."
@@ -269,19 +279,11 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   });
 
   protected packageLabel(): string {
-    const d = this.delivery();
-    if (!d) return '';
-    const parts: string[] = [];
-    if (d.weight_g) parts.push(`${(d.weight_g / 1000).toLocaleString('pt-BR')} kg`);
-    if (d.length_cm && d.width_cm && d.height_cm) {
-      parts.push(`${d.length_cm}×${d.width_cm}×${d.height_cm} cm`);
-    }
-    return parts.join(' · ');
+    return fmtPackage(this.delivery() ?? {});
   }
 
   protected payMethod(): PaymentMethod {
-    const m = this.delivery()?.payment_method;
-    return m === 'pix' || m === 'card' ? m : 'direct';
+    return paymentMethodOf(this.delivery()?.payment_method);
   }
 
   protected mapAria(): string {
@@ -313,11 +315,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   }
 
   protected stateLabel(): string {
-    const map: Record<string, string> = {
-      ACEITA: 'Aceita',
-      COLETADA: 'Coletada',
-    };
-    return map[this.delivery()?.state ?? ''] ?? this.delivery()?.state ?? '';
+    return deliveryStateLabel(this.delivery()?.state);
   }
 
   protected stepLabel(): string {

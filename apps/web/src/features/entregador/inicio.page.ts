@@ -27,6 +27,7 @@ import {
   CourierScore,
   EntregadorService,
 } from './entregador.service';
+import { deliveryStateLabel } from '../../shared/util/delivery-format';
 
 /** Mutually-exclusive dispatch states on the home (UI-SPEC §2.3). */
 type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
@@ -362,18 +363,7 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     this.offerResult.set(null);
   }
 
-  protected stateLabel(state: string): string {
-    const map: Record<string, string> = {
-      CRIADA: 'Criada',
-      ACEITA: 'Aceita',
-      COLETADA: 'Coletada',
-      ENTREGUE: 'Entregue',
-      FINALIZADA: 'Finalizada',
-      RECUSADA_NO_DESTINO: 'Recusada',
-      CANCELADA: 'Cancelada',
-    };
-    return map[state] ?? state;
-  }
+  protected readonly stateLabel = deliveryStateLabel;
 
   protected paymentLabel(method: string): string {
     const map: Record<string, string> = {

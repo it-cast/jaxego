@@ -55,7 +55,7 @@ import { AdminKycService, CourierListItem } from '../kyc/kyc.service';
           class="jx-couriers__search"
           placeholder="Buscar por nome ou CPF…"
           [value]="query()"
-          (input)="query.set($any($event.target).value)"
+          (input)="onSearch($event)"
           aria-label="Buscar entregador"
         />
       </header>
@@ -209,6 +209,10 @@ export class AdminEntregadoresPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected onSearch(e: Event): void {
+    this.query.set((e.target as HTMLInputElement).value);
   }
 
   protected setFilter(value: 'pending_kyc' | 'all'): void {

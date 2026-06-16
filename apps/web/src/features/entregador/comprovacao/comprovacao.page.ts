@@ -54,7 +54,7 @@ import { ProofKind, ProofService } from './proof.service';
             maxlength="6"
             placeholder="0000"
             [value]="reference()"
-            (input)="reference.set($any($event.target).value)"
+            (input)="onRefInput($event)"
           />
           <button
             type="button"
@@ -158,6 +158,10 @@ export class ComprovacaoPage implements OnInit {
       this.error.set('Não foi possível enviar a foto agora. Tente de novo.');
       this.geofence.set('out');
     }
+  }
+
+  protected onRefInput(e: Event): void {
+    this.reference.set((e.target as HTMLInputElement).value);
   }
 
   protected async onReference(): Promise<void> {
