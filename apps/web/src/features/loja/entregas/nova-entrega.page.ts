@@ -217,8 +217,9 @@ export class NovaEntregaPage {
       this.estimateMin.set(result.data.estimate_min_cents);
       this.estimateMax.set(result.data.estimate_max_cents);
       this.noCouriersWarning.set(result.data.no_couriers_warning);
-      // Born CRIADA → go to the list with a discreet success (no confetti).
-      void this.router.navigate(['/loja/entregas']);
+      // Born CRIADA → go to the detail, which shows "procurando entregador" and
+      // polls until a courier accepts (F4.1 / tpl-m-searching).
+      void this.router.navigate(['/loja/entregas', result.data.delivery_id]);
       return;
     }
 

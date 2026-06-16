@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { StateBadgeComponent } from '../../../shared/components/state-badge/state-badge.component';
 import {
@@ -29,6 +36,13 @@ import { DeliveryService } from '../entregas/delivery.service';
           <h1 class="jx-detail__title">Entrega #{{ d.id }}</h1>
           <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
         </header>
+
+        @if (trackingState(d) === 'CRIADA') {
+          <div class="jx-detail__searching" role="status" aria-live="polite">
+            <span class="jx-detail__spinner" aria-hidden="true"></span>
+            Procurando entregador… a oferta foi enviada aos entregadores online da área.
+          </div>
+        }
 
         <div class="jx-detail__grid">
           <section class="jx-detail__main">
@@ -62,22 +76,78 @@ import { DeliveryService } from '../entregas/delivery.service';
     </main>
   `,
   styleUrl: './entrega-detalhe.page.scss',
+  styles: [
+    `
+      .jx-detail__searching {
+        display: flex;
+        align-items: center;
+        gap: var(--jx-space-2);
+        background: var(--jx-color-brand-50);
+        border: 1px solid var(--jx-color-brand-100);
+        border-radius: var(--jx-radius-md);
+        padding: var(--jx-space-3);
+        color: var(--jx-color-brand-700, var(--brand));
+        font-size: var(--jx-text-sm);
+        margin-bottom: var(--jx-space-3);
+      }
+      .jx-detail__spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--jx-color-brand-200);
+        border-top-color: var(--jx-color-brand-500);
+        border-radius: var(--jx-radius-full);
+        animation: jx-spin 0.9s linear infinite;
+      }
+      @keyframes jx-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .jx-detail__spinner {
+          animation: none;
+        }
+      }
+    `,
+  ],
 })
-export class EntregaDetalhePage implements OnInit {
+export class EntregaDetalhePage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(DeliveryService);
 
   protected readonly delivery = signal<DeliveryListItem | null>(null);
   protected readonly notFound = signal(false);
 
+  private deliveryId = 0;
+  private pollHandle: ReturnType<typeof setInterval> | null = null;
+
   async ngOnInit(): Promise<void> {
-    const id = Number(this.route.snapshot.paramMap.get('id') ?? 0);
-    const d = await this.service.get(id);
+    this.deliveryId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+    await this.load();
+    // F4.1: while CRIADA (no courier yet), poll until a courier accepts.
+    this.pollHandle = setInterval(() => void this.poll(), 5000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollHandle) clearInterval(this.pollHandle);
+  }
+
+  private async load(): Promise<void> {
+    const d = await this.service.get(this.deliveryId);
     if (d === null) {
       this.notFound.set(true);
       return;
     }
     this.delivery.set(d);
+  }
+
+  private async poll(): Promise<void> {
+    if (this.delivery()?.state !== 'CRIADA') {
+      if (this.pollHandle) clearInterval(this.pollHandle);
+      this.pollHandle = null;
+      return;
+    }
+    await this.load();
   }
 
   protected trackingState(d: DeliveryListItem): TrackingState {
