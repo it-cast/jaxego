@@ -53,8 +53,10 @@ A superfície mais quebrada. Backend pronto: `dispatch/offers/*` (accept/decline
 - [x] **F1.3b — Tela de entrega concluída** (`tpl-c-done`): sucesso + resumo
       (valor recebido, taxa) + CTA voltar. Comprovação fiada: pickup→entrega ativa;
       delivery+pgto→concluída; recusa→concluída. ng build OK.
-- [ ] **F1.6 — Backend: courier self-profile** — `GET /v1/couriers/{id}/profile`
-      (nome, CPF mascarado, veículo, documentos, chave PIX) p/ completar o perfil + UI.
+- [x] **F1.6 — Courier self-profile** — `GET /v1/couriers/{id}/profile` (nome,
+      CPF/phone/email mascarados, veículo, documentos+status) + UI no perfil. ng build OK.
+- [ ] **F1.7 — Chave PIX no perfil** — exige migration (campo `pix_key` no courier)
+      + endpoint PUT + UI. Adiado (sem migration nesta rodada).
 - **Aceite:** loop online→oferta→aceite→coleta→foto→entrega navega ponta a ponta.
   Tudo `ng build` OK e commitado. Restam F1.3b (tela sucesso) e F1.6 (perfil completo).
 
@@ -86,9 +88,9 @@ Backend: `areas` (POST/PATCH/archive — sem UI), `platform_admin/areas/{id}/rev
 - [x] **F3.1 — CRUD de área**: criar/editar/arquivar em `/plataforma/areas` +
       link no shell. Sobre `/v1/areas` (backend já existia). ng build OK.
 - [x] **F3.2 — Revenue-share**: % por área (`setRevenueShare`) na mesma tela.
-- [ ] **F3.3 — Designar admin de área**: precisa endpoint backend para vincular
-      `area_admins` (não existe) + UI. _Gap descoberto._
-- **Aceite:** crio área nova e defino repasse pela UI ✅. Designar admin = F3.3.
+- [x] **F3.3 — Designar admin de área**: `POST /v1/areas/{id}/admins` (por e-mail,
+      cria/atualiza `area_admins`, auditado, testado) + form na tela de áreas.
+- **Aceite:** crio área, defino repasse e designo admin pela UI. **MR-3 COMPLETA.**
 
 ---
 
