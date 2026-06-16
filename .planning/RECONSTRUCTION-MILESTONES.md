@@ -199,6 +199,20 @@ empacota só a sua superfície.
 | Pagamento cartão/PIX com split (Safe2Pay) | 🟡 código contra Stub; **blocker de contrato** (MR-6 / TD-10) |
 | Validação ao vivo (MySQL/B2): migrations, triggers, geofence | ❌ MR-6 |
 
+### Polimentos de fidelidade ao protótipo (status)
+
+- [x] Tabbar do entregador = Início/Ganhos/Bairros/Perfil
+- [x] Navegação no shell da loja (Painel/Entregas/Favoritos/Faturas/Plano)
+- [x] Mapa na entrega ativa do entregador + fonte de tiles configurável (Mapbox/MapTiler-ready)
+- [x] Badge "PAGAMENTO DIRETO 💵" (token `payment.direct`) em entrega-ativa/listas/detalhe
+- [x] Nº do pedido na comprovação (`proof.submitReference`)
+- [x] "Ganhos/liberado hoje" na home (computado do extrato)
+- [x] Mapa no detalhe da entrega da loja (coords expostas ao lojista dono)
+- [ ] **Ligar/Mensagem** (entrega ativa / detalhe loja) — **bloqueado**: telefone é
+      mascarado por privacidade (RN-022); botão real exige número não-mascarado ao
+      dono OU proxy-call. Não implementado como botão "fake".
+- [ ] **F1.7 — Chave PIX no perfil** — bloqueado por migration (`pix_key`).
+
 ### Fases novas/explicitadas para fechar 100%
 
 - **F1.3b** — Tela de entrega concluída (`tpl-c-done`): sucesso + resumo (valor, taxa, +score) + CTAs.
