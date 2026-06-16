@@ -64,11 +64,19 @@ A superfície mais quebrada. Backend pronto: `dispatch/offers/*` (accept/decline
 
 Backend: `platform_admin/*`, `invoices`, admin KYC (`couriers/admin`), `proofs/manual-release`.
 
-- [ ] **F2.1 — Dashboard de filas** (`tpl-a-dash`): substitui stub `admin/inicio`;
-      contadores reais clicáveis + KPIs.
-- [ ] **F2.2 — Fila KYC** (rota+página usando `queue-table` órfão) → detalhe (existe) → ativar.
-- [ ] **F2.3 — Listas**: entregadores (→ detalhe existente) + lojas da área.
-- **Aceite:** admin vê filas, clica, age (aprovar KYC, ativar, resolver disputa).
+- [x] **F2.0 — Backend: lista de entregadores da área** — `GET /v1/admin/couriers`
+      (area-scoped, filtro status, CPF mascarado) + teste. _(gap descoberto: admin
+      só tinha detalhe/review, sem lista)._
+- [x] **F2.1 — Dashboard de filas** (`tpl-a-dash`): `admin/inicio` real com
+      contadores clicáveis (KYC pendente/disputas/suspensões). + **navegação lateral
+      do shell admin** (não existia).
+- [x] **F2.2 — Fila KYC**: aba "Fila de validação" na lista de entregadores →
+      `/admin/kyc/:id` (revisão, já existia) → ativar.
+- [~] **F2.3 — Listas**: entregadores ✅ (fila+todos → detalhe). **Lojas: falta**
+      (precisa `GET /v1/admin/merchants` + página) → **F2.4**.
+- [ ] **F2.4 — Backend+UI: lista de lojas da área** (`GET /v1/admin/merchants`).
+- **Aceite:** admin navega filas, abre, age (aprovar KYC, ativar, resolver disputa).
+  Falta só a lista de lojas (F2.4). ng build OK; F2.0 testado.
 
 ---
 
