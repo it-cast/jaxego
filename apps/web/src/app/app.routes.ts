@@ -2,24 +2,23 @@ import { Routes } from '@angular/router';
 import { authGuard } from '../core/auth/auth.guard';
 
 /**
- * Route map (UI-SPEC §6.2):
- *  - /entrar is public (login).
- *  - /entregador, /loja, /admin are lazy (DRV-004) and protected by authGuard.
- *  - wildcard -> 404 (jx-empty-state).
- * Post-login surface routing is added with user-type data in a later phase;
- * for now '/' redirects to /entrar (the guard sends unauthenticated users there).
+ * Route groups by surface (MR-5). Each physical app (admin/loja/entregador)
+ * composes its own subset from these named groups; the combined `routes` (below)
+ * still serves the all-in-one `web` build. The route objects are identical across
+ * builds — only which groups are mounted differs.
  */
-export const routes: Routes = [
-  {
-    path: '',
-    pathMatch: 'full',
-    redirectTo: 'entrar',
-  },
+
+/** Login (public). */
+export const authRoutes: Routes = [
   {
     path: 'entrar',
     loadComponent: () =>
       import('../features/auth/login.page').then((m) => m.LoginPage),
   },
+];
+
+/** Entregador (mobile) surface + public courier onboarding. */
+export const entregadorRoutes: Routes = [
   {
     path: 'entregador',
     canActivate: [authGuard],
@@ -57,7 +56,6 @@ export const routes: Routes = [
             '../features/entregador/cobertura-precos/cobertura-precos.page'
           ).then((m) => m.CoberturaPrecosPage),
       },
-      // MR-1 F1.2: active delivery (tela 05 / tpl-c-active).
       {
         path: 'entrega-ativa',
         loadComponent: () =>
@@ -65,7 +63,6 @@ export const routes: Routes = [
             '../features/entregador/entrega-ativa/entrega-ativa.page'
           ).then((m) => m.EntregadorEntregaAtivaPage),
       },
-      // Phase 9 (F-06): proof capture for an active delivery (telas 06/07).
       {
         path: 'entrega/:id/comprovar/:kind',
         loadComponent: () =>
@@ -73,7 +70,6 @@ export const routes: Routes = [
             (m) => m.ComprovacaoPage,
           ),
       },
-      // MR-1 F1.3b: delivery completed (tela tpl-c-done).
       {
         path: 'entrega/:id/concluida',
         loadComponent: () =>
@@ -81,7 +77,6 @@ export const routes: Routes = [
             (m) => m.EntregadorConcluidaPage,
           ),
       },
-      // Phase 15 (tela 16 / D-06): extrato/saldo + solicitar saque (REQ-038).
       {
         path: 'saldo',
         loadComponent: () =>
@@ -91,8 +86,6 @@ export const routes: Routes = [
       },
     ],
   },
-  // Public courier onboarding (F-02): the wizard + post-submit "em análise" are
-  // lazy and unauthenticated — a new courier has no account yet (Phase 5).
   {
     path: 'entregador/cadastro',
     loadComponent: () =>
@@ -107,9 +100,10 @@ export const routes: Routes = [
         (m) => m.EntregadorEmAnalisePage
       ),
   },
-  // Public store onboarding (F-01): cadastro + plano are lazy and unauthenticated
-  // — a new store owner has no account yet (Phase 4). Mounted under `loja/` but
-  // OUTSIDE the auth-protected shell below.
+];
+
+/** Loja (web) surface + public store onboarding. */
+export const lojaRoutes: Routes = [
   {
     path: 'loja/cadastro',
     loadComponent: () =>
@@ -134,7 +128,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../features/loja/inicio.page').then((m) => m.LojaInicioPage),
       },
-      // Phase 7 (F-03): dashboard (tela 11), new delivery (tela 12), list (tela 14).
       {
         path: 'painel',
         loadComponent: () =>
@@ -150,7 +143,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('../features/loja/entregas/entregas-list.page').then((m) => m.EntregasListPage),
       },
-      // Phase 9 (F-06): store delivery detail (tela 13) — timeline + cancel + link.
       {
         path: 'entregas/:id',
         loadComponent: () =>
@@ -158,13 +150,11 @@ export const routes: Routes = [
             (m) => m.EntregaDetalhePage,
           ),
       },
-      // Phase 8 (F-05): favoritos e bloqueados (tela 15).
       {
         path: 'favoritos',
         loadComponent: () =>
           import('../features/loja/favoritos/favoritos.page').then((m) => m.FavoritosPage),
       },
-      // Phase 15 (tela 15 / D-06): fatura mensal da loja (REQ-037).
       {
         path: 'faturas',
         loadComponent: () =>
@@ -172,7 +162,6 @@ export const routes: Routes = [
             (m) => m.LojaFaturaPage,
           ),
       },
-      // Phase 15 (tela 08 / D-06): recibo do pagamento direto de uma entrega (RN-026).
       {
         path: 'entregas/:id/recibo',
         loadComponent: () =>
@@ -182,6 +171,10 @@ export const routes: Routes = [
       },
     ],
   },
+];
+
+/** Admin da área surface. */
+export const adminRoutes: Routes = [
   {
     path: 'admin',
     canActivate: [authGuard],
@@ -217,7 +210,6 @@ export const routes: Routes = [
             (m) => m.NeighborhoodsPage
           ),
       },
-      // MR-2 F2.4: lista de lojas da área.
       {
         path: 'lojas',
         loadComponent: () =>
@@ -225,7 +217,6 @@ export const routes: Routes = [
             (m) => m.AdminLojasPage
           ),
       },
-      // Phase 12 (tela 22 / D-10): chaves de API + webhook da área.
       {
         path: 'api-keys',
         loadComponent: () =>
@@ -233,7 +224,6 @@ export const routes: Routes = [
             (m) => m.AdminApiKeysPage
           ),
       },
-      // Phase 13 (tela 09 / D-08): disputas + suspensões da área.
       {
         path: 'disputas',
         loadComponent: () =>
@@ -241,7 +231,6 @@ export const routes: Routes = [
             (m) => m.AdminGovernancaDisputasPage
           ),
       },
-      // MR-2 F2.2/F2.3: lista de entregadores da área + fila de KYC.
       {
         path: 'entregadores',
         loadComponent: () =>
@@ -249,7 +238,6 @@ export const routes: Routes = [
             '../features/admin/entregadores/entregadores-list.page'
           ).then((m) => m.AdminEntregadoresPage),
       },
-      // Phase 13 (telas 19/20 / D-04/D-05): detalhe do entregador + score + suspensão.
       {
         path: 'entregadores/:courierId',
         loadComponent: () =>
@@ -259,9 +247,10 @@ export const routes: Routes = [
       },
     ],
   },
-  // Phase 13 (D-06): platform-admin shell (telas 23-25). Lazy, auth-guarded; the
-  // backend enforces require_platform_admin + TOTP (ADR-005) on every endpoint, so
-  // a non-platform admin simply sees empty/error states. Cross-area reads are audited.
+];
+
+/** Admin da plataforma (super-admin) surface. Ships in the admin app. */
+export const plataformaRoutes: Routes = [
   {
     path: 'plataforma',
     canActivate: [authGuard],
@@ -278,7 +267,6 @@ export const routes: Routes = [
             (m) => m.PlataformaVisaoGeralPage,
           ),
       },
-      // MR-3 F3.1/F3.2: criar/editar/arquivar área + % de repasse.
       {
         path: 'areas',
         loadComponent: () =>
@@ -302,8 +290,10 @@ export const routes: Routes = [
       },
     ],
   },
-  // Public tracking (tela 26, F-06 / Phase 9): token-only, NO auth guard. The map
-  // (MapLibre) is lazy inside the page so it never bloats this route's chunk.
+];
+
+/** Public tracking (token-only, no guard). */
+export const publicRoutes: Routes = [
   {
     path: 'r/:token',
     loadComponent: () =>
@@ -311,9 +301,53 @@ export const routes: Routes = [
         (m) => m.PublicTrackingPage,
       ),
   },
+];
+
+/** Wildcard → 404. Always last. */
+export const notFoundRoute: Routes = [
   {
     path: '**',
     loadComponent: () =>
       import('../shared/not-found.page').then((m) => m.NotFoundPage),
   },
+];
+
+const redirectToLogin: Routes = [{ path: '', pathMatch: 'full', redirectTo: 'entrar' }];
+
+/** Combined route map — the all-in-one `web` build. */
+export const routes: Routes = [
+  ...redirectToLogin,
+  ...authRoutes,
+  ...entregadorRoutes,
+  ...lojaRoutes,
+  ...adminRoutes,
+  ...plataformaRoutes,
+  ...publicRoutes,
+  ...notFoundRoute,
+];
+
+/** Per-app route maps (MR-5 — physical app separation). */
+export const entregadorAppRoutes: Routes = [
+  ...redirectToLogin,
+  ...authRoutes,
+  ...entregadorRoutes,
+  ...publicRoutes,
+  ...notFoundRoute,
+];
+
+export const lojaAppRoutes: Routes = [
+  ...redirectToLogin,
+  ...authRoutes,
+  ...lojaRoutes,
+  ...publicRoutes,
+  ...notFoundRoute,
+];
+
+export const adminAppRoutes: Routes = [
+  ...redirectToLogin,
+  ...authRoutes,
+  ...adminRoutes,
+  ...plataformaRoutes,
+  ...publicRoutes,
+  ...notFoundRoute,
 ];

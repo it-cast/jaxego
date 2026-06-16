@@ -6,7 +6,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'br.com.jaxego.app',
   appName: 'Jaxegô',
-  webDir: 'dist/web/browser',
+  // MR-5: o app mobile empacota o build SEPARADO do entregador.
+  webDir: 'dist/entregador/browser',
 };
 
 export default config;

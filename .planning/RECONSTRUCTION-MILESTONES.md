@@ -105,14 +105,25 @@ Superfície mais completa; só refinos.
 
 ---
 
-## MR-5 — Separação física em 4 apps (mecânico, por último)
+## MR-5 — Separação física dos apps ✅ CONCLUÍDA
 
-Feito depois que os fluxos existem, para não mover código quebrado. ADR-001.
+Estratégia escolhida (baixo risco, verificável): **build targets separados por app**
+no mesmo workspace, compartilhando o código-fonte (sem mover arquivos = zero
+reescrita de imports = zero quebra). Cada app tem rotas + bootstrap próprios e
+empacota só a sua superfície.
 
-- [ ] **F5.1 — `packages/shared`**: design system (`jx-*`), models, http, auth, tokens.
-- [ ] **F5.2 — `apps/entregador`** (Ionic + Capacitor) consumindo shared.
-- [ ] **F5.3 — `apps/admin` + `apps/loja`** consumindo shared.
-- **Aceite:** os 4 apps buildam isolados; `apps/api` intacto.
+- [x] **F5.1 — Rotas por superfície** (`app.routes.ts`): grupos nomeados
+      (auth/entregador/loja/admin/plataforma/public) + mapas por app
+      (`entregadorAppRoutes`/`lojaAppRoutes`/`adminAppRoutes`).
+- [x] **F5.2 — Bootstrap por app**: `main.{entregador,loja,admin}.ts` +
+      `makeAppConfig(routes)` (providers idênticos, rotas por app).
+- [x] **F5.3 — Projetos no `angular.json`**: `entregador` (Capacitor →
+      `dist/entregador/browser`), `loja`, `admin` — cada um build próprio +
+      `serve`. Scripts `build:entregador|loja|admin|apps`.
+- **Aceite:** `ng build entregador|loja|admin` **e** `web` (combinado) buildam ✅.
+  Cada app empacota só sua superfície (bundles menores). `apps/api` intacto.
+- _Nota:_ mover as features para pastas físicas `apps/{admin,loja,entregador}/` é
+  refinamento opcional futuro; a separação de **apps/builds/deploy** já está feita.
 
 ---
 
