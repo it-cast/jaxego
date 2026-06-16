@@ -22,8 +22,10 @@ Plataformas multi-veículo precisam de **peso + dimensões** (escolha de veícul
 
 Listas hoje são tabelas básicas. Elevar para o padrão `data-tables-ux`.
 
-- [x] **F-MG2.1/2.2 (parcial)**: **busca** client-side + filtro de status nas listas
-      de entregadores e lojas. `jx-data-table` já tem ordenação por coluna (sortable).
-- [ ] **F-MG2.3**: migrar listas para `jx-data-table` (ordenação/paginação completas)
-      + KPIs/analytics no painel. _Pendente — profundidade extra._
-- **Aceite parcial:** listas com busca + filtro. Falta paginação/sort completos + analytics.
+- [x] **F-MG2.1/2.2**: busca + filtro de status nas listas de entregadores e lojas.
+- [x] **F-MG2.3**: listas de entregadores e lojas migradas para `jx-data-table` —
+      ordenação por coluna (nome/status), estados loading/empty/error nativos,
+      **paginação** (10/pág), ação por linha. ng lint limpo; web + 3 apps buildam.
+- [ ] **F-MG2.4 (opcional)**: KPIs/analytics no painel (dashboards) — profundidade extra.
+- **Aceite:** listas com busca + filtro + ordenação + paginação + estados. **MG-2 done**
+  (resta só analytics opcional).
