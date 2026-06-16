@@ -72,11 +72,10 @@ Backend: `platform_admin/*`, `invoices`, admin KYC (`couriers/admin`), `proofs/m
       do shell admin** (não existia).
 - [x] **F2.2 — Fila KYC**: aba "Fila de validação" na lista de entregadores →
       `/admin/kyc/:id` (revisão, já existia) → ativar.
-- [~] **F2.3 — Listas**: entregadores ✅ (fila+todos → detalhe). **Lojas: falta**
-      (precisa `GET /v1/admin/merchants` + página) → **F2.4**.
-- [ ] **F2.4 — Backend+UI: lista de lojas da área** (`GET /v1/admin/merchants`).
-- **Aceite:** admin navega filas, abre, age (aprovar KYC, ativar, resolver disputa).
-  Falta só a lista de lojas (F2.4). ng build OK; F2.0 testado.
+- [x] **F2.3 — Listas**: entregadores (fila+todos → detalhe).
+- [x] **F2.4 — Lista de lojas**: `GET /v1/admin/merchants` (area-scoped, doc
+      mascarado, testado) + página `/admin/lojas` + link no shell.
+- **Aceite:** admin navega filas, abre, age. **MR-2 COMPLETA.** ng build + testes verdes.
 
 ---
 
