@@ -11,6 +11,20 @@ class MockAuthService {
     this.lastReq = req;
     return this.result;
   }
+  // O fluxo de login resolve a superfície via /me e roteia por ela (R0.4).
+  async loadMe() {
+    return {
+      user_id: 1,
+      surface: 'loja' as const,
+      area_id: 1,
+      courier_id: null,
+      merchant_id: 1,
+      status: 'active',
+    };
+  }
+  surfaceHome(): string {
+    return '/loja';
+  }
 }
 
 describe('LoginPage', () => {

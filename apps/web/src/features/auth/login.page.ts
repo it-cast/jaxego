@@ -63,10 +63,6 @@ export class LoginPage implements AfterViewInit {
   }
 
   protected async submit(): Promise<void> {
-    console.log('[login] submit clicado — form válido:', this.form.valid, this.form.value);
-    console.log('[login] erros email:', this.form.controls.email.errors);
-    console.log('[login] erros password:', this.form.controls.password.errors);
-    console.log('[login] erros totp:', this.form.controls.totp.errors);
     if (this.loading()) return; // no double submit
     this.errorMessage.set(null);
 

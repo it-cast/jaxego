@@ -12,8 +12,8 @@ describe('NovaEntregaPage — F-03 form (UI-SPEC §2)', () => {
     });
     const fixture = TestBed.createComponent(NovaEntregaPage);
     const http = TestBed.inject(HttpTestingController);
-    // The constructor fires GET /v1/neighborhoods — flush it.
-    http.expectOne('/v1/neighborhoods').flush([{ id: 1, name: 'Centro' }]);
+    // The constructor fires GET /v1/neighborhoods/catalog — flush it.
+    http.expectOne('/v1/neighborhoods/catalog').flush([{ id: 1, name: 'Centro' }]);
     return { page: fixture.componentInstance, http };
   }
 
