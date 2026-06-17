@@ -12,10 +12,10 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../shared/components/data-table/data-table.component';
-import { NoticeComponent } from '../../shared/components/notice/notice.component';
-import { ScoreBadgeComponent } from '../../shared/components/score-badge/score-badge.component';
-import { ScoreBreakdownComponent } from '../../shared/components/score-breakdown/score-breakdown.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { NoticeComponent } from '@jaxego/shared/components/notice/notice.component';
+import { ScoreBadgeComponent } from '@jaxego/shared/components/score-badge/score-badge.component';
+import { ScoreBreakdownComponent } from '@jaxego/shared/components/score-breakdown/score-breakdown.component';
 import {
   CourierScore,
   CourierSearchRow,

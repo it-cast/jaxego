@@ -1,0 +1,20 @@
+{
+  "name": "jaxego-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo Jaxegô — apps/web (admin+loja), apps/app (entregador), packages/shared (design system + core/auth). Backend em apps/api (Python).",
+  "workspaces": [
+    "packages/shared",
+    "apps/web",
+    "apps/app"
+  ],
+  "scripts": {
+    "tokens:build": "node packages/shared/scripts/build-tokens.mjs",
+    "build:web": "npm run build --workspace @jaxego/web",
+    "build:app": "npm run build --workspace @jaxego/app",
+    "test:web": "npm run test --workspace @jaxego/web",
+    "test:app": "npm run test --workspace @jaxego/app",
+    "lint:web": "npm run lint --workspace @jaxego/web",
+    "lint:app": "npm run lint --workspace @jaxego/app"
+  }
+}

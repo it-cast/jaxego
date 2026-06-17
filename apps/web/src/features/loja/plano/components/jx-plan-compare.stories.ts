@@ -1,5 +1,5 @@
 /** Visual-regression BASELINE for jx-plan-compare (UI-SPEC §14): upgrade, downgrade. */
-import type { Plan } from '../../../../shared/components';
+import type { Plan } from '@jaxego/shared/components';
 
 export interface PlanCompareStory {
   state: string;

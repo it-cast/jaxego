@@ -11,13 +11,13 @@ import {
   ErrorStateComponent,
   LoadingSkeletonComponent,
   WarnBannerComponent,
-} from '../../../shared/state';
+} from '@jaxego/shared/state';
 import {
   PlanCardComponent,
   WizardStepperComponent,
   type Plan,
   type WizardStep,
-} from '../../../shared/components';
+} from '@jaxego/shared/components';
 import { SemAreaComponent } from './sem-area.component';
 import {
   isCepComplete,
@@ -29,7 +29,7 @@ import {
   maskCpf,
   maskPhone,
   phoneToE164,
-} from './br-format';
+} from '@jaxego/shared/util/br-format';
 import { MERCHANT_ERROR } from './merchant.models';
 import { MerchantService } from './merchant.service';
 

@@ -8,22 +8,22 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { FieldComponent } from '../../../shared/components/field/field.component';
-import { EstimateBoxComponent } from '../../../shared/components/estimate-box/estimate-box.component';
-import { UpgradeModalComponent } from '../../../shared/components/upgrade-modal/upgrade-modal.component';
-import { ErrorStateComponent, WarnBannerComponent } from '../../../shared/state';
+import { FieldComponent } from '@jaxego/shared/components/field/field.component';
+import { EstimateBoxComponent } from '@jaxego/shared/components/estimate-box/estimate-box.component';
+import { UpgradeModalComponent } from '@jaxego/shared/components/upgrade-modal/upgrade-modal.component';
+import { ErrorStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
 import { CardFormComponent } from '../plano/components/jx-card-form.component';
-import { Plan } from '../../../shared/components/plan-card/plan-card.component';
+import { Plan } from '@jaxego/shared/components/plan-card/plan-card.component';
 import {
   isCepComplete,
   isPhoneComplete,
   maskCep,
   maskPhone,
   phoneToE164,
-} from '../cadastro/br-format';
-import { maskBrl, parseBrl } from '../../../shared/util/money';
+} from '@jaxego/shared/util/br-format';
+import { maskBrl, parseBrl } from '@jaxego/shared/util/money';
 import { DeliveryService } from './delivery.service';
-import { CreateDeliveryRequest } from './delivery.models';
+import { CreateDeliveryRequest } from '@jaxego/shared/models/delivery.models';
 
 interface NeighborhoodOption {
   id: number;

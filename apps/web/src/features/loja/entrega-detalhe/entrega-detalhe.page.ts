@@ -7,18 +7,18 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { StateBadgeComponent } from '../../../shared/components/state-badge/state-badge.component';
-import { LiveMapComponent } from '../../../shared/components/live-map/live-map.component';
-import { PaymentBadgeComponent } from '../../../shared/components';
+import { StateBadgeComponent } from '@jaxego/shared/components/state-badge/state-badge.component';
+import { LiveMapComponent } from '@jaxego/shared/components/live-map/live-map.component';
+import { PaymentBadgeComponent } from '@jaxego/shared/components';
 import {
   packageLabel as fmtPackage,
   paymentMethodOf,
-} from '../../../shared/util/delivery-format';
+} from '@jaxego/shared/util/delivery-format';
 import {
   TrackingState,
   TrackingTimelineComponent,
-} from '../../../shared/components/tracking-timeline/tracking-timeline.component';
-import { DeliveryListItem } from '../entregas/delivery.models';
+} from '@jaxego/shared/components/tracking-timeline/tracking-timeline.component';
+import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 import { DeliveryService } from '../entregas/delivery.service';
 
 /**

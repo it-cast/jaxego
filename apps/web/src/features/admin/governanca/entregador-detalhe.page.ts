@@ -7,14 +7,14 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { NoticeComponent } from '../../../shared/components/notice/notice.component';
-import { ScoreBadgeComponent } from '../../../shared/components/score-badge/score-badge.component';
-import { ScoreBreakdownComponent } from '../../../shared/components/score-breakdown/score-breakdown.component';
-import { SuspensionPanelComponent } from '../../../shared/components/suspension-panel/suspension-panel.component';
+import { NoticeComponent } from '@jaxego/shared/components/notice/notice.component';
+import { ScoreBadgeComponent } from '@jaxego/shared/components/score-badge/score-badge.component';
+import { ScoreBreakdownComponent } from '@jaxego/shared/components/score-breakdown/score-breakdown.component';
+import { SuspensionPanelComponent } from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 import type {
   AppealDecision,
   SuspensionAppeal,
-} from '../../../shared/components/suspension-panel/suspension-panel.component';
+} from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 import { CourierScore, GovernancaService } from './governanca.service';
 
 /**

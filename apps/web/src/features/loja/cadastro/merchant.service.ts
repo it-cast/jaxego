@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { ApiErrorEnvelope } from '../../../core/auth/auth.models';
+import { ApiErrorEnvelope } from '@jaxego/core/auth/auth.models';
 import {
   PlanDto,
   SignupRequest,

@@ -9,10 +9,10 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../../shared/components/data-table/data-table.component';
-import { InvoiceSummaryComponent } from '../../../shared/components/invoice-summary/invoice-summary.component';
-import { MoneyComponent } from '../../../shared/components/money/money.component';
-import { ErrorStateComponent } from '../../../shared/state/error-state.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { InvoiceSummaryComponent } from '@jaxego/shared/components/invoice-summary/invoice-summary.component';
+import { MoneyComponent } from '@jaxego/shared/components/money/money.component';
+import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
 import { Invoice, InvoiceLine, LojaFinanceiroService } from './financeiro.service';
 
 /**

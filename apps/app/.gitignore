@@ -1,0 +1,27 @@
+# Dependencies
+/node_modules
+
+# Build output
+/dist
+/.angular/cache
+/out-tsc
+
+# Capacitor native (Phase 14)
+/android
+/ios
+
+# Tooling caches
+/.eslintcache
+
+# Test / coverage
+/coverage
+
+# Playwright (visual baseline tooling, T-06)
+/test-results
+/playwright-report
+/.playwright
+/visual-baseline
+
+# IDE / OS
+.DS_Store
+Thumbs.db

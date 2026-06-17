@@ -5,8 +5,8 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { EmptyStateComponent } from '../../../shared/state/empty-state.component';
-import { LoadingSkeletonComponent } from '../../../shared/state/loading-skeleton.component';
+import { EmptyStateComponent } from '@jaxego/shared/state/empty-state.component';
+import { LoadingSkeletonComponent } from '@jaxego/shared/state/loading-skeleton.component';
 
 /** A row in the KYC review queue (UI-SPEC §5.1). */
 export interface KycQueueRow {

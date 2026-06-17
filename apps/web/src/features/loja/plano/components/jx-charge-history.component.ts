@@ -3,7 +3,7 @@ import {
   DataTableColumn,
   DataTableComponent,
   type DataTableState,
-} from '../../../../shared/components/data-table/data-table.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
 import { type ChargeHistoryItem, formatCents } from '../billing.service';
 
 interface ChargeRow {

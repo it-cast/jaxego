@@ -9,9 +9,9 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../shared/components/data-table/data-table.component';
-import { SuspensionPanelComponent } from '../../shared/components/suspension-panel/suspension-panel.component';
-import type { SuspensionAppeal } from '../../shared/components/suspension-panel/suspension-panel.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { SuspensionPanelComponent } from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
+import type { SuspensionAppeal } from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 import { DisputeRow, PlatformAdminService } from './platform-admin.service';
 
 /**

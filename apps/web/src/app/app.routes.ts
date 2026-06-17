@@ -1,11 +1,9 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '../core/auth/auth.guard';
+import { authGuard } from '@jaxego/core/auth/auth.guard';
 
 /**
- * Route groups by surface (MR-5). Each physical app (admin/loja/entregador)
- * composes its own subset from these named groups; the combined `routes` (below)
- * still serves the all-in-one `web` build. The route objects are identical across
- * builds — only which groups are mounted differs.
+ * Route groups by surface. apps/web monta as superfícies web (loja + admin +
+ * plataforma + auth + tracking público). O entregador (mobile) vive em apps/app.
  */
 
 /** Login (public). */
@@ -13,92 +11,7 @@ export const authRoutes: Routes = [
   {
     path: 'entrar',
     loadComponent: () =>
-      import('../features/auth/login.page').then((m) => m.LoginPage),
-  },
-];
-
-/** Entregador (mobile) surface + public courier onboarding. */
-export const entregadorRoutes: Routes = [
-  {
-    path: 'entregador',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('../layouts/entregador-shell.component').then(
-        (m) => m.EntregadorShellComponent
-      ),
-    children: [
-      { path: '', pathMatch: 'full', redirectTo: 'inicio' },
-      {
-        path: 'inicio',
-        loadComponent: () =>
-          import('../features/entregador/inicio.page').then(
-            (m) => m.EntregadorInicioPage
-          ),
-      },
-      {
-        path: 'entregas',
-        loadComponent: () =>
-          import('../features/entregador/entregas.page').then(
-            (m) => m.EntregadorEntregasPage
-          ),
-      },
-      {
-        path: 'perfil',
-        loadComponent: () =>
-          import('../features/entregador/perfil.page').then(
-            (m) => m.EntregadorPerfilPage
-          ),
-      },
-      {
-        path: 'cobertura',
-        loadComponent: () =>
-          import(
-            '../features/entregador/cobertura-precos/cobertura-precos.page'
-          ).then((m) => m.CoberturaPrecosPage),
-      },
-      {
-        path: 'entrega-ativa',
-        loadComponent: () =>
-          import(
-            '../features/entregador/entrega-ativa/entrega-ativa.page'
-          ).then((m) => m.EntregadorEntregaAtivaPage),
-      },
-      {
-        path: 'entrega/:id/comprovar/:kind',
-        loadComponent: () =>
-          import('../features/entregador/comprovacao/comprovacao.page').then(
-            (m) => m.ComprovacaoPage,
-          ),
-      },
-      {
-        path: 'entrega/:id/concluida',
-        loadComponent: () =>
-          import('../features/entregador/concluida/concluida.page').then(
-            (m) => m.EntregadorConcluidaPage,
-          ),
-      },
-      {
-        path: 'saldo',
-        loadComponent: () =>
-          import('../features/entregador/saldo/saldo.page').then(
-            (m) => m.EntregadorSaldoPage,
-          ),
-      },
-    ],
-  },
-  {
-    path: 'entregador/cadastro',
-    loadComponent: () =>
-      import('../features/entregador/cadastro/cadastro.page').then(
-        (m) => m.CadastroEntregadorPage
-      ),
-  },
-  {
-    path: 'entregador/cadastro/em-analise',
-    loadComponent: () =>
-      import('../features/entregador/cadastro/em-analise.component').then(
-        (m) => m.EntregadorEmAnalisePage
-      ),
+      import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
   },
 ];
 
@@ -308,7 +221,7 @@ export const publicRoutes: Routes = [
   {
     path: 'r/:token',
     loadComponent: () =>
-      import('../features/public-tracking/public-tracking.page').then(
+      import('@jaxego/shared/features/public-tracking/public-tracking.page').then(
         (m) => m.PublicTrackingPage,
       ),
   },
@@ -319,17 +232,16 @@ export const notFoundRoute: Routes = [
   {
     path: '**',
     loadComponent: () =>
-      import('../shared/not-found.page').then((m) => m.NotFoundPage),
+      import('@jaxego/shared/not-found.page').then((m) => m.NotFoundPage),
   },
 ];
 
 const redirectToLogin: Routes = [{ path: '', pathMatch: 'full', redirectTo: 'entrar' }];
 
-/** Combined route map — the all-in-one `web` build. */
+/** Combined web route map — o build `web` guarda-chuva (loja + admin + plataforma). */
 export const routes: Routes = [
   ...redirectToLogin,
   ...authRoutes,
-  ...entregadorRoutes,
   ...lojaRoutes,
   ...adminRoutes,
   ...plataformaRoutes,
@@ -337,15 +249,7 @@ export const routes: Routes = [
   ...notFoundRoute,
 ];
 
-/** Per-app route maps (MR-5 — physical app separation). */
-export const entregadorAppRoutes: Routes = [
-  ...redirectToLogin,
-  ...authRoutes,
-  ...entregadorRoutes,
-  ...publicRoutes,
-  ...notFoundRoute,
-];
-
+/** Per-app route maps (build físico separado por superfície web). */
 export const lojaAppRoutes: Routes = [
   ...redirectToLogin,
   ...authRoutes,

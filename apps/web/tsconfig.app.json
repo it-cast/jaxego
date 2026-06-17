@@ -6,9 +6,12 @@
   },
   "files": [
     "src/main.ts",
-    "src/main.entregador.ts",
     "src/main.loja.ts",
     "src/main.admin.ts"
   ],
-  "include": ["src/**/*.d.ts"]
+  "include": ["src/**/*.d.ts", "../../packages/shared/src/**/*.ts"],
+  "exclude": [
+    "../../packages/shared/src/**/*.spec.ts",
+    "../../packages/shared/src/**/*.stories.ts"
+  ]
 }

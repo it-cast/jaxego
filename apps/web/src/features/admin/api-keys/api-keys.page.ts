@@ -13,9 +13,9 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../../shared/components/data-table/data-table.component';
-import { SecretRevealComponent } from '../../../shared/components/secret-reveal/secret-reveal.component';
-import { ErrorStateComponent } from '../../../shared/state/error-state.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { SecretRevealComponent } from '@jaxego/shared/components/secret-reveal/secret-reveal.component';
+import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
 import {
   AdminApiKeysService,
   API_KEY_SCOPES,

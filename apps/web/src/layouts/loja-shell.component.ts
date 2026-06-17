@@ -7,8 +7,8 @@ import {
 } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
-import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
-import { AuthService } from '../core/auth/auth.service';
+import { ThemeToggleComponent } from '@jaxego/core/theme/theme-toggle.component';
+import { AuthService } from '@jaxego/core/auth/auth.service';
 
 /**
  * Loja shell — web responsive, centered 620–860px, topbar com navegação + slot

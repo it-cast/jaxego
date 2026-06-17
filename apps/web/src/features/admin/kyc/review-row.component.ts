@@ -6,8 +6,8 @@ import {
   Output,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ErrorStateComponent } from '../../../shared/state/error-state.component';
-import { LoadingSkeletonComponent } from '../../../shared/state/loading-skeleton.component';
+import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
+import { LoadingSkeletonComponent } from '@jaxego/shared/state/loading-skeleton.component';
 
 export type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'approved_auto';
 

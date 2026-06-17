@@ -10,7 +10,7 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   LoadingSkeletonComponent,
-} from '../../shared/state';
+} from '@jaxego/shared/state';
 import { Area, PlatformAdminService } from './platform-admin.service';
 
 /**

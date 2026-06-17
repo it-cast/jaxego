@@ -15,8 +15,8 @@ import {
   faRightFromBracket,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
-import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
-import { AuthService } from '../core/auth/auth.service';
+import { ThemeToggleComponent } from '@jaxego/core/theme/theme-toggle.component';
+import { AuthService } from '@jaxego/core/auth/auth.service';
 
 /**
  * Platform-admin shell (UI-SPEC telas 23-25 / D-06) — desktop-first, collapsible

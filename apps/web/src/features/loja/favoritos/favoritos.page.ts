@@ -3,12 +3,12 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   LoadingSkeletonComponent,
-} from '../../../shared/state';
+} from '@jaxego/shared/state';
 import {
   FavoriteRowComponent,
   BlockedRowComponent,
   type ScoreLevel,
-} from '../../../shared/components';
+} from '@jaxego/shared/components';
 import { FavoritosService } from './favoritos.service';
 import type { BlockedRow, FavoriteRow } from './favoritos.models';
 

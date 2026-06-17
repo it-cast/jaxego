@@ -5,9 +5,9 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../../shared/components/data-table/data-table.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
 import { NeighborhoodRowComponent } from './neighborhood-row.component';
-import { ErrorStateComponent } from '../../../shared/state/error-state.component';
+import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
 import {
   AdminNeighborhoodsService,
   Neighborhood,

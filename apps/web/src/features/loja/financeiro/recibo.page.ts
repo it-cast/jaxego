@@ -5,8 +5,8 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { MoneyComponent } from '../../../shared/components/money/money.component';
-import { ErrorStateComponent } from '../../../shared/state/error-state.component';
+import { MoneyComponent } from '@jaxego/shared/components/money/money.component';
+import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
 import { DirectReceipt, LojaFinanceiroService } from './financeiro.service';
 
 type ReceiptState = 'loading' | 'ready' | 'empty' | 'error';

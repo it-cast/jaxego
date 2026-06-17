@@ -4,7 +4,7 @@ import {
 } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AreaConfigPage } from './area-config.page';
-import { maskBrl, parseBrl } from '../../../shared/util/money';
+import { maskBrl, parseBrl } from '@jaxego/shared/util/money';
 
 describe('money mask (br/brazilian-forms)', () => {
   it('masks raw digits into pt-BR R$ 0,00', () => {

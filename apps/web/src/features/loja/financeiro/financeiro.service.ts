@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import type {
   InvoiceStatus,
   InvoiceSummary,
-} from '../../../shared/components/invoice-summary/invoice-summary.component';
+} from '@jaxego/shared/components/invoice-summary/invoice-summary.component';
 
 /**
  * Contratos das telas 15 (fatura da loja) e 08 (recibo do direto) — espelham

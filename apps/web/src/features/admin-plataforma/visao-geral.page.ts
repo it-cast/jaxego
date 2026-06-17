@@ -10,7 +10,7 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../shared/components/data-table/data-table.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
 import {
   AreaOverviewRow,
   PlatformAdminService,

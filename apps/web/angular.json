@@ -28,17 +28,17 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": [
-              "node_modules/@fontsource/inter-tight/400.css",
-              "node_modules/@fontsource/inter-tight/500.css",
-              "node_modules/@fontsource/inter-tight/600.css",
-              "node_modules/@fontsource/inter-tight/700.css",
-              "node_modules/@fontsource/inter-tight/800.css",
-              "node_modules/@fontsource/fraunces/500-italic.css",
-              "node_modules/@fontsource/jetbrains-mono/400.css",
-              "node_modules/@fontsource/jetbrains-mono/600.css",
-              "src/styles/global.scss"
+              "../../node_modules/@fontsource/inter-tight/400.css",
+              "../../node_modules/@fontsource/inter-tight/500.css",
+              "../../node_modules/@fontsource/inter-tight/600.css",
+              "../../node_modules/@fontsource/inter-tight/700.css",
+              "../../node_modules/@fontsource/inter-tight/800.css",
+              "../../node_modules/@fontsource/fraunces/500-italic.css",
+              "../../node_modules/@fontsource/jetbrains-mono/400.css",
+              "../../node_modules/@fontsource/jetbrains-mono/600.css",
+              "../../packages/shared/src/styles/global.scss"
             ],
-            "stylePreprocessorOptions": { "includePaths": ["src/styles"] },
+            "stylePreprocessorOptions": { "includePaths": ["../../packages/shared/src/styles"] },
             "scripts": []
           },
           "configurations": {
@@ -78,75 +78,23 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": [
-              "node_modules/@fontsource/inter-tight/400.css",
-              "node_modules/@fontsource/inter-tight/500.css",
-              "node_modules/@fontsource/inter-tight/600.css",
-              "node_modules/@fontsource/inter-tight/700.css",
-              "node_modules/@fontsource/inter-tight/800.css",
-              "node_modules/@fontsource/fraunces/500-italic.css",
-              "node_modules/@fontsource/jetbrains-mono/400.css",
-              "node_modules/@fontsource/jetbrains-mono/600.css",
-              "src/styles/global.scss"
+              "../../node_modules/@fontsource/inter-tight/400.css",
+              "../../node_modules/@fontsource/inter-tight/500.css",
+              "../../node_modules/@fontsource/inter-tight/600.css",
+              "../../node_modules/@fontsource/inter-tight/700.css",
+              "../../node_modules/@fontsource/inter-tight/800.css",
+              "../../node_modules/@fontsource/fraunces/500-italic.css",
+              "../../node_modules/@fontsource/jetbrains-mono/400.css",
+              "../../node_modules/@fontsource/jetbrains-mono/600.css",
+              "../../packages/shared/src/styles/global.scss"
             ],
-            "stylePreprocessorOptions": { "includePaths": ["src/styles"] },
+            "stylePreprocessorOptions": { "includePaths": ["../../packages/shared/src/styles"] },
             "scripts": []
           }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",
           "options": { "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"] }
-        }
-      }
-    },
-    "entregador": {
-      "projectType": "application",
-      "root": "",
-      "sourceRoot": "src",
-      "prefix": "jx",
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:application",
-          "options": {
-            "outputPath": "dist/entregador",
-            "index": "src/index.html",
-            "browser": "src/main.entregador.ts",
-            "polyfills": ["zone.js"],
-            "tsConfig": "tsconfig.app.json",
-            "inlineStyleLanguage": "scss",
-            "assets": [{ "glob": "**/*", "input": "public" }],
-            "styles": [
-              "node_modules/@fontsource/inter-tight/400.css",
-              "node_modules/@fontsource/inter-tight/500.css",
-              "node_modules/@fontsource/inter-tight/600.css",
-              "node_modules/@fontsource/inter-tight/700.css",
-              "node_modules/@fontsource/inter-tight/800.css",
-              "node_modules/@fontsource/fraunces/500-italic.css",
-              "node_modules/@fontsource/jetbrains-mono/400.css",
-              "node_modules/@fontsource/jetbrains-mono/600.css",
-              "src/styles/global.scss"
-            ],
-            "stylePreprocessorOptions": { "includePaths": ["src/styles"] },
-            "scripts": []
-          },
-          "configurations": {
-            "production": { "outputHashing": "all" },
-            "development": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
-          "configurations": {
-            "production": { "buildTarget": "entregador:build:production" },
-            "development": { "buildTarget": "entregador:build:development" }
-          },
-          "defaultConfiguration": "development",
-          "options": { "proxyConfig": "proxy.conf.json" }
         }
       }
     },
@@ -167,17 +115,17 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": [
-              "node_modules/@fontsource/inter-tight/400.css",
-              "node_modules/@fontsource/inter-tight/500.css",
-              "node_modules/@fontsource/inter-tight/600.css",
-              "node_modules/@fontsource/inter-tight/700.css",
-              "node_modules/@fontsource/inter-tight/800.css",
-              "node_modules/@fontsource/fraunces/500-italic.css",
-              "node_modules/@fontsource/jetbrains-mono/400.css",
-              "node_modules/@fontsource/jetbrains-mono/600.css",
-              "src/styles/global.scss"
+              "../../node_modules/@fontsource/inter-tight/400.css",
+              "../../node_modules/@fontsource/inter-tight/500.css",
+              "../../node_modules/@fontsource/inter-tight/600.css",
+              "../../node_modules/@fontsource/inter-tight/700.css",
+              "../../node_modules/@fontsource/inter-tight/800.css",
+              "../../node_modules/@fontsource/fraunces/500-italic.css",
+              "../../node_modules/@fontsource/jetbrains-mono/400.css",
+              "../../node_modules/@fontsource/jetbrains-mono/600.css",
+              "../../packages/shared/src/styles/global.scss"
             ],
-            "stylePreprocessorOptions": { "includePaths": ["src/styles"] },
+            "stylePreprocessorOptions": { "includePaths": ["../../packages/shared/src/styles"] },
             "scripts": []
           },
           "configurations": {
@@ -219,17 +167,17 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": [
-              "node_modules/@fontsource/inter-tight/400.css",
-              "node_modules/@fontsource/inter-tight/500.css",
-              "node_modules/@fontsource/inter-tight/600.css",
-              "node_modules/@fontsource/inter-tight/700.css",
-              "node_modules/@fontsource/inter-tight/800.css",
-              "node_modules/@fontsource/fraunces/500-italic.css",
-              "node_modules/@fontsource/jetbrains-mono/400.css",
-              "node_modules/@fontsource/jetbrains-mono/600.css",
-              "src/styles/global.scss"
+              "../../node_modules/@fontsource/inter-tight/400.css",
+              "../../node_modules/@fontsource/inter-tight/500.css",
+              "../../node_modules/@fontsource/inter-tight/600.css",
+              "../../node_modules/@fontsource/inter-tight/700.css",
+              "../../node_modules/@fontsource/inter-tight/800.css",
+              "../../node_modules/@fontsource/fraunces/500-italic.css",
+              "../../node_modules/@fontsource/jetbrains-mono/400.css",
+              "../../node_modules/@fontsource/jetbrains-mono/600.css",
+              "../../packages/shared/src/styles/global.scss"
             ],
-            "stylePreprocessorOptions": { "includePaths": ["src/styles"] },
+            "stylePreprocessorOptions": { "includePaths": ["../../packages/shared/src/styles"] },
             "scripts": []
           },
           "configurations": {

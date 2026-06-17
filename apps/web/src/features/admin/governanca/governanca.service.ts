@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ScoreLevel } from '../../../shared/components/score-badge/score-badge.component';
-import type { ScoreComponent } from '../../../shared/components/score-breakdown/score-breakdown.component';
+import type { ScoreLevel } from '@jaxego/shared/components/score-badge/score-badge.component';
+import type { ScoreComponent } from '@jaxego/shared/components/score-breakdown/score-breakdown.component';
 import type {
   AppealDecision,
   SuspensionAppeal,
-} from '../../../shared/components/suspension-panel/suspension-panel.component';
+} from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 
 /**
  * Contratos de governança do admin de ÁREA (telas 09/19/20) — espelham

@@ -5,10 +5,10 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../../shared/components/data-table/data-table.component';
-import { DeliveryRowComponent } from '../../../shared/components/delivery-row/delivery-row.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { DeliveryRowComponent } from '@jaxego/shared/components/delivery-row/delivery-row.component';
 import { DeliveryService } from './delivery.service';
-import { DeliveryListItem } from './delivery.models';
+import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 
 /**
  * Tela 14 — store delivery list (F-03 / UI-SPEC §4.1). `jx-data-table` +

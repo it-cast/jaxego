@@ -4,8 +4,8 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { LoadingSkeletonComponent } from '../../../shared/state';
-import { PlanCardComponent, type Plan } from '../../../shared/components';
+import { LoadingSkeletonComponent } from '@jaxego/shared/state';
+import { PlanCardComponent, type Plan } from '@jaxego/shared/components';
 import { MerchantService } from '../cadastro/merchant.service';
 import {
   BillingService,

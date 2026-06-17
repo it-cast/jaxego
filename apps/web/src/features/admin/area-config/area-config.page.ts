@@ -4,8 +4,8 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ErrorStateComponent } from '../../../shared/state/error-state.component';
-import { maskBrl, parseBrl, formatBrl } from '../../../shared/util/money';
+import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
+import { maskBrl, parseBrl, formatBrl } from '@jaxego/shared/util/money';
 import {
   AdminAreaConfigService,
   AreaConfig,

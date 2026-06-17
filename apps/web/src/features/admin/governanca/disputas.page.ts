@@ -12,13 +12,13 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../../shared/components/data-table/data-table.component';
-import { NoticeComponent } from '../../../shared/components/notice/notice.component';
-import { SuspensionPanelComponent } from '../../../shared/components/suspension-panel/suspension-panel.component';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { NoticeComponent } from '@jaxego/shared/components/notice/notice.component';
+import { SuspensionPanelComponent } from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 import type {
   AppealDecision,
   SuspensionAppeal,
-} from '../../../shared/components/suspension-panel/suspension-panel.component';
+} from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 import {
   DisputeOutcome,
   DisputeRow,

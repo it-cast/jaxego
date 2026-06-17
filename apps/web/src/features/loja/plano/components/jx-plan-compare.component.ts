@@ -7,7 +7,7 @@ import {
   computed,
   signal,
 } from '@angular/core';
-import { PlanCardComponent, type Plan } from '../../../../shared/components';
+import { PlanCardComponent, type Plan } from '@jaxego/shared/components';
 import { formatCents } from '../billing.service';
 
 /**

@@ -4,7 +4,7 @@
  * loading, erro · light+dark. Plain data (no Storybook runtime).
  */
 
-import type { DeliveryListItem } from './delivery.models';
+import type { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 
 const ROWS: DeliveryListItem[] = [
   {

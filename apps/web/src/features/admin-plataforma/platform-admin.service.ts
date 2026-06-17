@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ScoreLevel } from '../../shared/components/score-badge/score-badge.component';
-import type { ScoreComponent } from '../../shared/components/score-breakdown/score-breakdown.component';
-import type { SuspensionAppeal } from '../../shared/components/suspension-panel/suspension-panel.component';
+import type { ScoreLevel } from '@jaxego/shared/components/score-badge/score-badge.component';
+import type { ScoreComponent } from '@jaxego/shared/components/score-breakdown/score-breakdown.component';
+import type { SuspensionAppeal } from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 
 /**
  * Contratos do admin de plataforma (telas 23/24/25) — espelham

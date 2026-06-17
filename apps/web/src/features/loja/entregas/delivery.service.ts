@@ -1,13 +1,13 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { ApiErrorEnvelope } from '../../../core/auth/auth.models';
+import { ApiErrorEnvelope } from '@jaxego/core/auth/auth.models';
 import {
   CreateDeliveryRequest,
   CreateDeliveryResponse,
   DeliveryListItem,
   DeliveryListResponse,
-} from './delivery.models';
+} from '@jaxego/shared/models/delivery.models';
 
 export type CreateDeliveryResult =
   | { ok: true; data: CreateDeliveryResponse }

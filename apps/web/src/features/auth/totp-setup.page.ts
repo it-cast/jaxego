@@ -16,7 +16,7 @@ import { faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import {
   ErrorStateComponent,
   LoadingSkeletonComponent,
-} from '../../shared/state';
+} from '@jaxego/shared/state';
 
 interface EnrollResponse {
   provisioning_uri: string;

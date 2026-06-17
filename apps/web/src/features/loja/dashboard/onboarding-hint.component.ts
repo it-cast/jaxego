@@ -4,7 +4,7 @@ import {
   Input,
   signal,
 } from '@angular/core';
-import { WarnBannerComponent } from '../../../shared/state';
+import { WarnBannerComponent } from '@jaxego/shared/state';
 
 export type MerchantStatusBanner =
   | 'pending_payment'

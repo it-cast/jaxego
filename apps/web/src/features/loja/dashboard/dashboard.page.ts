@@ -4,12 +4,12 @@ import {
   DataTableColumn,
   DataTableComponent,
   DataTableState,
-} from '../../../shared/components/data-table/data-table.component';
-import { StateBadgeComponent } from '../../../shared/components/state-badge/state-badge.component';
-import { WarnBannerComponent } from '../../../shared/state';
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { StateBadgeComponent } from '@jaxego/shared/components/state-badge/state-badge.component';
+import { WarnBannerComponent } from '@jaxego/shared/state';
 import { DeliveryService } from '../entregas/delivery.service';
-import { DeliveryListItem } from '../entregas/delivery.models';
-import { formatBrl } from '../../../shared/util/money';
+import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
+import { formatBrl } from '@jaxego/shared/util/money';
 
 interface Kpi {
   label: string;

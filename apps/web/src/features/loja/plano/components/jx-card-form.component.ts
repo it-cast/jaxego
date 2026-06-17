@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { FieldComponent } from '../../../../shared/components';
+import { FieldComponent } from '@jaxego/shared/components';
 import { PaymentCryptoService } from '../payment-crypto.service';
 
 export type CardFormState = 'idle' | 'cifrando' | 'aprovado' | 'recusado';

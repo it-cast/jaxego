@@ -8,8 +8,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { inject } from '@angular/core';
-import { EmptyStateComponent } from '../../../shared/state';
-import { FieldComponent } from '../../../shared/components';
+import { EmptyStateComponent } from '@jaxego/shared/state';
+import { FieldComponent } from '@jaxego/shared/components';
 
 /**
  * "Ainda não chegamos aí" empty state (UI-SPEC §5). Reuses jx-empty-state

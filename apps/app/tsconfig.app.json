@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/out-tsc/app",
+    "types": []
+  },
+  "files": ["src/main.ts"],
+  "include": ["src/**/*.d.ts", "../../packages/shared/src/**/*.ts"],
+  "exclude": [
+    "../../packages/shared/src/**/*.spec.ts",
+    "../../packages/shared/src/**/*.stories.ts"
+  ]
+}

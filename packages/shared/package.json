@@ -1,0 +1,24 @@
+{
+  "name": "@jaxego/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Design system jx-* + core/auth + tokens compartilhados entre apps/web (admin+loja) e apps/app (entregador).",
+  "type": "module",
+  "exports": {
+    "./*": "./src/shared/*",
+    "./core/*": "./src/core/*"
+  },
+  "peerDependencies": {
+    "@angular/common": "19.2.14",
+    "@angular/core": "19.2.14",
+    "@angular/forms": "19.2.14",
+    "@angular/router": "19.2.14",
+    "@fortawesome/angular-fontawesome": "^1.0.0",
+    "@fortawesome/fontawesome-svg-core": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@ionic/angular": "8.8.9",
+    "maplibre-gl": "^5.24.0",
+    "qrcode": "^1.5.4",
+    "rxjs": "7.8.2"
+  }
+}
