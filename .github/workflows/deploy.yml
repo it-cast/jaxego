@@ -57,6 +57,19 @@ jobs:
               exit 1
             fi
 
+            # Pre-flight do DATABASE_URL: precisa existir, nao-vazio e SEM aspas
+            # (o env_file do Docker mantem aspas literais -> quebra o make_url).
+            DBURL_LINE="$(grep -E '^DATABASE_URL=' "$TARGET/.env" | head -1 | cut -d= -f2-)"
+            if [ -z "$DBURL_LINE" ]; then
+              echo "ERRO: DATABASE_URL ausente/vazio no $TARGET/.env." >&2
+              exit 1
+            fi
+            case "$DBURL_LINE" in
+              '"'*|"'"*)
+                echo "ERRO: DATABASE_URL esta entre aspas no .env. Remova as aspas (o Docker env_file as mantem literais)." >&2
+                exit 1 ;;
+            esac
+
             cd infra
             COMPOSE="docker compose -f docker-compose.prod.yml --env-file ../.env"
             $COMPOSE build

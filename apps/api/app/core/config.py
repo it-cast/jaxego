@@ -9,7 +9,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -160,6 +160,31 @@ class Settings(BaseSettings):
     # cheap/high-volume family for bulk. Parametrised so the router never hardcodes a model.
     llm_model_reasoning: str = Field(default="claude-opus-4-5")
     llm_model_bulk: str = Field(default="claude-haiku-4-5")
+
+    @field_validator("database_url", "redis_url", mode="before")
+    @classmethod
+    def _clean_url(cls, v: object) -> object:
+        """Normalize connection URLs from the environment.
+
+        Docker's `env_file` keeps surrounding quotes literally, so a server `.env`
+        with `DATABASE_URL="mysql+aiomysql://..."` injects the quotes into the
+        value and SQLAlchemy's `make_url` fails ("Could not parse SQLAlchemy URL").
+        Strip wrapping quotes + whitespace so a quoted `.env` value still works.
+        """
+        if isinstance(v, str):
+            return v.strip().strip('"').strip("'").strip()
+        return v
+
+    @field_validator("database_url")
+    @classmethod
+    def _require_database_url(cls, v: str) -> str:
+        """Fail fast with a clear message instead of a cryptic SQLAlchemy traceback."""
+        if not v or "://" not in v:
+            raise ValueError(
+                "DATABASE_URL ausente/inválido. Defina no .env do servidor, sem aspas, "
+                "ex.: DATABASE_URL=mysql+aiomysql://user:senha@host:3306/jaxego?charset=utf8mb4"
+            )
+        return v
 
 
 @lru_cache
