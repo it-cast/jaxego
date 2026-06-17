@@ -1,13 +1,18 @@
 name: Deploy (piloto)
 
-# Deploy por SSH no servidor. Dispara no push para master (após o CI) ou manual.
+# Deploy por SSH no servidor. Dispara SÓ após o CI concluir com sucesso (workflow_run)
+# ou manualmente (workflow_dispatch). Nunca em paralelo com o CI.
 # Apenas a CONEXÃO SSH vem dos GitHub Secrets (host/user/key/port + DEPLOY_PATH/REPO_URL).
 # Os secrets de APP (JWT, DATABASE_URL, B2, etc.) vivem no .env do SERVIDOR — gerenciado
 # manualmente lá, persistente (gitignored), e o deploy NUNCA o sobrescreve.
 
 on:
   workflow_dispatch:
-  push:
+  # Só dispara DEPOIS que o CI conclui (não em paralelo com o push). O job só roda
+  # se o CI passou (conclusion == success) — assim não se faz deploy de código vermelho.
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [master]
 
 concurrency:
@@ -18,6 +23,8 @@ jobs:
   deploy:
     name: deploy via ssh
     runs-on: ubuntu-latest
+    # Manual sempre; via workflow_run só quando o CI passou.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy no servidor
         uses: appleboy/ssh-action@v1.2.0
