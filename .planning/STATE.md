@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-06-11T12:00:00.000Z"
-last_activity: "2026-06-11 — DEC-004: resequenciamento. Parte financeira pesada de Safe2Pay (ex-Phase 11: fatura/disputas-resolucao/saques/conciliacao) movida para POS-DEPLOY = Phase 15 (MS-06), ultima do projeto. Nova ordem de build (autopilot): 12 (API publica) -> 13 (governanca, religada a [9]) -> 14 (deploy) -> 15 (Safe2Pay back-office). Phase 10 (checkout cartao/PIX) fica live no deploy. ROADMAP/MILESTONES/DECISIONS atualizados. Proximo: Phase 12."
+last_updated: "2026-06-17T19:30:00.000Z"
+last_activity: "2026-06-17 — DEC-005 (ADR-014): separacao fisica dos apps. apps/web=admin+loja, apps/app=entregador (Ionic), packages/shared=design system+core/auth+tokens. Monorepo npm workspaces (node_modules hoisted na raiz; aliases @jaxego/shared/* e @jaxego/core/*). CI adaptado (npm ci na raiz; jobs web+app; zero-hex cobre lib+apps; APK de apps/app). Verde local: builds web/loja/admin/app + lint web/app + testes (web 54, app 31). | 2026-06-11 — DEC-004: resequenciamento. Parte financeira pesada de Safe2Pay (ex-Phase 11: fatura/disputas-resolucao/saques/conciliacao) movida para POS-DEPLOY = Phase 15 (MS-06), ultima do projeto. Nova ordem de build (autopilot): 12 (API publica) -> 13 (governanca, religada a [9]) -> 14 (deploy) -> 15 (Safe2Pay back-office). Phase 10 (checkout cartao/PIX) fica live no deploy. ROADMAP/MILESTONES/DECISIONS atualizados. Proximo: Phase 12."
 progress:
   total_phases: 14
   completed_phases: 10

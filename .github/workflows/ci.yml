@@ -9,14 +9,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: apps/api
-
 jobs:
   lint:
     name: lint (ruff)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
     steps:
       - uses: actions/checkout@v4
       - name: Set up uv
@@ -33,6 +32,9 @@ jobs:
   typecheck:
     name: typecheck (basedpyright)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
     steps:
       - uses: actions/checkout@v4
       - name: Set up uv
@@ -47,6 +49,9 @@ jobs:
   test:
     name: test (pytest)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
 
     services:
       mysql:
@@ -99,75 +104,91 @@ jobs:
         run: uv run python tools/check_naive_datetime.py
 
   # -------------------------------------------------------------------------
-  # Phase 14 — gates de release do frontend (test + lint + build + perf budget).
+  # Frontend monorepo (npm workspaces na raiz). packages/shared (design system +
+  # core/auth) é consumido por apps/web (admin+loja) e apps/app (entregador).
+  # O zero-hex roda uma vez (raiz) cobrindo a lib + os dois apps.
   web:
     name: web (test + lint + build + perf)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: apps/web/package-lock.json
-      - name: Install
+          cache-dependency-path: package-lock.json
+      - name: Install (workspaces, raiz)
         run: npm ci
-      - name: Lint
-        run: npm run lint
-      - name: Test (headless)
-        run: npm run test -- --watch=false --browsers=ChromeHeadless
-      - name: Build (production)
-        run: npm run build
+      - name: Lint web
+        run: npm run lint:web
+      - name: Test web (headless — inclui specs de packages/shared)
+        run: npm run test:web
+      - name: Build web (admin + loja)
+        run: npm run build:web && npm run build:loja --workspace @jaxego/web && npm run build:admin --workspace @jaxego/web
       - name: Zero hex hardcoded (design tokens integrity)
         run: |
-          # Camada de tokens (src/styles/) DEFINE as cores — hex ali é a fonte canônica.
-          # Exceções técnicas: #000 em CSS mask (offer-timer), theme-color do manifest, hex em comentário.
-          HITS=$(grep -rnE "#[0-9A-Fa-f]{3,6}\b" src --include="*.scss" \
-            | grep -v "src/styles/" \
+          # A camada de tokens (packages/shared/src/styles/) DEFINE as cores — hex ali é a fonte canônica.
+          # Exceções técnicas: mask CSS, radial-gradient, theme-color do manifest, hex em comentário.
+          HITS=$(grep -rnE "#[0-9A-Fa-f]{3,6}\b" packages/shared/src apps/web/src apps/app/src --include="*.scss" \
+            | grep -v "packages/shared/src/styles/" \
             | grep -viE "mask:|radial-gradient|theme-color" \
             | grep -vE "//|/\*" | wc -l)
           echo "hex suspeitos: $HITS"; test "$HITS" -eq 0
       - name: Lighthouse CI (perf budget — informativo)
-        run: npx --yes @lhci/cli autorun --config=../../tooling/ci/lighthouserc.json || true
+        run: npx --yes @lhci/cli autorun --config=tooling/ci/lighthouserc.json || true
 
-  # -------------------------------------------------------------------------
-  # Phase 14 — build de APK debug (Android). Release assinado = UAT humano (keystore).
-  # Roda só em tag/dispatch para não onerar todo PR; informativo (TD do release assinado).
-  apk:
-    name: apk (Android debug)
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    needs: [web]
+  app:
+    name: app (entregador — test + lint + build)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: apps/web/package-lock.json
+          cache-dependency-path: package-lock.json
+      - name: Install (workspaces, raiz)
+        run: npm ci
+      - name: Lint app
+        run: npm run lint:app
+      - name: Test app (headless)
+        run: npm run test:app
+      - name: Build app (entregador)
+        run: npm run build:app
+
+  # -------------------------------------------------------------------------
+  # Build de APK debug (Android) do app do entregador (apps/app). Release assinado
+  # = UAT humano (keystore). Roda só em tag/dispatch; informativo.
+  apk:
+    name: apk (Android debug — entregador)
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: [web, app]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - name: Install + build web
-        run: npm ci && npm run build
-      - name: Add Android platform
+      - name: Install + build app
+        run: npm ci && npm run build:app
+      - name: Add/sync Android platform
+        working-directory: apps/app
         run: npx --yes cap add android || npx --yes cap sync android
       - name: Assemble debug APK
-        run: cd android && ./gradlew assembleDebug
+        working-directory: apps/app/android
+        run: ./gradlew assembleDebug
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: jaxego-debug-apk
-          path: apps/web/android/app/build/outputs/apk/debug/*.apk
+          path: apps/app/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
 
 # ---------------------------------------------------------------------------
-# Deploy por tag fica para o pipeline de produção (gated pelo RELEASE-CHECKLIST.md
-# da Phase 14 — em especial o cutover Safe2Pay TD-10-01..04, dependente do contrato).
+# Deploy por tag fica para o pipeline de produção (gated pelo RELEASE-CHECKLIST.md).
