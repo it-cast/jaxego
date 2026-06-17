@@ -167,9 +167,7 @@ async def assign_area_admin(
         raise AdminUserNotFoundError()
     membership = (
         await session.execute(
-            select(AreaAdmin).where(
-                AreaAdmin.area_id == area_id, AreaAdmin.user_id == user.id
-            )
+            select(AreaAdmin).where(AreaAdmin.area_id == area_id, AreaAdmin.user_id == user.id)
         )
     ).scalar_one_or_none()
     if membership is None:

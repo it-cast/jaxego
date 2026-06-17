@@ -267,9 +267,7 @@ async def set_availability(
 # (IDOR → 404). PII reveal-by-state (RN-013): full dropoff + recipient only
 # AFTER pickup (COLETADA+). `/active` is declared before `/{delivery_id}`.
 # ---------------------------------------------------------------------------
-_COURIER_DROPOFF_REVEALED = frozenset(
-    {"COLETADA", "ENTREGUE", "RECUSADA_NO_DESTINO", "FINALIZADA"}
-)
+_COURIER_DROPOFF_REVEALED = frozenset({"COLETADA", "ENTREGUE", "RECUSADA_NO_DESTINO", "FINALIZADA"})
 
 
 def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
@@ -294,9 +292,7 @@ def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
         dropoff_lat=delivery.dropoff_lat if revealed else None,
         dropoff_lng=delivery.dropoff_lng if revealed else None,
         recipient_name=(recipient.name if recipient else None) if revealed else None,
-        recipient_phone_masked=(
-            mask_phone_display(recipient.phone_e164) if recipient else None
-        )
+        recipient_phone_masked=(mask_phone_display(recipient.phone_e164) if recipient else None)
         if revealed
         else None,
         estimate_min_cents=delivery.estimate_min_cents,

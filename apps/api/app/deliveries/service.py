@@ -597,9 +597,7 @@ async def get_courier_delivery(
     session: AsyncSession, *, courier_id: int, delivery_id: int
 ) -> tuple[Delivery, Recipient | None]:
     """Read one delivery assigned to this courier (404 if not theirs — TH-03)."""
-    stmt = select(Delivery).where(
-        Delivery.id == delivery_id, Delivery.courier_id == courier_id
-    )
+    stmt = select(Delivery).where(Delivery.id == delivery_id, Delivery.courier_id == courier_id)
     delivery = (await session.execute(stmt)).scalar_one_or_none()
     if delivery is None:
         raise NotFoundError("Entrega não encontrada.")

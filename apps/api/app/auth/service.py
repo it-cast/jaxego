@@ -149,6 +149,7 @@ async def _resolve_session_context(session: AsyncSession, user: User) -> tuple[i
     merchant_user = (await session.execute(stmt_merchant)).scalar_one_or_none()
     if merchant_user is not None:
         from app.merchants.models import Merchant
+
         merchant = await session.get(Merchant, merchant_user.merchant_id)
         area_id = merchant.area_id if merchant else None
         return area_id, "merchant"

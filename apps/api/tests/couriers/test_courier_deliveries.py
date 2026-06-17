@@ -128,8 +128,14 @@ async def test_active_and_detail_scoped_to_courier(
     async with session_factory() as s:
         area, nbhd, merchant, recipient, a, b = await _setup(s)
         active = await _delivery(
-            s, area_id=area.id, merchant_id=merchant.id, nbhd_id=nbhd.id,
-            recipient_id=recipient.id, courier_id=a.id, state="ACEITA", token="T" * 26,
+            s,
+            area_id=area.id,
+            merchant_id=merchant.id,
+            nbhd_id=nbhd.id,
+            recipient_id=recipient.id,
+            courier_id=a.id,
+            state="ACEITA",
+            token="T" * 26,
         )
         await s.commit()
 
@@ -154,13 +160,23 @@ async def test_list_only_own_deliveries(
         area, nbhd, merchant, recipient, a, b = await _setup(s)
         for i, st in enumerate(["ACEITA", "ENTREGUE", "FINALIZADA"]):
             await _delivery(
-                s, area_id=area.id, merchant_id=merchant.id, nbhd_id=nbhd.id,
-                recipient_id=recipient.id, courier_id=a.id, state=st,
+                s,
+                area_id=area.id,
+                merchant_id=merchant.id,
+                nbhd_id=nbhd.id,
+                recipient_id=recipient.id,
+                courier_id=a.id,
+                state=st,
                 token=f"A{i:025d}",
             )
         await _delivery(
-            s, area_id=area.id, merchant_id=merchant.id, nbhd_id=nbhd.id,
-            recipient_id=recipient.id, courier_id=b.id, state="ACEITA",
+            s,
+            area_id=area.id,
+            merchant_id=merchant.id,
+            nbhd_id=nbhd.id,
+            recipient_id=recipient.id,
+            courier_id=b.id,
+            state="ACEITA",
             token=f"B{0:025d}",
         )
         await s.commit()
@@ -177,12 +193,24 @@ async def test_pii_hidden_before_pickup_revealed_after(
     async with session_factory() as s:
         area, nbhd, merchant, recipient, a, _ = await _setup(s)
         before = await _delivery(
-            s, area_id=area.id, merchant_id=merchant.id, nbhd_id=nbhd.id,
-            recipient_id=recipient.id, courier_id=a.id, state="ACEITA", token="C" * 26,
+            s,
+            area_id=area.id,
+            merchant_id=merchant.id,
+            nbhd_id=nbhd.id,
+            recipient_id=recipient.id,
+            courier_id=a.id,
+            state="ACEITA",
+            token="C" * 26,
         )
         after = await _delivery(
-            s, area_id=area.id, merchant_id=merchant.id, nbhd_id=nbhd.id,
-            recipient_id=recipient.id, courier_id=a.id, state="COLETADA", token="D" * 26,
+            s,
+            area_id=area.id,
+            merchant_id=merchant.id,
+            nbhd_id=nbhd.id,
+            recipient_id=recipient.id,
+            courier_id=a.id,
+            state="COLETADA",
+            token="D" * 26,
         )
         await s.commit()
 

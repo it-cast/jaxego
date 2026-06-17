@@ -53,8 +53,8 @@ async def test_assign_creates_then_updates_role(
         assert again.id == membership.id
         assert again.role == "owner"
         rows = (
-            await s.execute(select(AreaAdmin).where(AreaAdmin.area_id == area.id))
-        ).scalars().all()
+            (await s.execute(select(AreaAdmin).where(AreaAdmin.area_id == area.id))).scalars().all()
+        )
         assert len(rows) == 1
 
 

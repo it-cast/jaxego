@@ -129,6 +129,7 @@ async def totp_enroll(user: CurrentUser, session: SessionDep) -> TotpEnrollRespo
     """
     if user.totp_enrolled:
         from app.core.exceptions import ValidationAppError
+
         raise ValidationAppError("TOTP já configurado nesta conta.")
     secret = generate_totp_secret()
     user.totp_secret = secret
