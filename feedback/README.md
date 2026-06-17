@@ -13,6 +13,7 @@
 |---|---|
 | `POSTMORTEM-jaxego-v1.md` | O que falhou, com evidência. Separa **falha de documentação/planejamento** de **falha de codificação**. |
 | `GSD-IMPROVEMENTS.md` | Tradução de cada falha em **mudança concreta de mecanismo** do GSD (gate, reconcile, autopilot, plan-checker). É o entregável acionável. |
+| `FIELD-REPORT-02-ci-deploy-merge.md` | Field data da sessão de reconstrução+integração: CI real (ruff format/karma/zero-hex) e deploy (ordem, DATABASE_URL) que só falharam **pós-push**. Mudança-chave: **GSD precisa conhecer e rodar o CI real do projeto** na definition-of-done. |
 
 ## Evidência-base
 
