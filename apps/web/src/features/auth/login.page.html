@@ -29,7 +29,6 @@
           class="jx-input"
           autocomplete="current-password"
           [attr.enterkeyhint]="totpRequired() ? 'next' : 'send'"
-          minlength="10"
         />
         <button
           type="button"
@@ -37,7 +36,7 @@
           [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
           (click)="togglePassword()"
         >
-          {{ showPassword() ? '🙈' : '👁' }}
+          <fa-icon [icon]="showPassword() ? faEyeSlash : faEye" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -75,14 +74,9 @@
     }
   </form>
 
-  <nav class="jx-login__links" aria-label="Recuperação e cadastro">
-    <a href="/auth/recuperar-senha">Esqueci a senha</a>
-    <a href="/cadastro">Criar conta</a>
-  </nav>
-
   <section class="jx-login__cta-block">
-    <a href="/cadastro/loja">Cadastrar minha loja →</a>
-    <a href="/cadastro/entregador">Quero entregar →</a>
+    <a href="/loja/cadastro">Cadastrar minha loja →</a>
+    <a href="/entregador/cadastro">Quero entregar →</a>
   </section>
 
   <footer class="jx-login__footer">jaxego.com.br · Grupo Itcast</footer>

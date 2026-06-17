@@ -13,6 +13,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '../../core/auth/auth.service';
 import {
   ErrorStateComponent,
@@ -23,7 +25,7 @@ import {
   selector: 'jx-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ErrorStateComponent, LoadingSkeletonComponent],
+  imports: [ReactiveFormsModule, ErrorStateComponent, LoadingSkeletonComponent, FaIconComponent],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -34,7 +36,7 @@ export class LoginPage implements AfterViewInit {
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(10)]],
+    password: ['', [Validators.required]],
     totp: [''],
   });
 
@@ -42,6 +44,8 @@ export class LoginPage implements AfterViewInit {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly totpRequired = signal(false);
   protected readonly showPassword = signal(false);
+  protected readonly faEye = faEye;
+  protected readonly faEyeSlash = faEyeSlash;
 
   private readonly errorRef =
     viewChild<ElementRef<HTMLElement>>('errorBlock');
@@ -59,6 +63,10 @@ export class LoginPage implements AfterViewInit {
   }
 
   protected async submit(): Promise<void> {
+    console.log('[login] submit clicado — form válido:', this.form.valid, this.form.value);
+    console.log('[login] erros email:', this.form.controls.email.errors);
+    console.log('[login] erros password:', this.form.controls.password.errors);
+    console.log('[login] erros totp:', this.form.controls.totp.errors);
     if (this.loading()) return; // no double submit
     this.errorMessage.set(null);
 
@@ -83,8 +91,8 @@ export class LoginPage implements AfterViewInit {
     this.loading.set(false);
 
     if (result.ok) {
-      // Resolve the user's surface and route to the right shell (R0.4). Replaces
-      // the old navigate(['/']) which looped back to /entrar (no surface routing).
+      // Roteamento por papel via /me (R0.4) — resolve TODAS as superfícies,
+      // inclusive courier/merchant (que o claim `role` do JWT não distingue).
       const me = await this.auth.loadMe();
       if (!me || me.surface === 'none') {
         this.errorMessage.set(

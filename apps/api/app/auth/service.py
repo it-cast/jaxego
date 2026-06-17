@@ -125,20 +125,35 @@ async def _get_user_by_email(session: AsyncSession, email: str) -> User | None:
 async def _resolve_session_context(session: AsyncSession, user: User) -> tuple[int | None, str]:
     """Resolve the (area_scope, role) the token is minted with.
 
-    Platform admins get area_scope=None (audited bypass). Otherwise we pick the
-    user's first area membership (single-context login for this phase; explicit
-    area switching is a future enhancement).
+    Platform admins get area_scope=None (audited bypass). Otherwise checks
+    area_admins, then couriers, then merchant_users — first match wins.
     """
     from app.areas.models import AreaAdmin
+    from app.couriers.models import Courier
+    from app.merchants.models import MerchantUser
 
     if user.platform_role == "admin_plataforma":
         return None, "admin_plataforma"
 
     stmt = select(AreaAdmin).where(AreaAdmin.user_id == user.id).limit(1)
     membership = (await session.execute(stmt)).scalar_one_or_none()
-    if membership is None:
-        return None, "user"
-    return membership.area_id, f"admin_area:{membership.role}"
+    if membership is not None:
+        return membership.area_id, f"admin_area:{membership.role}"
+
+    stmt_courier = select(Courier).where(Courier.user_id == user.id).limit(1)
+    courier = (await session.execute(stmt_courier)).scalar_one_or_none()
+    if courier is not None:
+        return courier.area_id, "courier"
+
+    stmt_merchant = select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1)
+    merchant_user = (await session.execute(stmt_merchant)).scalar_one_or_none()
+    if merchant_user is not None:
+        from app.merchants.models import Merchant
+        merchant = await session.get(Merchant, merchant_user.merchant_id)
+        area_id = merchant.area_id if merchant else None
+        return area_id, "merchant"
+
+    return None, "user"
 
 
 async def resolve_surface(session: AsyncSession, user: User) -> MeResponse:

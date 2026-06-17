@@ -127,6 +127,9 @@ async def totp_enroll(user: CurrentUser, session: SessionDep) -> TotpEnrollRespo
     get_current_user explicitly permits this path). Enrolment is confirmed by
     /totp/verify with a code from the authenticator app.
     """
+    if user.totp_enrolled:
+        from app.core.exceptions import ValidationAppError
+        raise ValidationAppError("TOTP já configurado nesta conta.")
     secret = generate_totp_secret()
     user.totp_secret = secret
     await session.commit()

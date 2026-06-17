@@ -79,7 +79,7 @@ export class AreaConfigPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
-      const area = await this.service.get(this.areaId);
+      const area = await this.service.get();
       this.areaName.set(area.name);
       const cfg = area.config as AreaConfig;
       this.loaded = this.normalise(cfg);
@@ -194,7 +194,7 @@ export class AreaConfigPage implements OnInit {
     this.saveError.set(null);
     try {
       const next = this.buildConfig();
-      const area = await this.service.patchConfig(this.areaId, next);
+      const area = await this.service.patchConfig(next);
       this.loaded = this.normalise(area.config as AreaConfig);
       this.saved.set(true);
     } catch {

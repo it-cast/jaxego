@@ -23,8 +23,8 @@ export interface LoginResult {
  * NEVER stored here: the backend sets it as an httpOnly+Secure cookie (web), so
  * there is nothing for JS to read (XSS mitigation / senior-quality-bar Gate 8).
  *
- * No PII (email/password/token) is ever logged. Only the error `request_id`
- * (envelope) is logged for correlation (observability-production).
+ * Combina: papel via claim do JWT (`role`, TOTP/Google Authenticator) + superfície
+ * resolvida por `/v1/auth/me` (roteamento pós-login por papel). No PII é logado.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -32,6 +32,7 @@ export class AuthService {
 
   private readonly _accessToken = signal<string | null>(null);
   private readonly _me = signal<Me | null>(null);
+  private readonly _role = signal<string | null>(null);
 
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
   /** Resolved identity/surface (null until loadMe() runs). */
@@ -41,21 +42,31 @@ export class AuthService {
     return this._accessToken();
   }
 
+  get role(): string | null {
+    return this._role();
+  }
+
+  private decodeRole(token: string): string | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload['role'] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Restore the session on app boot using the httpOnly refresh cookie (R0.5).
    * Without this, a page reload loses the in-memory token and the guard bounces
    * the user to /entrar. Returns true when a fresh access token was obtained.
    */
-  async tryRefresh(): Promise<boolean> {
+  async tryRestoreSession(): Promise<boolean> {
     try {
       const pair = await firstValueFrom(
-        this.http.post<TokenPair>(
-          '/v1/auth/refresh',
-          {},
-          { withCredentials: true }
-        )
+        this.http.post<TokenPair>('/v1/auth/refresh', {}, { withCredentials: true })
       );
       this._accessToken.set(pair.access_token);
+      this._role.set(this.decodeRole(pair.access_token));
       return true;
     } catch {
       this._accessToken.set(null);
@@ -65,8 +76,8 @@ export class AuthService {
 
   /**
    * Fetch the resolved surface for the authenticated user. Called right after
-   * login to route to the correct shell. Returns null on failure (caller decides
-   * the fallback). The Bearer token is attached by authInterceptor.
+   * login (and on boot after a successful restore) to route to the correct shell.
+   * Returns null on failure. The Bearer token is attached by authInterceptor.
    */
   async loadMe(): Promise<Me | null> {
     try {
@@ -98,21 +109,29 @@ export class AuthService {
   async login(req: LoginRequest): Promise<LoginResult> {
     try {
       const pair = await firstValueFrom(
-        // withCredentials so the browser stores/sends the refresh cookie.
         this.http.post<TokenPair>('/v1/auth/login', req, {
           withCredentials: true,
         })
       );
       this._accessToken.set(pair.access_token);
+      this._role.set(this.decodeRole(pair.access_token));
       return { ok: true };
     } catch (err) {
       return this.mapError(err);
     }
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.http.post('/v1/auth/logout', {}, { withCredentials: true })
+      );
+    } catch {
+      /* revogação best-effort — token limpo no cliente independente */
+    }
     this._accessToken.set(null);
     this._me.set(null);
+    this._role.set(null);
   }
 
   private mapError(err: unknown): LoginResult {

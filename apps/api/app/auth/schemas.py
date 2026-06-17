@@ -20,7 +20,7 @@ class LoginBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
-    password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+    password: str = Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)
     totp: str | None = Field(default=None, max_length=10)
 
 

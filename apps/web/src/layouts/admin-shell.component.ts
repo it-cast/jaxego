@@ -1,20 +1,35 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  inject,
   signal,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import {
+  faBars,
+  faGaugeHigh,
+  faGear,
+  faMap,
+  faScaleBalanced,
+  faKey,
+  faUsers,
+  faStore,
+  faRightFromBracket,
+  type IconDefinition,
+} from '@fortawesome/free-solid-svg-icons';
 import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
+import { AuthService } from '../core/auth/auth.service';
 
 /**
  * Admin shell — desktop-first, collapsible left sidebar + dense content slot
- * (UI-SPEC §6.1).
+ * (UI-SPEC §6.1). Nav (FA icons) cobre todas as telas da área + sair.
  */
 @Component({
   selector: 'jx-admin-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ThemeToggleComponent, FaIconComponent],
   template: `
     <div class="jx-admin" [class.jx-admin--collapsed]="collapsed()">
       <nav class="jx-admin__sidebar" aria-label="Navegação do admin">
@@ -25,23 +40,23 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
           aria-label="Alternar menu lateral"
           (click)="collapsed.set(!collapsed())"
         >
-          ☰
+          <fa-icon [icon]="iconBars" />
         </button>
         @if (!collapsed()) {
           <span class="jx-admin__brand">Jaxegô admin</span>
         }
-        <ul class="jx-admin__nav">
-          @for (item of nav; track item.path) {
+        <ul class="jx-admin__links">
+          @for (link of links; track link.path) {
             <li>
               <a
-                [routerLink]="item.path"
-                routerLinkActive="jx-admin__link--on"
+                [routerLink]="link.path"
+                routerLinkActive="jx-admin__link--active"
                 class="jx-admin__link"
-                [title]="item.label"
+                [attr.aria-label]="link.label"
               >
-                <span class="jx-admin__ic" aria-hidden="true">{{ item.icon }}</span>
+                <fa-icon [icon]="link.icon" [fixedWidth]="true" aria-hidden="true" />
                 @if (!collapsed()) {
-                  <span>{{ item.label }}</span>
+                  <span>{{ link.label }}</span>
                 }
               </a>
             </li>
@@ -49,6 +64,12 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         </ul>
         <div class="jx-admin__spacer"></div>
         <jx-theme-toggle />
+        <button type="button" class="jx-admin__logout" (click)="logout()">
+          <fa-icon [icon]="iconLogout" [fixedWidth]="true" aria-hidden="true" />
+          @if (!collapsed()) {
+            <span>Sair</span>
+          }
+        </button>
       </nav>
       <main class="jx-admin__content">
         <router-outlet />
@@ -88,9 +109,9 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         font-weight: var(--jx-weight-bold);
         color: var(--text);
       }
-      .jx-admin__nav {
+      .jx-admin__links {
         list-style: none;
-        margin: 0;
+        margin: var(--jx-space-3) 0 0;
         padding: 0;
         display: flex;
         flex-direction: column;
@@ -100,25 +121,25 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         display: flex;
         align-items: center;
         gap: var(--jx-space-2);
-        padding: var(--jx-space-2);
-        border-radius: var(--jx-radius-md);
+        min-height: 44px;
+        padding: 0 var(--jx-space-2);
+        border-radius: var(--jx-radius-lg);
         color: var(--text-muted);
         text-decoration: none;
         font-size: var(--jx-text-sm);
-        font-weight: var(--jx-weight-medium);
+        font-weight: var(--jx-weight-semibold);
       }
       .jx-admin__link:hover {
         background: var(--surface-elevated);
         color: var(--text);
       }
-      .jx-admin__link--on {
-        background: var(--surface-elevated);
-        color: var(--brand);
-        font-weight: var(--jx-weight-bold);
+      .jx-admin__link:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
       }
-      .jx-admin__ic {
-        width: 18px;
-        text-align: center;
+      .jx-admin__link--active {
+        background: var(--brand-wash);
+        color: var(--brand);
       }
       .jx-admin__spacer {
         flex: 1 1 auto;
@@ -127,19 +148,53 @@ import { ThemeToggleComponent } from '../core/theme/theme-toggle.component';
         padding: var(--jx-space-5);
         background: var(--surface);
       }
+      .jx-admin__logout {
+        display: flex;
+        align-items: center;
+        gap: var(--jx-space-2);
+        min-height: 44px;
+        width: 100%;
+        padding: 0 var(--jx-space-2);
+        border: 0;
+        border-radius: var(--jx-radius-lg);
+        background: transparent;
+        color: var(--text-muted);
+        font-size: var(--jx-text-sm);
+        font-weight: var(--jx-weight-semibold);
+        cursor: pointer;
+        text-align: left;
+      }
+      .jx-admin__logout:hover {
+        background: var(--surface-elevated);
+        color: var(--error);
+      }
+      .jx-admin__logout:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+      }
     `,
   ],
 })
 export class AdminShellComponent {
-  protected readonly collapsed = signal(false);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
-  protected readonly nav = [
-    { path: '/admin/inicio', label: 'Painel', icon: '▦' },
-    { path: '/admin/entregadores', label: 'Entregadores', icon: '✓' },
-    { path: '/admin/config', label: 'Configurações', icon: '⚙' },
-    { path: '/admin/bairros', label: 'Bairros', icon: '◰' },
-    { path: '/admin/lojas', label: 'Lojas', icon: '◫' },
-    { path: '/admin/disputas', label: 'Disputas', icon: '⚖' },
-    { path: '/admin/api-keys', label: 'API keys', icon: '⚿' },
+  protected readonly collapsed = signal(false);
+  protected readonly iconBars = faBars;
+  protected readonly iconLogout = faRightFromBracket;
+
+  protected readonly links: { path: string; label: string; icon: IconDefinition }[] = [
+    { path: 'inicio', label: 'Painel', icon: faGaugeHigh },
+    { path: 'entregadores', label: 'Entregadores', icon: faUsers },
+    { path: 'config', label: 'Configurações', icon: faGear },
+    { path: 'bairros', label: 'Bairros', icon: faMap },
+    { path: 'lojas', label: 'Lojas', icon: faStore },
+    { path: 'disputas', label: 'Disputas', icon: faScaleBalanced },
+    { path: 'api-keys', label: 'Chaves de API', icon: faKey },
   ];
+
+  protected async logout(): Promise<void> {
+    await this.auth.logout();
+    void this.router.navigate(['/entrar']);
+  }
 }

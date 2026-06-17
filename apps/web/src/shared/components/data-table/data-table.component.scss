@@ -41,6 +41,10 @@
   text-align: right;
 }
 
+.jx-data-table tbody tr {
+  height: 52px;
+}
+
 .jx-data-table tbody td {
   padding: var(--jx-space-3);
   border-bottom: 1px solid var(--border);

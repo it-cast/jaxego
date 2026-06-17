@@ -1,47 +1,52 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   IonTabs,
   IonTabBar,
   IonTabButton,
   IonLabel,
-  IonIcon,
 } from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
-  homeOutline,
-  mapOutline,
-  cashOutline,
-  personOutline,
-} from 'ionicons/icons';
+  faHouse,
+  faMap,
+  faMoneyBill,
+  faUser,
+  faRightFromBracket,
+} from '@fortawesome/free-solid-svg-icons';
+import { AuthService } from '../core/auth/auth.service';
 
 /**
  * Entregador shell — mobile-first, Ionic bottom tabs (UI-SPEC §6.1).
- * Tabs: Início / Ganhos / Bairros / Perfil (fiel ao tabbar do protótipo).
- * aria-current handled by Ionic router-link-active; safe-area via Ionic defaults.
+ * Tabs fiéis ao protótipo: Início / Ganhos / Bairros / Perfil (+ Sair).
  */
 @Component({
   selector: 'jx-entregador-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonTabs, IonTabBar, IonTabButton, IonLabel, IonIcon],
+  imports: [IonTabs, IonTabBar, IonTabButton, IonLabel, FaIconComponent],
   template: `
     <ion-tabs>
       <ion-tab-bar slot="bottom" class="jx-tabbar">
         <ion-tab-button tab="inicio">
-          <ion-icon name="home-outline" aria-hidden="true" />
+          <fa-icon [icon]="iconInicio" aria-hidden="true" />
           <ion-label>Início</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="saldo">
-          <ion-icon name="cash-outline" aria-hidden="true" />
+          <fa-icon [icon]="iconGanhos" aria-hidden="true" />
           <ion-label>Ganhos</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="cobertura">
-          <ion-icon name="map-outline" aria-hidden="true" />
+          <fa-icon [icon]="iconBairros" aria-hidden="true" />
           <ion-label>Bairros</ion-label>
         </ion-tab-button>
         <ion-tab-button tab="perfil">
-          <ion-icon name="person-outline" aria-hidden="true" />
+          <fa-icon [icon]="iconPerfil" aria-hidden="true" />
           <ion-label>Perfil</ion-label>
+        </ion-tab-button>
+        <ion-tab-button (click)="logout()">
+          <fa-icon [icon]="iconLogout" aria-hidden="true" />
+          <ion-label>Sair</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
@@ -58,7 +63,17 @@ import {
   ],
 })
 export class EntregadorShellComponent {
-  constructor() {
-    addIcons({ homeOutline, mapOutline, cashOutline, personOutline });
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  protected readonly iconInicio = faHouse;
+  protected readonly iconGanhos = faMoneyBill;
+  protected readonly iconBairros = faMap;
+  protected readonly iconPerfil = faUser;
+  protected readonly iconLogout = faRightFromBracket;
+
+  protected async logout(): Promise<void> {
+    await this.auth.logout();
+    void this.router.navigate(['/entrar']);
   }
 }

@@ -251,6 +251,17 @@ export const adminRoutes: Routes = [
 
 /** Admin da plataforma (super-admin) surface. Ships in the admin app. */
 export const plataformaRoutes: Routes = [
+  // TOTP enrollment gate (Correção #018): shown when admin_plataforma hasn't enrolled
+  // yet. Auth-guarded but NOT inside the shell so the enrollment page é acessível
+  // antes do TOTP estar configurado.
+  {
+    path: 'plataforma/totp-setup',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('../features/auth/totp-setup.page').then((m) => m.TotpSetupPage),
+  },
+  // Phase 13 (D-06): platform-admin shell (telas 23-25). Lazy, auth-guarded; the
+  // backend enforces require_platform_admin + TOTP (ADR-005) on every endpoint.
   {
     path: 'plataforma',
     canActivate: [authGuard],
