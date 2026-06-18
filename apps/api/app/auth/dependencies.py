@@ -89,8 +89,8 @@ async def get_current_user(request: Request, session: SessionDep) -> User:
 
     # Platform admin MUST enrol TOTP before any protected access (D-03/REQ-005).
     if user.platform_role == PLATFORM_ADMIN_ROLE and not user.totp_enrolled:
-        # The enrolment endpoints themselves bypass this guard (see router).
-        if not request.url.path.endswith(("/auth/totp/enroll", "/auth/totp/verify")):
+        # The enrolment endpoints and /me (surface routing) bypass this guard.
+        if not request.url.path.endswith(("/auth/totp/enroll", "/auth/totp/verify", "/auth/me")):
             raise TotpEnrollmentRequiredError()
 
     # Cache the token's claimed scope for area_scope to read.

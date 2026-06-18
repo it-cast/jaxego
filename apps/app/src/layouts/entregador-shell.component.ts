@@ -1,11 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import {
-  IonTabs,
-  IonTabBar,
-  IonTabButton,
-  IonLabel,
-} from '@ionic/angular/standalone';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faHouse,
@@ -16,48 +10,81 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 
-/**
- * Entregador shell — mobile-first, Ionic bottom tabs (UI-SPEC §6.1).
- * Tabs fiéis ao protótipo: Início / Ganhos / Bairros / Perfil (+ Sair).
- */
 @Component({
   selector: 'jx-entregador-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonTabs, IonTabBar, IonTabButton, IonLabel, FaIconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FaIconComponent],
   template: `
-    <ion-tabs>
-      <ion-tab-bar slot="bottom" class="jx-tabbar">
-        <ion-tab-button tab="inicio">
-          <fa-icon [icon]="iconInicio" aria-hidden="true" />
-          <ion-label>Início</ion-label>
-        </ion-tab-button>
-        <ion-tab-button tab="saldo">
-          <fa-icon [icon]="iconGanhos" aria-hidden="true" />
-          <ion-label>Ganhos</ion-label>
-        </ion-tab-button>
-        <ion-tab-button tab="cobertura">
-          <fa-icon [icon]="iconBairros" aria-hidden="true" />
-          <ion-label>Bairros</ion-label>
-        </ion-tab-button>
-        <ion-tab-button tab="perfil">
-          <fa-icon [icon]="iconPerfil" aria-hidden="true" />
-          <ion-label>Perfil</ion-label>
-        </ion-tab-button>
-        <ion-tab-button (click)="logout()">
-          <fa-icon [icon]="iconLogout" aria-hidden="true" />
-          <ion-label>Sair</ion-label>
-        </ion-tab-button>
-      </ion-tab-bar>
-    </ion-tabs>
+    <main class="jx-shell__content">
+      <router-outlet />
+    </main>
+    <nav class="jx-shell__tabbar">
+      <a routerLink="/entregador/inicio" routerLinkActive="jx-tab--active" class="jx-tab">
+        <fa-icon [icon]="iconInicio" aria-hidden="true" />
+        <span>Início</span>
+      </a>
+      <a routerLink="/entregador/saldo" routerLinkActive="jx-tab--active" class="jx-tab">
+        <fa-icon [icon]="iconGanhos" aria-hidden="true" />
+        <span>Ganhos</span>
+      </a>
+      <a routerLink="/entregador/cobertura" routerLinkActive="jx-tab--active" class="jx-tab">
+        <fa-icon [icon]="iconBairros" aria-hidden="true" />
+        <span>Bairros</span>
+      </a>
+      <a routerLink="/entregador/perfil" routerLinkActive="jx-tab--active" class="jx-tab">
+        <fa-icon [icon]="iconPerfil" aria-hidden="true" />
+        <span>Perfil</span>
+      </a>
+      <button type="button" class="jx-tab" (click)="logout()">
+        <fa-icon [icon]="iconLogout" aria-hidden="true" />
+        <span>Sair</span>
+      </button>
+    </nav>
   `,
   styles: [
     `
-      .jx-tabbar {
-        --background: var(--surface-elevated);
-        --color: var(--text-muted);
-        --color-selected: var(--brand);
-        --border: 1px solid var(--border);
+      :host {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+      }
+      .jx-shell__content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .jx-shell__tabbar {
+        display: flex;
+        align-items: stretch;
+        background: var(--surface-elevated, #fff);
+        border-top: 1px solid var(--border, #e5e0d8);
+        padding-bottom: env(safe-area-inset-bottom, 0);
+        flex-shrink: 0;
+      }
+      .jx-tab {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 6px 0 4px;
+        background: none;
+        border: none;
+        color: var(--text-muted, #8c8279);
+        font-size: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 0.15s;
+      }
+      .jx-tab fa-icon {
+        font-size: 20px;
+      }
+      .jx-tab--active {
+        color: var(--brand, #e8722a);
       }
     `,
   ],
