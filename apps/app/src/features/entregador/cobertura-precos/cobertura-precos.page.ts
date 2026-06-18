@@ -14,6 +14,7 @@ import {
 } from './coverage-list.component';
 import {
   CoberturaPrecosService,
+  CoverageRow,
   PricingRow,
 } from './cobertura-precos.service';
 
@@ -66,26 +67,58 @@ export class CoberturaPrecosPage implements OnInit {
   protected readonly saveError = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
-    // In M1 the catalog + floors are provided by the resolver; here we read the
-    // courier's current coverage to mark the rows. The neighborhood list comes
-    // from the area catalog (injected once that resolver lands).
     try {
-      const coverage = await this.service.getCoverage(this.courierId);
+      const [catalog, coverage, pricing] = await Promise.all([
+        this.service.catalog(),
+        this.service.getCoverage(this.courierId).catch(() => [] as CoverageRow[]),
+        this.service.getPricing(this.courierId).catch(() => [] as PricingRow[]),
+      ]);
       const covered = new Set(
         coverage.filter((r) => r.kind === 'include').map((r) => r.neighborhood_id)
       );
       const excluded = new Set(
         coverage.filter((r) => r.kind === 'exclude').map((r) => r.neighborhood_id)
       );
-      this.items.update((items) =>
-        items.map((it) => ({
-          ...it,
-          covered: covered.has(it.neighborhoodId),
-          excluded: excluded.has(it.neighborhoodId),
-        }))
+      const priceMap = new Map(
+        pricing
+          .filter((r) => r.neighborhood_id != null)
+          .map((r) => [r.neighborhood_id!, r] as const)
       );
+      this.items.set(
+        catalog.map((n) => {
+          const row = priceMap.get(n.id);
+          return {
+            neighborhoodId: n.id,
+            name: n.name,
+            covered: covered.has(n.id),
+            excluded: excluded.has(n.id),
+            price: row ? maskBrl(String(Math.round(Number(row.price) * 100))) : '',
+            priceError: null,
+          };
+        })
+      );
+      if (pricing.length > 0) {
+        if (pricing[0].return_pct != null) {
+          this.returnPct = Number(pricing[0].return_pct);
+        }
+        const savedMode = pricing[0].mode as 'neighborhood' | 'km' | undefined;
+        if (savedMode) {
+          this.mode.set(savedMode);
+        }
+        if (savedMode === 'km') {
+          this.kmBands = pricing
+            .filter((r) => r.up_to_km != null)
+            .map((r) => ({
+              upToKm: String(r.up_to_km),
+              price: maskBrl(String(Math.round(Number(r.price) * 100))),
+            }));
+          if (this.kmBands.length === 0) {
+            this.kmBands = [{ upToKm: '', price: '' }];
+          }
+        }
+      }
     } catch {
-      // Empty coverage is a valid starting state — the empty-state guides the user.
+      // Catalog empty or unreachable — empty-state guides the user.
     }
   }
 

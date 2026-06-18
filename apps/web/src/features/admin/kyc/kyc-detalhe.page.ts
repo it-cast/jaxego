@@ -1,51 +1,79 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   KycReviewRowComponent,
   type ReviewDecision,
   type ReviewStatus,
 } from './review-row.component';
+import {
+  AdminKycService,
+  type CourierDetail,
+  type CourierDocumentAdmin,
+} from './kyc.service';
 
-/** A document item shown in the detail review (drives jx-kyc-review-row). */
 interface ReviewItem {
   documentId: number;
+  kind: string;
   title: string;
   status: ReviewStatus;
   meta: string;
   thumbUrl: string | null;
   thumbState: 'loading' | 'ready' | 'error';
+  rejectReason: string | null;
+  rejectDetail: string | null;
 }
 
-/**
- * Painel de revisão do admin de área — tela 19 (UI-SPEC §5, T-11).
- *
- * Composes jx-kyc-review-row per document; approve/reject is OPTIMISTIC with
- * rollback on failure. The CPF is ALWAYS masked (PII/LGPD). The "Score" block is
- * an inert placeholder (Phase 13). The 48h escalation flag is reflected by the
- * queue (jx-kyc-queue-table) — this page is the per-courier detail. Reject without
- * a reason is blocked inside jx-kyc-review-row. Zero hardcoded hex; dark mode via
- * inherited semantic vars (DEC-001).
- *
- * The data wiring (load the courier + documents, regenerate the thumb view-url)
- * is driven by AdminKycService; this page renders the contract. The pilot ships
- * a representative item set so the surface is exercised end-to-end against the
- * contract; the live data hook is a thin swap once the list endpoint lands.
- */
+const KIND_LABELS: Record<string, string> = {
+  selfie: 'Selfie com documento',
+  cnh: 'CNH com EAR',
+  crlv: 'CRLV',
+  antecedentes: 'Antecedentes',
+  mei: 'MEI',
+};
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `enviada há ${mins}min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `enviada há ${hours}h`;
+  return `enviada há ${Math.floor(hours / 24)}d`;
+}
+
 @Component({
   selector: 'jx-admin-kyc-detalhe',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [KycReviewRowComponent],
+  imports: [RouterLink, KycReviewRowComponent],
   template: `
     <section class="jx-kyc-det">
       <header class="jx-kyc-det__head">
-        <a class="jx-kyc-det__back" href="/admin/inicio">← Entregadores</a>
-        <h1 class="jx-kyc-det__title">
-          {{ courierName }} <span class="jx-kyc-det__id">{{ courierId }}</span>
-        </h1>
-        <p class="jx-kyc-det__sub">
-          Validação exigida: <b>completa</b> · {{ approvedLabel }}
-        </p>
+        <a class="jx-kyc-det__back" routerLink="/admin/entregadores">← Entregadores</a>
+
+        @if (courier(); as c) {
+          <h1 class="jx-kyc-det__title">
+            {{ c.full_name }} <span class="jx-kyc-det__id">{{ c.cpf_masked }}</span>
+          </h1>
+          <p class="jx-kyc-det__sub">
+            Validação exigida: <b>{{ c.kyc_level }}</b> · {{ c.vehicle_type }}{{ c.vehicle_plate ? ' · ' + c.vehicle_plate : '' }} · {{ approvedLabel }}
+          </p>
+        } @else if (loading()) {
+          <p>Carregando…</p>
+        } @else {
+          <p>Entregador não encontrado.</p>
+        }
       </header>
+
+      @if (items().length === 0 && !loading()) {
+        <p class="jx-kyc-det__empty">Nenhum documento enviado ainda.</p>
+      }
 
       <div class="jx-kyc-det__items">
         @for (item of items(); track item.documentId) {
@@ -56,83 +84,119 @@ interface ReviewItem {
             [thumbUrl]="item.thumbUrl"
             [thumbState]="item.thumbState"
             (decide)="onDecide(item, $event)"
+            (openFull)="openLightbox(item)"
             (reloadThumb)="onReloadThumb(item)"
           />
         }
       </div>
 
-      <!-- Score block — inert placeholder (Phase 13). -->
       <aside class="jx-kyc-det__score" aria-label="Score do entregador">
         <h2 class="jx-kyc-det__score-title">Score</h2>
         <p class="jx-kyc-det__score-val" aria-hidden="true">—</p>
         <p class="jx-kyc-det__note">Disponível em breve.</p>
       </aside>
     </section>
+
+    @if (lightboxUrl()) {
+      <div class="jx-lightbox" (click)="closeLightbox()" role="dialog" aria-modal="true" aria-label="Visualizar documento">
+        <button type="button" class="jx-lightbox__close" aria-label="Fechar">✕</button>
+        <img class="jx-lightbox__img" [src]="lightboxUrl()" [alt]="lightboxTitle()" (click)="$event.stopPropagation()" />
+      </div>
+    }
   `,
   styleUrl: './kyc-detalhe.page.scss',
 })
-export class AdminKycDetalhePage {
-  // Demo identifiers — CPF always masked (PII). Live wiring swaps the source.
-  protected readonly courierId = 'cou_8f3a';
-  protected readonly courierName = 'João da Silva';
+export class AdminKycDetalhePage implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly kycService = inject(AdminKycService);
 
-  protected readonly items = signal<ReviewItem[]>([
-    {
-      documentId: 1,
-      title: 'Selfie com documento',
-      status: 'approved',
-      meta: '123.***.***-09 · enviada há 5h',
+  protected readonly courier = signal<CourierDetail | null>(null);
+  protected readonly items = signal<ReviewItem[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly lightboxUrl = signal<string | null>(null);
+  protected readonly lightboxTitle = signal('');
+
+  private get courierId(): number {
+    return Number(this.route.snapshot.paramMap.get('courierId'));
+  }
+
+  async ngOnInit(): Promise<void> {
+    const c = await this.kycService.getCourier(this.courierId);
+    this.courier.set(c);
+    this.loading.set(false);
+    if (!c) return;
+
+    const reviewItems: ReviewItem[] = c.documents.map((d) => ({
+      documentId: d.id,
+      kind: d.kind,
+      title: KIND_LABELS[d.kind] ?? d.kind,
+      status: d.status as ReviewStatus,
+      meta: `${c.cpf_masked} · ${timeAgo(d.created_at)}`,
       thumbUrl: null,
-      thumbState: 'ready',
-    },
-    {
-      documentId: 2,
-      title: 'CNH com EAR',
-      status: 'pending',
-      meta: '123.***.***-09 · enviada há 2h',
-      thumbUrl: null,
-      thumbState: 'ready',
-    },
-    {
-      documentId: 3,
-      title: 'CRLV',
-      status: 'pending',
-      meta: '123.***.***-09 · enviada há 2h',
-      thumbUrl: null,
-      thumbState: 'ready',
-    },
-    {
-      documentId: 4,
-      title: 'MEI',
-      status: 'approved_auto',
-      meta: 'CNAE 5320-2/02 · Receita: ATIVO',
-      thumbUrl: null,
-      thumbState: 'ready',
-    },
-  ]);
+      thumbState: 'loading' as const,
+      rejectReason: d.reject_reason,
+      rejectDetail: d.reject_detail,
+    }));
+    this.items.set(reviewItems);
+
+    for (const item of reviewItems) {
+      this.loadThumb(item);
+    }
+  }
+
+  private async loadThumb(item: ReviewItem): Promise<void> {
+    const url = await this.kycService.viewUrl(this.courierId, item.documentId);
+    this.items.update((list) =>
+      list.map((i) =>
+        i.documentId === item.documentId
+          ? { ...i, thumbUrl: url, thumbState: url ? 'ready' as const : 'error' as const }
+          : i
+      )
+    );
+  }
 
   protected get approvedLabel(): string {
     const list = this.items();
+    if (list.length === 0) return '';
     const approved = list.filter(
       (i) => i.status === 'approved' || i.status === 'approved_auto'
     ).length;
     return `${approved} de ${list.length} aprovados`;
   }
 
-  protected onDecide(item: ReviewItem, decision: ReviewDecision): void {
-    // Optimistic update (rollback handled by the service hook on failure).
+  protected async onDecide(item: ReviewItem, decision: ReviewDecision): Promise<void> {
     const next: ReviewStatus = decision.action === 'approve' ? 'approved' : 'rejected';
     this.items.update((list) =>
       list.map((i) => (i.documentId === item.documentId ? { ...i, status: next } : i))
     );
+    const result = await this.kycService.review(this.courierId, item.documentId, decision);
+    if (!result) {
+      this.items.update((list) =>
+        list.map((i) => (i.documentId === item.documentId ? { ...i, status: item.status } : i))
+      );
+    } else {
+      const c = this.courier();
+      if (c) this.courier.set({ ...c, status: result.courier_status });
+    }
   }
 
-  protected onReloadThumb(item: ReviewItem): void {
-    // Regenerate the (expired) view-url — sets loading, then ready on success.
+  protected openLightbox(item: ReviewItem): void {
+    if (item.thumbUrl) {
+      this.lightboxUrl.set(item.thumbUrl);
+      this.lightboxTitle.set(item.title);
+    }
+  }
+
+  protected closeLightbox(): void {
+    this.lightboxUrl.set(null);
+  }
+
+  protected async onReloadThumb(item: ReviewItem): Promise<void> {
     this.items.update((list) =>
       list.map((i) =>
-        i.documentId === item.documentId ? { ...i, thumbState: 'loading' } : i
+        i.documentId === item.documentId ? { ...i, thumbState: 'loading' as const } : i
       )
     );
+    await this.loadThumb(item);
   }
 }

@@ -13,6 +13,7 @@ const authRoutes: Routes = [
     path: 'entrar',
     loadComponent: () =>
       import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
+    data: { surface: 'app' },
   },
 ];
 

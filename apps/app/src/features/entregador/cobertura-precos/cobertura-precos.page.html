@@ -6,32 +6,17 @@
     <jx-warn-banner [message]="warnMessage" />
 
     <!-- Seletor de modo -->
-    <div
-      class="jx-cobertura__mode"
-      role="radiogroup"
-      aria-label="Modo de preço"
-    >
-      <button
-        type="button"
-        role="radio"
-        class="jx-cobertura__mode-btn"
-        [class.jx-cobertura__mode-btn--active]="mode() === 'neighborhood'"
-        [attr.aria-checked]="mode() === 'neighborhood'"
-        (click)="setMode('neighborhood')"
+    <label class="jx-cobertura__mode-label">
+      <span>Como você cobra</span>
+      <select
+        class="jx-cobertura__mode-select"
+        [value]="mode()"
+        (change)="setMode($any($event.target).value)"
       >
-        Por bairro
-      </button>
-      <button
-        type="button"
-        role="radio"
-        class="jx-cobertura__mode-btn"
-        [class.jx-cobertura__mode-btn--active]="mode() === 'km'"
-        [attr.aria-checked]="mode() === 'km'"
-        (click)="setMode('km')"
-      >
-        Por km
-      </button>
-    </div>
+        <option value="neighborhood">Preço por bairro</option>
+        <option value="km">Preço por km</option>
+      </select>
+    </label>
 
     @if (saveError()) {
       <jx-error-state [message]="saveError()!" />

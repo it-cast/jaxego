@@ -83,3 +83,44 @@
     grid-template-columns: 1fr;
   }
 }
+
+// Lightbox overlay
+.jx-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.jx-lightbox__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: var(--jx-radius-full);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.jx-lightbox__close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.jx-lightbox__img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--jx-radius-md);
+  cursor: default;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}

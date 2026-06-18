@@ -1,5 +1,9 @@
-<ion-content class="jx-cad">
+<div class="jx-cad">
   <div class="jx-cad__wrap">
+    <div class="jx-cad__top">
+      <a routerLink="/entrar" class="jx-cad__back">← Voltar ao login</a>
+    </div>
+
     <h1 class="jx-cad__h1">
       Entregue na sua cidade. Comece <em>hoje.</em>
     </h1>
@@ -35,6 +39,8 @@
           type="text"
           inputmode="numeric"
           autocomplete="off"
+          maxlength="14"
+          placeholder="000.000.000-00"
           [value]="form.controls.cpf.value"
           (input)="onCpfInput($any($event.target).value)"
           [attr.aria-invalid]="cpfError() ? 'true' : null"
@@ -51,6 +57,7 @@
           type="tel"
           inputmode="numeric"
           autocomplete="tel"
+          maxlength="15"
           placeholder="(22) 99999-1234"
           [value]="form.controls.phone.value"
           (input)="onPhoneInput($any($event.target).value)"
@@ -63,7 +70,37 @@
         <input id="email" class="jx-cad__input" type="email" inputmode="email" autocomplete="email" formControlName="email" />
 
         <label class="jx-cad__label" for="pwd">Senha</label>
-        <input id="pwd" class="jx-cad__input" type="password" minlength="10" autocomplete="new-password" formControlName="password" />
+        <div class="jx-cad__input-wrap">
+          <input
+            id="pwd"
+            class="jx-cad__input"
+            [type]="showPassword() ? 'text' : 'password'"
+            minlength="10"
+            autocomplete="new-password"
+            formControlName="password"
+          />
+          <button type="button" class="jx-cad__eye" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'">
+            <fa-icon [icon]="showPassword() ? faEyeSlash : faEye" aria-hidden="true" />
+          </button>
+        </div>
+
+        <label class="jx-cad__label" for="pwd-confirm">Confirmar senha</label>
+        <div class="jx-cad__input-wrap">
+          <input
+            id="pwd-confirm"
+            class="jx-cad__input"
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="new-password"
+            formControlName="password_confirm"
+            [attr.aria-invalid]="passwordMismatch() ? 'true' : null"
+          />
+          <button type="button" class="jx-cad__eye" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'">
+            <fa-icon [icon]="showPassword() ? faEyeSlash : faEye" aria-hidden="true" />
+          </button>
+        </div>
+        @if (passwordMismatch()) {
+          <p class="jx-cad__err">As senhas não coincidem.</p>
+        }
 
         <label class="jx-cad__consent">
           <input type="checkbox" formControlName="consent" />
@@ -72,7 +109,7 @@
       </section>
     }
 
-    <!-- Step 2 — selfie -->
+    <!-- Step 2 — selfie (foto guardada em memória, upload só no final) -->
     @if (current() === 1) {
       <section class="jx-cad__step">
         <p class="jx-cad__trust">
@@ -80,15 +117,22 @@
         </p>
         @for (doc of docs(); track doc.kind) {
           @if (doc.kind === 'selfie') {
-            <jx-doc-card
-              [title]="doc.title"
-              mode="edit"
-              [status]="doc.status"
-              [captureMode]="doc.capture"
-              [purpose]="doc.purpose"
-              [uploadState]="doc.status === 'uploading' ? 'uploading' : 'idle'"
-              (fileSelected)="onFile(doc, $event)"
-            />
+            <div class="jx-cad__doc-wrap">
+              <jx-doc-card
+                [title]="doc.title"
+                mode="edit"
+                [status]="doc.status"
+                [captureMode]="doc.capture"
+                [purpose]="doc.purpose"
+                [previewUrl]="doc.previewUrl"
+                [hideBadge]="true"
+                uploadState="idle"
+                (fileSelected)="onFileSelected(doc, $event)"
+              />
+              @if (doc.file) {
+                <button type="button" class="jx-cad__remove-x" aria-label="Remover foto" (click)="removeFile(doc)">✕</button>
+              }
+            </div>
           }
         }
       </section>
@@ -127,15 +171,22 @@
         />
         @for (doc of docs(); track doc.kind) {
           @if (doc.kind !== 'selfie') {
-            <jx-doc-card
-              [title]="doc.title"
-              mode="edit"
-              [status]="doc.status"
-              [captureMode]="doc.capture"
-              [purpose]="doc.purpose"
-              [uploadState]="doc.status === 'uploading' ? 'uploading' : 'idle'"
-              (fileSelected)="onFile(doc, $event)"
-            />
+            <div class="jx-cad__doc-wrap">
+              <jx-doc-card
+                [title]="doc.title"
+                mode="edit"
+                [status]="doc.status"
+                [captureMode]="doc.capture"
+                [purpose]="doc.purpose"
+                [previewUrl]="doc.previewUrl"
+                [hideBadge]="true"
+                uploadState="idle"
+                (fileSelected)="onFileSelected(doc, $event)"
+              />
+              @if (doc.file) {
+                <button type="button" class="jx-cad__remove-x" [attr.aria-label]="'Remover ' + doc.title" (click)="removeFile(doc)">✕</button>
+              }
+            </div>
           }
         }
 
@@ -145,14 +196,16 @@
       </section>
     }
 
-    @if (offlineWarn()) {
-      <jx-warn-banner [message]="offlineWarn()!" />
+    @if (submitting()) {
+      <div class="jx-cad__submitting" role="status" aria-busy="true">
+        <p>{{ submitProgress() }}</p>
+      </div>
     }
   </div>
 
   <footer class="jx-cad__footer">
-    <button type="button" class="jx-cad__cta" [disabled]="loading()" (click)="next()">
+    <button type="button" class="jx-cad__cta" [disabled]="loading() || submitting()" (click)="next()">
       {{ isLastStep() ? 'Enviar para análise' : 'Continuar' }}
     </button>
   </footer>
-</ion-content>
+</div>

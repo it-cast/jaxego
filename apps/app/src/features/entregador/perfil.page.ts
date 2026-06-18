@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
-import { ThemeToggleComponent } from '@jaxego/core/theme/theme-toggle.component';
 import {
   ScoreBreakdownComponent,
   ScoreChipComponent,
@@ -42,7 +41,6 @@ const VALID_LEVELS: ScoreLevel[] = [
   imports: [
     IonContent,
     EmptyStateComponent,
-    ThemeToggleComponent,
     ScoreChipComponent,
     ScoreBreakdownComponent,
   ],
@@ -105,9 +103,6 @@ const VALID_LEVELS: ScoreLevel[] = [
           />
         }
 
-        <div class="jx-perfil__theme">
-          <jx-theme-toggle />
-        </div>
       </div>
     </ion-content>
   `,
@@ -173,11 +168,6 @@ const VALID_LEVELS: ScoreLevel[] = [
         margin: 0;
         font-size: var(--jx-text-sm);
         color: var(--jx-color-neutral-500);
-      }
-      .jx-perfil__theme {
-        display: flex;
-        justify-content: center;
-        padding-top: var(--jx-space-2);
       }
     `,
   ],

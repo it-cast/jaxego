@@ -90,7 +90,8 @@ def get_geocoding_adapter() -> GeocodingPort:
 @lru_cache
 def _stub_storage() -> StorageStubAdapter:
     """A process-wide stub rooted in the OS temp dir (dev only; tests inject own)."""
-    return StorageStubAdapter(root=Path(gettempdir()) / "jaxego-b2-stub")
+    base_url = "http://localhost:8000" if settings.environment == "dev" else None
+    return StorageStubAdapter(root=Path(gettempdir()) / "jaxego-b2-stub", base_url=base_url)
 
 
 def get_storage_adapter() -> StoragePort:

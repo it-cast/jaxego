@@ -275,6 +275,35 @@ class CourierDocumentItem(BaseModel):
     status: str
 
 
+class CourierDocumentAdminItem(BaseModel):
+    """One KYC document for the admin detail view — includes ID for review/view-url."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    kind: str
+    status: str
+    reject_reason: str | None = None
+    reject_detail: str | None = None
+    created_at: str | None = None
+
+
+class CourierAdminDetailOut(BaseModel):
+    """Courier detail for the area admin KYC review page."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: int
+    full_name: str
+    cpf_masked: str
+    status: str
+    kyc_level: str
+    vehicle_type: str
+    vehicle_plate: str | None = None
+    created_at: str | None = None
+    documents: list[CourierDocumentAdminItem]
+
+
 class CourierProfileOut(BaseModel):
     """The courier's OWN profile (F1.6 — tpl-c-profile identity + documents).
 

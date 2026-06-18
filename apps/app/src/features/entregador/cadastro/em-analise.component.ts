@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { IonContent } from '@ionic/angular/standalone';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
 
 /**
@@ -13,9 +12,9 @@ import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
   selector: 'jx-entregador-em-analise',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, EmptyStateComponent, WarnBannerComponent],
+  imports: [RouterLink, EmptyStateComponent, WarnBannerComponent],
   template: `
-    <ion-content class="jx-analise">
+    <div class="jx-analise">
       @if (meiPending) {
         <jx-warn-banner
           message="Você ainda não tem MEI ativo. Pode entregar recebendo direto da loja. Para receber pela plataforma, regularize seu MEI."
@@ -26,12 +25,33 @@ import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
         title="Recebemos seu cadastro."
         message="Estamos conferindo seus dados. Avisamos assim que liberar — costuma sair rápido."
       />
-    </ion-content>
+      <a routerLink="/entrar" class="jx-analise__btn">Voltar ao login</a>
+    </div>
   `,
   styles: [
     `
       .jx-analise {
-        --background: var(--surface);
+        background: var(--surface);
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--jx-space-4);
+        gap: var(--jx-space-4);
+      }
+      .jx-analise__btn {
+        display: inline-block;
+        min-height: 48px;
+        line-height: 48px;
+        padding: 0 var(--jx-space-5);
+        background: var(--brand);
+        color: var(--brand-contrast, #fff);
+        border-radius: var(--jx-radius-md);
+        font-weight: var(--jx-weight-semibold);
+        text-decoration: none;
+        text-align: center;
       }
     `,
   ],

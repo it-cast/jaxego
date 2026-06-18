@@ -57,9 +57,11 @@ const BADGES: Record<DocStatus, BadgeSpec> = {
     <article class="jx-doc-card" [attr.aria-label]="title">
       <header class="jx-doc-card__head">
         <h3 class="jx-doc-card__title">{{ title }}</h3>
-        <span class="jx-doc-card__badge jx-doc-card__badge--{{ badge.cls }}" role="status">
-          <span aria-hidden="true">{{ badge.icon }}</span> {{ badge.text }}
-        </span>
+        @if (!hideBadge) {
+          <span class="jx-doc-card__badge jx-doc-card__badge--{{ badge.cls }}" role="status">
+            <span aria-hidden="true">{{ badge.icon }}</span> {{ badge.text }}
+          </span>
+        }
       </header>
 
       @if (purpose) {
@@ -123,6 +125,7 @@ export class DocCardComponent {
   @Input() uploadState: DocUploadState = 'idle';
   @Input() progress = 0;
   @Input() uploadError: string | null = null;
+  @Input() hideBadge = false;
 
   @Output() fileSelected = new EventEmitter<File>();
   @Output() open = new EventEmitter<void>();

@@ -50,14 +50,8 @@ class StorageB2Adapter:
         )
 
     async def presign_put(self, key: str, *, content_type: str, expires_in: int) -> PresignResult:
-        url = self._client.generate_presigned_url(
-            "put_object",
-            Params={"Bucket": self._bucket, "Key": key, "ContentType": content_type},
-            ExpiresIn=expires_in,
-        )
-        assert_safe_url(url, allowlist=self._allowlist)  # TH-04
         return PresignResult(
-            url=url,
+            url=f"/v1/upload/{key}",
             method="PUT",
             expires_in=expires_in,
             headers={"Content-Type": content_type},

@@ -8,6 +8,7 @@ export interface CoverageRow {
 }
 
 export interface PricingRow {
+  mode?: 'neighborhood' | 'km';
   neighborhood_id?: number | null;
   up_to_km?: number | null;
   price: number;
@@ -24,6 +25,14 @@ export interface PricingPayload {
   rows: PricingRow[];
 }
 
+export interface NeighborhoodCatalogItem {
+  id: number;
+  area_id: number;
+  name: string;
+  is_informal: boolean;
+  polygon_status: string;
+}
+
 /**
  * CoberturaPrecosService — the courier's own coverage + pricing (RN-003/RN-015).
  *
@@ -36,9 +45,21 @@ export interface PricingPayload {
 export class CoberturaPrecosService {
   private readonly http = inject(HttpClient);
 
+  async catalog(): Promise<NeighborhoodCatalogItem[]> {
+    return firstValueFrom(
+      this.http.get<NeighborhoodCatalogItem[]>('/v1/neighborhoods/catalog')
+    );
+  }
+
   async getCoverage(courierId: number): Promise<CoverageRow[]> {
     return firstValueFrom(
       this.http.get<CoverageRow[]>(`/v1/couriers/${courierId}/coverage`)
+    );
+  }
+
+  async getPricing(courierId: number): Promise<PricingRow[]> {
+    return firstValueFrom(
+      this.http.get<PricingRow[]>(`/v1/couriers/${courierId}/pricing`)
     );
   }
 

@@ -1,13 +1,12 @@
 """StorageStubAdapter — dev/test only; NEVER touches B2 or the network.
 
-Simulates the StoragePort against a temp filesystem. Presigned URLs are fake
-`stub://` strings that are NOT directly fetchable — a fetch requires the key, so a
-test proving "no public access without a presign" works: there is no way to read
-an object except through this adapter (which the backend gates by ownership+area).
+Simulates the StoragePort against a temp filesystem. In dev mode, presigned
+URLs point to `http://localhost:8000/v1/dev/upload/{key}` so the frontend can
+PUT files normally. In test mode (base_url=None), URLs use the `stub://` scheme
+that is NOT fetchable (tests verifying "no public access" still work).
 
-`presign_put`/`presign_get` return deterministic fake URLs; `put_bytes` writes the
-file under `root`; `fetch` reads it back; reading a missing key raises KeyError
-(the caller maps it to a 404 / pipeline error).
+`put_bytes` writes the file under `root`; `fetch` reads it back; reading a
+missing key raises KeyError (the caller maps it to a 404 / pipeline error).
 """
 
 from __future__ import annotations
@@ -20,9 +19,10 @@ from app.integrations.base import PresignResult
 class StorageStubAdapter:
     """Filesystem-backed StoragePort stub (no network, no real B2)."""
 
-    def __init__(self, root: Path | str) -> None:
+    def __init__(self, root: Path | str, *, base_url: str | None = None) -> None:
         self._root = Path(root)
         self._root.mkdir(parents=True, exist_ok=True)
+        self._base_url = base_url
 
     def _path(self, key: str) -> Path:
         # The key is server-generated (no traversal); still, resolve + verify the
@@ -34,16 +34,24 @@ class StorageStubAdapter:
         return target
 
     async def presign_put(self, key: str, *, content_type: str, expires_in: int) -> PresignResult:
+        if self._base_url:
+            url = f"/v1/upload/{key}"
+        else:
+            url = f"stub://put/{key}?ct={content_type}&exp={expires_in}"
         return PresignResult(
-            url=f"stub://put/{key}?ct={content_type}&exp={expires_in}",
+            url=url,
             method="PUT",
             expires_in=expires_in,
             headers={"Content-Type": content_type},
         )
 
     async def presign_get(self, key: str, *, expires_in: int) -> PresignResult:
+        if self._base_url:
+            url = f"/v1/upload/{key}"
+        else:
+            url = f"stub://get/{key}?exp={expires_in}"
         return PresignResult(
-            url=f"stub://get/{key}?exp={expires_in}",
+            url=url,
             method="GET",
             expires_in=expires_in,
             headers={},

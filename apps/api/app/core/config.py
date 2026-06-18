@@ -80,12 +80,12 @@ class Settings(BaseSettings):
     # If a secret is ever committed: ROTATE it in the B2 console immediately.
     b2_key_id: str | None = Field(default=None)
     b2_app_key: str | None = Field(default=None)
-    b2_endpoint_url: str = Field(default="https://s3.us-west-004.backblazeb2.com")
-    b2_region: str = Field(default="us-west-004")
-    b2_kyc_bucket: str = Field(default="jaxego-kyc-prod")
+    b2_endpoint_url: str = Field(default="https://s3.eu-central-003.backblazeb2.com")
+    b2_region: str = Field(default="eu-central-003")
+    b2_kyc_bucket: str = Field(default="jaxego")
     # Comma-separated host allowlist for the SSRF guard on the internal download
     # of the just-uploaded object (TH-04). Only the B2 S3 endpoint host.
-    b2_allowlist_hosts: str = Field(default="s3.us-west-004.backblazeb2.com")
+    b2_allowlist_hosts: str = Field(default="s3.eu-central-003.backblazeb2.com")
 
     # --- OSRM routing (Phase 8) — ETA/distance for the dispatch ranking ---
     # In dev/test the factory returns the haversine Stub (no network). The real

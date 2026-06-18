@@ -38,6 +38,10 @@ def create_app() -> FastAPI:
     # Versioned domain endpoints under /v1 (DRV-003).
     app.include_router(api_router, prefix="/v1")
 
+    # Upload proxy — frontend uploads here, API forwards to storage (B2 or stub).
+    from app.dev_upload import router as upload_router
+    app.include_router(upload_router, prefix="/v1")
+
     return app
 
 

@@ -12,7 +12,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
@@ -25,7 +25,7 @@ import {
   selector: 'jx-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, ErrorStateComponent, LoadingSkeletonComponent, FaIconComponent],
+  imports: [ReactiveFormsModule, RouterLink, ErrorStateComponent, LoadingSkeletonComponent, FaIconComponent],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -33,6 +33,9 @@ export class LoginPage implements AfterViewInit {
   private readonly fb = inject(FormBuilder);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+
+  protected readonly isApp = this.route.snapshot.data['surface'] === 'app';
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],

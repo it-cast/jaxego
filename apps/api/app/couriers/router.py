@@ -32,8 +32,10 @@ from app.couriers.models import Courier
 from app.couriers.schemas import (
     AvailabilityBody,
     AvailabilityResponse,
+    CourierAdminDetailOut,
     CourierAdminListItem,
     CourierAdminListOut,
+    CourierDocumentAdminItem,
     CourierDocumentItem,
     CourierProfileOut,
     CourierSignupBody,
@@ -434,6 +436,53 @@ async def list_area_couriers(
     ]
     return CourierAdminListOut(
         items=items, total=total, limit=min(limit, 100), offset=max(offset, 0)
+    )
+
+
+@admin_router.get("/{courier_id}", response_model=CourierAdminDetailOut)
+async def get_area_courier(
+    courier_id: int,
+    session: SessionDep,
+    admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
+    scope: AreaScopeDep,
+) -> CourierAdminDetailOut:
+    """Courier detail + documents for the KYC review page. Area-scoped (TH-09)."""
+    from app.couriers.models import Courier, CourierDocument
+
+    query = select(Courier).where(Courier.id == courier_id)
+    if scope is not None:
+        query = query.where(Courier.area_id == scope)
+    courier = (await session.execute(query)).scalar_one_or_none()
+    if courier is None:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError("Entregador não encontrado.")
+    docs = (
+        await session.execute(
+            select(CourierDocument)
+            .where(CourierDocument.courier_id == courier.id)
+            .order_by(CourierDocument.id)
+        )
+    ).scalars().all()
+    return CourierAdminDetailOut(
+        id=courier.id,
+        full_name=courier.full_name,
+        cpf_masked=mask_cpf_display(courier.cpf),
+        status=courier.status,
+        kyc_level=courier.kyc_level,
+        vehicle_type=courier.vehicle_type,
+        vehicle_plate=courier.vehicle_plate,
+        created_at=courier.created_at.isoformat() if courier.created_at else None,
+        documents=[
+            CourierDocumentAdminItem(
+                id=d.id,
+                kind=d.kind,
+                status=d.status,
+                reject_reason=d.reject_reason,
+                reject_detail=d.reject_detail,
+                created_at=d.created_at.isoformat() if d.created_at else None,
+            )
+            for d in docs
+        ],
     )
 
 
