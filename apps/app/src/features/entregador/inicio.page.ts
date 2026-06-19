@@ -298,13 +298,15 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     const id = this.courierId;
     if (!id) return;
-    const [balance, score, list, active, extract] = await Promise.all([
+    const [balance, score, list, active, extract, profile] = await Promise.all([
       this.saldo.balance().catch(() => null),
       this.svc.score(id),
       this.svc.listDeliveries(id).catch(() => null),
       this.svc.activeDelivery(id).catch(() => null),
       this.saldo.extract().catch(() => []),
+      this.svc.profile(id),
     ]);
+    if (profile) this.online.set(profile.is_online ?? false);
     this.balance.set(balance);
     // "Liberado hoje" = soma dos créditos liberados com data de hoje (sem endpoint novo).
     const today = new Date().toDateString();

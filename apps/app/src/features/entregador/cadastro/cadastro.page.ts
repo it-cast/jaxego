@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   inject,
   signal,
@@ -26,10 +27,16 @@ import {
   maskPhone,
   phoneToE164,
 } from '@jaxego/shared/util/br-format';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { COURIER_ERROR, type KycLevel, type VehicleType } from './cadastro.models';
 import { CourierCadastroService } from './cadastro.service';
 
 const DRAFT_KEY = 'jx-courier-onboarding';
+
+function normalizeKycLevel(level: string | null | undefined): KycLevel {
+  return level === 'completa' ? 'completa' : 'simples';
+}
 
 interface DocItem {
   kind: 'selfie' | 'cnh' | 'crlv' | 'antecedentes';
@@ -64,15 +71,13 @@ interface DocItem {
   templateUrl: './cadastro.page.html',
   styleUrl: './cadastro.page.scss',
 })
-export class CadastroEntregadorPage {
+export class CadastroEntregadorPage implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly http = inject(HttpClient);
   private readonly couriers = inject(CourierCadastroService);
   private readonly router = inject(Router);
 
-  protected readonly areas = signal<{ id: number; name: string; level: KycLevel }[]>([
-    { id: 1, name: 'Pádua', level: 'completa' },
-    { id: 2, name: 'Itaocara', level: 'simples' },
-  ]);
+  protected readonly areas = signal<{ id: number; name: string; level: KycLevel }[]>([]);
 
   protected readonly current = signal(0);
   protected readonly loading = signal(false);
@@ -117,6 +122,19 @@ export class CadastroEntregadorPage {
     this.restoreDraft();
   }
 
+  async ngOnInit(): Promise<void> {
+    try {
+      const data = await firstValueFrom(
+        this.http.get<{ id: number; name: string; kyc_level: string }[]>('/v1/areas/public')
+      );
+      this.areas.set(
+        data.map((a) => ({ id: a.id, name: a.name, level: normalizeKycLevel(a.kyc_level) }))
+      );
+    } catch {
+      // Areas indisponíveis — o select fica vazio com mensagem.
+    }
+  }
+
   // --- masking + validation -------------------------------------------------
   protected onCpfInput(value: string): void {
     this.form.controls.cpf.setValue(maskCpf(value));
@@ -127,8 +145,9 @@ export class CadastroEntregadorPage {
   protected onAreaChange(areaId: number): void {
     const area = this.areas().find((a) => a.id === Number(areaId));
     this.form.controls.area_id.setValue(area?.id ?? 0);
-    this.level.set(area?.level ?? 'simples');
-    this.initDocs(area?.level ?? 'simples');
+    const level = normalizeKycLevel(area?.level);
+    this.level.set(level);
+    this.initDocs(level);
   }
 
   protected togglePassword(): void {
@@ -158,8 +177,7 @@ export class CadastroEntregadorPage {
 
   // --- doc items (fotos guardadas em memória como File) ---------------------
   private initDocs(level: KycLevel): void {
-    const current = this.docs();
-    if (current.length > 0) return;
+    const currentByKind = new Map(this.docs().map((doc) => [doc.kind, doc]));
     const items: DocItem[] = [
       { kind: 'selfie', title: 'Selfie com documento', purpose: 'Confirma que é você de verdade.', capture: 'user', status: 'pending_upload', file: null, previewUrl: null },
     ];
@@ -169,7 +187,7 @@ export class CadastroEntregadorPage {
         { kind: 'crlv', title: 'CRLV', purpose: 'Confirma que o veículo está regular.', capture: 'environment', status: 'pending_upload', file: null, previewUrl: null },
       );
     }
-    this.docs.set(items);
+    this.docs.set(items.map((item) => currentByKind.get(item.kind) ?? item));
   }
 
   protected onFileSelected(item: DocItem, file: File): void {
@@ -341,8 +359,9 @@ export class CadastroEntregadorPage {
       const { step, level, ...values } = draft;
       this.form.patchValue(values as never);
       if (level) {
-        this.level.set(level);
-        this.initDocs(level);
+        const restoredLevel = normalizeKycLevel(level);
+        this.level.set(restoredLevel);
+        this.initDocs(restoredLevel);
       }
       if (typeof step === 'number') {
         this.current.set(Math.min(step, this.steps().length - 1));

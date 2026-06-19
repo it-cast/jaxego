@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { ApiErrorEnvelope } from '@jaxego/core/auth/auth.models';
 import {
+  AreaOption,
   PlanDto,
   SignupRequest,
   SignupResponse,
@@ -34,6 +35,14 @@ export class MerchantService {
   async listPlans(): Promise<PlanDto[]> {
     try {
       return await firstValueFrom(this.http.get<PlanDto[]>('/v1/plans'));
+    } catch {
+      return [];
+    }
+  }
+
+  async listAreas(): Promise<AreaOption[]> {
+    try {
+      return await firstValueFrom(this.http.get<AreaOption[]>('/v1/areas/public'));
     } catch {
       return [];
     }

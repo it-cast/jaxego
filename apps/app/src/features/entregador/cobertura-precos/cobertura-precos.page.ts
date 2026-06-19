@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { IonContent } from '@ionic/angular/standalone';
+import { AuthService } from '@jaxego/core/auth/auth.service';
 import {
   EmptyStateComponent,
   ErrorStateComponent,
@@ -50,8 +51,11 @@ interface KmBand {
 })
 export class CoberturaPrecosPage implements OnInit {
   private readonly service = inject(CoberturaPrecosService);
+  private readonly auth = inject(AuthService);
 
-  protected courierId = 1; // resolved from the session in M1
+  protected get courierId(): number {
+    return this.auth.me()?.courier_id ?? 0;
+  }
 
   // The floors come from the area config (never hardcoded — single source).
   protected pisoEntrega = 0;

@@ -12,6 +12,7 @@ export type MerchantStatus =
 
 /** POST /v1/merchants/signup request body. */
 export interface SignupRequest {
+  area_id: number;
   account_type: AccountType;
   document: string;
   trade_name: string;
@@ -39,6 +40,13 @@ export interface PlanDto {
   taxa_entrega_cents: number;
   is_free: boolean;
   is_unlimited: boolean;
+}
+
+/** Public active area from GET /v1/areas/public. */
+export interface AreaOption {
+  id: number;
+  name: string;
+  kyc_level?: string;
 }
 
 /** Machine error codes the signup flow reacts to (app/merchants/service.py). */

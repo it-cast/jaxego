@@ -7,6 +7,8 @@ import {
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import {
   ErrorStateComponent,
   LoadingSkeletonComponent,
@@ -30,7 +32,7 @@ import {
   maskPhone,
   phoneToE164,
 } from '@jaxego/shared/util/br-format';
-import { MERCHANT_ERROR } from './merchant.models';
+import { AreaOption, MERCHANT_ERROR } from './merchant.models';
 import { MerchantService } from './merchant.service';
 
 const STEPS: WizardStep[] = [
@@ -55,6 +57,7 @@ const DRAFT_KEY = 'jx-merchant-onboarding';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    FaIconComponent,
     WizardStepperComponent,
     PlanCardComponent,
     SemAreaComponent,
@@ -77,8 +80,11 @@ export class CadastroLojaPage {
   protected readonly cepWarn = signal<string | null>(null);
   protected readonly noArea = signal(false);
   protected readonly plans = signal<Plan[]>([]);
+  protected readonly areas = signal<AreaOption[]>([]);
   protected readonly selectedPlan = signal<string>('free');
   protected readonly showPassword = signal(false);
+  protected readonly faEye = faEye;
+  protected readonly faEyeSlash = faEyeSlash;
 
   protected readonly form = this.fb.nonNullable.group({
     account_type: ['cnpj' as 'cnpj' | 'cpf', Validators.required],
@@ -88,6 +94,8 @@ export class CadastroLojaPage {
     phone: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(10)]],
+    password_confirm: ['', Validators.required],
+    area_id: [0, Validators.min(1)],
     cep: [''],
     rua: [''],
     numero: [''],
@@ -101,6 +109,7 @@ export class CadastroLojaPage {
 
   constructor() {
     this.restoreDraft();
+    void this.loadAreas();
     void this.loadPlans();
   }
 
@@ -112,6 +121,12 @@ export class CadastroLojaPage {
         : maskCpf(value);
     this.form.controls.document.setValue(masked);
   }
+  protected passwordMismatch(): boolean {
+    const pw = this.form.controls.password.value;
+    const confirm = this.form.controls.password_confirm.value;
+    return confirm.length > 0 && pw !== confirm;
+  }
+
   protected onPhoneInput(value: string): void {
     this.form.controls.phone.setValue(maskPhone(value));
   }
@@ -126,6 +141,14 @@ export class CadastroLojaPage {
   }
   protected togglePassword(): void {
     this.showPassword.update((v) => !v);
+  }
+  protected onAreaChange(areaId: number): void {
+    const area = this.areas().find((a) => a.id === Number(areaId));
+    this.form.patchValue({
+      area_id: area?.id ?? 0,
+      cidade: area?.name ?? this.form.controls.cidade.value,
+    });
+    this.noArea.set(false);
   }
 
   // --- inline validation messages (what happened + what to do) --------------
@@ -188,7 +211,7 @@ export class CadastroLojaPage {
       case 1:
         return !this.phoneError() && f.phone.valid && f.email.valid && f.password.valid;
       case 2:
-        return !this.noArea() && !!f.cidade.value;
+        return !this.noArea() && f.area_id.valid;
       case 3:
         return f.consent.value === true;
       default:
@@ -219,6 +242,14 @@ export class CadastroLojaPage {
     this.plans.set(plans);
   }
 
+  private async loadAreas(): Promise<void> {
+    const areas = await this.merchants.listAreas();
+    this.areas.set(areas);
+    if (areas.length === 0) {
+      this.noArea.set(true);
+    }
+  }
+
   protected choosePlan(plan: Plan): void {
     this.selectedPlan.set(plan.codename);
     void this.submit();
@@ -234,6 +265,7 @@ export class CadastroLojaPage {
     this.loading.set(true);
     const f = this.form.getRawValue();
     const result = await this.merchants.signup({
+      area_id: f.area_id,
       account_type: f.account_type,
       document: f.document.replace(/[^0-9A-Za-z]/g, ''),
       trade_name: f.trade_name,
@@ -272,7 +304,8 @@ export class CadastroLojaPage {
 
   // --- draft persistence (NEVER the password — UI-SPEC §2.4) ---------------
   private persistDraft(): void {
-    const { password, ...rest } = this.form.getRawValue();
+    const { password, password_confirm, ...rest } = this.form.getRawValue();
+    void password_confirm;
     void password; // explicitly excluded
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...rest, step: this.current() }));

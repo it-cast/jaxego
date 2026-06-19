@@ -141,17 +141,13 @@ def _area_requires_antecedentes(area: Area) -> bool:
 # Signup (step 1) — E2 anti-enumeration per area.
 # ---------------------------------------------------------------------------
 async def _assert_unique_in_area(
-    session: AsyncSession, *, area_id: int, cpf: str, password: str
+    session: AsyncSession, *, area_id: int, user_id: int, password: str
 ) -> None:
-    """Raise a generic CourierExistsError if the CPF already onboarded HERE.
-
-    Pays the dummy-hash cost on collision so timing does not reveal existence
-    (E2). A CPF in another area is fine (new vínculo) — not checked here.
-    """
-    stmt = select(Courier.id).where(Courier.area_id == area_id, Courier.cpf == cpf)
+    """Raise CourierExistsError if this user already onboarded in this area."""
+    stmt = select(Courier.id).where(Courier.area_id == area_id, Courier.user_id == user_id)
     if (await session.execute(stmt)).first() is not None:
-        verify_dummy(password)  # constant-time path (anti-enumeration)
-        logger.info("courier_collision")  # no PII, no field hint
+        verify_dummy(password)
+        logger.info("courier_collision")
         raise CourierExistsError()
 
 
@@ -166,32 +162,31 @@ async def signup(
         raise InvalidCpfError()
 
     area = await _get_area(session, body.area_id)
-    await _assert_unique_in_area(session, area_id=area.id, cpf=body.cpf, password=body.password)
-
     level = _area_kyc_level(area)
 
-    # Reuse an existing user with this email if present (the same person may
-    # onboard across areas); otherwise create one (argon2id).
     existing = (
         await session.execute(select(User).where(User.email == body.email))
     ).scalar_one_or_none()
     if existing is not None:
         user = existing
+        if not user.cpf:
+            user.cpf = body.cpf
     else:
         user = User(
             email=body.email,
             name=body.full_name,
-            phone=body.phone_e164,
+            cpf=body.cpf,
             password_hash=hash_password(body.password),
             platform_role="user",
         )
         session.add(user)
         await session.flush()
 
+    await _assert_unique_in_area(session, area_id=area.id, user_id=user.id, password=body.password)
+
     courier = Courier(
         area_id=area.id,
         user_id=user.id,
-        cpf=body.cpf,
         full_name=body.full_name,
         phone_e164=body.phone_e164,
         email=body.email,
@@ -469,7 +464,7 @@ async def list_area_couriers(
     cross-area bypass (audited at the caller). Optional `status` filter powers the
     KYC queue (status='pending_kyc'). Single query + COUNT, no N+1.
     """
-    base = select(Courier).where(Courier.deleted_at.is_(None))
+    base = select(Courier, User.cpf).join(User, Courier.user_id == User.id).where(Courier.deleted_at.is_(None))
     count_stmt = select(func.count(Courier.id)).where(Courier.deleted_at.is_(None))
     if area_id is not None:
         base = base.where(Courier.area_id == area_id)
@@ -478,7 +473,8 @@ async def list_area_couriers(
         base = base.where(Courier.status == status)
         count_stmt = count_stmt.where(Courier.status == status)
     base = base.order_by(Courier.created_at.desc()).limit(limit).offset(offset)
-    rows = list((await session.execute(base)).scalars().all())
+    result = (await session.execute(base)).all()
+    rows = [(row[0], row[1]) for row in result]  # (Courier, cpf)
     total = int((await session.execute(count_stmt)).scalar_one())
     return rows, total
 
@@ -486,6 +482,21 @@ async def list_area_couriers(
 async def list_courier_documents(
     session: AsyncSession, *, courier_id: int
 ) -> list[CourierDocument]:
-    """The courier's KYC documents (kind + status), for their own profile (F1.6)."""
-    stmt = select(CourierDocument).where(CourierDocument.courier_id == courier_id)
-    return list((await session.execute(stmt)).scalars().all())
+    """The courier's KYC documents — latest per kind only (F1.6).
+
+    When a document is rejected and re-uploaded, multiple rows exist for the same
+    kind. The profile shows only the most recent one (highest id) per kind.
+    """
+    stmt = (
+        select(CourierDocument)
+        .where(CourierDocument.courier_id == courier_id)
+        .order_by(CourierDocument.id.desc())
+    )
+    all_docs = list((await session.execute(stmt)).scalars().all())
+    seen: set[str] = set()
+    latest: list[CourierDocument] = []
+    for doc in all_docs:
+        if doc.kind not in seen:
+            seen.add(doc.kind)
+            latest.append(doc)
+    return latest

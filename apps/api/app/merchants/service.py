@@ -116,29 +116,16 @@ class SignupResult:
 
 
 # ---------------------------------------------------------------------------
-# Area resolution (POINT-in-area). The seed config may carry a bbox/geofence;
-# for the pilot we resolve by a simple bounding box stored in area.config, with a
-# sensible default for Pádua. A precise polygon check arrives with mapping (later
-# phase); this is enough to drive coverage vs empty-state here.
+# Area resolution. The signup contract carries an explicit area_id selected from
+# /v1/areas/public; this avoids geocoding a trade name and removes pilot bbox
+# fallbacks from the store onboarding path.
 # ---------------------------------------------------------------------------
-# Default Pádua bounding box (approx) — overridable per-area via config["bbox"].
-_PADUA_BBOX = {"min_lat": -21.70, "max_lat": -21.40, "min_lng": -42.25, "max_lng": -41.85}
-
-
-def _point_in_bbox(lat: float, lng: float, bbox: dict) -> bool:
-    return bbox["min_lat"] <= lat <= bbox["max_lat"] and bbox["min_lng"] <= lng <= bbox["max_lng"]
-
-
-async def _resolve_area(session: AsyncSession, lat: float, lng: float) -> Area | None:
-    """Return the covering area for a point, or None (no coverage)."""
-    stmt = select(Area).where(Area.deleted_at.is_(None))
-    for area in (await session.execute(stmt)).scalars().all():
-        bbox = area.config.get("bbox") if isinstance(area.config, dict) else None
-        if bbox is None and area.codename == "padua":
-            bbox = _PADUA_BBOX
-        if bbox and _point_in_bbox(lat, lng, bbox):
-            return area
-    return None
+async def _resolve_signup_area(session: AsyncSession, area_id: int) -> Area:
+    """Return an active signup area or raise the public uncovered-city error."""
+    area = await session.get(Area, area_id)
+    if area is None or area.deleted_at is not None:
+        raise AreaNotCoveredError()
+    return area
 
 
 # ---------------------------------------------------------------------------
@@ -202,13 +189,8 @@ async def signup(
     # 2. Anti-enumeration uniqueness (RN-011) — generic, constant time.
     await _assert_unique(session, body)
 
-    # 3. Geocode + resolve area (empty state if uncovered).
-    point = await geocoding.geocode(body.trade_name)  # address omitted from PII log
-    if point is None:
-        raise AreaNotCoveredError()
-    area = await _resolve_area(session, point.lat, point.lng)
-    if area is None:
-        raise AreaNotCoveredError()
+    # 3. Resolve explicit area selected from the public active-area catalog.
+    area = await _resolve_signup_area(session, body.area_id)
 
     # 4. Receita validation → decide initial status (E1 block / E4 pending).
     revalidation_enqueued = False
@@ -239,7 +221,6 @@ async def signup(
     user = User(
         email=body.email,
         name=body.trade_name,
-        phone=body.phone_e164,
         password_hash=hash_password(body.password),
         platform_role="user",
     )
@@ -255,8 +236,8 @@ async def signup(
         phone_e164=body.phone_e164,
         email=body.email,
         status=status,
-        lat=point.lat,
-        lng=point.lng,
+        lat=None,
+        lng=None,
         receita_validated=receita_validated,
         revalidation_attempts=0,
         next_revalidation_at=otp_mod.expires_at() if revalidation_enqueued else None,

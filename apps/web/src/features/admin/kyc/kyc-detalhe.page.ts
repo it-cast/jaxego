@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -75,8 +76,36 @@ function timeAgo(iso: string | null): string {
         <p class="jx-kyc-det__empty">Nenhum documento enviado ainda.</p>
       }
 
+      @if (items().length > 0) {
+        <div class="jx-kyc-det__filters">
+          <label class="jx-kyc-det__filter">
+            <span>Documento</span>
+            <select [value]="filterKind()" (change)="filterKind.set($any($event.target).value)">
+              <option value="all">Todos</option>
+              @for (k of availableKinds(); track k) {
+                <option [value]="k">{{ kindLabel(k) }}</option>
+              }
+            </select>
+          </label>
+          <label class="jx-kyc-det__filter">
+            <span>Status</span>
+            <select [value]="filterStatus()" (change)="filterStatus.set($any($event.target).value)">
+              <option value="all">Todos</option>
+              <option value="pending">Em análise</option>
+              <option value="approved">Aprovado</option>
+              <option value="rejected">Reprovado</option>
+              <option value="pending_upload">Aguardando envio</option>
+            </select>
+          </label>
+        </div>
+      }
+
+      @if (filteredItems().length === 0 && items().length > 0 && !loading()) {
+        <p class="jx-kyc-det__empty">Nenhum documento com esse filtro.</p>
+      }
+
       <div class="jx-kyc-det__items">
-        @for (item of items(); track item.documentId) {
+        @for (item of filteredItems(); track item.documentId) {
           <jx-kyc-review-row
             [title]="item.title"
             [status]="item.status"
@@ -115,6 +144,23 @@ export class AdminKycDetalhePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly lightboxUrl = signal<string | null>(null);
   protected readonly lightboxTitle = signal('');
+
+  protected readonly filterKind = signal<string>('all');
+  protected readonly filterStatus = signal<string>('pending');
+
+  protected readonly filteredItems = computed(() => {
+    let list = this.items();
+    const kind = this.filterKind();
+    const status = this.filterStatus();
+    if (kind !== 'all') list = list.filter((i) => i.kind === kind);
+    if (status !== 'all') list = list.filter((i) => i.status === status);
+    return list;
+  });
+
+  protected readonly availableKinds = computed(() => {
+    const kinds = new Set(this.items().map((i) => i.kind));
+    return [...kinds];
+  });
 
   private get courierId(): number {
     return Number(this.route.snapshot.paramMap.get('courierId'));
@@ -178,6 +224,10 @@ export class AdminKycDetalhePage implements OnInit {
       const c = this.courier();
       if (c) this.courier.set({ ...c, status: result.courier_status });
     }
+  }
+
+  protected kindLabel(kind: string): string {
+    return KIND_LABELS[kind] ?? kind;
   }
 
   protected openLightbox(item: ReviewItem): void {

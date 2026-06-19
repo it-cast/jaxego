@@ -46,11 +46,12 @@
             class="jx-input jx-mono"
             inputmode="numeric"
             autocomplete="off"
+            [attr.maxlength]="form.controls.account_type.value === 'cnpj' ? 18 : 14"
+            [placeholder]="form.controls.account_type.value === 'cnpj' ? '00.000.000/0001-00' : '000.000.000-00'"
             [attr.aria-describedby]="docError() ? 'doc-error' : null"
             [attr.aria-invalid]="docError() ? 'true' : null"
             [value]="form.controls.document.value"
             (input)="onDocInput($any($event.target).value)"
-            placeholder="00.000.000/0001-00"
           />
           @if (docError()) {
             <p class="jx-field__error" id="doc-error">{{ docError() }}</p>
@@ -98,6 +99,7 @@
             type="tel"
             inputmode="numeric"
             autocomplete="tel"
+            maxlength="15"
             [attr.aria-describedby]="phoneError() ? 'phone-error' : null"
             [attr.aria-invalid]="phoneError() ? 'true' : null"
             [value]="form.controls.phone.value"
@@ -143,11 +145,36 @@
               [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
               (click)="togglePassword()"
             >
-              {{ showPassword() ? '🙈' : '👁' }}
+              <fa-icon [icon]="showPassword() ? faEyeSlash : faEye" aria-hidden="true" />
             </button>
           </div>
           @if (passwordError()) {
             <p class="jx-field__error" id="pwd-error">{{ passwordError() }}</p>
+          }
+        </div>
+
+        <div class="jx-field">
+          <label class="jx-label" for="password-confirm">Confirmar senha</label>
+          <div class="jx-input-wrap">
+            <input
+              id="password-confirm"
+              class="jx-input"
+              [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="new-password"
+              formControlName="password_confirm"
+              [attr.aria-invalid]="passwordMismatch() ? 'true' : null"
+            />
+            <button
+              type="button"
+              class="jx-input-toggle"
+              [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+              (click)="togglePassword()"
+            >
+              <fa-icon [icon]="showPassword() ? faEyeSlash : faEye" aria-hidden="true" />
+            </button>
+          </div>
+          @if (passwordMismatch()) {
+            <p class="jx-field__error">As senhas não coincidem.</p>
           }
         </div>
       </fieldset>
@@ -158,6 +185,24 @@
       <fieldset class="jx-cadastro__step">
         <legend class="jx-sr-only">Endereço</legend>
         @if (!noArea()) {
+          <div class="jx-field">
+            <label class="jx-label" for="area">Cidade atendida</label>
+            <select
+              id="area"
+              class="jx-input"
+              formControlName="area_id"
+              (change)="onAreaChange($any($event.target).value)"
+            >
+              <option [value]="0" disabled>Selecione a cidade</option>
+              @for (area of areas(); track area.id) {
+                <option [value]="area.id">{{ area.name }}</option>
+              }
+            </select>
+            <p class="jx-field__hint">
+              A loja será vinculada à cidade selecionada.
+            </p>
+          </div>
+
           <div class="jx-field">
             <label class="jx-label" for="cep">CEP</label>
             <input

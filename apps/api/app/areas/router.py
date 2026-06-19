@@ -32,6 +32,12 @@ router = APIRouter(prefix="/areas", tags=["areas"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
+def _public_kyc_level(config: dict | None) -> str:
+    """Public signup only exposes supported KYC levels; legacy values fall back safely."""
+    raw = (config or {}).get("kyc_level", "simples")
+    return raw if raw in {"simples", "completa"} else "simples"
+
+
 def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
@@ -111,6 +117,21 @@ async def create_area(
     )
     await session.commit()
     return AreaRead.model_validate(area)
+
+
+@router.get("/public", response_model=list[dict])
+async def list_areas_public(session: SessionDep) -> list[dict]:
+    """Public list of active areas for the courier signup (F-02 step 2). No auth."""
+    areas = await service.list_areas(session)
+    return [
+        {
+            "id": a.id,
+            "name": a.name,
+            "kyc_level": _public_kyc_level(a.config),
+        }
+        for a in areas
+        if a.deleted_at is None
+    ]
 
 
 @router.get("", response_model=list[AreaRead])

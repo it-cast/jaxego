@@ -13,6 +13,7 @@ from tests.helpers import Seed
 VALID_CNPJ = "11222333000181"
 VALID_CNPJ_2 = "11444777000161"
 BASE = {
+    "area_id": 1,
     "account_type": "cnpj",
     "document": VALID_CNPJ,
     "trade_name": "Loja A",

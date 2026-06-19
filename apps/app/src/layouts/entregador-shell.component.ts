@@ -1,14 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faHouse,
   faMap,
   faMoneyBill,
   faUser,
-  faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
-import { AuthService } from '@jaxego/core/auth/auth.service';
 
 @Component({
   selector: 'jx-entregador-shell',
@@ -36,10 +34,6 @@ import { AuthService } from '@jaxego/core/auth/auth.service';
         <fa-icon [icon]="iconPerfil" aria-hidden="true" />
         <span>Perfil</span>
       </a>
-      <button type="button" class="jx-tab" (click)="logout()">
-        <fa-icon [icon]="iconLogout" aria-hidden="true" />
-        <span>Sair</span>
-      </button>
     </nav>
   `,
   styles: [
@@ -90,17 +84,8 @@ import { AuthService } from '@jaxego/core/auth/auth.service';
   ],
 })
 export class EntregadorShellComponent {
-  private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-
   protected readonly iconInicio = faHouse;
   protected readonly iconGanhos = faMoneyBill;
   protected readonly iconBairros = faMap;
   protected readonly iconPerfil = faUser;
-  protected readonly iconLogout = faRightFromBracket;
-
-  protected async logout(): Promise<void> {
-    await this.auth.logout();
-    void this.router.navigate(['/entrar']);
-  }
 }

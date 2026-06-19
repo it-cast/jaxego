@@ -70,26 +70,21 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
 
     __tablename__ = "couriers"
     __table_args__ = (
-        # F-02 E2: a CPF may onboard in several areas, but not twice in the SAME
-        # area. The composite UNIQUE is the structural enforcement; the service
-        # returns ONE generic anti-enumeration message on collision.
-        UniqueConstraint("area_id", "cpf", name="uq_couriers_area_id_cpf"),
+        # F-02 E2: same user cannot onboard twice in the SAME area.
+        UniqueConstraint("area_id", "user_id", name="uq_couriers_area_id_user_id"),
         Base.__table_args__,
     )
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
 
-    # Owner User (argon2id via auth/). One user row per CPF; the courier links it
-    # to an area (a user may have several courier rows across areas).
+    # Owner User. CPF lives in users (unique global). One user may have several
+    # courier rows across areas (F-02 E2).
     user_id: Mapped[int] = mapped_column(
         BIG_ID,
         ForeignKey("users.id", ondelete="RESTRICT", onupdate="RESTRICT"),
         nullable=False,
         index=True,
     )
-
-    # Normalised CPF (digits only). [PII] — masked in outputs, never logged.
-    cpf: Mapped[str] = mapped_column(String(11), nullable=False)
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
     # [PII] E.164 phone — masked in outputs, never logged.
     phone_e164: Mapped[str] = mapped_column(String(20), nullable=False)

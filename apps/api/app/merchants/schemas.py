@@ -37,6 +37,7 @@ class MerchantSignupBody(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    area_id: int = Field(gt=0)
     account_type: Literal["cnpj", "cpf"]
     document: str = Field(min_length=3, max_length=20)
     trade_name: str = Field(min_length=2, max_length=120)

@@ -31,11 +31,9 @@ class User(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
 
-    # --- PII [LGPD] (RN-021): never logged; masked in non-essential outputs ---
-    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)  # [LGPD]
-    name: Mapped[str] = mapped_column(String(160), nullable=False)  # [LGPD]
-    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)  # [LGPD]
-    cpf: Mapped[str | None] = mapped_column(String(11), nullable=True, unique=True)  # [LGPD]
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    cpf: Mapped[str | None] = mapped_column(String(11), nullable=True, unique=True)
 
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 

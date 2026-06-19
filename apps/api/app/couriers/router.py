@@ -389,15 +389,21 @@ async def get_courier_profile(
     return CourierProfileOut(
         id=courier.id,
         full_name=courier.full_name,
-        cpf_masked=mask_cpf_display(courier.cpf),
+        cpf_masked=mask_cpf_display(user.cpf or ''),
         phone_masked=mask_phone(courier.phone_e164),
         email_masked=mask_email(courier.email),
         vehicle_type=courier.vehicle_type,
         vehicle_plate=courier.vehicle_plate,
         kyc_level=courier.kyc_level,
         status=courier.status,
+        is_online=courier.is_online,
         mei_pending=courier.mei_pending,
-        documents=[CourierDocumentItem(kind=d.kind, status=d.status) for d in docs],
+        documents=[
+            CourierDocumentItem(
+                id=d.id, kind=d.kind, status=d.status,
+                reject_reason=d.reject_reason, reject_detail=d.reject_detail,
+            ) for d in docs
+        ],
     )
 
 
@@ -427,12 +433,12 @@ async def list_area_couriers(
         CourierAdminListItem(
             id=c.id,
             full_name=c.full_name,
-            cpf_masked=mask_cpf_display(c.cpf),
+            cpf_masked=mask_cpf_display(cpf or ''),
             status=c.status,
             kyc_level=c.kyc_level,
             created_at=c.created_at.isoformat() if c.created_at else None,
         )
-        for c in rows
+        for c, cpf in rows
     ]
     return CourierAdminListOut(
         items=items, total=total, limit=min(limit, 100), offset=max(offset, 0)
@@ -449,13 +455,14 @@ async def get_area_courier(
     """Courier detail + documents for the KYC review page. Area-scoped (TH-09)."""
     from app.couriers.models import Courier, CourierDocument
 
-    query = select(Courier).where(Courier.id == courier_id)
+    query = select(Courier, User.cpf).join(User, Courier.user_id == User.id).where(Courier.id == courier_id)
     if scope is not None:
         query = query.where(Courier.area_id == scope)
-    courier = (await session.execute(query)).scalar_one_or_none()
-    if courier is None:
+    row = (await session.execute(query)).first()
+    if row is None:
         from app.core.exceptions import NotFoundError
         raise NotFoundError("Entregador não encontrado.")
+    courier, user_cpf = row[0], row[1]
     docs = (
         await session.execute(
             select(CourierDocument)
@@ -466,7 +473,7 @@ async def get_area_courier(
     return CourierAdminDetailOut(
         id=courier.id,
         full_name=courier.full_name,
-        cpf_masked=mask_cpf_display(courier.cpf),
+        cpf_masked=mask_cpf_display(user_cpf or ''),
         status=courier.status,
         kyc_level=courier.kyc_level,
         vehicle_type=courier.vehicle_type,

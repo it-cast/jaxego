@@ -21,6 +21,7 @@ from tests.helpers import Seed
 VALID_CNPJ = "11222333000181"
 VALID_CPF = "39053344705"
 SIGNUP_BASE = {
+    "area_id": 1,
     "account_type": "cnpj",
     "document": VALID_CNPJ,
     "trade_name": "Loja do Bairro",
@@ -150,11 +151,11 @@ async def test_receita_down_pending_validation(
 async def test_sem_area_estado_vazio(
     db_session, seed: Seed, with_plans, geocoding_stub_fora
 ) -> None:
-    """Endereço fora de área → AreaNotCoveredError (estado vazio)."""
+    """Área inexistente/arquivada → AreaNotCoveredError (estado vazio)."""
     with pytest.raises(service.AreaNotCoveredError):
         await service.signup(
             db_session,
-            body=_body(),
+            body=_body(area_id=999_999),
             receita=ReceitaStubAdapter(scenario="ativa"),
             geocoding=geocoding_stub_fora,
         )

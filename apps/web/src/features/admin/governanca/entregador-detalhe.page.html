@@ -1,7 +1,62 @@
 <main class="jx-gov-courier">
-  <h1 class="jx-gov-courier__title">
-    Entregador <span class="jx-gov-courier__id">#{{ courierId() }}</span>
-  </h1>
+  <a class="jx-gov-courier__back" routerLink="/admin/entregadores">← Entregadores</a>
+
+  @if (courier(); as c) {
+    <h1 class="jx-gov-courier__title">
+      {{ c.full_name }} <span class="jx-gov-courier__id">{{ c.cpf_masked }}</span>
+    </h1>
+
+    <!-- Dados pessoais -->
+    <section class="jx-gov-courier__section" aria-labelledby="info-heading">
+      <h2 id="info-heading" class="jx-gov-courier__section-title">Informações</h2>
+      <div class="jx-gov-courier__info-grid">
+        <div class="jx-gov-courier__info-item">
+          <span class="jx-gov-courier__info-label">Status</span>
+          <span class="jx-gov-courier__info-value">{{ statusLabel(c.status) }}</span>
+        </div>
+        <div class="jx-gov-courier__info-item">
+          <span class="jx-gov-courier__info-label">Validação</span>
+          <span class="jx-gov-courier__info-value">{{ c.kyc_level }}</span>
+        </div>
+        <div class="jx-gov-courier__info-item">
+          <span class="jx-gov-courier__info-label">Veículo</span>
+          <span class="jx-gov-courier__info-value">{{ vehicleLabel(c.vehicle_type) }}{{ c.vehicle_plate ? ' · ' + c.vehicle_plate : '' }}</span>
+        </div>
+        @if (c.created_at) {
+          <div class="jx-gov-courier__info-item">
+            <span class="jx-gov-courier__info-label">Cadastro em</span>
+            <span class="jx-gov-courier__info-value jx-gov-courier__mono">{{ c.created_at?.slice(8, 10) }}/{{ c.created_at?.slice(5, 7) }}/{{ c.created_at?.slice(0, 4) }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- Documentos -->
+    @if (c.documents.length > 0) {
+      <section class="jx-gov-courier__section" aria-labelledby="docs-heading">
+        <h2 id="docs-heading" class="jx-gov-courier__section-title">
+          Documentos
+          <a class="jx-gov-courier__docs-link" [routerLink]="'/admin/kyc/' + courierId()">Revisar →</a>
+        </h2>
+        <div class="jx-gov-courier__docs">
+          @for (d of c.documents; track d.id) {
+            <div class="jx-gov-courier__doc-row">
+              <span>{{ docLabel(d.kind) }}</span>
+              <span class="jx-gov-courier__doc-status"
+                [class.jx-gov-courier__doc-status--ok]="d.status === 'approved'"
+                [class.jx-gov-courier__doc-status--err]="d.status === 'rejected'"
+                [class.jx-gov-courier__doc-status--warn]="d.status === 'pending'"
+              >{{ docStatusLabel(d.status) }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+  } @else {
+    <h1 class="jx-gov-courier__title">
+      Entregador <span class="jx-gov-courier__id">#{{ courierId() }}</span>
+    </h1>
+  }
 
   <!-- Score -->
   <section class="jx-gov-courier__section" aria-labelledby="score-heading">

@@ -45,7 +45,7 @@ async def _upsert_area(session: AsyncSession) -> Area:
         codename=PADUA_CODENAME,
         name="Santo Antônio de Pádua",
         config={
-            "kyc_level": "basico",
+            "kyc_level": "simples",
             "bbox": {"min_lat": -21.70, "max_lat": -21.40, "min_lng": -42.25, "max_lng": -41.85},
         },
     )

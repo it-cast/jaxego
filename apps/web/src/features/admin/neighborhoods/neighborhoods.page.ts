@@ -41,7 +41,6 @@ export class NeighborhoodsPage implements OnInit {
   protected readonly columns: DataTableColumn[] = [
     { key: 'name', label: 'Nome' },
     { key: 'polygon', label: 'Polígono' },
-    { key: 'actions', label: 'Ações', numeric: true },
   ];
 
   protected readonly rows = signal<Neighborhood[]>([]);

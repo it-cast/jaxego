@@ -34,8 +34,11 @@ export interface AvailabilityResult {
 }
 
 export interface CourierDocumentItem {
+  id: number;
   kind: string;
   status: string;
+  reject_reason: string | null;
+  reject_detail: string | null;
 }
 
 export interface CourierProfile {
@@ -48,6 +51,7 @@ export interface CourierProfile {
   vehicle_plate: string | null;
   kyc_level: string;
   status: string;
+  is_online: boolean;
   mei_pending: boolean;
   documents: CourierDocumentItem[];
 }

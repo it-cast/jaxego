@@ -271,8 +271,11 @@ class CourierDocumentItem(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    id: int
     kind: str
     status: str
+    reject_reason: str | None = None
+    reject_detail: str | None = None
 
 
 class CourierDocumentAdminItem(BaseModel):
@@ -322,5 +325,6 @@ class CourierProfileOut(BaseModel):
     vehicle_plate: str | None
     kyc_level: str
     status: str
+    is_online: bool
     mei_pending: bool
     documents: list[CourierDocumentItem]

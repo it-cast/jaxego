@@ -238,7 +238,6 @@ async def anonymize_inactive(ctx: dict[str, Any]) -> int:
                 if await _courier_has_legal_retention(session, courier_id=courier.id):
                     continue  # fiscal/financial retention (D-02)
                 courier.full_name = _PII_NAME
-                courier.cpf = _PII_TOMBSTONE
                 courier.phone_e164 = _PII_TOMBSTONE  # NOT NULL column → tombstone
                 courier.email = _PII_TOMBSTONE
                 courier.mei_cnpj = None
@@ -310,7 +309,7 @@ async def anonymize_inactive(ctx: dict[str, Any]) -> int:
                 user.email = f"{_PII_TOMBSTONE}+{user.id}@anonymized.invalid"
                 user.name = _PII_NAME
                 user.phone = None
-                user.cpf = None  # UNIQUE nullable — null frees the value (D-02)
+                user.cpf = None
                 user.is_active = False
                 user.anonymized_at = started
                 await write_audit(

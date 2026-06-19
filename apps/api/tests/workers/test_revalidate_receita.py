@@ -14,6 +14,7 @@ from app.workers.revalidate import RETRY_WINDOWS_HOURS, next_retry_delay
 from tests.helpers import Seed
 
 BASE = {
+    "area_id": 1,
     "account_type": "cnpj",
     "document": "11222333000181",
     "trade_name": "Loja",

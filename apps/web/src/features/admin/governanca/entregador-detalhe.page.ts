@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NoticeComponent } from '@jaxego/shared/components/notice/notice.component';
 import { ScoreBadgeComponent } from '@jaxego/shared/components/score-badge/score-badge.component';
@@ -16,6 +16,7 @@ import type {
   SuspensionAppeal,
 } from '@jaxego/shared/components/suspension-panel/suspension-panel.component';
 import { CourierScore, GovernancaService } from './governanca.service';
+import { AdminKycService, type CourierDetail } from '../kyc/kyc.service';
 
 /**
  * Telas 19/20 — Detalhe do entregador (UI-SPEC §Tela 19/20 / D-04/D-05).
@@ -31,6 +32,7 @@ import { CourierScore, GovernancaService } from './governanca.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     NoticeComponent,
     ScoreBadgeComponent,
     ScoreBreakdownComponent,
@@ -43,8 +45,10 @@ export class AdminEntregadorDetalhePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(GovernancaService);
+  private readonly kycService = inject(AdminKycService);
 
   protected readonly courierId = signal<number>(0);
+  protected readonly courier = signal<CourierDetail | null>(null);
 
   // --- Score ----------------------------------------------------------------
   protected readonly scoreState = signal<'loading' | 'ready' | 'empty' | 'error'>(
@@ -73,7 +77,27 @@ export class AdminEntregadorDetalhePage implements OnInit {
   async ngOnInit(): Promise<void> {
     const id = Number(this.route.snapshot.paramMap.get('courierId'));
     this.courierId.set(id);
-    await Promise.all([this.loadScore(), this.loadAppeal()]);
+    await Promise.all([this.loadCourier(), this.loadScore(), this.loadAppeal()]);
+  }
+
+  private async loadCourier(): Promise<void> {
+    this.courier.set(await this.kycService.getCourier(this.courierId()));
+  }
+
+  protected vehicleLabel(v: string): string {
+    return { moto: 'Moto', bicicleta: 'Bicicleta', carro: 'Carro', a_pe: 'A pé' }[v] ?? v;
+  }
+
+  protected statusLabel(s: string): string {
+    return { active: 'Ativo', pending_kyc: 'Em análise', suspended: 'Suspenso', banned: 'Banido' }[s] ?? s;
+  }
+
+  protected docLabel(kind: string): string {
+    return { selfie: 'CPF + Selfie', cnh: 'CNH com EAR', crlv: 'CRLV', mei: 'MEI', antecedentes: 'Antecedentes' }[kind] ?? kind;
+  }
+
+  protected docStatusLabel(status: string): string {
+    return { approved: '✓ Aprovado', rejected: 'Reprovado', pending: 'Em análise', pending_upload: 'Aguardando envio' }[status] ?? status;
   }
 
   protected async loadScore(): Promise<void> {

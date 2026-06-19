@@ -77,8 +77,9 @@
   <section class="jx-login__cta-block">
     @if (!isApp) {
       <a routerLink="/loja/cadastro">Cadastrar minha loja →</a>
+    } @else {
+      <a routerLink="/entregador/cadastro">Quero entregar →</a>
     }
-    <a routerLink="/entregador/cadastro">Quero entregar →</a>
   </section>
 
   <footer class="jx-login__footer">jaxego.com.br · Grupo Itcast</footer>
