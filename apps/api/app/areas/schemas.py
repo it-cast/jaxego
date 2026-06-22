@@ -56,6 +56,25 @@ class AreaAdminRead(BaseModel):
 
     id: int
     area_id: int
+    area_name: str = ""
     user_id: int
     user_email: str
+    user_name: str = ""
     role: str
+
+
+class AreaAdminCreateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    area_id: int
+    email: EmailStr
+    name: str = Field(min_length=1, max_length=160)
+    password: str = Field(min_length=10, max_length=128)
+    role: Literal["owner", "manager", "viewer"] = "manager"
+
+
+class AreaAdminUpdateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["owner", "manager", "viewer"] | None = None
+    area_id: int | None = None

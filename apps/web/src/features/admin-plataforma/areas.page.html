@@ -1,0 +1,175 @@
+<main class="jx-areas">
+  <header class="jx-areas__header">
+    <h1 class="jx-areas__title">Areas de <em>operacao</em></h1>
+    @if (mode() === 'list') {
+      <button
+        type="button"
+        class="jx-areas__cta"
+        (click)="showCreate()"
+      >
+        <fa-icon [icon]="iconPlus" aria-hidden="true" />
+        Adicionar
+      </button>
+    }
+  </header>
+
+  @if (msg(); as m) {
+    <div
+      class="jx-areas__msg"
+      [class.jx-areas__msg--ok]="m.tone === 'ok'"
+      [class.jx-areas__msg--err]="m.tone === 'err'"
+      role="status"
+    >
+      {{ m.text }}
+    </div>
+  }
+
+  @if (mode() === 'create' || mode() === 'edit') {
+    <section class="jx-areas__form-card">
+      <h2 class="jx-areas__form-title">
+        {{ mode() === 'create' ? 'Nova area' : 'Editar area' }}
+      </h2>
+      <form class="jx-areas__form" (ngSubmit)="save()">
+        <div class="jx-areas__form-grid">
+          <label class="jx-areas__field">
+            <span class="jx-areas__label">Slug (identificador)</span>
+            <input
+              class="jx-areas__input"
+              type="text"
+              [(ngModel)]="form.codename"
+              name="codename"
+              required
+              maxlength="32"
+              [disabled]="mode() === 'edit'"
+              placeholder="ex: padua"
+            />
+          </label>
+          <label class="jx-areas__field">
+            <span class="jx-areas__label">Nome</span>
+            <input
+              class="jx-areas__input"
+              type="text"
+              [(ngModel)]="form.name"
+              name="name"
+              required
+              maxlength="120"
+              placeholder="ex: Padua"
+            />
+          </label>
+          <label class="jx-areas__field">
+            <span class="jx-areas__label">Validacao exigida</span>
+            <select
+              class="jx-areas__select"
+              [(ngModel)]="form.kyc_level"
+              name="kyc_level"
+            >
+              <option value="simples">Simples (CPF + selfie)</option>
+              <option value="completa">Completa (CNH + CRLV + MEI)</option>
+            </select>
+          </label>
+        </div>
+        <div class="jx-areas__form-actions">
+          <button
+            type="submit"
+            class="jx-areas__cta"
+            [disabled]="saving()"
+          >
+            <fa-icon [icon]="iconSave" aria-hidden="true" />
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </button>
+          <button
+            type="button"
+            class="jx-areas__btn-secondary"
+            (click)="cancel()"
+          >
+            <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (mode() === 'list') {
+    <div class="jx-areas__search">
+      <label class="jx-areas__field">
+        <span class="jx-sr-only">Buscar area</span>
+        <input
+          class="jx-areas__input"
+          type="search"
+          placeholder="Buscar por nome ou slug..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilter()"
+        />
+      </label>
+    </div>
+
+    <jx-data-table
+      [columns]="columns"
+      [rows]="filtered()"
+      [state]="state()"
+      [trackBy]="trackArea"
+      caption="Areas de operacao da plataforma"
+      emptyIcon="◍"
+      emptyTitle="Nenhuma area encontrada"
+      emptyMessage="Crie a primeira area clicando em '+ Adicionar'."
+      errorMessage="Nao foi possivel carregar as areas. Tente novamente."
+      (retry)="load()"
+    >
+      <ng-template #row let-item>
+        <td class="jx-areas__num">{{ item.id }}</td>
+        <td class="jx-areas__mono">{{ item.codename }}</td>
+        <td>
+          <span class="jx-areas__name">{{ item.name }}</span>
+        </td>
+        <td>
+          <span
+            class="jx-areas__badge"
+            [class.jx-areas__badge--simples]="kycLabel(item) === 'Simples'"
+            [class.jx-areas__badge--completa]="kycLabel(item) === 'Completa'"
+          >
+            {{ kycLabel(item) }}
+          </span>
+        </td>
+        <td class="jx-areas__actions">
+          @if (confirmArchiveId() === item.id) {
+            <span class="jx-areas__confirm-msg">Arquivar?</span>
+            <button
+              type="button"
+              class="jx-areas__action-btn jx-areas__action-btn--danger"
+              (click)="doArchive(item.id)"
+              aria-label="Confirmar arquivamento"
+            >
+              <fa-icon [icon]="iconSave" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-areas__action-btn"
+              (click)="cancelArchive()"
+              aria-label="Cancelar arquivamento"
+            >
+              <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="jx-areas__action-btn"
+              (click)="showEdit(item)"
+              [attr.aria-label]="'Editar ' + item.name"
+            >
+              <fa-icon [icon]="iconEdit" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-areas__action-btn jx-areas__action-btn--danger"
+              (click)="confirmArchive(item.id)"
+              [attr.aria-label]="'Arquivar ' + item.name"
+            >
+              <fa-icon [icon]="iconArchive" aria-hidden="true" />
+            </button>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
+  }
+</main>

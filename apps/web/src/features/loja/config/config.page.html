@@ -1,0 +1,70 @@
+<main class="jx-config">
+  <h1 class="jx-config__title">Configuracoes da <em>loja</em></h1>
+
+  @if (msg(); as m) {
+    <div
+      class="jx-config__msg"
+      [class.jx-config__msg--ok]="m.tone === 'ok'"
+      [class.jx-config__msg--err]="m.tone === 'err'"
+      role="status"
+    >
+      {{ m.text }}
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="jx-config__loading">Carregando...</p>
+  } @else {
+    <form class="jx-config__form" (ngSubmit)="save()">
+      <div class="jx-config__card">
+        <h2 class="jx-config__section">Dados da loja</h2>
+
+        <label class="jx-config__field">
+          <span class="jx-config__label">Nome da loja</span>
+          <input
+            class="jx-config__input"
+            type="text"
+            [(ngModel)]="form.trade_name"
+            name="trade_name"
+            required
+            maxlength="120"
+          />
+        </label>
+
+        <label class="jx-config__field">
+          <span class="jx-config__label">Endereco</span>
+          <input
+            class="jx-config__input"
+            type="text"
+            [(ngModel)]="form.address"
+            name="address"
+            maxlength="255"
+            placeholder="Rua, numero, bairro, cidade"
+          />
+          <span class="jx-config__hint">
+            Usado como endereco de coleta padrao nas entregas.
+          </span>
+        </label>
+
+        <div class="jx-config__readonly-group">
+          <div class="jx-config__field">
+            <span class="jx-config__label">E-mail</span>
+            <span class="jx-config__value">{{ email }}</span>
+          </div>
+          <div class="jx-config__field">
+            <span class="jx-config__label">Categoria</span>
+            <span class="jx-config__value">{{ categoryLabel() }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="jx-config__cta"
+        [disabled]="saving()"
+      >
+        {{ saving() ? 'Salvando...' : 'Salvar alteracoes' }}
+      </button>
+    </form>
+  }
+</main>

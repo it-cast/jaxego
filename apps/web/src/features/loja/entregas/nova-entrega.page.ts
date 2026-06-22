@@ -22,6 +22,7 @@ import {
   phoneToE164,
 } from '@jaxego/shared/util/br-format';
 import { maskBrl, parseBrl } from '@jaxego/shared/util/money';
+import { AuthService } from '@jaxego/core/auth/auth.service';
 import { DeliveryService } from './delivery.service';
 import { CreateDeliveryRequest } from '@jaxego/shared/models/delivery.models';
 
@@ -58,6 +59,7 @@ interface NeighborhoodOption {
 export class NovaEntregaPage {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(DeliveryService);
+  private readonly auth = inject(AuthService);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
@@ -81,7 +83,42 @@ export class NovaEntregaPage {
     notes: [''],
     proof_method: ['photo'],
     payment_method: ['direct'],
+    receipt_method: ['dinheiro'],
   });
+
+  protected readonly packageSizes = [
+    {
+      nome: 'Pequeno',
+      descricao: 'Medicamentos, cosméticos, acessórios, documentos, lanches.',
+      comprimentoCm: 20, larguraCm: 15, alturaCm: 10, pesoMaximoKg: 1,
+    },
+    {
+      nome: 'Médio',
+      descricao: 'Roupas, calçados, refeições, eletrônicos compactos.',
+      comprimentoCm: 30, larguraCm: 25, alturaCm: 20, pesoMaximoKg: 3,
+    },
+    {
+      nome: 'Grande',
+      descricao: 'Caixas de bebidas, brinquedos, compras de mercado pequenas.',
+      comprimentoCm: 40, larguraCm: 35, alturaCm: 30, pesoMaximoKg: 8,
+    },
+    {
+      nome: 'Extra Grande',
+      descricao: 'Compras de supermercado, galões, eletroportáteis, estoque.',
+      comprimentoCm: 50, larguraCm: 40, alturaCm: 40, pesoMaximoKg: 15,
+    },
+  ];
+  protected readonly selectedPackage = signal<string>('Pequeno');
+
+  protected selectPackage(pkg: typeof this.packageSizes[number]): void {
+    this.selectedPackage.set(pkg.nome);
+    this.form.patchValue({
+      weight_kg: String(pkg.pesoMaximoKg),
+      length_cm: String(pkg.comprimentoCm),
+      width_cm: String(pkg.larguraCm),
+      height_cm: String(pkg.alturaCm),
+    });
+  }
 
   protected readonly neighborhoods = signal<NeighborhoodOption[]>([]);
   protected readonly submitting = signal(false);
@@ -102,11 +139,19 @@ export class NovaEntregaPage {
   // Phase 10 — online payment (card/pix). F-03 E3: a refusal does NOT create the
   // delivery; the store gets retry or switch-to-direct (no form data lost).
   protected readonly paymentMethod = signal<'direct' | 'pix' | 'card'>('direct');
+  protected readonly proofMethod = signal<string>('photo');
+  protected readonly receiptMethod = signal<string>('dinheiro');
   protected readonly deliveryRefused = signal(false);
   private cardBlob: string | null = null;
 
   constructor() {
     void this.loadNeighborhoods();
+    const me = this.auth.me();
+    const pickup = me?.address || me?.trade_name;
+    if (pickup) {
+      this.form.controls.pickup_address.setValue(pickup);
+    }
+    this.selectPackage(this.packageSizes[0]);
     // Apply BR masks reactively (no raw type="number"; mask on every keystroke).
     this.form.controls.cep.valueChanges.subscribe((v) => {
       const masked = maskCep(v ?? '');
@@ -133,6 +178,12 @@ export class NovaEntregaPage {
       this.paymentMethod.set((v as 'direct' | 'pix' | 'card') ?? 'direct');
       this.deliveryRefused.set(false);
       if (v !== 'card') this.cardBlob = null;
+    });
+    this.form.controls.proof_method.valueChanges.subscribe((v) => {
+      this.proofMethod.set(v ?? 'photo');
+    });
+    this.form.controls.receipt_method.valueChanges.subscribe((v) => {
+      this.receiptMethod.set(v ?? 'dinheiro');
     });
   }
 
@@ -183,13 +234,6 @@ export class NovaEntregaPage {
       this.form.markAllAsTouched();
       return;
     }
-    const method = this.paymentMethod();
-    // Card requires the encrypted blob first — the form's submit triggers
-    // onDeliveryCardEncrypted, which re-enters submit() with the blob set.
-    if (method === 'card' && !this.cardBlob) {
-      return;
-    }
-
     this.submitting.set(true);
     this.submitError.set(null);
     this.deliveryRefused.set(false);
@@ -218,8 +262,8 @@ export class NovaEntregaPage {
       reference_number: v.reference_number || null,
       notes: v.notes || null,
       proof_method: 'photo',
-      payment_method: method,
-      card_blob: method === 'card' ? this.cardBlob : null,
+      payment_method: 'direct',
+      receipt_method: this.receiptMethod(),
     };
 
     const result = await this.service.create(req);
@@ -241,13 +285,6 @@ export class NovaEntregaPage {
     }
     if (result.code === 'dropoff_out_of_area') {
       this.outOfArea.set(true);
-      return;
-    }
-    // F-03 E3: card/pix refused/gateway error → the delivery was NOT created. Offer
-    // retry or switch-to-direct without losing the filled form. The blob is single-use.
-    if (method !== 'direct' && result.code === 'payment_gateway_error') {
-      this.cardBlob = null;
-      this.deliveryRefused.set(true);
       return;
     }
     this.submitError.set(

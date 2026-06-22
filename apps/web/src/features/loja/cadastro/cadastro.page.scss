@@ -143,12 +143,6 @@
   gap: var(--jx-space-3);
 }
 
-@media (min-width: 720px) {
-  .jx-cadastro__plans {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 .jx-cadastro__consent {
   font-size: var(--jx-text-xs);
   color: var(--text-muted);

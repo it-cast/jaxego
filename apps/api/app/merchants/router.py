@@ -33,10 +33,13 @@ from app.merchants.schemas import (
     InterestBody,
     MerchantAdminListItem,
     MerchantAdminListOut,
+    MerchantProfileRead,
+    MerchantProfileUpdate,
     MerchantSignupBody,
     SignupResponse,
     mask_document_display,
 )
+from app.merchants.models import MerchantUser
 
 router = APIRouter(prefix="/merchants", tags=["merchants"])
 interest_router = APIRouter(prefix="/interest", tags=["interest"])
@@ -77,6 +80,67 @@ async def list_area_merchants(
     ]
     return MerchantAdminListOut(
         items=items, total=total, limit=min(limit, 100), offset=max(offset, 0)
+    )
+
+
+@router.get("/profile", response_model=MerchantProfileRead)
+async def get_profile(
+    session: SessionDep,
+    user: CurrentUser,
+) -> MerchantProfileRead:
+    from sqlalchemy import select
+    from app.merchants.models import Merchant
+
+    link = (
+        await session.execute(select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1))
+    ).scalar_one_or_none()
+    if link is None:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError("Loja nao encontrada.")
+    merchant = await session.get(Merchant, link.merchant_id)
+    if merchant is None:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError("Loja nao encontrada.")
+    return MerchantProfileRead(
+        id=merchant.id,
+        trade_name=merchant.trade_name,
+        address=merchant.address,
+        category=merchant.category,
+        email=merchant.email,
+    )
+
+
+@router.patch("/profile", response_model=MerchantProfileRead)
+async def update_profile(
+    body: MerchantProfileUpdate,
+    session: SessionDep,
+    user: CurrentUser,
+) -> MerchantProfileRead:
+    from sqlalchemy import select
+    from app.merchants.models import Merchant
+
+    link = (
+        await session.execute(select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1))
+    ).scalar_one_or_none()
+    if link is None:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError("Loja nao encontrada.")
+    merchant = await session.get(Merchant, link.merchant_id)
+    if merchant is None:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError("Loja nao encontrada.")
+    if body.trade_name is not None:
+        merchant.trade_name = body.trade_name
+    if body.address is not None:
+        merchant.address = body.address
+    await session.flush()
+    await session.commit()
+    return MerchantProfileRead(
+        id=merchant.id,
+        trade_name=merchant.trade_name,
+        address=merchant.address,
+        category=merchant.category,
+        email=merchant.email,
     )
 
 

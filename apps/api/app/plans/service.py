@@ -11,6 +11,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import NotFoundError, ValidationAppError
 from app.plans.models import SubscriptionPlan
 
 # [ASSUMIDO] seed values (DRV-009) — editable seed data, never hardcoded in UI.
@@ -72,6 +73,90 @@ async def list_active_plans(session: AsyncSession) -> list[SubscriptionPlan]:
 async def get_plan_by_code(session: AsyncSession, code: str) -> SubscriptionPlan | None:
     stmt = select(SubscriptionPlan).where(SubscriptionPlan.code == code)
     return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def list_all_plans(session: AsyncSession) -> list[SubscriptionPlan]:
+    stmt = select(SubscriptionPlan).order_by(SubscriptionPlan.sort_order)
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def get_plan_by_id(session: AsyncSession, plan_id: int) -> SubscriptionPlan:
+    stmt = select(SubscriptionPlan).where(SubscriptionPlan.id == plan_id)
+    plan = (await session.execute(stmt)).scalar_one_or_none()
+    if plan is None:
+        raise NotFoundError("Plano não encontrado.")
+    return plan
+
+
+async def create_plan(
+    session: AsyncSession,
+    *,
+    code: str,
+    name: str,
+    price_cents: int,
+    deliveries_per_month: int,
+    fee_cents: int,
+    is_unlimited: bool,
+    sort_order: int,
+) -> SubscriptionPlan:
+    existing = await get_plan_by_code(session, code)
+    if existing is not None:
+        raise ValidationAppError(f"Já existe um plano com o código '{code}'.")
+    plan = SubscriptionPlan(
+        code=code,
+        name=name,
+        price_cents=price_cents,
+        deliveries_per_month=deliveries_per_month,
+        fee_cents=fee_cents,
+        is_free=False,
+        is_unlimited=is_unlimited,
+        is_active=True,
+        sort_order=sort_order,
+    )
+    session.add(plan)
+    await session.flush()
+    return plan
+
+
+async def update_plan(
+    session: AsyncSession,
+    plan_id: int,
+    *,
+    name: str | None = None,
+    price_cents: int | None = None,
+    deliveries_per_month: int | None = None,
+    fee_cents: int | None = None,
+    is_unlimited: bool | None = None,
+    is_active: bool | None = None,
+    sort_order: int | None = None,
+) -> SubscriptionPlan:
+    plan = await get_plan_by_id(session, plan_id)
+    if plan.is_free:
+        raise ValidationAppError("O plano Free é imutável e não pode ser editado.")
+    if name is not None:
+        plan.name = name
+    if price_cents is not None:
+        plan.price_cents = price_cents
+    if deliveries_per_month is not None:
+        plan.deliveries_per_month = deliveries_per_month
+    if fee_cents is not None:
+        plan.fee_cents = fee_cents
+    if is_unlimited is not None:
+        plan.is_unlimited = is_unlimited
+    if is_active is not None:
+        plan.is_active = is_active
+    if sort_order is not None:
+        plan.sort_order = sort_order
+    await session.flush()
+    return plan
+
+
+async def delete_plan(session: AsyncSession, plan_id: int) -> None:
+    plan = await get_plan_by_id(session, plan_id)
+    if plan.is_free:
+        raise ValidationAppError("O plano Free não pode ser removido.")
+    plan.is_active = False
+    await session.flush()
 
 
 async def seed_plans_if_missing(session: AsyncSession) -> None:

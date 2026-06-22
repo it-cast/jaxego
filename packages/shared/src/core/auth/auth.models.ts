@@ -57,5 +57,7 @@ export interface Me {
   area_id: number | null;
   courier_id: number | null;
   merchant_id: number | null;
+  trade_name: string | null;
+  address: string | null;
   status: string | null;
 }

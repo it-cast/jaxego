@@ -25,17 +25,22 @@ export const lojaRoutes: Routes = [
       ),
   },
   {
-    path: 'loja/plano',
-    loadComponent: () =>
-      import('../features/loja/plano/plano.page').then((m) => m.PlanoPage),
-  },
-  {
     path: 'loja',
     canActivate: [authGuard],
     loadComponent: () =>
       import('../layouts/loja-shell.component').then((m) => m.LojaShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'painel' },
+      {
+        path: 'plano',
+        loadComponent: () =>
+          import('../features/loja/plano/plano.page').then((m) => m.PlanoPage),
+      },
+      {
+        path: 'config',
+        loadComponent: () =>
+          import('../features/loja/config/config.page').then((m) => m.LojaConfigPage),
+      },
       {
         path: 'inicio',
         loadComponent: () =>
@@ -203,6 +208,20 @@ export const plataformaRoutes: Routes = [
         loadComponent: () =>
           import('../features/admin-plataforma/pessoas.page').then(
             (m) => m.PlataformaPessoasPage,
+          ),
+      },
+      {
+        path: 'planos',
+        loadComponent: () =>
+          import('../features/admin-plataforma/planos.page').then(
+            (m) => m.PlataformaPlanosPage,
+          ),
+      },
+      {
+        path: 'admins',
+        loadComponent: () =>
+          import('../features/admin-plataforma/admins.page').then(
+            (m) => m.PlataformaAdminsPage,
           ),
       },
       {

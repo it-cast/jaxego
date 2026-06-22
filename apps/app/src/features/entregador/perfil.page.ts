@@ -9,7 +9,12 @@ import {
 import { IonContent } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faRotateRight, faRightFromBracket } from '@fortawesome/free-solid-svg-icons';
+import {
+  faRotateRight,
+  faRightFromBracket,
+  faChevronRight,
+  faUser,
+} from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import {
   DocCardComponent,
@@ -54,65 +59,72 @@ const REASON_LABELS: Record<string, string> = {
   template: `
     <ion-content>
       <div class="jx-perfil">
-        <h1 class="jx-perfil__title">Seu perfil</h1>
-
-        @if (profile(); as p) {
-          <section class="jx-perfil__card">
+        <!-- Header with avatar -->
+        <header class="jx-perfil__header">
+          <h1 class="jx-perfil__page-title">Perfil</h1>
+          <div class="jx-perfil__avatar">
+            <fa-icon [icon]="faUser" class="jx-perfil__avatar-icon" aria-hidden="true" />
+          </div>
+          @if (profile(); as p) {
             <strong class="jx-perfil__name">{{ p.full_name }}</strong>
-            <p class="jx-perfil__id">
+            <p class="jx-perfil__sub">
               CPF {{ p.cpf_masked }} · {{ vehicleLabel(p.vehicle_type) }}
-              @if (p.vehicle_plate) { {{ p.vehicle_plate }} }
+              @if (p.vehicle_plate) { · {{ p.vehicle_plate }} }
             </p>
-          </section>
-        }
-
-        <section class="jx-perfil__card">
-          <span class="jx-perfil__eyebrow">Situação do cadastro</span>
-          <strong>{{ statusLabel() }}</strong>
-        </section>
-
-        @if (profile(); as p) {
-          @if (p.documents.length) {
-            <section class="jx-perfil__card">
-              <span class="jx-perfil__eyebrow">Documentos</span>
-              @for (d of p.documents; track d.id) {
-                <div class="jx-perfil__doc">
-                  <span>{{ docLabel(d.kind) }}</span>
-                  <div class="jx-perfil__doc-right">
-                    <span
-                      class="jx-perfil__doc-status"
-                      [class.jx-perfil__doc-status--ok]="d.status === 'approved'"
-                      [class.jx-perfil__doc-status--err]="d.status === 'rejected'"
-                    >{{ docStatusLabel(d.status) }}</span>
-                    @if (d.status === 'rejected') {
-                      <button type="button" class="jx-perfil__resend-btn" (click)="openResendModal(d)"
-                        [attr.aria-label]="'Reenviar ' + docLabel(d.kind)">
-                        <fa-icon [icon]="faRotateRight" aria-hidden="true" />
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-            </section>
           }
-        }
+        </header>
+
+        <!-- Menu list -->
+        <ul class="jx-perfil__list">
+          <li class="jx-perfil__item">
+            <span>Situacao</span>
+            <span class="jx-perfil__item-value">{{ statusLabel() }}</span>
+          </li>
+
+          @if (profile(); as p) {
+            @for (d of p.documents; track d.id) {
+              <li class="jx-perfil__item" [class.jx-perfil__item--action]="d.status === 'rejected'">
+                <span>{{ docLabel(d.kind) }}</span>
+                <div class="jx-perfil__item-right">
+                  <span
+                    class="jx-perfil__status-pill"
+                    [class.jx-perfil__status-pill--ok]="d.status === 'approved'"
+                    [class.jx-perfil__status-pill--err]="d.status === 'rejected'"
+                    [class.jx-perfil__status-pill--pending]="d.status === 'pending' || d.status === 'pending_upload'"
+                  >{{ docStatusLabel(d.status) }}</span>
+                  @if (d.status === 'rejected') {
+                    <button type="button" class="jx-perfil__resend-btn" (click)="openResendModal(d)"
+                      [attr.aria-label]="'Reenviar ' + docLabel(d.kind)">
+                      <fa-icon [icon]="faRotateRight" aria-hidden="true" />
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          }
+
+          @if (score(); as sc) {
+            <li class="jx-perfil__item">
+              <span>Score</span>
+              <div class="jx-perfil__item-right">
+                <jx-score-chip [level]="level()" [value]="sc.total_score" />
+              </div>
+            </li>
+          }
+        </ul>
 
         @if (score(); as sc) {
-          <section class="jx-perfil__card">
-            <div class="jx-perfil__score-head">
-              <span class="jx-perfil__eyebrow">Seu score</span>
-              <jx-score-chip [level]="level()" [value]="sc.total_score" />
-            </div>
+          <section class="jx-perfil__score-card">
             <jx-score-breakdown [components]="sc.components" />
             <p class="jx-perfil__note">
-              No M1 o score é só o seu histórico público — não muda suas taxas.
+              No M1 o score e so o seu historico publico — nao muda suas taxas.
             </p>
           </section>
         } @else {
           <jx-empty-state
             icon="⭐"
-            title="Score ainda não calculado"
-            message="Assim que você fizer entregas, seu score aparece aqui."
+            title="Score ainda nao calculado"
+            message="Assim que voce fizer entregas, seu score aparece aqui."
           />
         }
 
@@ -163,7 +175,7 @@ const REASON_LABELS: Record<string, string> = {
               [disabled]="resendUploading()" (click)="closeResendModal()">Cancelar</button>
             <button type="button" class="jx-resend-modal__btn jx-resend-modal__btn--send"
               [disabled]="!resendFile() || resendUploading()" (click)="submitResend()">
-              {{ resendUploading() ? 'Enviando…' : 'Enviar para análise' }}
+              {{ resendUploading() ? 'Enviando…' : 'Enviar para analise' }}
             </button>
           </div>
         </div>
@@ -171,24 +183,104 @@ const REASON_LABELS: Record<string, string> = {
     </ion-content>
   `,
   styles: [`
-    .jx-perfil { display: flex; flex-direction: column; gap: var(--jx-space-3); padding: var(--jx-space-4) var(--jx-space-4) var(--jx-space-6); }
-    .jx-perfil__title { font-family: var(--jx-font-display); font-size: var(--jx-text-2xl); margin: 0; }
-    .jx-perfil__card { background: var(--jx-color-surface); border: 1px solid var(--jx-color-neutral-200); border-radius: var(--jx-radius-lg); padding: var(--jx-space-3); display: flex; flex-direction: column; gap: var(--jx-space-2); }
-    .jx-perfil__score-head { display: flex; align-items: center; justify-content: space-between; }
-    .jx-perfil__eyebrow { font-family: var(--jx-font-mono); font-size: var(--jx-text-xs); text-transform: uppercase; letter-spacing: 0.08em; color: var(--jx-color-neutral-500); }
-    .jx-perfil__name { font-size: var(--jx-text-md); }
-    .jx-perfil__id { margin: 0; font-family: var(--jx-font-mono); font-size: var(--jx-text-xs); color: var(--jx-color-neutral-500); }
-    .jx-perfil__doc { display: flex; align-items: center; justify-content: space-between; font-size: var(--jx-text-sm); padding: var(--jx-space-1) 0; border-bottom: 1px solid var(--surface-sunken); }
-    .jx-perfil__doc-right { display: flex; align-items: center; gap: var(--jx-space-2); }
-    .jx-perfil__doc-status { color: var(--jx-color-neutral-500); font-weight: var(--jx-weight-medium); }
-    .jx-perfil__doc-status--ok { color: var(--jx-color-semantic-success); }
-    .jx-perfil__doc-status--err { color: var(--error, #d32f2f); }
-    .jx-perfil__resend-btn { width: 32px; height: 32px; display: grid; place-items: center; background: var(--brand); color: var(--brand-contrast, #fff); border: none; border-radius: var(--jx-radius-full); cursor: pointer; font-size: 14px; }
-    .jx-perfil__note { margin: 0; font-size: var(--jx-text-sm); color: var(--jx-color-neutral-500); }
+    .jx-perfil {
+      display: flex; flex-direction: column; gap: var(--jx-space-3);
+      padding: var(--jx-space-4) var(--jx-space-4) var(--jx-space-6);
+    }
+
+    /* Header with avatar */
+    .jx-perfil__header {
+      display: flex; flex-direction: column; align-items: center;
+      gap: var(--jx-space-2); padding-bottom: var(--jx-space-4);
+    }
+    .jx-perfil__page-title {
+      font-family: var(--jx-font-display); font-size: var(--jx-text-lg);
+      font-weight: var(--jx-weight-bold); margin: 0; color: var(--text);
+    }
+    .jx-perfil__avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: var(--brand-wash, hsl(24 80% 95%));
+      display: grid; place-items: center; position: relative;
+    }
+    .jx-perfil__avatar-icon { font-size: 36px; color: var(--brand); }
+    .jx-perfil__name {
+      font-family: var(--jx-font-display); font-size: var(--jx-text-lg);
+      font-weight: var(--jx-weight-bold); color: var(--text); text-align: center;
+    }
+    .jx-perfil__sub {
+      margin: 0; font-family: var(--jx-font-mono); font-size: var(--jx-text-xs);
+      color: var(--text-muted); text-align: center;
+    }
+
+    /* Menu list */
+    .jx-perfil__list {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column;
+    }
+    .jx-perfil__item {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 48px; padding: var(--jx-space-3) 0;
+      border-bottom: 1px solid var(--border, hsl(0 0% 90%));
+      font-size: var(--jx-text-sm); color: var(--text);
+    }
+    .jx-perfil__item-value {
+      font-size: var(--jx-text-xs); color: var(--text-muted); text-align: right; max-width: 60%;
+    }
+    .jx-perfil__item-right {
+      display: flex; align-items: center; gap: var(--jx-space-2);
+    }
+
+    /* Status pills */
+    .jx-perfil__status-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px;
+      font-size: var(--jx-text-2xs); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      background: var(--surface-sunken); color: var(--text-muted);
+    }
+    .jx-perfil__status-pill--ok {
+      background: var(--success-wash, hsl(120 40% 93%)); color: var(--success, hsl(120 40% 35%));
+    }
+    .jx-perfil__status-pill--err {
+      background: var(--error-wash, hsl(0 70% 95%)); color: var(--error, #d32f2f);
+    }
+    .jx-perfil__status-pill--pending {
+      background: var(--warning-wash, hsl(40 80% 92%)); color: var(--warning, hsl(40 80% 35%));
+    }
+
+    .jx-perfil__resend-btn {
+      width: 32px; height: 32px; display: grid; place-items: center;
+      background: var(--brand); color: var(--brand-contrast, #fff);
+      border: none; border-radius: 50%; cursor: pointer; font-size: 14px;
+    }
+
+    /* Score card */
+    .jx-perfil__score-card {
+      background: var(--surface-elevated, #fff); border: 1px solid var(--border, hsl(0 0% 90%));
+      border-radius: var(--jx-radius-lg); padding: var(--jx-space-3);
+      display: flex; flex-direction: column; gap: var(--jx-space-2);
+    }
+    .jx-perfil__note {
+      margin: 0; font-size: var(--jx-text-xs); color: var(--text-muted);
+    }
+
+    /* Logout */
+    .jx-perfil__logout {
+      width: 100%; min-height: 48px; display: flex; align-items: center;
+      justify-content: center; gap: var(--jx-space-2);
+      background: none; border: 1px solid var(--error, #d32f2f);
+      border-radius: var(--jx-radius-full, 999px);
+      color: var(--error, #d32f2f); font-size: var(--jx-text-sm);
+      font-weight: var(--jx-weight-semibold); cursor: pointer; margin-top: var(--jx-space-3);
+    }
 
     /* Modal de reenvio */
     .jx-resend-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.5); }
-    .jx-resend-modal { position: fixed; bottom: 0; left: 0; right: 0; z-index: 70; background: var(--surface, #fff); border-radius: var(--jx-radius-xl) var(--jx-radius-xl) 0 0; padding: var(--jx-space-4); padding-bottom: max(var(--jx-space-5), env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: var(--jx-space-3); max-height: 85vh; overflow-y: auto; }
+    .jx-resend-modal {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 70;
+      background: var(--surface, #fff); border-radius: var(--jx-radius-xl) var(--jx-radius-xl) 0 0;
+      padding: var(--jx-space-4); padding-bottom: max(var(--jx-space-5), env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; gap: var(--jx-space-3); max-height: 85vh; overflow-y: auto;
+    }
     .jx-resend-modal__title { margin: 0; font-family: var(--jx-font-display); font-size: var(--jx-text-lg); font-weight: var(--jx-weight-bold); }
     .jx-resend-modal__info { display: flex; flex-direction: column; gap: var(--jx-space-1); font-size: var(--jx-text-sm); color: var(--text-muted); }
     .jx-resend-modal__info p { margin: 0; }
@@ -198,9 +290,8 @@ const REASON_LABELS: Record<string, string> = {
     .jx-resend-modal__btn--cancel { background: var(--surface-sunken); color: var(--text); }
     .jx-resend-modal__btn--send { background: var(--brand); color: var(--brand-contrast, #fff); }
     .jx-resend-modal__btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .jx-perfil__logout { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: var(--jx-space-2); background: none; border: 1px solid var(--error, #d32f2f); border-radius: var(--jx-radius-md); color: var(--error, #d32f2f); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; margin-top: var(--jx-space-2); }
     .jx-resend-modal__doc-wrap { position: relative; }
-    .jx-resend-modal__remove-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; background: var(--error, #d32f2f); color: #fff; border: none; border-radius: var(--jx-radius-full); font-size: 14px; font-weight: 700; cursor: pointer; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .jx-resend-modal__remove-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; background: var(--error, #d32f2f); color: #fff; border: none; border-radius: 50%; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
   `],
 })
 export class EntregadorPerfilPage implements OnInit {
@@ -211,6 +302,7 @@ export class EntregadorPerfilPage implements OnInit {
   private readonly router = inject(Router);
   protected readonly faRotateRight = faRotateRight;
   protected readonly faLogout = faRightFromBracket;
+  protected readonly faUser = faUser;
 
   protected readonly score = signal<CourierScore | null>(null);
   protected readonly profile = signal<CourierProfile | null>(null);

@@ -139,6 +139,7 @@ export class LojaShellComponent {
     { path: '/loja/favoritos', label: 'Favoritos' },
     { path: '/loja/faturas', label: 'Faturas' },
     { path: '/loja/plano', label: 'Plano' },
+    { path: '/loja/config', label: 'Configurações' },
   ];
 
   protected async logout(): Promise<void> {

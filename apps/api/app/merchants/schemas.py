@@ -115,6 +115,23 @@ class InterestBody(BaseModel):
         return v
 
 
+class MerchantProfileRead(BaseModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    id: int
+    trade_name: str
+    address: str | None = None
+    category: str
+    email: str
+
+
+class MerchantProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    trade_name: str | None = Field(default=None, min_length=1, max_length=120)
+    address: str | None = Field(default=None, max_length=255)
+
+
 class PlanRead(BaseModel):
     """A subscription plan projection (values from the SEED — DRV-009)."""
 

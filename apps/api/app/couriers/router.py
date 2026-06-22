@@ -307,6 +307,8 @@ def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
         length_cm=delivery.length_cm,
         width_cm=delivery.width_cm,
         height_cm=delivery.height_cm,
+        courier_collection_method=delivery.courier_collection_method,
+        receipt_method=delivery.receipt_method,
         created_at=delivery.created_at.isoformat() if delivery.created_at else None,
     )
 
@@ -374,6 +376,30 @@ async def get_courier_delivery(
         session, courier_id=courier.id, delivery_id=delivery_id
     )
     return _courier_delivery_out(delivery, recipient)
+
+
+@router.patch("/{courier_id}/deliveries/{delivery_id}/collection-method")
+async def set_collection_method(
+    courier_id: int,
+    delivery_id: int,
+    body: dict,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Set how the courier will collect payment (in_hand or pix_app)."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery, _ = await delivery_service.get_courier_delivery(
+        session, courier_id=courier.id, delivery_id=delivery_id
+    )
+    method = body.get("collection_method", "")
+    if method not in ("in_hand", "pix_app"):
+        from app.core.exceptions import ValidationAppError
+        raise ValidationAppError("Metodo invalido. Use 'in_hand' ou 'pix_app'.")
+    delivery.courier_collection_method = method
+    await session.flush()
+    await session.commit()
+    return {"collection_method": delivery.courier_collection_method}
 
 
 @router.get("/{courier_id}/profile", response_model=CourierProfileOut)

@@ -83,7 +83,8 @@ class CreateDeliveryBody(BaseModel):
 
     # --- Choices ---
     proof_method: ProofMethod = ProofMethod.photo
-    payment_method: PaymentMethod
+    payment_method: PaymentMethod = PaymentMethod.direct
+    receipt_method: str | None = Field(default=None, max_length=16)
 
     # --- Online payment (Phase 10 — card/pix only). card_blob is the OPAQUE RSA-OAEP
     # ciphertext from the client; the raw card NEVER arrives here (A09). ---
@@ -224,6 +225,8 @@ class CourierDeliveryOut(BaseModel):
     length_cm: int | None
     width_cm: int | None
     height_cm: int | None
+    courier_collection_method: str | None = None
+    receipt_method: str | None = None
     created_at: str | None
 
 

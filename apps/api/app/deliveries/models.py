@@ -170,6 +170,9 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     # time and RECORDED here (the effective charge is the Phase 11 invoice). Phase 9.
     cancel_cost_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    courier_collection_method: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    receipt_method: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
     # LGPD retention (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
 

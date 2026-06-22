@@ -7,310 +7,172 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
-  EmptyStateComponent,
-  ErrorStateComponent,
-  LoadingSkeletonComponent,
-} from '@jaxego/shared/state';
+  DataTableColumn,
+  DataTableComponent,
+  DataTableState,
+} from '@jaxego/shared/components/data-table/data-table.component';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import {
+  faPenToSquare,
+  faBoxArchive,
+  faPlus,
+  faXmark,
+  faCheck,
+} from '@fortawesome/free-solid-svg-icons';
 import { Area, PlatformAdminService } from './platform-admin.service';
 
-/**
- * Áreas (plataforma) — criar/editar/arquivar cidade + % de repasse (F3.1/F3.2).
- * O CRUD existia no backend (/v1/areas) sem UI; esta é a tela do "adicionar área".
- * O % de repasse é dado de negócio (TD-13-01), não move dinheiro no M1. Tokens only.
- */
+type ViewMode = 'list' | 'create' | 'edit';
+
 @Component({
   selector: 'jx-plataforma-areas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, EmptyStateComponent, ErrorStateComponent, LoadingSkeletonComponent],
-  template: `
-    <section class="jx-areas">
-      <h1 class="jx-areas__title">Áreas</h1>
-
-      <form class="jx-areas__card" (submit)="create($event)">
-        <h2 class="jx-areas__h2">Nova área</h2>
-        <div class="jx-areas__form">
-          <label>
-            <span>Identificador (slug)</span>
-            <input name="codename" [(ngModel)]="newCodename" placeholder="ex.: padua" required />
-          </label>
-          <label>
-            <span>Nome</span>
-            <input name="name" [(ngModel)]="newName" placeholder="ex.: Pádua" required />
-          </label>
-          <label>
-            <span>Validação exigida</span>
-            <select name="kyc" [(ngModel)]="newKyc">
-              <option value="simples">Simples (CPF + selfie)</option>
-              <option value="completa">Completa (CNH + CRLV + MEI)</option>
-            </select>
-          </label>
-          <button type="submit" class="jx-areas__primary" [disabled]="saving()">
-            Criar área
-          </button>
-        </div>
-        @if (createError()) {
-          <p class="jx-areas__err" role="alert">{{ createError() }}</p>
-        }
-      </form>
-
-      @if (loading()) {
-        <jx-loading-skeleton />
-      } @else if (error()) {
-        <jx-error-state message="Não foi possível carregar as áreas." (retry)="reload()" />
-      } @else if (!areas().length) {
-        <jx-empty-state icon="◰" title="Nenhuma área" message="Crie a primeira área acima." />
-      } @else {
-        @for (a of areas(); track a.id) {
-          <article class="jx-areas__card">
-            <div class="jx-areas__row">
-              <label class="jx-areas__grow">
-                <span>Nome</span>
-                <input [(ngModel)]="a.name" />
-              </label>
-              <label>
-                <span>Slug</span>
-                <input class="jx-areas__mono" [value]="a.codename" disabled />
-              </label>
-              <label>
-                <span>Validação</span>
-                <select [ngModel]="kycOf(a)" (ngModelChange)="setKyc(a, $event)">
-                  <option value="simples">Simples</option>
-                  <option value="completa">Completa</option>
-                </select>
-              </label>
-            </div>
-            <div class="jx-areas__row">
-              <label>
-                <span>Repasse (%)</span>
-                <input
-                  class="jx-areas__mono"
-                  type="number"
-                  min="0"
-                  max="100"
-                  [(ngModel)]="revenue[a.id]"
-                  placeholder="10"
-                />
-              </label>
-              <button type="button" class="jx-areas__ghost" (click)="save(a)">
-                Salvar
-              </button>
-              <button type="button" class="jx-areas__danger" (click)="archive(a)">
-                Arquivar
-              </button>
-            </div>
-            <div class="jx-areas__row">
-              <label class="jx-areas__grow">
-                <span>Designar admin (e-mail)</span>
-                <input
-                  type="email"
-                  [(ngModel)]="adminEmail[a.id]"
-                  placeholder="pessoa@exemplo.com"
-                />
-              </label>
-              <label>
-                <span>Papel</span>
-                <select [(ngModel)]="adminRole[a.id]">
-                  <option value="manager">Gestor</option>
-                  <option value="owner">Dono</option>
-                  <option value="viewer">Leitura</option>
-                </select>
-              </label>
-              <button type="button" class="jx-areas__ghost" (click)="assignAdmin(a)">
-                Designar
-              </button>
-            </div>
-            @if (adminMsg[a.id]) {
-              <p class="jx-areas__msg" role="status">{{ adminMsg[a.id] }}</p>
-            }
-          </article>
-        }
-      }
-    </section>
-  `,
-  styles: [
-    `
-      .jx-areas {
-        display: flex;
-        flex-direction: column;
-        gap: var(--jx-space-3);
-        max-width: 720px;
-      }
-      .jx-areas__title {
-        font-family: var(--jx-font-display);
-        font-size: var(--jx-text-2xl);
-        margin: 0;
-      }
-      .jx-areas__card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--jx-radius-lg);
-        padding: var(--jx-space-3);
-        display: flex;
-        flex-direction: column;
-        gap: var(--jx-space-2);
-      }
-      .jx-areas__h2 {
-        font-size: var(--jx-text-md);
-        margin: 0;
-      }
-      .jx-areas__form,
-      .jx-areas__row {
-        display: flex;
-        gap: var(--jx-space-2);
-        align-items: flex-end;
-        flex-wrap: wrap;
-      }
-      .jx-areas__grow {
-        flex: 1 1 200px;
-      }
-      label {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        font-size: var(--jx-text-xs);
-        color: var(--text-muted);
-      }
-      input,
-      select {
-        padding: var(--jx-space-2);
-        border: 1px solid var(--border);
-        border-radius: var(--jx-radius-md);
-        background: var(--surface);
-        color: var(--text);
-        font-size: var(--jx-text-sm);
-      }
-      .jx-areas__mono {
-        font-family: var(--jx-font-mono);
-      }
-      .jx-areas__primary,
-      .jx-areas__ghost,
-      .jx-areas__danger {
-        border: 0;
-        border-radius: var(--jx-radius-md);
-        padding: var(--jx-space-2) var(--jx-space-3);
-        font-weight: var(--jx-weight-bold);
-        cursor: pointer;
-        min-height: 40px;
-      }
-      .jx-areas__primary {
-        background: var(--jx-color-brand-500);
-        color: var(--jx-neutral-50);
-      }
-      .jx-areas__ghost {
-        background: var(--surface-sunken);
-        color: var(--text);
-      }
-      .jx-areas__danger {
-        background: transparent;
-        color: var(--jx-color-semantic-error);
-        border: 1px solid var(--border);
-      }
-      .jx-areas__err {
-        color: var(--jx-color-semantic-error);
-        font-size: var(--jx-text-sm);
-        margin: 0;
-      }
-      .jx-areas__msg {
-        color: var(--text-muted);
-        font-size: var(--jx-text-sm);
-        margin: 0;
-      }
-    `,
-  ],
+  imports: [FormsModule, DataTableComponent, FaIconComponent],
+  templateUrl: './areas.page.html',
+  styleUrl: './areas.page.scss',
 })
 export class PlataformaAreasPage implements OnInit {
   private readonly svc = inject(PlatformAdminService);
 
-  protected readonly areas = signal<Area[]>([]);
-  protected readonly loading = signal(true);
-  protected readonly error = signal(false);
-  protected readonly saving = signal(false);
-  protected readonly createError = signal<string | null>(null);
-  protected readonly revenue: Record<number, number | null> = {};
-  protected readonly adminEmail: Record<number, string> = {};
-  protected readonly adminRole: Record<number, string> = {};
-  protected readonly adminMsg: Record<number, string> = {};
+  protected readonly iconEdit = faPenToSquare;
+  protected readonly iconArchive = faBoxArchive;
+  protected readonly iconPlus = faPlus;
+  protected readonly iconCancel = faXmark;
+  protected readonly iconSave = faCheck;
 
-  protected newCodename = '';
-  protected newName = '';
-  protected newKyc = 'simples';
+  protected readonly state = signal<DataTableState>('loading');
+  protected readonly areas = signal<Area[]>([]);
+  protected readonly filtered = signal<Area[]>([]);
+  protected readonly mode = signal<ViewMode>('list');
+  protected readonly saving = signal(false);
+  protected readonly msg = signal<{ text: string; tone: 'ok' | 'err' } | null>(null);
+  protected readonly confirmArchiveId = signal<number | null>(null);
+
+  protected searchQuery = '';
+
+  protected readonly columns: DataTableColumn[] = [
+    { key: 'id', label: 'ID', numeric: true },
+    { key: 'codename', label: 'Slug' },
+    { key: 'name', label: 'Nome' },
+    { key: 'kyc', label: 'Validacao' },
+    { key: 'actions', label: 'Acoes' },
+  ];
+
+  protected form = this.emptyForm();
+  protected editingArea: Area | null = null;
 
   async ngOnInit(): Promise<void> {
-    await this.reload();
+    await this.load();
   }
 
-  protected async reload(): Promise<void> {
-    this.loading.set(true);
-    this.error.set(false);
+  protected async load(): Promise<void> {
+    this.state.set('loading');
     try {
-      this.areas.set(await this.svc.listAreas());
+      const areas = await this.svc.listAreas();
+      this.areas.set(areas);
+      this.applyFilter();
+      this.state.set(areas.length === 0 ? 'empty' : 'ready');
     } catch {
-      this.error.set(true);
-    } finally {
-      this.loading.set(false);
+      this.state.set('error');
     }
   }
 
-  protected kycOf(a: Area): string {
-    return (a.config?.['kyc_level'] as string) ?? 'simples';
+  protected applyFilter(): void {
+    let result = this.areas();
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.trim().toLowerCase();
+      result = result.filter(
+        (a) =>
+          a.name.toLowerCase().includes(q) ||
+          a.codename.toLowerCase().includes(q),
+      );
+    }
+    this.filtered.set(result);
   }
 
-  protected setKyc(a: Area, value: string): void {
-    a.config = { ...(a.config ?? {}), kyc_level: value };
+  protected showCreate(): void {
+    this.form = this.emptyForm();
+    this.editingArea = null;
+    this.mode.set('create');
+    this.msg.set(null);
   }
 
-  protected async create(ev: Event): Promise<void> {
-    ev.preventDefault();
-    this.createError.set(null);
-    if (!this.newCodename.trim() || !this.newName.trim()) return;
+  protected showEdit(area: Area): void {
+    this.editingArea = area;
+    this.form = {
+      codename: area.codename,
+      name: area.name,
+      kyc_level: (area.config?.['kyc_level'] as string) ?? 'simples',
+    };
+    this.mode.set('edit');
+    this.msg.set(null);
+  }
+
+  protected cancel(): void {
+    this.mode.set('list');
+    this.editingArea = null;
+    this.msg.set(null);
+  }
+
+  protected async save(): Promise<void> {
     this.saving.set(true);
+    this.msg.set(null);
     try {
-      await this.svc.createArea({
-        codename: this.newCodename.trim(),
-        name: this.newName.trim(),
-        config: { kyc_level: this.newKyc },
-      });
-      this.newCodename = '';
-      this.newName = '';
-      this.newKyc = 'simples';
-      await this.reload();
+      if (this.mode() === 'create') {
+        await this.svc.createArea({
+          codename: this.form.codename,
+          name: this.form.name,
+          config: { kyc_level: this.form.kyc_level },
+        });
+        this.msg.set({ text: 'Area criada com sucesso.', tone: 'ok' });
+      } else if (this.editingArea) {
+        await this.svc.updateArea(this.editingArea.id, {
+          name: this.form.name,
+          config: { kyc_level: this.form.kyc_level },
+        });
+        this.msg.set({ text: 'Area atualizada com sucesso.', tone: 'ok' });
+      }
+      this.mode.set('list');
+      this.editingArea = null;
+      await this.load();
     } catch {
-      this.createError.set('Não foi possível criar (slug já existe?). Tente outro identificador.');
+      this.msg.set({ text: 'Erro ao salvar area.', tone: 'err' });
     } finally {
       this.saving.set(false);
     }
   }
 
-  protected async save(a: Area): Promise<void> {
-    await this.svc.updateArea(a.id, { name: a.name, config: a.config });
-    const pct = this.revenue[a.id];
-    if (pct !== null && pct !== undefined && !Number.isNaN(pct)) {
-      await this.svc.setRevenueShare(a.id, Number(pct));
-    }
-    await this.reload();
+  protected confirmArchive(areaId: number): void {
+    this.confirmArchiveId.set(areaId);
   }
 
-  protected async archive(a: Area): Promise<void> {
-    await this.svc.archiveArea(a.id);
-    await this.reload();
+  protected cancelArchive(): void {
+    this.confirmArchiveId.set(null);
   }
 
-  protected async assignAdmin(a: Area): Promise<void> {
-    const email = (this.adminEmail[a.id] ?? '').trim();
-    if (!email) return;
-    const role = this.adminRole[a.id] ?? 'manager';
+  protected async doArchive(areaId: number): Promise<void> {
+    this.confirmArchiveId.set(null);
     try {
-      await this.svc.assignAreaAdmin(a.id, email, role);
-      this.adminMsg[a.id] = `${email} designado como ${this.roleLabel(role)}.`;
-      this.adminEmail[a.id] = '';
+      await this.svc.archiveArea(areaId);
+      this.msg.set({ text: 'Area arquivada com sucesso.', tone: 'ok' });
+      await this.load();
     } catch {
-      this.adminMsg[a.id] =
-        'Não foi possível designar (a pessoa precisa ter conta criada antes).';
+      this.msg.set({ text: 'Erro ao arquivar a area.', tone: 'err' });
     }
   }
 
-  protected roleLabel(role: string): string {
-    return { owner: 'dono', manager: 'gestor', viewer: 'leitura' }[role] ?? role;
+  protected kycLabel(area: Area): string {
+    const level = (area.config?.['kyc_level'] as string) ?? 'simples';
+    return level === 'completa' ? 'Completa' : 'Simples';
+  }
+
+  protected trackArea = (item: unknown): unknown => (item as Area).id;
+
+  private emptyForm() {
+    return {
+      codename: '',
+      name: '',
+      kyc_level: 'simples',
+    };
   }
 }

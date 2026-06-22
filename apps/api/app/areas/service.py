@@ -177,3 +177,88 @@ async def assign_area_admin(
     else:
         membership.role = role
     return membership, user.email
+
+
+async def list_area_admins(session: AsyncSession) -> list[dict]:
+    """All area admin memberships with user email and area name (single query)."""
+    stmt = (
+        select(AreaAdmin, User.email, User.name, Area.name.label("area_name"))
+        .join(User, AreaAdmin.user_id == User.id)
+        .join(Area, AreaAdmin.area_id == Area.id)
+        .order_by(AreaAdmin.area_id, AreaAdmin.id)
+    )
+    rows = (await session.execute(stmt)).all()
+    return [
+        {
+            "id": m.id,
+            "area_id": m.area_id,
+            "area_name": area_name,
+            "user_id": m.user_id,
+            "user_email": email,
+            "user_name": name,
+            "role": m.role,
+        }
+        for m, email, name, area_name in rows
+    ]
+
+
+async def create_area_admin_with_user(
+    session: AsyncSession,
+    *,
+    area_id: int,
+    email: str,
+    name: str,
+    password_hash: str,
+    role: str,
+) -> AreaAdmin:
+    """Create a user + area admin membership in one step."""
+    from app.core.exceptions import ValidationAppError
+
+    await get_area(session, area_id)
+    existing_user = (
+        await session.execute(select(User).where(User.email == email))
+    ).scalar_one_or_none()
+    if existing_user is not None:
+        existing_membership = (
+            await session.execute(
+                select(AreaAdmin).where(
+                    AreaAdmin.area_id == area_id, AreaAdmin.user_id == existing_user.id
+                )
+            )
+        ).scalar_one_or_none()
+        if existing_membership is not None:
+            raise ValidationAppError(f"'{email}' ja e admin desta area.")
+        membership = AreaAdmin(area_id=area_id, user_id=existing_user.id, role=role)
+        session.add(membership)
+        await session.flush()
+        return membership
+    user = User(email=email, name=name, password_hash=password_hash, platform_role="user")
+    session.add(user)
+    await session.flush()
+    membership = AreaAdmin(area_id=area_id, user_id=user.id, role=role)
+    session.add(membership)
+    await session.flush()
+    return membership
+
+
+async def update_area_admin(
+    session: AsyncSession, admin_id: int, *, role: str | None = None, area_id: int | None = None
+) -> AreaAdmin:
+    membership = await session.get(AreaAdmin, admin_id)
+    if membership is None:
+        raise NotFoundError("Admin de area nao encontrado.")
+    if role is not None:
+        membership.role = role
+    if area_id is not None:
+        await get_area(session, area_id)
+        membership.area_id = area_id
+    await session.flush()
+    return membership
+
+
+async def remove_area_admin(session: AsyncSession, admin_id: int) -> None:
+    membership = await session.get(AreaAdmin, admin_id)
+    if membership is None:
+        raise NotFoundError("Admin de area nao encontrado.")
+    await session.delete(membership)
+    await session.flush()

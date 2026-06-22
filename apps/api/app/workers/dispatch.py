@@ -198,6 +198,43 @@ async def enqueue_dispatch(delivery_id: int) -> bool:
         return False
 
 
+async def redispatch_stale_deliveries(ctx: dict[str, Any]) -> int:
+    """Re-dispatch deliveries stuck in CRIADA with no active offer.
+
+    Finds all CRIADA deliveries that have no live Redis offer and no candidate
+    queue, then re-enqueues the cascade for each. Intended to be called from a
+    cron (e.g. every 5 min) so that deliveries created when no courier was
+    online get retried once couriers come back.
+    """
+    from sqlalchemy import select
+
+    r = get_redis_client()
+    session_factory = ctx["session_factory"]
+    count = 0
+    async with session_factory() as session:
+        rows = (
+            await session.execute(
+                select(Delivery).where(Delivery.state == "CRIADA")
+            )
+        ).scalars().all()
+        for delivery in rows:
+            has_offer = await offer_state.current_offer(r, delivery.id) is not None
+            has_candidates = await r.exists(f"dispatch:{delivery.id}:candidates")
+            if has_offer or has_candidates:
+                continue
+            await offer_state.clear_candidates(r, delivery.id)
+            if "redis" in ctx:
+                await ctx["redis"].enqueue_job("dispatch_offer_task", delivery.id)
+                count += 1
+                logger.info(
+                    "dispatch.redispatch.enqueued",
+                    delivery_id=delivery.id,
+                    area_id=delivery.area_id,
+                )
+    logger.info("dispatch.redispatch.sweep", redispatched=count, total_criada=len(rows))
+    return count
+
+
 async def send_push_task(ctx: dict[str, Any], delivery_id: int, reason: str) -> str:
     """Send ONE Web Push for a delivery offer/accept (payload has no PII — LOW-5).
 

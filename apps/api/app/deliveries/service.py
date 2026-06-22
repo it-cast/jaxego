@@ -376,6 +376,7 @@ async def create_delivery(
         height_cm=body.height_cm,
         reference_number=body.reference_number,
         notes=body.notes,
+        receipt_method=body.receipt_method,
         public_token=_new_public_token(),
         origin="manual",
     )

@@ -44,10 +44,11 @@ export interface Plan {
       <button
         type="button"
         class="jx-plan__cta"
-        [class.jx-plan__cta--fill]="plan.is_free"
+        [class.jx-plan__cta--fill]="selected"
+        [disabled]="selected"
         (click)="choose.emit(plan)"
       >
-        {{ ctaLabel }}
+        {{ selected ? 'Selecionado' : 'Selecionar' }}
       </button>
     </article>
   `,
@@ -70,12 +71,6 @@ export class PlanCardComponent {
       ? 'ilimitado'
       : `${this.plan.entregas_mes} entregas/mês`;
     return `${entregas} · taxa ${this.formatBrl(this.plan.taxa_entrega_cents)}/entrega`;
-  }
-
-  protected get ctaLabel(): string {
-    return this.plan.is_free
-      ? 'Continuar no Free'
-      : `Escolher ${this.plan.nome}`;
   }
 
   private formatBrl(cents: number): string {

@@ -66,6 +66,7 @@ class Merchant(Base, AreaScopedMixin, TimestampMixin):
     # [PII] E.164 phone — masked in outputs, never logged.
     phone_e164: Mapped[str] = mapped_column(String(20), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)  # [PII]
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending_validation")
 

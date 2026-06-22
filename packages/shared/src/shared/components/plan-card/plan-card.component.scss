@@ -71,6 +71,11 @@
   color: var(--brand-contrast);
 }
 
+.jx-plan__cta:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
+
 .jx-plan__cta:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);

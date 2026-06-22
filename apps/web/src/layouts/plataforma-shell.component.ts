@@ -13,6 +13,8 @@ import {
   faMap,
   faScaleBalanced,
   faRightFromBracket,
+  faCreditCard,
+  faUserShield,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 import { ThemeToggleComponent } from '@jaxego/core/theme/theme-toggle.component';
@@ -192,6 +194,8 @@ export class PlataformaShellComponent {
     { path: 'visao-geral', label: 'Visão geral', icon: faGaugeHigh },
     { path: 'areas', label: 'Áreas', icon: faMap },
     { path: 'pessoas', label: 'Entregadores e lojas', icon: faUsers },
+    { path: 'planos', label: 'Planos', icon: faCreditCard },
+    { path: 'admins', label: 'Admins de área', icon: faUserShield },
     { path: 'disputas', label: 'Disputas e suspensões', icon: faScaleBalanced },
   ];
 

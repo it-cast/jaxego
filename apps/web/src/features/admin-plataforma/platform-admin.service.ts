@@ -76,6 +76,62 @@ export interface CourierScore {
   components: ScoreComponent[];
 }
 
+export interface AreaAdminRow {
+  id: number;
+  area_id: number;
+  area_name: string;
+  user_id: number;
+  user_email: string;
+  user_name: string;
+  role: string;
+}
+
+export interface AreaAdminCreateBody {
+  area_id: number;
+  email: string;
+  name: string;
+  password: string;
+  role: string;
+}
+
+export interface AreaAdminUpdateBody {
+  role?: string;
+  area_id?: number;
+}
+
+export interface PlanAdmin {
+  id: number;
+  code: string;
+  name: string;
+  price_cents: number;
+  deliveries_per_month: number;
+  fee_cents: number;
+  is_free: boolean;
+  is_unlimited: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface PlanCreateBody {
+  code: string;
+  name: string;
+  price_cents: number;
+  deliveries_per_month: number;
+  fee_cents: number;
+  is_unlimited: boolean;
+  sort_order: number;
+}
+
+export interface PlanUpdateBody {
+  name?: string;
+  price_cents?: number;
+  deliveries_per_month?: number;
+  fee_cents?: number;
+  is_unlimited?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PlatformAdminService {
   private readonly http = inject(HttpClient);
@@ -200,6 +256,58 @@ export class PlatformAdminService {
         user_email: userEmail,
         role,
       }),
+    );
+  }
+
+  // --- Area Admins CRUD ---
+
+  async listAreaAdmins(): Promise<AreaAdminRow[]> {
+    return firstValueFrom(
+      this.http.get<AreaAdminRow[]>(`${this.base}/area-admins`),
+    );
+  }
+
+  async createAreaAdmin(body: AreaAdminCreateBody): Promise<AreaAdminRow> {
+    return firstValueFrom(
+      this.http.post<AreaAdminRow>(`${this.base}/area-admins`, body),
+    );
+  }
+
+  async updateAreaAdmin(adminId: number, body: AreaAdminUpdateBody): Promise<AreaAdminRow> {
+    return firstValueFrom(
+      this.http.patch<AreaAdminRow>(`${this.base}/area-admins/${adminId}`, body),
+    );
+  }
+
+  async removeAreaAdmin(adminId: number): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`${this.base}/area-admins/${adminId}`),
+    );
+  }
+
+  // --- Plans CRUD ---
+
+  async listPlans(): Promise<PlanAdmin[]> {
+    return firstValueFrom(
+      this.http.get<PlanAdmin[]>(`${this.base}/plans`),
+    );
+  }
+
+  async createPlan(body: PlanCreateBody): Promise<PlanAdmin> {
+    return firstValueFrom(
+      this.http.post<PlanAdmin>(`${this.base}/plans`, body),
+    );
+  }
+
+  async updatePlan(planId: number, body: PlanUpdateBody): Promise<PlanAdmin> {
+    return firstValueFrom(
+      this.http.patch<PlanAdmin>(`${this.base}/plans/${planId}`, body),
+    );
+  }
+
+  async deletePlan(planId: number): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`${this.base}/plans/${planId}`),
     );
   }
 

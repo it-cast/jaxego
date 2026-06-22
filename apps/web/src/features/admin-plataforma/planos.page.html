@@ -1,0 +1,241 @@
+<main class="jx-planos">
+  <header class="jx-planos__header">
+    <h1 class="jx-planos__title">Planos de <em>assinatura</em></h1>
+    @if (mode() === 'list') {
+      <button
+        type="button"
+        class="jx-planos__cta"
+        (click)="showCreate()"
+      >
+        <fa-icon [icon]="iconPlus" aria-hidden="true" />
+        Adicionar
+      </button>
+    }
+  </header>
+
+  <!-- Feedback message -->
+  @if (msg(); as m) {
+    <div
+      class="jx-planos__msg"
+      [class.jx-planos__msg--ok]="m.tone === 'ok'"
+      [class.jx-planos__msg--err]="m.tone === 'err'"
+      role="status"
+    >
+      {{ m.text }}
+    </div>
+  }
+
+  <!-- Create / Edit form -->
+  @if (mode() === 'create' || mode() === 'edit') {
+    <section class="jx-planos__form-card">
+      <h2 class="jx-planos__form-title">
+        {{ mode() === 'create' ? 'Novo plano' : 'Editar plano' }}
+      </h2>
+      <form class="jx-planos__form" (ngSubmit)="save()">
+        <div class="jx-planos__form-grid">
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Codigo</span>
+            <input
+              class="jx-planos__input"
+              type="text"
+              [(ngModel)]="form.code"
+              name="code"
+              required
+              maxlength="32"
+              [disabled]="mode() === 'edit'"
+              placeholder="ex: premium"
+            />
+          </label>
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Nome</span>
+            <input
+              class="jx-planos__input"
+              type="text"
+              [(ngModel)]="form.name"
+              name="name"
+              required
+              maxlength="80"
+              placeholder="ex: Premium"
+            />
+          </label>
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Preco (centavos)</span>
+            <input
+              class="jx-planos__input jx-planos__input--num"
+              type="number"
+              [(ngModel)]="form.price_cents"
+              name="price_cents"
+              required
+              min="0"
+            />
+          </label>
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Entregas/mes</span>
+            <input
+              class="jx-planos__input jx-planos__input--num"
+              type="number"
+              [(ngModel)]="form.deliveries_per_month"
+              name="deliveries_per_month"
+              required
+              min="0"
+            />
+          </label>
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Taxa por entrega (centavos)</span>
+            <input
+              class="jx-planos__input jx-planos__input--num"
+              type="number"
+              [(ngModel)]="form.fee_cents"
+              name="fee_cents"
+              required
+              min="0"
+            />
+          </label>
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Ordem</span>
+            <input
+              class="jx-planos__input jx-planos__input--num"
+              type="number"
+              [(ngModel)]="form.sort_order"
+              name="sort_order"
+              required
+              min="0"
+            />
+          </label>
+          <label class="jx-planos__field jx-planos__field--check">
+            <input
+              type="checkbox"
+              [(ngModel)]="form.is_unlimited"
+              name="is_unlimited"
+            />
+            <span>Entregas ilimitadas</span>
+          </label>
+        </div>
+        <div class="jx-planos__form-actions">
+          <button
+            type="submit"
+            class="jx-planos__cta"
+            [disabled]="saving()"
+          >
+            <fa-icon [icon]="iconSave" aria-hidden="true" />
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </button>
+          <button
+            type="button"
+            class="jx-planos__btn-secondary"
+            (click)="cancel()"
+          >
+            <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <!-- Search / filter bar -->
+  @if (mode() === 'list') {
+    <div class="jx-planos__search">
+      <label class="jx-planos__field">
+        <span class="jx-sr-only">Buscar plano</span>
+        <input
+          class="jx-planos__input"
+          type="search"
+          placeholder="Buscar por nome ou codigo..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilter()"
+        />
+      </label>
+      <label class="jx-planos__field">
+        <span class="jx-sr-only">Filtrar por status</span>
+        <select
+          class="jx-planos__select"
+          [(ngModel)]="filterActive"
+          (ngModelChange)="applyFilter()"
+        >
+          <option value="all">Todos</option>
+          <option value="active">Ativos</option>
+          <option value="inactive">Inativos</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Data table -->
+    <jx-data-table
+      [columns]="columns"
+      [rows]="filtered()"
+      [state]="state()"
+      [trackBy]="trackPlan"
+      caption="Planos de assinatura da plataforma"
+      emptyIcon="📋"
+      emptyTitle="Nenhum plano encontrado"
+      emptyMessage="Crie o primeiro plano clicando em '+ Adicionar'."
+      errorMessage="Nao foi possivel carregar os planos. Tente novamente."
+      (retry)="load()"
+    >
+      <ng-template #row let-item>
+        <td>
+          <span class="jx-planos__name">{{ item.name }}</span>
+          @if (item.is_free) {
+            <span class="jx-planos__badge jx-planos__badge--free">Free</span>
+          }
+        </td>
+        <td class="jx-planos__mono">{{ item.code }}</td>
+        <td class="jx-planos__num">R$ {{ formatCents(item.price_cents) }}</td>
+        <td class="jx-planos__num">
+          {{ item.is_unlimited ? 'Ilimitado' : item.deliveries_per_month }}
+        </td>
+        <td class="jx-planos__num">R$ {{ formatCents(item.fee_cents) }}</td>
+        <td>
+          <span
+            class="jx-planos__badge"
+            [class.jx-planos__badge--active]="item.is_active"
+            [class.jx-planos__badge--inactive]="!item.is_active"
+          >
+            {{ item.is_active ? 'Ativo' : 'Inativo' }}
+          </span>
+        </td>
+        <td class="jx-planos__actions">
+          @if (confirmDeleteId() === item.id) {
+            <span class="jx-planos__confirm-msg">Desativar?</span>
+            <button
+              type="button"
+              class="jx-planos__action-btn jx-planos__action-btn--danger"
+              (click)="doDelete(item.id)"
+              aria-label="Confirmar desativacao"
+            >
+              <fa-icon [icon]="iconSave" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-planos__action-btn"
+              (click)="cancelDelete()"
+              aria-label="Cancelar desativacao"
+            >
+              <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="jx-planos__action-btn"
+              [disabled]="item.is_free"
+              (click)="showEdit(item)"
+              [attr.aria-label]="'Editar ' + item.name"
+            >
+              <fa-icon [icon]="iconEdit" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-planos__action-btn jx-planos__action-btn--danger"
+              [disabled]="item.is_free || !item.is_active"
+              (click)="confirmDelete(item.id)"
+              [attr.aria-label]="'Desativar ' + item.name"
+            >
+              <fa-icon [icon]="iconDelete" aria-hidden="true" />
+            </button>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
+  }
+</main>

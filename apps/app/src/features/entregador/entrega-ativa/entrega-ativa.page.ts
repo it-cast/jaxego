@@ -72,7 +72,11 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
           <div class="jx-active__head">
             <div class="jx-active__staterow">
               <span class="jx-active__state">{{ stateLabel() }}</span>
-              <jx-payment-badge [method]="payMethod()" />
+              @if (delivery()!.receipt_method) {
+                <span class="jx-active__receipt-badge">{{ receiptLabel() }}</span>
+              } @else {
+                <jx-payment-badge [method]="payMethod()" />
+              }
             </div>
             <span class="jx-active__step">{{ stepLabel() }}</span>
           </div>
@@ -120,13 +124,29 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             }
           </ol>
 
-          <button
-            type="button"
-            class="jx-active__primary"
-            (click)="advance()"
-          >
-            {{ primaryLabel() }}
-          </button>
+          @if (delivery()!.state === 'COLETADA' && !delivery()!.courier_collection_method) {
+            <button
+              type="button"
+              class="jx-active__primary"
+              (click)="showCollectionModal.set(true)"
+            >
+              Cobrar entrega
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="jx-active__primary"
+              (click)="advance()"
+            >
+              {{ primaryLabel() }}
+            </button>
+          }
+
+          @if (delivery()!.courier_collection_method) {
+            <p class="jx-active__collection-badge">
+              {{ collectionLabel() }}
+            </p>
+          }
 
           @if (delivery()!.state === 'COLETADA') {
             <button
@@ -136,6 +156,39 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             >
               Destinatário ausente / recusou
             </button>
+          }
+
+          @if (showCollectionModal()) {
+            <div class="jx-active__overlay" (click)="showCollectionModal.set(false)">
+              <div class="jx-active__modal" (click)="$event.stopPropagation()">
+                <h2 class="jx-active__modal-title">Como vai cobrar?</h2>
+                <button
+                  type="button"
+                  class="jx-active__modal-opt"
+                  (click)="setCollection('in_hand')"
+                >
+                  <span class="jx-active__modal-icon">💵</span>
+                  <span class="jx-active__modal-label">Recebi em maos</span>
+                  <span class="jx-active__modal-desc">Dinheiro ou PIX direto para voce</span>
+                </button>
+                <button
+                  type="button"
+                  class="jx-active__modal-opt"
+                  (click)="setCollection('pix_app')"
+                >
+                  <span class="jx-active__modal-icon">📱</span>
+                  <span class="jx-active__modal-label">Cobrar com PIX</span>
+                  <span class="jx-active__modal-desc">Gerar QR Code para o destinatario pagar</span>
+                </button>
+                <button
+                  type="button"
+                  class="jx-active__modal-cancel"
+                  (click)="showCollectionModal.set(false)"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
           }
         </div>
       }
@@ -254,6 +307,85 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         color: var(--jx-color-semantic-error);
         border: 1px solid var(--jx-color-neutral-300);
       }
+      .jx-active__receipt-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: var(--jx-text-xs);
+        font-weight: 600;
+        background: var(--jx-color-brand-50, #fff7ed);
+        color: var(--jx-color-brand-600, #c2410c);
+      }
+      .jx-active__collection-badge {
+        margin: 0;
+        text-align: center;
+        font-size: var(--jx-text-sm);
+        font-weight: 600;
+        color: var(--jx-color-brand-600);
+      }
+      .jx-active__overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 100;
+      }
+      .jx-active__modal {
+        width: 100%;
+        max-width: 420px;
+        background: var(--jx-color-surface, #fff);
+        border-radius: var(--jx-radius-xl) var(--jx-radius-xl) 0 0;
+        padding: var(--jx-space-5);
+        display: flex;
+        flex-direction: column;
+        gap: var(--jx-space-3);
+      }
+      .jx-active__modal-title {
+        margin: 0;
+        font-size: var(--jx-text-lg);
+        font-weight: 700;
+        text-align: center;
+      }
+      .jx-active__modal-opt {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--jx-space-1);
+        padding: var(--jx-space-4);
+        background: var(--jx-color-neutral-50, #f9f9f9);
+        border: 2px solid var(--jx-color-neutral-200);
+        border-radius: var(--jx-radius-lg);
+        cursor: pointer;
+        font: inherit;
+        text-align: center;
+      }
+      .jx-active__modal-opt:hover {
+        border-color: var(--jx-color-brand-500);
+        background: var(--jx-color-brand-50);
+      }
+      .jx-active__modal-icon {
+        font-size: var(--jx-text-2xl);
+      }
+      .jx-active__modal-label {
+        font-weight: 700;
+        font-size: var(--jx-text-md);
+      }
+      .jx-active__modal-desc {
+        font-size: var(--jx-text-xs);
+        color: var(--jx-color-neutral-500);
+      }
+      .jx-active__modal-cancel {
+        border: 0;
+        background: transparent;
+        color: var(--jx-color-neutral-500);
+        font: inherit;
+        font-size: var(--jx-text-sm);
+        cursor: pointer;
+        padding: var(--jx-space-2);
+        text-align: center;
+      }
     `,
   ],
 })
@@ -265,6 +397,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly delivery = signal<CourierDelivery | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
+  protected readonly showCollectionModal = signal(false);
 
   /** Map focuses the destination after pickup (COLETADA), else the pickup point. */
   protected readonly mapLat = computed<number | null>(() => {
@@ -339,6 +472,33 @@ export class EntregadorEntregaAtivaPage implements OnInit {
       { key: 'entrega', label: 'Entregar no destino', done: false, current: collected },
       { key: 'comprovar', label: 'Comprovar entrega', done: false, current: false },
     ];
+  }
+
+  protected receiptLabel(): string {
+    const map: Record<string, string> = {
+      dinheiro: '💵 Dinheiro',
+      maquina_loja: '💳 Máquina da loja',
+      aplicativo: '📱 Aplicativo',
+    };
+    return map[this.delivery()?.receipt_method ?? ''] ?? '';
+  }
+
+  protected collectionLabel(): string {
+    const m = this.delivery()?.courier_collection_method;
+    return m === 'pix_app' ? '📱 Cobrança via PIX' : '💵 Recebido em mãos';
+  }
+
+  protected async setCollection(method: 'in_hand' | 'pix_app'): Promise<void> {
+    const d = this.delivery();
+    const courierId = this.auth.me()?.courier_id;
+    if (!d || !courierId) return;
+    try {
+      await this.svc.setCollectionMethod(courierId, d.id, method);
+      this.showCollectionModal.set(false);
+      await this.reload();
+    } catch {
+      // stay on modal
+    }
   }
 
   protected advance(): void {

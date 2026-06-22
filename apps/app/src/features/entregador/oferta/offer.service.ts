@@ -21,7 +21,10 @@ export class OfferService {
         this.http.get<OfferOut>('/v1/offers/active', { observe: 'response' }),
       );
       return data.status === 204 ? null : (data.body ?? null);
-    } catch {
+    } catch (err) {
+      if (err instanceof HttpErrorResponse && err.status === 401) {
+        throw err;
+      }
       return null;
     }
   }

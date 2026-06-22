@@ -11,12 +11,17 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.areas import service as areas_service
+from app.areas.schemas import AreaAdminCreateBody, AreaAdminRead, AreaAdminUpdateBody
 from app.auth.dependencies import PlatformAdmin
 from app.core.exceptions import NotFoundError
+from app.core.security import hash_password
 from app.db.session import get_session
+from app.plans import service as plans_service
+from app.plans.schemas import PlanAdminRead, PlanCreate, PlanUpdate
 from app.platform_admin import service
 from app.platform_admin.schemas import (
     AreaOverviewRow,
@@ -137,3 +142,129 @@ async def set_revenue_share(
     return RevenueShareRead(
         area_id=row.area_id, share_pct=float(row.share_pct), effective_from=row.effective_from
     )
+
+
+# --- Plans CRUD (platform admin) -------------------------------------------
+
+
+@router.get("/plans", response_model=list[PlanAdminRead])
+async def list_plans(
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> list[PlanAdminRead]:
+    plans = await plans_service.list_all_plans(session)
+    return [PlanAdminRead.model_validate(p) for p in plans]
+
+
+@router.post("/plans", response_model=PlanAdminRead, status_code=201)
+async def create_plan(
+    body: PlanCreate,
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> PlanAdminRead:
+    plan = await plans_service.create_plan(
+        session,
+        code=body.code,
+        name=body.name,
+        price_cents=body.price_cents,
+        deliveries_per_month=body.deliveries_per_month,
+        fee_cents=body.fee_cents,
+        is_unlimited=body.is_unlimited,
+        sort_order=body.sort_order,
+    )
+    await session.commit()
+    return PlanAdminRead.model_validate(plan)
+
+
+@router.patch("/plans/{plan_id}", response_model=PlanAdminRead)
+async def update_plan(
+    plan_id: int,
+    body: PlanUpdate,
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> PlanAdminRead:
+    plan = await plans_service.update_plan(
+        session,
+        plan_id,
+        name=body.name,
+        price_cents=body.price_cents,
+        deliveries_per_month=body.deliveries_per_month,
+        fee_cents=body.fee_cents,
+        is_unlimited=body.is_unlimited,
+        is_active=body.is_active,
+        sort_order=body.sort_order,
+    )
+    await session.commit()
+    return PlanAdminRead.model_validate(plan)
+
+
+@router.delete("/plans/{plan_id}", status_code=204, response_class=Response)
+async def delete_plan(
+    plan_id: int,
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> Response:
+    await plans_service.delete_plan(session, plan_id)
+    await session.commit()
+    return Response(status_code=204)
+
+
+# --- Area Admins CRUD (platform admin) --------------------------------------
+
+
+@router.get("/area-admins", response_model=list[AreaAdminRead])
+async def list_area_admins(
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> list[AreaAdminRead]:
+    rows = await areas_service.list_area_admins(session)
+    return [AreaAdminRead(**r) for r in rows]
+
+
+@router.post("/area-admins", response_model=AreaAdminRead, status_code=201)
+async def create_area_admin(
+    body: AreaAdminCreateBody,
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> AreaAdminRead:
+    membership = await areas_service.create_area_admin_with_user(
+        session,
+        area_id=body.area_id,
+        email=body.email,
+        name=body.name,
+        password_hash=hash_password(body.password),
+        role=body.role,
+    )
+    await session.commit()
+    rows = await areas_service.list_area_admins(session)
+    match = next((r for r in rows if r["id"] == membership.id), None)
+    if match is None:
+        raise NotFoundError("Admin criado mas nao encontrado.")
+    return AreaAdminRead(**match)
+
+
+@router.patch("/area-admins/{admin_id}", response_model=AreaAdminRead)
+async def update_area_admin(
+    admin_id: int,
+    body: AreaAdminUpdateBody,
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> AreaAdminRead:
+    await areas_service.update_area_admin(session, admin_id, role=body.role, area_id=body.area_id)
+    await session.commit()
+    rows = await areas_service.list_area_admins(session)
+    match = next((r for r in rows if r["id"] == admin_id), None)
+    if match is None:
+        raise NotFoundError("Admin nao encontrado.")
+    return AreaAdminRead(**match)
+
+
+@router.delete("/area-admins/{admin_id}", status_code=204, response_class=Response)
+async def remove_area_admin(
+    admin_id: int,
+    session: SessionDep,
+    admin: PlatformAdmin,
+) -> Response:
+    await areas_service.remove_area_admin(session, admin_id)
+    await session.commit()
+    return Response(status_code=204)

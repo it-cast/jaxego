@@ -1,0 +1,191 @@
+<main class="jx-admins">
+  <header class="jx-admins__header">
+    <h1 class="jx-admins__title">Admins de <em>area</em></h1>
+    @if (mode() === 'list') {
+      <button type="button" class="jx-admins__cta" (click)="showCreate()">
+        <fa-icon [icon]="iconPlus" aria-hidden="true" />
+        Adicionar
+      </button>
+    }
+  </header>
+
+  @if (msg(); as m) {
+    <div
+      class="jx-admins__msg"
+      [class.jx-admins__msg--ok]="m.tone === 'ok'"
+      [class.jx-admins__msg--err]="m.tone === 'err'"
+      role="status"
+    >
+      {{ m.text }}
+    </div>
+  }
+
+  @if (mode() === 'create' || mode() === 'edit') {
+    <section class="jx-admins__form-card">
+      <h2 class="jx-admins__form-title">
+        {{ mode() === 'create' ? 'Novo admin' : 'Editar admin' }}
+      </h2>
+      <form class="jx-admins__form" (ngSubmit)="save()">
+        <div class="jx-admins__form-grid">
+          <label class="jx-admins__field">
+            <span class="jx-admins__label">Area</span>
+            <select
+              class="jx-admins__select"
+              [(ngModel)]="form.area_id"
+              name="area_id"
+              required
+            >
+              <option [value]="0" disabled>Selecione a area</option>
+              @for (area of areas(); track area.id) {
+                <option [value]="area.id">{{ area.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="jx-admins__field">
+            <span class="jx-admins__label">Papel</span>
+            <select
+              class="jx-admins__select"
+              [(ngModel)]="form.role"
+              name="role"
+            >
+              <option value="manager">Gestor</option>
+              <option value="owner">Dono</option>
+              <option value="viewer">Leitura</option>
+            </select>
+          </label>
+          @if (mode() === 'create') {
+            <label class="jx-admins__field">
+              <span class="jx-admins__label">Nome</span>
+              <input
+                class="jx-admins__input"
+                type="text"
+                [(ngModel)]="form.name"
+                name="name"
+                required
+                maxlength="160"
+                placeholder="Nome completo"
+              />
+            </label>
+            <label class="jx-admins__field">
+              <span class="jx-admins__label">E-mail</span>
+              <input
+                class="jx-admins__input"
+                type="email"
+                [(ngModel)]="form.email"
+                name="email"
+                required
+                placeholder="email@exemplo.com"
+              />
+            </label>
+            <label class="jx-admins__field">
+              <span class="jx-admins__label">Senha</span>
+              <input
+                class="jx-admins__input"
+                type="password"
+                [(ngModel)]="form.password"
+                name="password"
+                required
+                minlength="10"
+                placeholder="Minimo 10 caracteres"
+              />
+            </label>
+          }
+        </div>
+        <div class="jx-admins__form-actions">
+          <button type="submit" class="jx-admins__cta" [disabled]="saving()">
+            <fa-icon [icon]="iconSave" aria-hidden="true" />
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </button>
+          <button type="button" class="jx-admins__btn-secondary" (click)="cancel()">
+            <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (mode() === 'list') {
+    <div class="jx-admins__search">
+      <label class="jx-admins__field">
+        <span class="jx-sr-only">Buscar admin</span>
+        <input
+          class="jx-admins__input"
+          type="search"
+          placeholder="Buscar por nome, e-mail ou area..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilter()"
+        />
+      </label>
+    </div>
+
+    <jx-data-table
+      [columns]="columns"
+      [rows]="filtered()"
+      [state]="state()"
+      [trackBy]="trackAdmin"
+      caption="Administradores de area da plataforma"
+      emptyIcon="◍"
+      emptyTitle="Nenhum admin encontrado"
+      emptyMessage="Crie o primeiro admin clicando em '+ Adicionar'."
+      errorMessage="Nao foi possivel carregar os admins. Tente novamente."
+      (retry)="load()"
+    >
+      <ng-template #row let-item>
+        <td>
+          <span class="jx-admins__name">{{ item.user_name }}</span>
+        </td>
+        <td class="jx-admins__email">{{ item.user_email }}</td>
+        <td>{{ item.area_name }}</td>
+        <td>
+          <span
+            class="jx-admins__badge"
+            [class.jx-admins__badge--owner]="item.role === 'owner'"
+            [class.jx-admins__badge--manager]="item.role === 'manager'"
+            [class.jx-admins__badge--viewer]="item.role === 'viewer'"
+          >
+            {{ roleLabel(item.role) }}
+          </span>
+        </td>
+        <td class="jx-admins__actions">
+          @if (confirmDeleteId() === item.id) {
+            <span class="jx-admins__confirm-msg">Remover?</span>
+            <button
+              type="button"
+              class="jx-admins__action-btn jx-admins__action-btn--danger"
+              (click)="doDelete(item.id)"
+              aria-label="Confirmar remocao"
+            >
+              <fa-icon [icon]="iconSave" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-admins__action-btn"
+              (click)="cancelDelete()"
+              aria-label="Cancelar remocao"
+            >
+              <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="jx-admins__action-btn"
+              (click)="showEdit(item)"
+              [attr.aria-label]="'Editar ' + item.user_name"
+            >
+              <fa-icon [icon]="iconEdit" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-admins__action-btn jx-admins__action-btn--danger"
+              (click)="confirmDelete(item.id)"
+              [attr.aria-label]="'Remover ' + item.user_name"
+            >
+              <fa-icon [icon]="iconDelete" aria-hidden="true" />
+            </button>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
+  }
+</main>

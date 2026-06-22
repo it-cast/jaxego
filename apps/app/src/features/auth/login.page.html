@@ -1,0 +1,102 @@
+<main class="jx-login" [attr.aria-busy]="loading()">
+  <!-- Hero image area -->
+  <div class="jx-login__hero">
+    <img
+      class="jx-login__hero-img"
+      src="login-hero.png"
+      alt="Entregador Jaxego"
+    />
+  </div>
+
+  <!-- Form card -->
+  <div class="jx-login__body">
+    <header class="jx-login__header">
+      <h1 class="jx-login__welcome">Bem-vindo!</h1>
+      <p class="jx-login__subtitle">Jaxego. Chegou <em>rapidinho.</em></p>
+    </header>
+
+    <form class="jx-login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="jx-field">
+        <input
+          #emailInput
+          id="email"
+          type="email"
+          formControlName="email"
+          class="jx-input"
+          inputmode="email"
+          autocomplete="email"
+          enterkeyhint="next"
+          placeholder="E-mail"
+        />
+      </div>
+
+      <div class="jx-field">
+        <div class="jx-input-wrap">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            class="jx-input"
+            autocomplete="current-password"
+            [attr.enterkeyhint]="totpRequired() ? 'next' : 'send'"
+            placeholder="Senha"
+          />
+          <button
+            type="button"
+            class="jx-input-toggle"
+            [attr.aria-label]="showPassword() ? 'Ocultar senha' : 'Mostrar senha'"
+            (click)="togglePassword()"
+          >
+            <fa-icon [icon]="showPassword() ? faEyeSlash : faEye" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      @if (totpRequired()) {
+        <div class="jx-field" aria-live="polite">
+          <input
+            #totpInput
+            id="totp"
+            type="text"
+            formControlName="totp"
+            class="jx-input jx-mono"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            enterkeyhint="send"
+            maxlength="6"
+            placeholder="Codigo de verificacao"
+          />
+          <p class="jx-caption">Digite o codigo do seu app autenticador.</p>
+        </div>
+      }
+
+      <label class="jx-login__remember">
+        <input type="checkbox" [(ngModel)]="rememberMe" [ngModelOptions]="{ standalone: true }" />
+        <span>Lembre de mim</span>
+      </label>
+
+      @if (errorMessage()) {
+        <div #errorBlock tabindex="-1" class="jx-login__error">
+          <jx-error-state [message]="errorMessage()!" />
+        </div>
+      }
+
+      <button type="submit" class="jx-login__submit" [disabled]="loading()" [attr.aria-busy]="loading()">
+        @if (loading()) {
+          <span class="jx-login__spinner" aria-hidden="true"></span>
+          Entrando...
+        } @else {
+          Entrar
+        }
+      </button>
+    </form>
+
+    <section class="jx-login__cta-block">
+      <span class="jx-login__cta-text">
+        Quer entregar? <a routerLink="/entregador/cadastro">Cadastre-se</a>
+      </span>
+    </section>
+
+    <footer class="jx-login__footer">jaxego.com.br · Grupo Itcast</footer>
+  </div>
+</main>

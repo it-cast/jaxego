@@ -327,7 +327,11 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
 
   private async pollOffer(): Promise<void> {
     if (!this.online() || this.active() || this.offer() || this.processing()) return;
-    this.offer.set(await this.offers.active());
+    try {
+      this.offer.set(await this.offers.active());
+    } catch {
+      // 401 re-thrown by OfferService — interceptor handles refresh
+    }
   }
 
   protected async setOnline(value: boolean): Promise<void> {

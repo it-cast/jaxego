@@ -12,6 +12,8 @@ import {
   ProofCaptureComponent,
   ProofCapturePayload,
 } from '@jaxego/shared/components/proof-capture/proof-capture.component';
+import { AuthService } from '@jaxego/core/auth/auth.service';
+import { EntregadorService } from '../entregador.service';
 import { PendingUploadService } from './pending-upload.service';
 import { ProofKind, ProofService } from './proof.service';
 
@@ -44,7 +46,7 @@ import { ProofKind, ProofService } from './proof.service';
         (captured)="onCaptured($event)"
       />
 
-      @if (paymentNeeded()) {
+      @if (needsReference()) {
         <div class="jx-proof-page__ref">
           <label for="refNum">Número do pedido (pergunte ao destinatário)</label>
           <input
@@ -91,6 +93,8 @@ export class ComprovacaoPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly proof = inject(ProofService);
+  private readonly entregador = inject(EntregadorService);
+  private readonly auth = inject(AuthService);
   protected readonly pending = inject(PendingUploadService);
 
   protected readonly geofence = signal<GeofenceState>('checking');
@@ -101,18 +105,35 @@ export class ComprovacaoPage implements OnInit {
   protected readonly lowConfidence = signal(false);
   protected readonly reference = signal('');
   protected readonly referenceSent = signal(false);
+  protected readonly proofMethod = signal<string>('photo');
 
   private deliveryId = 0;
   private kind: ProofKind = 'pickup';
   protected amountLabel = '';
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.deliveryId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     this.kind = (this.route.snapshot.paramMap.get('kind') as ProofKind) ?? 'pickup';
+    await this.loadDeliveryProofMethod();
+  }
+
+  private async loadDeliveryProofMethod(): Promise<void> {
+    try {
+      const me = this.auth.me();
+      if (!me?.courier_id) return;
+      const delivery = await this.entregador.getDelivery(me.courier_id, this.deliveryId);
+      this.proofMethod.set(delivery.proof_method ?? 'photo');
+    } catch {
+      // fallback to 'photo' — no reference field shown
+    }
   }
 
   protected kindLabel(): string {
     return { pickup: 'a coleta', delivery: 'a entrega', refusal: 'a recusa' }[this.kind];
+  }
+
+  protected needsReference(): boolean {
+    return this.kind === 'delivery' && this.proofMethod() === 'photo_reference';
   }
 
   protected paymentNeeded(): boolean {

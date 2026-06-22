@@ -88,37 +88,24 @@
       placeholder="R$ 0,00"
       formControlName="declared_value"
     />
-    <jx-field
-      label="Peso (kg, opcional)"
-      inputmode="decimal"
-      [mono]="true"
-      placeholder="2,5"
-      formControlName="weight_kg"
-    />
-    <div class="jx-nova__dims">
-      <span class="jx-nova__dims-label">Dimensões (cm, opcional)</span>
-      <div class="jx-nova__dims-row">
-        <jx-field
-          label="Compr."
-          inputmode="numeric"
-          [mono]="true"
-          placeholder="40"
-          formControlName="length_cm"
-        />
-        <jx-field
-          label="Largura"
-          inputmode="numeric"
-          [mono]="true"
-          placeholder="30"
-          formControlName="width_cm"
-        />
-        <jx-field
-          label="Altura"
-          inputmode="numeric"
-          [mono]="true"
-          placeholder="20"
-          formControlName="height_cm"
-        />
+    <div class="jx-nova__packages">
+      <span class="jx-nova__packages-label">Tamanho do pacote</span>
+      <div class="jx-nova__packages-grid">
+        @for (pkg of packageSizes; track pkg.nome) {
+          <button
+            type="button"
+            class="jx-nova__pkg-card"
+            [class.jx-nova__pkg-card--sel]="selectedPackage() === pkg.nome"
+            (click)="selectPackage(pkg)"
+          >
+            <span class="jx-nova__pkg-icon">📦</span>
+            <strong class="jx-nova__pkg-name">{{ pkg.nome }}</strong>
+            <span class="jx-nova__pkg-desc">{{ pkg.descricao }}</span>
+            <span class="jx-nova__pkg-dims">
+              {{ pkg.comprimentoCm }}×{{ pkg.larguraCm }}×{{ pkg.alturaCm }}cm · até {{ pkg.pesoMaximoKg }}kg
+            </span>
+          </button>
+        }
       </div>
     </div>
     <jx-field
@@ -138,11 +125,11 @@
   <fieldset class="jx-nova__section">
     <legend>Comprovação</legend>
     <div role="radiogroup" aria-label="Método de comprovação" class="jx-nova__radios">
-      <label class="jx-nova__radio jx-nova__radio--sel">
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="proofMethod() === 'photo'">
         <input type="radio" formControlName="proof_method" value="photo" />
         <span>Foto na entrega <small>padrão</small></span>
       </label>
-      <label class="jx-nova__radio">
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="proofMethod() === 'photo_reference'">
         <input type="radio" formControlName="proof_method" value="photo_reference" />
         <span>Foto + nº do pedido</span>
       </label>
@@ -153,43 +140,23 @@
     </div>
   </fieldset>
 
-  <!-- Pagamento -->
+  <!-- Recebimento -->
   <fieldset class="jx-nova__section">
-    <legend>Pagamento da corrida</legend>
-    <div role="radiogroup" aria-label="Forma de pagamento" class="jx-nova__radios">
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="paymentMethod() === 'direct'">
-        <input type="radio" formControlName="payment_method" value="direct" />
-        <span>Direto ao entregador <small>dinheiro ou seu PIX</small></span>
+    <legend>Recebimento</legend>
+    <div role="radiogroup" aria-label="Forma de recebimento" class="jx-nova__radios">
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="receiptMethod() === 'dinheiro'">
+        <input type="radio" formControlName="receipt_method" value="dinheiro" />
+        <span>Dinheiro</span>
       </label>
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="paymentMethod() === 'pix'">
-        <input type="radio" formControlName="payment_method" value="pix" />
-        <span>PIX <small>QR na hora</small></span>
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="receiptMethod() === 'maquina_loja'">
+        <input type="radio" formControlName="receipt_method" value="maquina_loja" />
+        <span>Maquina da loja</span>
       </label>
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="paymentMethod() === 'card'">
-        <input type="radio" formControlName="payment_method" value="card" />
-        <span>Cartão <small>cobrança online</small></span>
+      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="receiptMethod() === 'aplicativo'">
+        <input type="radio" formControlName="receipt_method" value="aplicativo" />
+        <span>Aplicativo</span>
       </label>
     </div>
-    <p class="jx-nova__paymicro">
-      No direto, você acerta a corrida com o entregador. No cartão/PIX, cobramos corrida + taxa
-      agora; a entrega só nasce com o pagamento aprovado.
-    </p>
-
-    @if (paymentMethod() === 'card') {
-      <jx-card-form ctaLabel="Pagar e chamar entregador" (cardEncrypted)="onDeliveryCardEncrypted($event)" />
-    }
-
-    @if (deliveryRefused()) {
-      <div class="jx-nova__refused" role="alert">
-        <p>Cartão recusado. A entrega não foi criada.</p>
-        <div class="jx-nova__refused-actions">
-          <button type="button" class="jx-nova__retry" (click)="retryPayment()">Tentar de novo</button>
-          <button type="button" class="jx-nova__direct" (click)="switchToDirect()">
-            Pagar direto ao entregador
-          </button>
-        </div>
-      </div>
-    }
   </fieldset>
 
   @if (noCouriersWarning()) {

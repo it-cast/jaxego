@@ -62,6 +62,8 @@ export interface CourierDelivery {
   state: string;
   payment_method: string;
   proof_method: string;
+  courier_collection_method: string | null;
+  receipt_method: string | null;
   pickup_address: string;
   pickup_neighborhood: string | null;
   pickup_lat: number | null;
@@ -157,6 +159,19 @@ export class EntregadorService {
       this.http.get<CourierDelivery>(
         `/v1/couriers/${courierId}/deliveries/${deliveryId}`
       )
+    );
+  }
+
+  async setCollectionMethod(
+    courierId: number,
+    deliveryId: number,
+    method: 'in_hand' | 'pix_app',
+  ): Promise<void> {
+    await firstValueFrom(
+      this.http.patch(
+        `/v1/couriers/${courierId}/deliveries/${deliveryId}/collection-method`,
+        { collection_method: method },
+      ),
     );
   }
 

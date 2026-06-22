@@ -252,7 +252,6 @@ export class CadastroLojaPage {
 
   protected choosePlan(plan: Plan): void {
     this.selectedPlan.set(plan.codename);
-    void this.submit();
   }
 
   // --- submit ---------------------------------------------------------------
@@ -319,8 +318,8 @@ export class CadastroLojaPage {
       if (!raw) return;
       const draft = JSON.parse(raw) as Record<string, unknown> & { step?: number };
       const { step, ...values } = draft;
+      void step;
       this.form.patchValue(values as never);
-      if (typeof step === 'number') this.current.set(Math.min(step, STEPS.length - 1));
     } catch {
       /* ignore corrupt draft */
     }

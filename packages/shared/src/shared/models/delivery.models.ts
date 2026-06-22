@@ -28,9 +28,8 @@ export interface CreateDeliveryRequest {
   reference_number?: string | null;
   notes?: string | null;
   proof_method: DeliveryProofMethod;
-  payment_method: DeliveryPaymentMethod;
-  // Phase 10 — card/pix only. OPAQUE RSA-OAEP ciphertext from jx-card-form; the raw
-  // card never reaches this layer (TH-A). null for direct/pix.
+  payment_method?: DeliveryPaymentMethod;
+  receipt_method?: string | null;
   card_blob?: string | null;
   payer_document?: string | null;
   payer_email?: string | null;
