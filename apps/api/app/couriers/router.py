@@ -309,6 +309,7 @@ def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
         height_cm=delivery.height_cm,
         courier_collection_method=delivery.courier_collection_method,
         receipt_method=delivery.receipt_method,
+        notes=delivery.notes,
         created_at=delivery.created_at.isoformat() if delivery.created_at else None,
     )
 

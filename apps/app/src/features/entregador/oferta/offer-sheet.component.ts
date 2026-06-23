@@ -63,8 +63,8 @@ import type { OfferOut, OfferResult } from './offer.models';
           </div>
 
           <div class="jx-offer-sheet__meta">
-            <span class="jx-offer-sheet__value">Você ganha {{ value() }}</span>
-            <span class="jx-offer-sheet__badge">PAGAMENTO DIRETO 💵</span>
+            <span class="jx-offer-sheet__value">Voce ganha {{ value() }}</span>
+            <span class="jx-offer-sheet__badge">{{ receiptBadge() }}</span>
           </div>
 
           <div class="jx-offer-sheet__actions">
@@ -140,6 +140,16 @@ export class OfferSheetComponent {
   protected readonly value = computed(() => {
     const cents = this._offer()?.value_cents ?? null;
     return cents === null ? '—' : formatBrl(cents / 100);
+  });
+
+  protected readonly receiptBadge = computed(() => {
+    const map: Record<string, string> = {
+      dinheiro: '💵 DINHEIRO',
+      maquina_loja: '💳 MAQUINA DA LOJA',
+      aplicativo: '📱 APLICATIVO',
+    };
+    const method = this._offer()?.receipt_method;
+    return method ? (map[method] ?? 'PAGAMENTO DIRETO 💵') : 'PAGAMENTO DIRETO 💵';
   });
 
   protected readonly distanceKm = computed(() => {

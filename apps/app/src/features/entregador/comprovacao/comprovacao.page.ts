@@ -17,15 +17,6 @@ import { EntregadorService } from '../entregador.service';
 import { PendingUploadService } from './pending-upload.service';
 import { ProofKind, ProofService } from './proof.service';
 
-/**
- * Comprovação (tela 07) — courier proof capture for the active delivery (F-06).
- *
- * Composes jx-proof-capture (camera + GPS) + the geofence pill + direct payment
- * confirm. The CTA verdict is server-side: a geofence failure shows the pill 'out'
- * and keeps the courier on the screen; 3 failures → 'low_confidence' destrava (the
- * delivery proceeds, admin reviews). Offline: the photo queues (jx-pending-upload-banner)
- * and the delivery does NOT show concluded until the upload + validation succeed.
- */
 @Component({
   selector: 'jx-comprovacao-page',
   standalone: true,
@@ -40,15 +31,15 @@ import { ProofKind, ProofService } from './proof.service';
       <jx-proof-capture
         [label]="kindLabel()"
         [geofence]="geofence()"
-        [uploadState]="uploadState()"
+        [uploadState]="captureState()"
         [previewUrl]="previewUrl()"
         [error]="error()"
         (captured)="onCaptured($event)"
       />
 
-      @if (needsReference()) {
+      @if (photoReady() && needsReference()) {
         <div class="jx-proof-page__ref">
-          <label for="refNum">Número do pedido (pergunte ao destinatário)</label>
+          <label for="refNum">Numero do pedido (pergunte ao destinatario)</label>
           <input
             id="refNum"
             class="jx-proof-page__refinput"
@@ -56,33 +47,52 @@ import { ProofKind, ProofService } from './proof.service';
             maxlength="6"
             placeholder="0000"
             [value]="reference()"
+            [disabled]="referenceValidated()"
             (input)="onRefInput($event)"
           />
-          <button
-            type="button"
-            class="jx-proof-page__refbtn"
-            [disabled]="reference().length < 3"
-            (click)="onReference()"
-          >
-            Enviar número do pedido
-          </button>
-          @if (referenceSent()) {
-            <p class="jx-proof-page__refok" role="status">Número registrado ✓</p>
+          @if (!referenceValidated()) {
+            <button
+              type="button"
+              class="jx-proof-page__refbtn"
+              [disabled]="reference().length < 3 || validatingRef()"
+              (click)="validateReference()"
+            >
+              {{ validatingRef() ? 'Validando...' : 'Validar numero' }}
+            </button>
+          }
+          @if (refMessage(); as msg) {
+            <p
+              class="jx-proof-page__ref-msg"
+              [class.jx-proof-page__ref-msg--ok]="referenceValidated()"
+              [class.jx-proof-page__ref-msg--err]="!referenceValidated()"
+              role="alert"
+            >
+              {{ msg }}
+            </p>
           }
         </div>
       }
 
-      @if (state() === 'ENTREGUE' && paymentNeeded()) {
-        <jx-direct-payment-confirm
-          [amountLabel]="amountLabel"
-          (confirm)="onPaymentConfirm($event)"
-        />
+      @if (canFinalize() && kind === 'delivery') {
+        <button
+          type="button"
+          class="jx-proof-page__finalize"
+          [disabled]="finalizing()"
+          (click)="finalize()"
+        >
+          @if (finalizing()) {
+            <span class="jx-proof-page__spinner" aria-hidden="true"></span>
+            Finalizando...
+          } @else {
+            Finalizar entrega
+          }
+        </button>
       }
 
       @if (lowConfidence()) {
         <p class="jx-proof-page__lowconf" role="status" aria-live="polite">
-          Não conseguimos confirmar a localização. Sua entrega segue para revisão da
-          equipe — você pode concluir mesmo assim.
+          Nao conseguimos confirmar a localizacao. Sua entrega segue para revisao da
+          equipe — voce pode concluir mesmo assim.
         </p>
       }
     </main>
@@ -98,18 +108,23 @@ export class ComprovacaoPage implements OnInit {
   protected readonly pending = inject(PendingUploadService);
 
   protected readonly geofence = signal<GeofenceState>('checking');
-  protected readonly uploadState = signal<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  protected readonly captureState = signal<'idle' | 'uploading' | 'success' | 'error'>('idle');
   protected readonly previewUrl = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
-  protected readonly state = signal<string>('');
   protected readonly lowConfidence = signal(false);
-  protected readonly reference = signal('');
-  protected readonly referenceSent = signal(false);
   protected readonly proofMethod = signal<string>('photo');
 
+  protected readonly photoReady = signal(false);
+  protected readonly reference = signal('');
+  protected readonly referenceValidated = signal(false);
+  protected readonly validatingRef = signal(false);
+  protected readonly refMessage = signal<string | null>(null);
+  protected readonly finalizing = signal(false);
+
   private deliveryId = 0;
-  private kind: ProofKind = 'pickup';
+  protected kind: ProofKind = 'pickup';
   protected amountLabel = '';
+  private capturedPayload: ProofCapturePayload | null = null;
 
   async ngOnInit(): Promise<void> {
     this.deliveryId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
@@ -123,9 +138,7 @@ export class ComprovacaoPage implements OnInit {
       if (!me?.courier_id) return;
       const delivery = await this.entregador.getDelivery(me.courier_id, this.deliveryId);
       this.proofMethod.set(delivery.proof_method ?? 'photo');
-    } catch {
-      // fallback to 'photo' — no reference field shown
-    }
+    } catch { /* fallback photo */ }
   }
 
   protected kindLabel(): string {
@@ -136,68 +149,101 @@ export class ComprovacaoPage implements OnInit {
     return this.kind === 'delivery' && this.proofMethod() === 'photo_reference';
   }
 
-  protected paymentNeeded(): boolean {
-    return this.kind === 'delivery';
+  protected canFinalize(): boolean {
+    if (!this.photoReady()) return false;
+    if (this.needsReference() && !this.referenceValidated()) return false;
+    return true;
   }
 
-  protected async onCaptured(payload: ProofCapturePayload): Promise<void> {
+  protected onCaptured(payload: ProofCapturePayload): void {
     this.error.set(null);
     this.previewUrl.set(URL.createObjectURL(payload.file));
-    // Offline → queue, reassure, do NOT conclude.
+    this.capturedPayload = payload;
+
+    if (this.kind === 'pickup' || this.kind === 'refusal') {
+      void this.submitAndNavigate(payload);
+      return;
+    }
+    this.photoReady.set(true);
+    this.captureState.set('idle');
+  }
+
+  private async submitAndNavigate(payload: ProofCapturePayload): Promise<void> {
     if (!this.pending.online()) {
       this.pending.enqueue({
-        deliveryId: this.deliveryId,
-        proofKind: this.kind,
-        file: payload.file,
-        lat: payload.lat,
-        lng: payload.lng,
+        deliveryId: this.deliveryId, proofKind: this.kind,
+        file: payload.file, lat: payload.lat, lng: payload.lng,
       });
       return;
     }
-    this.uploadState.set('uploading');
+    this.captureState.set('uploading');
     try {
       const result = await this.proof.submitPhoto(
-        this.deliveryId,
-        this.kind,
-        payload.file,
-        payload.lat,
-        payload.lng,
+        this.deliveryId, this.kind, payload.file, payload.lat, payload.lng,
       );
-      this.uploadState.set('success');
-      this.state.set(result.state);
+      this.captureState.set('success');
       this.geofence.set(result.geofence_ok ? 'ok' : result.low_confidence ? 'low_confidence' : 'out');
       this.lowConfidence.set(result.low_confidence);
-      // Wire-through (F1.3): pickup → back to the active delivery (now COLETADA);
-      // refusal → done screen; delivery waits for the direct-payment confirm.
       if (this.kind === 'pickup') {
         void this.router.navigate(['/entregador/entrega-ativa']);
       } else if (this.kind === 'refusal') {
         void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
       }
     } catch {
-      this.uploadState.set('error');
-      this.error.set('Não foi possível enviar a foto agora. Tente de novo.');
-      this.geofence.set('out');
+      this.captureState.set('error');
+      this.error.set('Nao foi possivel enviar a foto agora. Tente de novo.');
     }
   }
 
   protected onRefInput(e: Event): void {
     this.reference.set((e.target as HTMLInputElement).value);
+    this.refMessage.set(null);
+    this.referenceValidated.set(false);
   }
 
-  protected async onReference(): Promise<void> {
+  protected async validateReference(): Promise<void> {
     const ref = this.reference().trim();
     if (ref.length < 3) return;
+    this.validatingRef.set(true);
+    this.refMessage.set(null);
     try {
-      await this.proof.submitReference(this.deliveryId, ref);
-      this.referenceSent.set(true);
+      const valid = await this.proof.validateReference(this.deliveryId, ref);
+      if (valid) {
+        this.referenceValidated.set(true);
+        this.refMessage.set('Numero do pedido correto ✓');
+      } else {
+        this.referenceValidated.set(false);
+        this.refMessage.set('Numero do pedido incorreto. Verifique e tente novamente.');
+      }
     } catch {
-      this.referenceSent.set(false);
+      this.referenceValidated.set(false);
+      this.refMessage.set('Erro ao validar. Tente novamente.');
+    } finally {
+      this.validatingRef.set(false);
     }
   }
 
-  protected async onPaymentConfirm(outcome: DirectPaymentOutcome): Promise<void> {
-    await this.proof.confirmPayment(this.deliveryId, outcome, null);
-    void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
+  protected async finalize(): Promise<void> {
+    if (!this.capturedPayload || this.finalizing()) return;
+    this.finalizing.set(true);
+    this.error.set(null);
+    try {
+      if (!this.pending.online()) {
+        this.pending.enqueue({
+          deliveryId: this.deliveryId, proofKind: this.kind,
+          file: this.capturedPayload.file, lat: this.capturedPayload.lat, lng: this.capturedPayload.lng,
+        });
+        this.finalizing.set(false);
+        return;
+      }
+      await this.proof.submitPhoto(
+        this.deliveryId, this.kind,
+        this.capturedPayload.file, this.capturedPayload.lat, this.capturedPayload.lng,
+      );
+      void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
+    } catch {
+      this.error.set('Nao foi possivel finalizar. Tente de novo.');
+      this.finalizing.set(false);
+    }
   }
 }

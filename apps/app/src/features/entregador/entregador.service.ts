@@ -64,6 +64,7 @@ export interface CourierDelivery {
   proof_method: string;
   courier_collection_method: string | null;
   receipt_method: string | null;
+  notes: string | null;
   pickup_address: string;
   pickup_neighborhood: string | null;
   pickup_lat: number | null;

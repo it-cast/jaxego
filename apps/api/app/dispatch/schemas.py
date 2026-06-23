@@ -37,6 +37,7 @@ class OfferOut(BaseModel):
     value_cents: int | None
     # Payment modality (RN-023) — direct in M1.
     payment_method: str
+    receipt_method: str | None = None
     # ETA (OSRM seconds) + degrade flag (haversine fallback — silent to courier).
     eta_s: int | None
     eta_degraded: bool

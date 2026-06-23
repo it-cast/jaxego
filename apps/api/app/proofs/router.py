@@ -96,6 +96,14 @@ async def submit_proof(
         refusal_reason=body.refusal_reason,
         ip=_client_ip(request),
     )
+    # If delivery just became ENTREGUE, finalize immediately.
+    if delivery.state == "ENTREGUE":
+        from app.deliveries.service import transition
+
+        await transition(
+            session, delivery=delivery, to_state="FINALIZADA",
+            actor_id=scope.user_id, reason="immediate_finalize", ip=_client_ip(request),
+        )
     await session.commit()
     # Notify the recipient on the queue (a caminho / entregue — never inline).
     from app.notifications.dispatcher import enqueue_notification
@@ -132,12 +140,42 @@ async def submit_reference(
         reference_number=body.reference_number,
         ip=_client_ip(request),
     )
-    await session.commit()
     if result.state == "ENTREGUE":
+        from app.deliveries.service import transition
+
+        await transition(
+            session, delivery=delivery, to_state="FINALIZADA",
+            actor_id=scope.user_id, reason="immediate_finalize", ip=_client_ip(request),
+        )
+        result = ProofResponse(
+            delivery_id=delivery.id, state=delivery.state,
+            geofence_ok=result.geofence_ok, low_confidence=result.low_confidence,
+        )
+    await session.commit()
+    if delivery.state == "FINALIZADA" or result.state == "ENTREGUE":
         from app.notifications.dispatcher import enqueue_notification
 
         await enqueue_notification(delivery_id=delivery.id, moment="delivered")
     return result
+
+
+@router.post("/{delivery_id}/proof/validate-reference")
+async def validate_reference(
+    delivery_id: int,
+    body: SubmitReferenceRequest,
+    scope: CourierScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Validate a reference number WITHOUT transitioning state. Returns valid: true/false."""
+    delivery = await service.get_delivery_for_courier(
+        session, delivery_id=delivery_id, courier_id=scope.courier_id
+    )
+    expected = delivery.reference_number
+    if expected is None:
+        return {"valid": True}
+    from app.proofs.reference import _normalise
+    valid = _normalise(body.reference_number) == _normalise(expected)
+    return {"valid": valid}
 
 
 @router.post("/{delivery_id}/proof/manual-release", response_model=ProofResponse)

@@ -19,6 +19,91 @@
   margin: 0;
 }
 
+.jx-proof-page__finalize {
+  width: 100%;
+  min-height: 50px;
+  padding: var(--jx-space-3) var(--jx-space-4);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border: 0;
+  border-radius: var(--jx-radius-full, 999px);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+}
+
+.jx-proof-page__ref {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+}
+
+.jx-proof-page__refinput {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-base);
+  letter-spacing: 0.15em;
+}
+
+.jx-proof-page__refinput:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.jx-proof-page__refbtn {
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  background: var(--brand);
+  color: var(--brand-contrast);
+  border: 0;
+  border-radius: var(--jx-radius-lg);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-proof-page__refbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jx-proof-page__ref-msg {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+}
+
+.jx-proof-page__ref-msg--ok {
+  color: var(--success, var(--brand));
+}
+
+.jx-proof-page__ref-msg--err {
+  color: var(--error, #d32f2f);
+}
+
+.jx-proof-page__spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--brand-contrast);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: jx-spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: var(--jx-space-1);
+}
+
+@keyframes jx-spin {
+  to { transform: rotate(360deg); }
+}
+
 .jx-proof-page__lowconf {
   padding: var(--jx-space-3);
   border-radius: var(--jx-radius-md);

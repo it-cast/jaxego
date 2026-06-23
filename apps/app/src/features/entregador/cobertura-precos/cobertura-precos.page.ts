@@ -8,6 +8,7 @@ import {
   ErrorStateComponent,
   WarnBannerComponent,
 } from '@jaxego/shared/state';
+import { PageHeaderComponent } from '@jaxego/shared/components';
 import { formatBrl, maskBrl, parseBrl } from '@jaxego/shared/util/money';
 import {
   CoverageItem,
@@ -45,6 +46,7 @@ interface KmBand {
     EmptyStateComponent,
     ErrorStateComponent,
     WarnBannerComponent,
+    PageHeaderComponent,
   ],
   templateUrl: './cobertura-precos.page.html',
   styleUrl: './cobertura-precos.page.scss',

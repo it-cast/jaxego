@@ -261,7 +261,7 @@ export class NovaEntregaPage {
       height_cm: toInt(v.height_cm),
       reference_number: v.reference_number || null,
       notes: v.notes || null,
-      proof_method: 'photo',
+      proof_method: this.proofMethod() as 'photo' | 'photo_reference' | 'otp',
       payment_method: 'direct',
       receipt_method: this.receiptMethod(),
     };

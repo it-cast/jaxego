@@ -63,6 +63,7 @@ async def build_offer_view(
         distance_m=delivery.distance_m,
         value_cents=delivery.estimate_max_cents,
         payment_method=delivery.payment_method,
+        receipt_method=delivery.receipt_method,
         eta_s=None,
         eta_degraded=False,
         ttl_total_s=timeout_s,

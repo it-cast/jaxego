@@ -13,6 +13,7 @@ export interface OfferOut {
   distance_m: number | null;
   value_cents: number | null;
   payment_method: string;
+  receipt_method: string | null;
   eta_s: number | null;
   eta_degraded: boolean;
   /** Redis TTL — the source of truth of the timer (ADR-104). */

@@ -227,6 +227,7 @@ class CourierDeliveryOut(BaseModel):
     height_cm: int | None
     courier_collection_method: str | None = None
     receipt_method: str | None = None
+    notes: str | None = None
     created_at: str | None
 
 

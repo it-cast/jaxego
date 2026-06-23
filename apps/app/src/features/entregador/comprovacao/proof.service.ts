@@ -68,6 +68,15 @@ export class ProofService {
     );
   }
 
+  async validateReference(deliveryId: number, reference: string): Promise<boolean> {
+    const res = await firstValueFrom(
+      this.http.post<{ valid: boolean }>(`/v1/deliveries/${deliveryId}/proof/validate-reference`, {
+        reference_number: reference,
+      }),
+    );
+    return res.valid;
+  }
+
   async confirmPayment(
     deliveryId: number,
     outcome: 'cash' | 'pix' | 'not_received',

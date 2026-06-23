@@ -5,6 +5,7 @@ import {
   faHouse,
   faMap,
   faMoneyBill,
+  faBoxOpen,
   faUser,
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -25,6 +26,10 @@ import {
       <a routerLink="/entregador/saldo" routerLinkActive="jx-tab--active" class="jx-tab">
         <fa-icon [icon]="iconGanhos" aria-hidden="true" />
         <span>Ganhos</span>
+      </a>
+      <a routerLink="/entregador/entregas" routerLinkActive="jx-tab--active" class="jx-tab">
+        <fa-icon [icon]="iconEntregas" aria-hidden="true" />
+        <span>Entregas</span>
       </a>
       <a routerLink="/entregador/cobertura" routerLinkActive="jx-tab--active" class="jx-tab">
         <fa-icon [icon]="iconBairros" aria-hidden="true" />
@@ -56,6 +61,8 @@ import {
         border-top: 1px solid var(--border, #e5e0d8);
         padding-bottom: env(safe-area-inset-bottom, 0);
         flex-shrink: 0;
+        border-radius: 2em 2em 0 0;
+        padding: .5em;
       }
       .jx-tab {
         flex: 1;
@@ -86,6 +93,7 @@ import {
 export class EntregadorShellComponent {
   protected readonly iconInicio = faHouse;
   protected readonly iconGanhos = faMoneyBill;
+  protected readonly iconEntregas = faBoxOpen;
   protected readonly iconBairros = faMap;
   protected readonly iconPerfil = faUser;
 }

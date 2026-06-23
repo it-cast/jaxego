@@ -90,6 +90,9 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             @if (packageLabel()) {
               <p class="jx-active__muted">📦 {{ packageLabel() }}</p>
             }
+            @if (delivery()!.notes) {
+              <p class="jx-active__notes">📝 {{ delivery()!.notes }}</p>
+            }
           </section>
 
           <section class="jx-active__card jx-active__card--dest">
@@ -253,6 +256,13 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         margin: 0;
         font-size: var(--jx-text-sm);
         color: var(--jx-color-neutral-500);
+      }
+      .jx-active__notes {
+        margin: 0;
+        font-size: var(--jx-text-sm);
+        color: var(--jx-color-brand-600);
+        font-weight: 600;
+        font-style: italic;
       }
       .jx-active__tl {
         list-style: none;

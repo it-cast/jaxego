@@ -21,6 +21,7 @@ import {
   type DocStatus,
 } from '@jaxego/shared/components';
 import {
+  PageHeaderComponent,
   ScoreBreakdownComponent,
   ScoreChipComponent,
   type ScoreLevel,
@@ -55,13 +56,13 @@ const REASON_LABELS: Record<string, string> = {
     EmptyStateComponent,
     ScoreChipComponent,
     ScoreBreakdownComponent,
+    PageHeaderComponent,
   ],
   template: `
     <ion-content>
+      <jx-page-header title="Perfil" />
       <div class="jx-perfil">
-        <!-- Header with avatar -->
         <header class="jx-perfil__header">
-          <h1 class="jx-perfil__page-title">Perfil</h1>
           <div class="jx-perfil__avatar">
             <fa-icon [icon]="faUser" class="jx-perfil__avatar-icon" aria-hidden="true" />
           </div>
