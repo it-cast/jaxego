@@ -6,6 +6,8 @@ import {
   computed,
   signal,
 } from '@angular/core';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faClock } from '@fortawesome/free-solid-svg-icons';
 
 /** Urgency phase (UI-SPEC §4.2) — drives the color, never the only signal. */
 export type TimerPhase = 'calm' | 'attention' | 'urgent';
@@ -25,6 +27,7 @@ export type TimerPhase = 'calm' | 'attention' | 'urgent';
   selector: 'jx-offer-timer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [FaIconComponent],
   template: `
     <span
       class="jx-offer-timer"
@@ -37,7 +40,7 @@ export type TimerPhase = 'calm' | 'attention' | 'urgent';
         aria-hidden="true"
       ></span>
       <span class="jx-offer-timer__text">
-        <span aria-hidden="true">⏱</span>
+        <fa-icon [icon]="iconClock" aria-hidden="true" />
         <span class="jx-offer-timer__seconds">{{ remaining() }}s</span>
       </span>
       <span class="jx-sr-only" aria-live="polite">{{ liveLabel() }}</span>
@@ -46,6 +49,7 @@ export type TimerPhase = 'calm' | 'attention' | 'urgent';
   styleUrl: './offer-timer.component.scss',
 })
 export class OfferTimerComponent implements OnDestroy {
+  protected readonly iconClock = faClock;
   private readonly _total = signal(20);
   private readonly _remaining = signal(20);
   private readonly _liveLabel = signal('');

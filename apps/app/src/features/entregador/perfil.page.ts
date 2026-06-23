@@ -21,6 +21,7 @@ import {
   type DocStatus,
 } from '@jaxego/shared/components';
 import {
+  DotsLoaderComponent,
   PageHeaderComponent,
   ScoreBreakdownComponent,
   ScoreChipComponent,
@@ -57,9 +58,13 @@ const REASON_LABELS: Record<string, string> = {
     ScoreChipComponent,
     ScoreBreakdownComponent,
     PageHeaderComponent,
+    DotsLoaderComponent,
   ],
   template: `
     <ion-content>
+      @if (initialLoading()) {
+        <jx-dots-loader />
+      } @else {
       <jx-page-header title="Perfil" />
       <div class="jx-perfil">
         <header class="jx-perfil__header">
@@ -180,6 +185,7 @@ const REASON_LABELS: Record<string, string> = {
             </button>
           </div>
         </div>
+      }
       }
     </ion-content>
   `,
@@ -305,6 +311,7 @@ export class EntregadorPerfilPage implements OnInit {
   protected readonly faLogout = faRightFromBracket;
   protected readonly faUser = faUser;
 
+  protected readonly initialLoading = signal(true);
   protected readonly score = signal<CourierScore | null>(null);
   protected readonly profile = signal<CourierProfile | null>(null);
 
@@ -348,6 +355,7 @@ export class EntregadorPerfilPage implements OnInit {
     ]);
     this.score.set(score);
     this.profile.set(profile);
+    this.initialLoading.set(false);
   }
 
   // --- Modal de reenvio ---

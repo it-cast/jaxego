@@ -1,4 +1,7 @@
 <ion-content>
+  @if (initialLoading()) {
+    <jx-dots-loader />
+  } @else {
   <jx-page-header title="Bairros e preços" />
   <div class="jx-cobertura">
 
@@ -95,4 +98,5 @@
       {{ saving() ? 'Salvando…' : 'Salvar bairros e preços' }}
     </button>
   </div>
+  }
 </ion-content>

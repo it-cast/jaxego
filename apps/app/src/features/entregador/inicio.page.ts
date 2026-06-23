@@ -15,6 +15,7 @@ import {
   ScoreChipComponent,
   type ScoreLevel,
 } from '@jaxego/shared/components';
+import { DotsLoaderComponent } from '@jaxego/shared/components';
 import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
 import { Balance, SaldoService } from './saldo/saldo.service';
 import { AvailabilityToggleComponent } from './disponibilidade/availability-toggle.component';
@@ -59,12 +60,18 @@ const VALID_LEVELS: ScoreLevel[] = [
     OfferSheetComponent,
     MoneyComponent,
     ScoreChipComponent,
+    DotsLoaderComponent,
   ],
   template: `
     <ion-content>
+      @if (initialLoading()) {
+        <jx-dots-loader />
+      } @else {
+
+      <!-- Header -->
       <header class="jx-home-header">
         <div class="jx-home-greeting">
-          <span class="jx-home-greeting__hi">Olá!</span>
+          <span class="jx-home-greeting__hi">Olá {{ firstName() }}!</span>
         </div>
         <jx-availability-toggle
           [isOnline]="online()"
@@ -76,82 +83,62 @@ const VALID_LEVELS: ScoreLevel[] = [
 
       @if (meiPending()) {
         <jx-warn-banner
-          message="Você ainda não tem MEI ativo. Pode entregar recebendo direto da loja. Para receber pela plataforma, regularize seu MEI."
+          message="Voce ainda nao tem MEI ativo. Pode entregar recebendo direto da loja."
         />
       }
 
       <div class="jx-home-body">
         @switch (state()) {
           @case ('offline') {
-            <jx-empty-state
-              icon="🛵"
-              title="Você está offline"
-              message="Fique online para receber ofertas da sua área."
-            />
-          }
-          @case ('waiting') {
-            <div class="jx-home-cards">
-              <article class="jx-home-card jx-home-card--dark">
-                <span class="jx-home-card__eyebrow">Liberado hoje</span>
-                <jx-money [cents]="todayCents()" variant="display" label="Ganhos liberados hoje" />
-                <div class="jx-home-card--row" style="padding:0">
-                  <span class="jx-home-muted">
-                    Saldo p/ saque:
-                    <jx-money [cents]="balance()?.balance_cents ?? 0" />
-                  </span>
-                  <button type="button" class="jx-home-link" (click)="goSaldo()">
-                    Ver extrato →
-                  </button>
-                </div>
-              </article>
-
-              @if (score(); as sc) {
-                <article class="jx-home-card jx-home-card--row">
-                  <div>
-                    <span class="jx-home-card__eyebrow">Seu score</span>
-                    <jx-score-chip [level]="level()" [value]="sc.total_score" />
-                  </div>
-                  <button type="button" class="jx-home-link" (click)="goProfile()">
-                    Por quê? →
-                  </button>
-                </article>
-              }
-
-              <div class="jx-home-waiting" role="status">
-                <span class="jx-home-pulse" aria-hidden="true"></span>
-                <span>Aguardando ofertas da sua área…</span>
-              </div>
-
-              @if (recent().length) {
-                <div class="jx-home-card--row" style="padding:0">
-                  <span class="jx-home-card__eyebrow">Entregas recentes</span>
-                  <button type="button" class="jx-home-link" (click)="goEntregas()">
-                    Ver todas →
-                  </button>
-                </div>
-                @for (d of recent(); track d.id) {
-                  <article class="jx-home-card jx-home-card--row">
-                    <div>
-                      <strong>{{ stateLabel(d.state) }}</strong>
-                      <p class="jx-home-muted">{{ paymentLabel(d.payment_method) }}</p>
-                    </div>
-                    <jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" />
-                  </article>
-                }
-              }
+            <div class="jx-home-offline">
+              <div class="jx-home-offline__icon">🛵</div>
+              <h2 class="jx-home-offline__title">Você está offline</h2>
+              <p class="jx-home-offline__msg">Fique online para receber ofertas da sua área.</p>
             </div>
           }
+          @case ('waiting') {
+            <!-- Ganhos card -->
+            <article class="jx-home-earnings">
+              <span class="jx-home-earnings__label">Ganhos de hoje</span>
+              <div class="jx-home-earnings__value">
+                <jx-money [cents]="todayCents()" variant="display" label="Ganhos hoje" />
+              </div>
+              <div class="jx-home-earnings__row">
+                <span class="jx-home-earnings__balance">
+                  Saldo: <jx-money [cents]="balance()?.balance_cents ?? 0" />
+                </span>
+                <button type="button" class="jx-home-link" (click)="goSaldo()">Ver extrato →</button>
+              </div>
+            </article>
+
+            <!-- Score -->
+            @if (score(); as sc) {
+              <article class="jx-home-score" (click)="goProfile()">
+                <span class="jx-home-score__label">Seu score</span>
+                <jx-score-chip [level]="level()" [value]="sc.total_score" />
+              </article>
+            }
+
+            <!-- Waiting pulse -->
+            <div class="jx-home-waiting" role="status">
+              <span class="jx-home-pulse" aria-hidden="true"></span>
+              <span>Aguardando ofertas da sua área...</span>
+            </div>
+
+          }
           @case ('busy') {
-            <article class="jx-home-card jx-home-card--dest">
-              <span class="jx-home-card__eyebrow">Você está em uma entrega</span>
-              <strong>{{ active()?.pickup_address }}</strong>
-              <button type="button" class="jx-home-primary" (click)="goActive()">
+            <article class="jx-home-busy-card">
+              <span class="jx-home-busy-card__label">Entrega em andamento</span>
+              <strong class="jx-home-busy-card__addr">{{ active()?.pickup_address }}</strong>
+              <button type="button" class="jx-home-busy-card__btn" (click)="goActive()">
                 Abrir entrega
               </button>
             </article>
           }
           @case ('offer') {
-            <jx-empty-state icon="🔔" title="Nova oferta" message="Veja abaixo." />
+            <div class="jx-home-offer-hint">
+              <span>Nova oferta!</span>
+            </div>
           }
         }
       </div>
@@ -163,6 +150,7 @@ const VALID_LEVELS: ScoreLevel[] = [
         (accept)="acceptOffer($event)"
         (decline)="declineOffer($event)"
       />
+      }
     </ion-content>
   `,
   styleUrl: './inicio.page.scss',
@@ -170,86 +158,112 @@ const VALID_LEVELS: ScoreLevel[] = [
     `
       .jx-home-body {
         padding: var(--jx-space-4);
-      }
-      .jx-home-cards {
         display: flex;
         flex-direction: column;
         gap: var(--jx-space-3);
       }
-      .jx-home-card {
-        background: var(--jx-color-surface);
-        border: 1px solid var(--jx-color-neutral-200);
-        border-radius: var(--jx-radius-lg);
-        padding: var(--jx-space-3);
-        display: flex;
-        flex-direction: column;
-        gap: var(--jx-space-1);
+
+      /* Offline state */
+      .jx-home-offline {
+        display: flex; flex-direction: column; align-items: center;
+        gap: var(--jx-space-2); padding: var(--jx-space-6) 0; text-align: center;
       }
-      .jx-home-card--row {
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
+      .jx-home-offline__icon { font-size: 48px; }
+      .jx-home-offline__title { margin: 0; font-size: var(--jx-text-lg); font-weight: 700; color: var(--text); }
+      .jx-home-offline__msg { margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted, #888); }
+
+      /* Earnings card */
+      .jx-home-earnings {
+        background: var(--brand, #e8722a); color: #fff;
+        border-radius: 16px; padding: var(--jx-space-4);
+        display: flex; flex-direction: column; gap: var(--jx-space-2);
       }
-      .jx-home-card--dark {
-        background: var(--jx-color-neutral-800);
-        color: var(--jx-neutral-50);
-        border: 0;
+      .jx-home-earnings__label {
+        font-size: var(--jx-text-xs); text-transform: uppercase;
+        letter-spacing: 0.06em; opacity: 0.8;
       }
-      .jx-home-card--dest {
-        background: var(--jx-color-brand-50);
-        border-color: var(--jx-color-brand-100);
+      .jx-home-earnings__value { font-size: 32px; font-weight: 800; }
+      .jx-home-earnings__row {
+        display: flex; align-items: center; justify-content: space-between;
+        font-size: var(--jx-text-sm); opacity: 0.9;
       }
-      .jx-home-card__eyebrow {
-        font-family: var(--jx-font-mono);
-        font-size: var(--jx-text-xs);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--jx-color-neutral-500);
+      .jx-home-earnings__balance { font-size: var(--jx-text-xs); }
+      .jx-home-earnings .jx-home-link { color: #fff; opacity: 0.9; }
+      .jx-home-earnings { --text: #fff; }
+
+      /* Score row */
+      .jx-home-score {
+        display: flex; align-items: center; justify-content: space-between;
+        background: #fff; border: 1px solid var(--border, #eee);
+        border-radius: 12px; padding: var(--jx-space-3); cursor: pointer;
       }
-      .jx-home-card--dark .jx-home-card__eyebrow {
-        color: var(--jx-color-brand-300);
+      .jx-home-score__label {
+        font-size: var(--jx-text-sm); font-weight: 600; color: var(--text);
       }
-      .jx-home-muted {
-        margin: 0;
-        font-size: var(--jx-text-sm);
-        color: var(--jx-color-neutral-500);
-      }
-      .jx-home-link {
-        background: transparent;
-        border: 0;
-        padding: 0;
-        color: var(--jx-color-brand-600);
-        font-weight: 600;
-        cursor: pointer;
-        font-size: var(--jx-text-sm);
-        align-self: flex-start;
-      }
-      .jx-home-card--dark .jx-home-link {
-        color: var(--jx-color-brand-300);
-      }
-      .jx-home-primary {
-        border: 0;
-        border-radius: var(--jx-radius-md);
-        padding: var(--jx-space-3);
-        background: var(--jx-color-brand-500);
-        color: var(--jx-neutral-50);
-        font-weight: 700;
-        cursor: pointer;
-        min-height: 48px;
-      }
+
+      /* Waiting */
       .jx-home-waiting {
-        display: flex;
-        align-items: center;
-        gap: var(--jx-space-2);
-        color: var(--jx-color-neutral-500);
-        font-size: var(--jx-text-sm);
-        padding: var(--jx-space-2) 0;
+        display: flex; align-items: center; justify-content: center;
+        gap: var(--jx-space-2); color: var(--text-muted, #888);
+        font-size: var(--jx-text-sm); padding: var(--jx-space-3) 0;
+        height: 40vh;
       }
       .jx-home-pulse {
-        width: 8px;
-        height: 8px;
-        border-radius: var(--jx-radius-full);
-        background: var(--jx-color-brand-500);
+        width: 10px; height: 10px; border-radius: 50%;
+        background: #e84e1ba3;
+      }
+
+      /* Recent */
+      .jx-home-recent-header {
+        display: flex; align-items: center; justify-content: space-between;
+      }
+      .jx-home-section-title {
+        font-size: var(--jx-text-sm); font-weight: 700; color: var(--text);
+      }
+      .jx-home-recent {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-direction: column;
+      }
+      .jx-home-recent__item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: var(--jx-space-3) 0;
+        border-bottom: 1px solid var(--border, #eee);
+      }
+      .jx-home-recent__left { display: flex; flex-direction: column; gap: 2px; }
+      .jx-home-recent__state { font-size: var(--jx-text-sm); font-weight: 600; color: var(--text); }
+      .jx-home-recent__sub { font-size: var(--jx-text-xs); color: var(--text-muted, #888); }
+
+      /* Busy */
+      .jx-home-busy-card {
+        background: var(--brand-wash, hsl(24 80% 95%));
+        border: 1px solid var(--brand, #e8722a);
+        border-radius: 16px; padding: var(--jx-space-4);
+        display: flex; flex-direction: column; gap: var(--jx-space-2);
+      }
+      .jx-home-busy-card__label {
+        font-size: var(--jx-text-xs); text-transform: uppercase;
+        letter-spacing: 0.06em; color: var(--brand, #e8722a); font-weight: 600;
+      }
+      .jx-home-busy-card__addr { font-size: var(--jx-text-sm); color: var(--text); }
+      .jx-home-busy-card__btn {
+        min-height: 48px; border: 0; border-radius: 999px;
+        background: var(--brand, #e8722a); color: #fff;
+        font-size: var(--jx-text-md); font-weight: 700; cursor: pointer;
+      }
+
+      /* Offer hint */
+      .jx-home-offer-hint {
+        display: flex; align-items: center; justify-content: center;
+        gap: var(--jx-space-2); font-size: var(--jx-text-sm);
+        color: var(--brand, #e8722a); font-weight: 600;
+        padding: var(--jx-space-3) 0;
+      }
+
+      /* Shared */
+      .jx-home-link {
+        background: transparent; border: 0; padding: 0;
+        color: var(--brand, #e8722a); font-weight: 600;
+        cursor: pointer; font-size: var(--jx-text-xs);
       }
     `,
   ],
@@ -261,7 +275,9 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   private readonly offers = inject(OfferService);
   private readonly router = inject(Router);
 
+  protected readonly initialLoading = signal(true);
   protected readonly online = signal(false);
+  protected readonly firstName = signal('');
   protected readonly balance = signal<Balance | null>(null);
   protected readonly todayCents = signal(0);
   protected readonly score = signal<CourierScore | null>(null);
@@ -306,7 +322,10 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
       this.saldo.extract().catch(() => []),
       this.svc.profile(id),
     ]);
-    if (profile) this.online.set(profile.is_online ?? false);
+    if (profile) {
+      this.online.set(profile.is_online ?? false);
+      this.firstName.set(profile.full_name?.split(' ')[0] ?? '');
+    }
     this.balance.set(balance);
     // "Liberado hoje" = soma dos créditos liberados com data de hoje (sem endpoint novo).
     const today = new Date().toDateString();
@@ -318,6 +337,7 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     this.score.set(score);
     this.recent.set((list?.items ?? []).slice(0, 3));
     this.active.set(active);
+    this.initialLoading.set(false);
     this.pollHandle = setInterval(() => void this.pollOffer(), 4000);
   }
 
@@ -325,10 +345,16 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     if (this.pollHandle) clearInterval(this.pollHandle);
   }
 
+  private notificationSound = new Audio('notificacao.mp3');
+
   private async pollOffer(): Promise<void> {
     if (!this.online() || this.active() || this.offer() || this.processing()) return;
     try {
-      this.offer.set(await this.offers.active());
+      const offer = await this.offers.active();
+      if (offer && !this.offer()) {
+        this.notificationSound.play().catch(() => {});
+      }
+      this.offer.set(offer);
     } catch {
       // 401 re-thrown by OfferService — interceptor handles refresh
     }

@@ -7,6 +7,8 @@ import {
   computed,
   signal,
 } from '@angular/core';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faStore, faLocationDot, faMoneyBill, faRoute } from '@fortawesome/free-solid-svg-icons';
 import { WarnBannerComponent, ErrorStateComponent } from '@jaxego/shared/state';
 import { formatBrl } from '@jaxego/shared/util/money';
 import { OfferTimerComponent } from './offer-timer.component';
@@ -27,15 +29,15 @@ import type { OfferOut, OfferResult } from './offer.models';
   selector: 'jx-offer-sheet',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [OfferTimerComponent, WarnBannerComponent, ErrorStateComponent],
+  imports: [OfferTimerComponent, WarnBannerComponent, ErrorStateComponent, FaIconComponent],
   template: `
+    @if (offerData(); as o) {
     <div
       class="jx-offer-sheet"
       role="dialog"
       aria-modal="true"
-      [attr.aria-labelledby]="'offer-store-' + (offerData()?.delivery_id ?? 0)"
+      [attr.aria-labelledby]="'offer-store-' + o.delivery_id"
     >
-      @if (offerData(); as o) {
         <header class="jx-offer-sheet__head">
           <div>
             <p class="jx-offer-sheet__overline">NOVA OFERTA</p>
@@ -49,23 +51,36 @@ import type { OfferOut, OfferResult } from './offer.models';
         @if (resultState() === null) {
           <div class="jx-offer-sheet__stops">
             <div class="jx-stop jx-stop--pickup">
-              <span class="jx-stop__overline">COLETA</span>
+              <div class="jx-stop__icon-row">
+                <fa-icon [icon]="iconStore" class="jx-stop__fa" aria-hidden="true" />
+                <span class="jx-stop__overline">COLETA</span>
+              </div>
               <span class="jx-stop__line">{{ o.pickup_address }}</span>
             </div>
             <div class="jx-stop jx-stop--dropoff">
-              <span class="jx-stop__overline">ENTREGA</span>
-              <!-- RN-013: ONLY neighborhood + distance — never street/number. -->
+              <div class="jx-stop__icon-row">
+                <fa-icon [icon]="iconLocation" class="jx-stop__fa" aria-hidden="true" />
+                <span class="jx-stop__overline">ENTREGA</span>
+              </div>
               <span class="jx-stop__line">
                 {{ o.dropoff_neighborhood }} · {{ distanceKm() }}
               </span>
-              <span class="jx-stop__hint">(endereço completo após a coleta)</span>
+              <span class="jx-stop__hint">(endereco completo apos a coleta)</span>
             </div>
           </div>
 
-          <div class="jx-offer-sheet__meta">
-            <span class="jx-offer-sheet__value">Voce ganha {{ value() }}</span>
-            <span class="jx-offer-sheet__badge">{{ receiptBadge() }}</span>
+          <div class="jx-offer-sheet__value-card">
+            <fa-icon [icon]="iconMoney" class="jx-offer-sheet__value-icon" aria-hidden="true" />
+            <div class="jx-offer-sheet__value-info">
+              <span class="jx-offer-sheet__value-label">Voce ganha</span>
+              <span class="jx-offer-sheet__value-amount">{{ value() }}</span>
+            </div>
           </div>
+
+          <p class="jx-offer-sheet__receipt-text">
+            <fa-icon [icon]="iconRoute" class="jx-offer-sheet__receipt-icon" aria-hidden="true" />
+            Forma de recebimento do cliente: <strong>{{ receiptText() }}</strong>
+          </p>
 
           <div class="jx-offer-sheet__actions">
             <button
@@ -105,8 +120,8 @@ import type { OfferOut, OfferResult } from './offer.models';
             (retry)="onAccept()"
           />
         }
-      }
     </div>
+    }
   `,
   styleUrl: './offer-sheet.component.scss',
 })
@@ -133,6 +148,11 @@ export class OfferSheetComponent {
   @Output() accept = new EventEmitter<number>();
   @Output() decline = new EventEmitter<number>();
 
+  protected readonly iconStore = faStore;
+  protected readonly iconLocation = faLocationDot;
+  protected readonly iconMoney = faMoneyBill;
+  protected readonly iconRoute = faRoute;
+
   protected readonly offerData = computed(() => this._offer());
   protected readonly resultState = computed(() => this._result());
   protected readonly isProcessing = computed(() => this._processing());
@@ -142,14 +162,14 @@ export class OfferSheetComponent {
     return cents === null ? '—' : formatBrl(cents / 100);
   });
 
-  protected readonly receiptBadge = computed(() => {
+  protected readonly receiptText = computed(() => {
     const map: Record<string, string> = {
-      dinheiro: '💵 DINHEIRO',
-      maquina_loja: '💳 MAQUINA DA LOJA',
-      aplicativo: '📱 APLICATIVO',
+      dinheiro: 'Dinheiro',
+      maquina_loja: 'Maquina da loja',
+      aplicativo: 'Aplicativo',
     };
     const method = this._offer()?.receipt_method;
-    return method ? (map[method] ?? 'PAGAMENTO DIRETO 💵') : 'PAGAMENTO DIRETO 💵';
+    return method ? (map[method] ?? 'Direto') : 'Direto';
   });
 
   protected readonly distanceKm = computed(() => {

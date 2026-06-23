@@ -15,16 +15,17 @@ import {
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { EntregadorService } from '../entregador.service';
 import { PendingUploadService } from './pending-upload.service';
+import { PageHeaderComponent } from '@jaxego/shared/components';
 import { ProofKind, ProofService } from './proof.service';
 
 @Component({
   selector: 'jx-comprovacao-page',
   standalone: true,
-  imports: [ProofCaptureComponent, DirectPaymentConfirmComponent, PendingUploadBannerComponent],
+  imports: [ProofCaptureComponent, DirectPaymentConfirmComponent, PendingUploadBannerComponent, PageHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="jx-proof-page">
-      <h1 class="jx-proof-page__title">Comprovar {{ kindLabel() }}</h1>
+      <jx-page-header [title]="'Comprovar ' + kindLabel()" backLink="/entregador/entrega-ativa" />
 
       <jx-pending-upload-banner [count]="pending.count()" [online]="pending.online()" />
 
@@ -39,7 +40,7 @@ import { ProofKind, ProofService } from './proof.service';
 
       @if (photoReady() && needsReference()) {
         <div class="jx-proof-page__ref">
-          <label for="refNum">Numero do pedido (pergunte ao destinatario)</label>
+          <label for="refNum">Número do pedido (pergunte ao destinatário)</label>
           <input
             id="refNum"
             class="jx-proof-page__refinput"
@@ -50,16 +51,6 @@ import { ProofKind, ProofService } from './proof.service';
             [disabled]="referenceValidated()"
             (input)="onRefInput($event)"
           />
-          @if (!referenceValidated()) {
-            <button
-              type="button"
-              class="jx-proof-page__refbtn"
-              [disabled]="reference().length < 3 || validatingRef()"
-              (click)="validateReference()"
-            >
-              {{ validatingRef() ? 'Validando...' : 'Validar numero' }}
-            </button>
-          }
           @if (refMessage(); as msg) {
             <p
               class="jx-proof-page__ref-msg"
@@ -69,6 +60,16 @@ import { ProofKind, ProofService } from './proof.service';
             >
               {{ msg }}
             </p>
+          }
+          @if (!referenceValidated()) {
+            <button
+              type="button"
+              class="jx-proof-page__refbtn"
+              [disabled]="reference().length < 3 || validatingRef()"
+              (click)="validateReference()"
+            >
+              {{ validatingRef() ? 'Validando...' : 'Validar número' }}
+            </button>
           }
         </div>
       }
@@ -91,8 +92,8 @@ import { ProofKind, ProofService } from './proof.service';
 
       @if (lowConfidence()) {
         <p class="jx-proof-page__lowconf" role="status" aria-live="polite">
-          Nao conseguimos confirmar a localizacao. Sua entrega segue para revisao da
-          equipe — voce pode concluir mesmo assim.
+          Não conseguimos confirmar a localização. Sua entrega segue para revisao da
+          equipe — você pode concluir mesmo assim.
         </p>
       }
     </main>
@@ -210,10 +211,10 @@ export class ComprovacaoPage implements OnInit {
       const valid = await this.proof.validateReference(this.deliveryId, ref);
       if (valid) {
         this.referenceValidated.set(true);
-        this.refMessage.set('Numero do pedido correto ✓');
+        this.refMessage.set('Número do pedido correto.');
       } else {
         this.referenceValidated.set(false);
-        this.refMessage.set('Numero do pedido incorreto. Verifique e tente novamente.');
+        this.refMessage.set('Número do pedido incorreto. Verifique e tente novamente.');
       }
     } catch {
       this.referenceValidated.set(false);

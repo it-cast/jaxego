@@ -1,12 +1,10 @@
+@if (balanceState() === 'loading') {
+  <jx-dots-loader />
+} @else {
 <jx-page-header title="Saldo" />
 <section class="jx-saldo" aria-labelledby="saldo-heading">
 
-  <!-- ================= Saldo disponível ================= -->
-  @if (balanceState() === 'loading') {
-    <p class="jx-saldo__loading" role="status" aria-busy="true">
-      Carregando seu saldo…
-    </p>
-  } @else if (balanceState() === 'error') {
+  @if (balanceState() === 'error') {
     <jx-error-state
       message="Não conseguimos carregar seu saldo. Tente de novo."
       retryLabel="Tentar de novo"
@@ -167,3 +165,4 @@
     </div>
   }
 </section>
+}

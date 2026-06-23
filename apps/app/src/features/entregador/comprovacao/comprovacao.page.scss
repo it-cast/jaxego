@@ -6,9 +6,9 @@
   gap: var(--jx-space-4);
   max-width: 480px;
   margin: 0 auto;
-  padding: var(--jx-space-5) var(--jx-space-4);
+  padding: 0 var(--jx-space-4) var(--jx-space-5);
   min-height: 100dvh;
-  background: var(--surface);
+  background: #fff;
   color: var(--text);
 }
 
@@ -22,6 +22,7 @@
 .jx-proof-page__finalize {
   width: 100%;
   min-height: 50px;
+  margin-top: 2em;
   padding: var(--jx-space-3) var(--jx-space-4);
   background: var(--brand);
   color: var(--brand-contrast);
@@ -60,6 +61,7 @@
 
 .jx-proof-page__refbtn {
   min-height: 44px;
+  margin-top: 2em;
   padding: 0 var(--jx-space-4);
   background: var(--brand);
   color: var(--brand-contrast);

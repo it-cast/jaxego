@@ -10,7 +10,9 @@ import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { LiveMapComponent } from '@jaxego/shared/components/live-map/live-map.component';
-import { PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen } from '@fortawesome/free-solid-svg-icons';
+import { PageHeaderComponent, PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
 import {
   deliveryStateLabel,
   packageLabel as fmtPackage,
@@ -43,6 +45,8 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     LoadingSkeletonComponent,
     LiveMapComponent,
     PaymentBadgeComponent,
+    FaIconComponent,
+    PageHeaderComponent,
   ],
   template: `
     <ion-content>
@@ -60,6 +64,7 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
           message="Quando você aceitar uma oferta, ela aparece aqui."
         />
       } @else {
+        <jx-page-header title="Entrega ativa" backLink="/entregador/inicio" />
         <div class="jx-active">
           @if (mapLat() !== null && mapLng() !== null) {
             <jx-live-map
@@ -69,95 +74,84 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             />
           }
 
-          <div class="jx-active__head">
-            <div class="jx-active__staterow">
-              <span class="jx-active__state">{{ stateLabel() }}</span>
-              @if (delivery()!.receipt_method) {
-                <span class="jx-active__receipt-badge">{{ receiptLabel() }}</span>
-              } @else {
-                <jx-payment-badge [method]="payMethod()" />
-              }
-            </div>
-            <span class="jx-active__step">{{ stepLabel() }}</span>
-          </div>
-
           <section class="jx-active__card">
-            <span class="jx-active__eyebrow">Coleta</span>
-            <strong>{{ delivery()!.pickup_address }}</strong>
+            <div class="jx-active__card-row">
+              <fa-icon [icon]="iconStore" class="jx-active__card-icon" aria-hidden="true" />
+              <span class="jx-active__eyebrow">Coleta</span>
+            </div>
+            @if (delivery()!.merchant_trade_name) {
+              <strong class="jx-active__store-name">{{ delivery()!.merchant_trade_name }}</strong>
+            }
+            <p class="jx-active__muted">{{ delivery()!.pickup_address }}</p>
             @if (delivery()!.pickup_neighborhood) {
               <p class="jx-active__muted">{{ delivery()!.pickup_neighborhood }}</p>
             }
+            @if (delivery()!.items_description) {
+              <div class="jx-active__info-line">
+                <fa-icon [icon]="iconBox" class="jx-active__info-icon" aria-hidden="true" />
+                <span>{{ delivery()!.items_description }} (x{{ delivery()!.items_quantity }})</span>
+              </div>
+            }
             @if (packageLabel()) {
-              <p class="jx-active__muted">📦 {{ packageLabel() }}</p>
+              <div class="jx-active__info-line">
+                <fa-icon [icon]="iconBox" class="jx-active__info-icon" aria-hidden="true" />
+                <span>{{ packageLabel() }}</span>
+              </div>
             }
             @if (delivery()!.notes) {
-              <p class="jx-active__notes">📝 {{ delivery()!.notes }}</p>
+              <div class="jx-active__info-line jx-active__info-line--notes">
+                <fa-icon [icon]="iconNotes" class="jx-active__info-icon" aria-hidden="true" />
+                <span>{{ delivery()!.notes }}</span>
+              </div>
             }
           </section>
 
           <section class="jx-active__card jx-active__card--dest">
-            <span class="jx-active__eyebrow">Entrega</span>
+            <div class="jx-active__card-row">
+              <fa-icon [icon]="iconLocation" class="jx-active__card-icon jx-active__card-icon--dest" aria-hidden="true" />
+              <span class="jx-active__eyebrow">Entrega</span>
+            </div>
             @if (delivery()!.dropoff_address) {
               <strong>
-                {{ delivery()!.dropoff_address }}@if (delivery()!.dropoff_number) {,
-                  {{ delivery()!.dropoff_number }}}
+                {{ delivery()!.dropoff_address }}@if (delivery()!.dropoff_number) {, {{ delivery()!.dropoff_number }}}
               </strong>
               @if (delivery()!.recipient_name) {
-                <p class="jx-active__muted">
-                  {{ delivery()!.recipient_name }} ·
-                  {{ delivery()!.recipient_phone_masked }}
-                </p>
+                <p class="jx-active__muted">{{ delivery()!.recipient_name }}</p>
               }
             } @else {
               <strong>Bairro de destino</strong>
-              <p class="jx-active__muted">
-                Endereço exato liberado após a coleta.
-              </p>
+              <p class="jx-active__muted">Endereco exato liberado apos a coleta.</p>
             }
           </section>
 
-          <ol class="jx-active__tl">
-            @for (s of steps(); track s.key) {
-              <li
-                [class.jx-active__tl--done]="s.done"
-                [class.jx-active__tl--cur]="s.current"
-              >
-                {{ s.label }}
-              </li>
-            }
-          </ol>
+          @if (delivery()!.receipt_method || delivery()!.courier_collection_method) {
+            <div class="jx-active__payment-info">
+              @if (delivery()!.receipt_method) {
+                <p class="jx-active__receipt-line">
+                  Forma de recebimento do cliente: <strong>{{ receiptLabel() }}</strong>
+                </p>
+              }
+              @if (delivery()!.courier_collection_method) {
+                <p class="jx-active__receipt-line">
+                  Forma de cobranca do entregador: <strong>{{ collectionLabel() }}</strong>
+                </p>
+              }
+            </div>
+          }
 
           @if (delivery()!.state === 'COLETADA' && !delivery()!.courier_collection_method) {
-            <button
-              type="button"
-              class="jx-active__primary"
-              (click)="showCollectionModal.set(true)"
-            >
+            <button type="button" class="jx-active__primary" (click)="showCollectionModal.set(true)">
               Cobrar entrega
             </button>
           } @else {
-            <button
-              type="button"
-              class="jx-active__primary"
-              (click)="advance()"
-            >
+            <button type="button" class="jx-active__primary" (click)="advance()">
               {{ primaryLabel() }}
             </button>
           }
 
-          @if (delivery()!.courier_collection_method) {
-            <p class="jx-active__collection-badge">
-              {{ collectionLabel() }}
-            </p>
-          }
-
-          @if (delivery()!.state === 'COLETADA') {
-            <button
-              type="button"
-              class="jx-active__secondary"
-              (click)="refusal()"
-            >
-              Destinatário ausente / recusou
+          @if (delivery()!.courier_collection_method && delivery()!.state === 'COLETADA') {
+            <button type="button" class="jx-active__secondary" (click)="refusal()">
+              Destinatario ausente / recusou
             </button>
           }
 
@@ -165,29 +159,17 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             <div class="jx-active__overlay" (click)="showCollectionModal.set(false)">
               <div class="jx-active__modal" (click)="$event.stopPropagation()">
                 <h2 class="jx-active__modal-title">Como vai cobrar?</h2>
-                <button
-                  type="button"
-                  class="jx-active__modal-opt"
-                  (click)="setCollection('in_hand')"
-                >
-                  <span class="jx-active__modal-icon">💵</span>
+                <button type="button" class="jx-active__modal-opt" (click)="setCollection('in_hand')">
+                  <fa-icon [icon]="iconHand" class="jx-active__modal-fa" aria-hidden="true" />
                   <span class="jx-active__modal-label">Recebi em maos</span>
                   <span class="jx-active__modal-desc">Dinheiro ou PIX direto para voce</span>
                 </button>
-                <button
-                  type="button"
-                  class="jx-active__modal-opt"
-                  (click)="setCollection('pix_app')"
-                >
-                  <span class="jx-active__modal-icon">📱</span>
+                <button type="button" class="jx-active__modal-opt" (click)="setCollection('pix_app')">
+                  <fa-icon [icon]="iconMobile" class="jx-active__modal-fa" aria-hidden="true" />
                   <span class="jx-active__modal-label">Cobrar com PIX</span>
                   <span class="jx-active__modal-desc">Gerar QR Code para o destinatario pagar</span>
                 </button>
-                <button
-                  type="button"
-                  class="jx-active__modal-cancel"
-                  (click)="showCollectionModal.set(false)"
-                >
+                <button type="button" class="jx-active__modal-cancel" (click)="showCollectionModal.set(false)">
                   Cancelar
                 </button>
               </div>
@@ -236,10 +218,12 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         background: var(--jx-color-surface);
         border: 1px solid var(--jx-color-neutral-200);
         border-radius: var(--jx-radius-lg);
-        padding: var(--jx-space-3);
         display: flex;
         flex-direction: column;
         gap: var(--jx-space-1);
+      }
+      .jx-active__card + .jx-active__card {
+        margin-top: 2em;
       }
       .jx-active__card--dest {
         border-color: var(--jx-color-brand-100);
@@ -308,49 +292,78 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         cursor: pointer;
         min-height: 48px;
       }
+      .jx-active__store-name {
+        font-size: var(--jx-text-md); color: var(--text);
+      }
+      .jx-active__card-row {
+        display: flex; align-items: center; gap: var(--jx-space-2);
+      }
+      .jx-active__card-icon {
+        font-size: 18px; color: var(--brand, #e8722a); margin-top: 2px; flex-shrink: 0;
+      }
+      .jx-active__card-icon--dest {
+        color: var(--jx-color-brand-600, #c2410c);
+      }
+      .jx-active__info-line {
+        display: flex; align-items: center; gap: var(--jx-space-2);
+        font-size: var(--jx-text-sm); color: var(--text-muted, #888);
+        padding-left: 26px;
+      }
+      .jx-active__info-line--notes {
+        color: var(--brand, #e8722a); font-weight: 600; font-style: italic;
+      }
+      .jx-active__info-icon {
+        font-size: 14px; color: var(--text-muted, #888); flex-shrink: 0;
+      }
+      .jx-active__info-line--notes .jx-active__info-icon {
+        color: var(--brand, #e8722a);
+      }
+      .jx-active__payment-info {
+        display: flex; flex-direction: column; gap: var(--jx-space-1);
+        margin-bottom: 2em;
+      }
+      .jx-active__receipt-line {
+        margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted, #888);
+      }
+      .jx-active__receipt-line strong { color: var(--text); }
       .jx-active__primary {
-        background: var(--jx-color-neutral-800);
-        color: var(--jx-neutral-50);
+        background: var(--brand, #e8722a);
+        color: #fff;
+        border-radius: 999px;
       }
       .jx-active__secondary {
         background: transparent;
-        color: var(--jx-color-semantic-error);
-        border: 1px solid var(--jx-color-neutral-300);
-      }
-      .jx-active__receipt-badge {
-        display: inline-block;
-        padding: 2px 8px;
+        color: var(--brand, #e8722a);
+        border: 2px solid var(--brand, #e8722a);
         border-radius: 999px;
-        font-size: var(--jx-text-xs);
-        font-weight: 600;
-        background: var(--jx-color-brand-50, #fff7ed);
-        color: var(--jx-color-brand-600, #c2410c);
-      }
-      .jx-active__collection-badge {
-        margin: 0;
-        text-align: center;
-        font-size: var(--jx-text-sm);
-        font-weight: 600;
-        color: var(--jx-color-brand-600);
       }
       .jx-active__overlay {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0,0,0,0);
         display: flex;
         align-items: flex-end;
         justify-content: center;
         z-index: 100;
+        animation: jx-fade-in 0.25s ease forwards;
+      }
+      @keyframes jx-fade-in {
+        to { background: rgba(0,0,0,0.5); }
       }
       .jx-active__modal {
         width: 100%;
         max-width: 420px;
         background: var(--jx-color-surface, #fff);
-        border-radius: var(--jx-radius-xl) var(--jx-radius-xl) 0 0;
+        border-radius: 20px 20px 0 0;
         padding: var(--jx-space-5);
         display: flex;
         flex-direction: column;
         gap: var(--jx-space-3);
+        animation: jx-slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @keyframes jx-slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
       }
       .jx-active__modal-title {
         margin: 0;
@@ -364,19 +377,18 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         align-items: center;
         gap: var(--jx-space-1);
         padding: var(--jx-space-4);
-        background: var(--jx-color-neutral-50, #f9f9f9);
-        border: 2px solid var(--jx-color-neutral-200);
+        background: #fff;
+        border: 2px solid #e8722a69;
         border-radius: var(--jx-radius-lg);
         cursor: pointer;
         font: inherit;
         text-align: center;
       }
       .jx-active__modal-opt:hover {
-        border-color: var(--jx-color-brand-500);
-        background: var(--jx-color-brand-50);
+        background: var(--brand-wash, hsl(24 80% 95%));
       }
-      .jx-active__modal-icon {
-        font-size: var(--jx-text-2xl);
+      .jx-active__modal-fa {
+        font-size: 24px; color: var(--brand, #e8722a);
       }
       .jx-active__modal-label {
         font-weight: 700;
@@ -403,6 +415,13 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly svc = inject(EntregadorService);
   private readonly router = inject(Router);
+
+  protected readonly iconStore = faStore;
+  protected readonly iconLocation = faLocationDot;
+  protected readonly iconBox = faBoxOpen;
+  protected readonly iconNotes = faNoteSticky;
+  protected readonly iconHand = faHandHoldingDollar;
+  protected readonly iconMobile = faMobileScreen;
 
   protected readonly delivery = signal<CourierDelivery | null>(null);
   protected readonly loading = signal(true);
@@ -469,8 +488,8 @@ export class EntregadorEntregaAtivaPage implements OnInit {
 
   protected primaryLabel(): string {
     return this.delivery()?.state === 'COLETADA'
-      ? 'Cheguei no destino — comprovar'
-      : 'Coletei — tirar foto';
+      ? 'Cheguei no destino'
+      : 'Coletei';
   }
 
   protected steps(): { key: string; label: string; done: boolean; current: boolean }[] {

@@ -42,8 +42,6 @@ import { WarnBannerComponent } from '@jaxego/shared/state';
         </span>
       </button>
 
-      <span class="jx-sr-only" aria-live="polite">{{ liveLabel() }}</span>
-
       @if (disabled) {
         <jx-warn-banner
           message="Termine sua validação para ficar online e receber ofertas."

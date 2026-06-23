@@ -26,6 +26,7 @@ interface PillMeta {
   selector: 'jx-geofence-pill',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { style: 'display: block; width: 100%;' },
   template: `
     <span
       class="jx-geofence-pill"

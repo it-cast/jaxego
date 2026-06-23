@@ -2,7 +2,9 @@
 // color reinforces. Tokens only — no hex (Gate 2).
 
 .jx-geofence-pill {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
   align-items: center;
   gap: var(--jx-space-2);
   min-height: 44px; // touch / readability (accessibility-pro)

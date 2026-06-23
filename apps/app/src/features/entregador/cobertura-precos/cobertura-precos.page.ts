@@ -8,7 +8,7 @@ import {
   ErrorStateComponent,
   WarnBannerComponent,
 } from '@jaxego/shared/state';
-import { PageHeaderComponent } from '@jaxego/shared/components';
+import { PageHeaderComponent, DotsLoaderComponent } from '@jaxego/shared/components';
 import { formatBrl, maskBrl, parseBrl } from '@jaxego/shared/util/money';
 import {
   CoverageItem,
@@ -47,6 +47,7 @@ interface KmBand {
     ErrorStateComponent,
     WarnBannerComponent,
     PageHeaderComponent,
+    DotsLoaderComponent,
   ],
   templateUrl: './cobertura-precos.page.html',
   styleUrl: './cobertura-precos.page.scss',
@@ -68,6 +69,7 @@ export class CoberturaPrecosPage implements OnInit {
   protected kmBands: KmBand[] = [{ upToKm: '', price: '' }];
   protected returnPct = 0;
 
+  protected readonly initialLoading = signal(true);
   protected readonly saving = signal(false);
   protected readonly saved = signal(false);
   protected readonly saveError = signal<string | null>(null);
@@ -125,6 +127,8 @@ export class CoberturaPrecosPage implements OnInit {
       }
     } catch {
       // Catalog empty or unreachable — empty-state guides the user.
+    } finally {
+      this.initialLoading.set(false);
     }
   }
 

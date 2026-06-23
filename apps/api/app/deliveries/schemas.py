@@ -197,6 +197,8 @@ class CourierDeliveryOut(BaseModel):
     state: str
     payment_method: str
     proof_method: str
+    # Store name
+    merchant_trade_name: str | None = None
     # Pickup (the store) — always visible to the assigned courier.
     pickup_address: str
     pickup_neighborhood: str | None
@@ -238,6 +240,9 @@ class CourierDeliveryListItem(BaseModel):
     public_token: str
     state: str
     payment_method: str
+    pickup_address: str | None = None
+    dropoff_address: str | None = None
+    dropoff_number: str | None = None
     dropoff_neighborhood_id: int
     distance_m: int | None
     estimate_min_cents: int | None

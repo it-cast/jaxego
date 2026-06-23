@@ -13,7 +13,7 @@ import {
   DataTableState,
 } from '@jaxego/shared/components/data-table/data-table.component';
 import { MoneyComponent } from '@jaxego/shared/components/money/money.component';
-import { PageHeaderComponent } from '@jaxego/shared/components';
+import { PageHeaderComponent, DotsLoaderComponent } from '@jaxego/shared/components';
 import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
 import { formatCents } from '@jaxego/shared/util/money';
 import {
@@ -49,7 +49,7 @@ const WITHDRAWAL_STATUS_META: Record<
   selector: 'jx-entregador-saldo-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DataTableComponent, MoneyComponent, ErrorStateComponent, PageHeaderComponent],
+  imports: [DataTableComponent, MoneyComponent, ErrorStateComponent, PageHeaderComponent, DotsLoaderComponent],
   templateUrl: './saldo.page.html',
   styleUrl: './saldo.page.scss',
 })

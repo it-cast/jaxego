@@ -103,32 +103,70 @@
   color: var(--text-muted);
 }
 
-.jx-offer-sheet__meta {
-  margin-top: var(--jx-space-4);
-  padding: var(--jx-space-3) 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+.jx-stop__icon-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--jx-space-2);
+  gap: var(--jx-space-1);
 }
 
-// The run value — the decisive number, editorial-technical (mono brand).
-.jx-offer-sheet__value {
-  font-family: var(--jx-font-mono);
+.jx-stop__fa {
+  font-size: var(--jx-text-sm);
+  color: var(--brand);
+}
+
+.jx-stop--dropoff .jx-stop__fa {
+  color: var(--brand-hover);
+}
+
+.jx-offer-sheet__value-card {
+  margin-top: var(--jx-space-4);
+  padding: var(--jx-space-4);
+  background: var(--brand-wash);
+  border-radius: var(--jx-radius-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+}
+
+.jx-offer-sheet__value-icon {
   font-size: var(--jx-text-2xl);
+  color: var(--brand);
+}
+
+.jx-offer-sheet__value-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.jx-offer-sheet__value-label {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+  font-weight: var(--jx-weight-medium);
+}
+
+.jx-offer-sheet__value-amount {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xl);
   font-weight: var(--jx-weight-extrabold);
   color: var(--brand);
 }
 
-.jx-offer-sheet__badge {
-  font-size: var(--jx-text-2xs);
-  font-weight: var(--jx-weight-bold);
-  padding: 2px var(--jx-space-2);
-  border-radius: var(--jx-radius-full);
-  background: var(--warning-bg);
-  color: var(--warning);
+.jx-offer-sheet__receipt-text {
+  margin: var(--jx-space-2) 0 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+}
+
+.jx-offer-sheet__receipt-text strong {
+  color: var(--text);
+}
+
+.jx-offer-sheet__receipt-icon {
+  font-size: var(--jx-text-sm);
+  color: var(--brand);
 }
 
 .jx-offer-sheet__actions {

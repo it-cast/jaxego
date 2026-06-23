@@ -42,3 +42,4 @@ export {
   type PaymentMethod,
 } from './payment-badge/payment-badge.component';
 export { PageHeaderComponent } from './page-header/page-header.component';
+export { DotsLoaderComponent } from './dots-loader/dots-loader.component';

@@ -57,6 +57,7 @@ from app.couriers.schemas import (
 from app.couriers.view import view_document_url
 from app.db.session import get_session
 from app.deliveries import service as delivery_service
+from app.merchants.models import Merchant
 from app.deliveries.schemas import (
     CourierDeliveryListItem,
     CourierDeliveryListOut,
@@ -272,7 +273,7 @@ async def set_availability(
 _COURIER_DROPOFF_REVEALED = frozenset({"COLETADA", "ENTREGUE", "RECUSADA_NO_DESTINO", "FINALIZADA"})
 
 
-def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
+def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | None = None) -> CourierDeliveryOut:
     """Serialize a delivery for the assigned courier, hiding destination PII
     until pickup (RN-013). The recipient phone is masked even when revealed."""
     revealed = delivery.state in _COURIER_DROPOFF_REVEALED
@@ -282,6 +283,7 @@ def _courier_delivery_out(delivery, recipient) -> CourierDeliveryOut:
         state=delivery.state,
         payment_method=delivery.payment_method,
         proof_method=delivery.proof_method,
+        merchant_trade_name=merchant_trade_name,
         pickup_address=delivery.pickup_address,
         pickup_neighborhood=delivery.pickup_neighborhood,
         pickup_lat=delivery.pickup_lat,
@@ -326,7 +328,9 @@ async def get_active_delivery(
     result = await delivery_service.get_courier_active_delivery(session, courier_id=courier.id)
     if result is None:
         return None
-    return _courier_delivery_out(*result)
+    delivery, recipient = result
+    merchant = await session.get(Merchant, delivery.merchant_id)
+    return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None)
 
 
 @router.get("/{courier_id}/deliveries", response_model=CourierDeliveryListOut)
@@ -349,6 +353,9 @@ async def list_courier_deliveries(
             public_token=d.public_token,
             state=d.state,
             payment_method=d.payment_method,
+            pickup_address=d.pickup_address,
+            dropoff_address=d.dropoff_address,
+            dropoff_number=d.dropoff_number,
             dropoff_neighborhood_id=d.dropoff_neighborhood_id,
             distance_m=d.distance_m,
             estimate_min_cents=d.estimate_min_cents,
@@ -376,7 +383,8 @@ async def get_courier_delivery(
     delivery, recipient = await delivery_service.get_courier_delivery(
         session, courier_id=courier.id, delivery_id=delivery_id
     )
-    return _courier_delivery_out(delivery, recipient)
+    merchant = await session.get(Merchant, delivery.merchant_id)
+    return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None)
 
 
 @router.patch("/{courier_id}/deliveries/{delivery_id}/collection-method")

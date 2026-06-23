@@ -9,8 +9,8 @@ import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faBoxOpen } from '@fortawesome/free-solid-svg-icons';
-import { PageHeaderComponent, MoneyComponent } from '@jaxego/shared/components';
+import { faBoxOpen, faCircle, faLocationDot } from '@fortawesome/free-solid-svg-icons';
+import { PageHeaderComponent, MoneyComponent, DotsLoaderComponent } from '@jaxego/shared/components';
 import { deliveryStateLabel } from '@jaxego/shared/util/delivery-format';
 import {
   EmptyStateComponent,
@@ -31,14 +31,17 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
     LoadingSkeletonComponent,
     MoneyComponent,
     FaIconComponent,
+    DotsLoaderComponent,
   ],
   template: `
     <ion-content>
+      @if (loading()) {
+        <jx-dots-loader />
+      } @else {
       <jx-page-header title="Entregas" />
 
       <div class="jx-entregas">
-        @if (loading()) {
-          <jx-loading-skeleton />
+        @if (error()) {
         } @else if (error()) {
           <jx-error-state
             message="Nao foi possivel carregar suas entregas."
@@ -67,22 +70,38 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
           </div>
           <ul class="jx-entregas__list">
             @for (d of filtered(); track d.id) {
-              <li
-                class="jx-entregas__item"
-                [class.jx-entregas__item--active]="isActive(d.state)"
-                (click)="open(d)"
-              >
-                <div class="jx-entregas__icon">
-                  <fa-icon [icon]="iconBox" aria-hidden="true" />
+              <li class="jx-entregas__card" (click)="open(d)">
+                <div class="jx-entregas__card-head">
+                  <div class="jx-entregas__card-icon">
+                    <fa-icon [icon]="iconBox" aria-hidden="true" />
+                  </div>
+                  <span class="jx-entregas__card-title">
+                    {{ shortDate(d.created_at) }} | #{{ d.id }}
+                  </span>
+                  <span class="jx-entregas__badge"
+                    [class.jx-entregas__badge--ok]="d.state === 'FINALIZADA'"
+                    [class.jx-entregas__badge--active]="isActive(d.state)"
+                    [class.jx-entregas__badge--cancel]="d.state === 'CANCELADA'"
+                  >{{ stateLabel(d.state) }}</span>
                 </div>
-                <div class="jx-entregas__info">
-                  <strong class="jx-entregas__state">{{ stateLabel(d.state) }}</strong>
-                  <p class="jx-entregas__meta">
-                    {{ shortDate(d.created_at) }} · #{{ d.id }}
-                  </p>
-                </div>
-                <div class="jx-entregas__value">
-                  <jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" />
+                <div class="jx-entregas__timeline">
+                  <div class="jx-entregas__tl-step">
+                    <fa-icon [icon]="iconCircle" class="jx-entregas__tl-dot jx-entregas__tl-dot--pickup" aria-hidden="true" />
+                    <div>
+                      <strong class="jx-entregas__tl-label">{{ d.pickup_address || 'Coleta' }}</strong>
+                      <p class="jx-entregas__tl-sub"><jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" /></p>
+                    </div>
+                  </div>
+                  <div class="jx-entregas__tl-line"></div>
+                  <div class="jx-entregas__tl-step">
+                    <fa-icon [icon]="iconPin" class="jx-entregas__tl-dot jx-entregas__tl-dot--drop" aria-hidden="true" />
+                    <div>
+                      <strong class="jx-entregas__tl-label">{{ d.dropoff_address || 'Entrega' }}@if (d.dropoff_number) {, {{ d.dropoff_number }}}</strong>
+                      @if (d.distance_m) {
+                        <p class="jx-entregas__tl-sub">{{ formatKm(d.distance_m) }}</p>
+                      }
+                    </div>
+                  </div>
                 </div>
               </li>
             }
@@ -160,6 +179,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
           <button type="button" class="jx-detail-modal__close" (click)="closeDetail()">Fechar</button>
         </div>
       }
+      }
     </ion-content>
   `,
   styles: [`
@@ -200,53 +220,48 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
       cursor: pointer;
     }
     .jx-entregas__list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
+      list-style: none; margin: 0; padding: 0;
+      display: flex; flex-direction: column; gap: var(--jx-space-3);
     }
-    .jx-entregas__item {
-      display: flex;
-      align-items: center;
-      gap: var(--jx-space-3);
-      padding: var(--jx-space-3) 0;
-      border-bottom: 1px solid var(--border, hsl(0 0% 90%));
+    .jx-entregas__card {
+      background: #fff; border: 1px solid var(--border, #eee);
+      border-radius: 16px; padding: var(--jx-space-3);
+      display: flex; flex-direction: column; gap: var(--jx-space-3);
       cursor: pointer;
     }
-    .jx-entregas__icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
+    .jx-entregas__card-head {
+      display: flex; align-items: center; gap: var(--jx-space-2);
+    }
+    .jx-entregas__card-icon {
+      width: 40px; height: 40px; border-radius: 50%;
       background: var(--brand-wash, hsl(24 80% 95%));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: var(--brand, #e8722a);
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: var(--brand, #e8722a); flex-shrink: 0;
     }
-    .jx-entregas__info {
-      flex: 1;
-      min-width: 0;
+    .jx-entregas__card-title {
+      flex: 1; font-size: var(--jx-text-sm); font-weight: 600; color: var(--text);
     }
-    .jx-entregas__state {
-      display: block;
-      font-size: var(--jx-text-sm);
-      font-weight: 600;
-      color: var(--text);
+    .jx-entregas__badge {
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      background: var(--surface-sunken, #f0f0f0); color: var(--text-muted, #888);
     }
-    .jx-entregas__meta {
-      margin: 0;
-      font-size: var(--jx-text-xs);
-      color: var(--text-muted, #888);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+    .jx-entregas__badge--ok { background: hsl(120 40% 93%); color: hsl(120 50% 35%); }
+    .jx-entregas__badge--active { background: var(--brand-wash, hsl(24 80% 95%)); color: var(--brand, #e8722a); }
+    .jx-entregas__badge--cancel { background: hsl(0 70% 95%); color: hsl(0 60% 45%); }
+    .jx-entregas__timeline {
+      display: flex; flex-direction: column; padding-left: var(--jx-space-2);
     }
-    .jx-entregas__value {
-      flex-shrink: 0;
+    .jx-entregas__tl-step {
+      display: flex; align-items: flex-start; gap: var(--jx-space-2);
     }
+    .jx-entregas__tl-dot { font-size: 10px; margin-top: 4px; flex-shrink: 0; }
+    .jx-entregas__tl-dot--pickup { color: var(--brand, #e8722a); }
+    .jx-entregas__tl-dot--drop { color: hsl(0 70% 55%); }
+    .jx-entregas__tl-label { font-size: var(--jx-text-sm); color: var(--text); }
+    .jx-entregas__tl-sub { margin: 0; font-size: var(--jx-text-xs); color: var(--text-muted, #888); }
+    .jx-entregas__tl-line { width: 1px; height: 16px; background: var(--border, #ddd); margin-left: 4px; }
 
     /* Detail bottom-sheet */
     .jx-detail-backdrop {
@@ -377,7 +392,13 @@ export class EntregadorEntregasPage implements OnInit {
   }
 
   protected readonly iconBox = faBoxOpen;
+  protected readonly iconCircle = faCircle;
+  protected readonly iconPin = faLocationDot;
   protected readonly stateLabel = deliveryStateLabel;
+
+  protected formatKm(m: number): string {
+    return `~${(m / 1000).toFixed(1).replace('.', ',')} km`;
+  }
 
   protected onFilterDate(e: Event): void {
     this.filterDate.set((e.target as HTMLInputElement).value);

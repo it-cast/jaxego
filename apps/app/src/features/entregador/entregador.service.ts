@@ -62,6 +62,7 @@ export interface CourierDelivery {
   state: string;
   payment_method: string;
   proof_method: string;
+  merchant_trade_name: string | null;
   courier_collection_method: string | null;
   receipt_method: string | null;
   notes: string | null;
@@ -96,6 +97,9 @@ export interface CourierDeliveryListItem {
   public_token: string;
   state: string;
   payment_method: string;
+  pickup_address: string | null;
+  dropoff_address: string | null;
+  dropoff_number: string | null;
   dropoff_neighborhood_id: number;
   distance_m: number | null;
   estimate_min_cents: number | null;
