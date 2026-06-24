@@ -147,7 +147,8 @@ export class NovaEntregaPage {
   constructor() {
     void this.loadNeighborhoods();
     const me = this.auth.me();
-    const pickup = me?.address || me?.trade_name;
+    const parts = [me?.address, me?.address_number, me?.address_neighborhood].filter(Boolean);
+    const pickup = parts.length ? parts.join(', ') : me?.trade_name;
     if (pickup) {
       this.form.controls.pickup_address.setValue(pickup);
     }
@@ -174,6 +175,9 @@ export class NovaEntregaPage {
         this.form.controls.declared_value.setValue(masked, { emitEvent: false });
       }
     });
+    this.form.controls.dropoff_neighborhood_id.valueChanges.subscribe((v) => {
+      if (v) void this.loadEstimate(v);
+    });
     this.form.controls.payment_method.valueChanges.subscribe((v) => {
       this.paymentMethod.set((v as 'direct' | 'pix' | 'card') ?? 'direct');
       this.deliveryRefused.set(false);
@@ -181,6 +185,13 @@ export class NovaEntregaPage {
     });
     this.form.controls.proof_method.valueChanges.subscribe((v) => {
       this.proofMethod.set(v ?? 'photo');
+      const ref = this.form.controls.reference_number;
+      if (v === 'photo_reference') {
+        ref.setValidators([Validators.required]);
+      } else {
+        ref.clearValidators();
+      }
+      ref.updateValueAndValidity();
     });
     this.form.controls.receipt_method.valueChanges.subscribe((v) => {
       this.receiptMethod.set(v ?? 'dinheiro');
@@ -202,6 +213,16 @@ export class NovaEntregaPage {
     this.deliveryRefused.set(false);
     this.cardBlob = null;
     this.form.controls.payment_method.setValue('direct');
+  }
+
+  private async loadEstimate(neighborhoodId: number): Promise<void> {
+    this.estimating.set(true);
+    const res = await this.service.estimate(neighborhoodId);
+    this.estimateMin.set(res.estimate_min_cents);
+    this.estimateMax.set(res.estimate_max_cents);
+    this.courierCount.set(res.courier_count);
+    this.noCouriersWarning.set(res.courier_count === 0);
+    this.estimating.set(false);
   }
 
   private async loadNeighborhoods(): Promise<void> {

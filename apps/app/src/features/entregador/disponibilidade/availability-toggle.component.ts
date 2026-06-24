@@ -37,7 +37,6 @@ import { WarnBannerComponent } from '@jaxego/shared/state';
           <span class="jx-availability__thumb"></span>
         </span>
         <span class="jx-availability__label">
-          <span aria-hidden="true">{{ online() ? '●' : '○' }}</span>
           {{ online() ? 'Online' : 'Offline' }}
         </span>
       </button>

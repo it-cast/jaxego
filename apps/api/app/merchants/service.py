@@ -24,6 +24,7 @@ from typing import Literal, cast
 
 import structlog
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas.models import Area
@@ -225,7 +226,11 @@ async def signup(
         platform_role="user",
     )
     session.add(user)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        raise DuplicateAccountError()
 
     merchant = Merchant(
         area_id=area.id,
@@ -235,6 +240,9 @@ async def signup(
         category=body.category,
         phone_e164=body.phone_e164,
         email=body.email,
+        address=body.address,
+        address_number=body.address_number,
+        address_neighborhood=body.address_neighborhood,
         status=status,
         lat=None,
         lng=None,

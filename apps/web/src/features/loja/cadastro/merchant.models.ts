@@ -21,6 +21,9 @@ export interface SignupRequest {
   email: string;
   password: string;
   consent: boolean;
+  address?: string;
+  address_number?: string;
+  address_neighborhood?: string;
   plan_code?: string;
 }
 

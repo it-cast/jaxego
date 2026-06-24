@@ -6,13 +6,12 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { StateBadgeComponent } from '@jaxego/shared/components/state-badge/state-badge.component';
 import { LiveMapComponent } from '@jaxego/shared/components/live-map/live-map.component';
-import { PaymentBadgeComponent } from '@jaxego/shared/components';
 import {
   packageLabel as fmtPackage,
-  paymentMethodOf,
 } from '@jaxego/shared/util/delivery-format';
 import {
   TrackingState,
@@ -34,9 +33,9 @@ import { DeliveryService } from '../entregas/delivery.service';
   selector: 'jx-entrega-detalhe-page',
   standalone: true,
   imports: [
+    FormsModule,
     TrackingTimelineComponent,
     StateBadgeComponent,
-    PaymentBadgeComponent,
     LiveMapComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,7 +45,6 @@ import { DeliveryService } from '../entregas/delivery.service';
         <header class="jx-detail__header">
           <h1 class="jx-detail__title">Entrega #{{ d.id }}</h1>
           <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
-          <jx-payment-badge [method]="payOf(d.payment_method)" />
         </header>
 
         @if (trackingState(d) === 'CRIADA') {
@@ -84,6 +82,57 @@ import { DeliveryService } from '../entregas/delivery.service';
               <button type="button" class="jx-detail__cancel" (click)="cancel(d)">
                 {{ cancelLabel(d) }}
               </button>
+            }
+
+            @if (d.state === 'FINALIZADA' && !rated()) {
+              <section class="jx-detail__rating">
+                <h3 class="jx-detail__rating-title">Avaliar entregador</h3>
+                <div class="jx-detail__stars">
+                  @for (s of [1, 2, 3, 4, 5]; track s) {
+                    <button
+                      type="button"
+                      class="jx-detail__star"
+                      [class.jx-detail__star--on]="s <= selectedStars()"
+                      (click)="selectedStars.set(s)"
+                      [attr.aria-label]="s + ' estrela' + (s > 1 ? 's' : '')"
+                    >
+                      ★
+                    </button>
+                  }
+                </div>
+                <textarea
+                  class="jx-detail__comment"
+                  [(ngModel)]="ratingComment"
+                  placeholder="Comentario (opcional)"
+                  maxlength="500"
+                  rows="2"
+                ></textarea>
+                <button
+                  type="button"
+                  class="jx-detail__rate-btn"
+                  [disabled]="selectedStars() === 0 || ratingSubmitting()"
+                  (click)="submitRating(d)"
+                >
+                  {{ ratingSubmitting() ? 'Enviando...' : 'Enviar avaliacao' }}
+                </button>
+              </section>
+            }
+
+            @if (rated()) {
+              <section class="jx-detail__rating-done">
+                <h3 class="jx-detail__rating-title">Sua avaliacao</h3>
+                <div class="jx-detail__stars-display">
+                  @for (s of [1, 2, 3, 4, 5]; track s) {
+                    <span class="jx-detail__star-fixed" [class.jx-detail__star-fixed--on]="s <= selectedStars()">★</span>
+                  }
+                </div>
+                @if (ratingComment.trim()) {
+                  <p class="jx-detail__rating-comment">"{{ ratingComment }}"</p>
+                }
+                @if (justRated()) {
+                  <p class="jx-detail__rated-msg">Avaliacao enviada. Obrigado!</p>
+                }
+              </section>
             }
           </aside>
         </div>
@@ -136,6 +185,11 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   protected readonly delivery = signal<DeliveryListItem | null>(null);
   protected readonly notFound = signal(false);
+  protected readonly selectedStars = signal(0);
+  protected readonly rated = signal(false);
+  protected readonly justRated = signal(false);
+  protected readonly ratingSubmitting = signal(false);
+  protected ratingComment = '';
 
   private deliveryId = 0;
   private pollHandle: ReturnType<typeof setInterval> | null = null;
@@ -158,6 +212,14 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
       return;
     }
     this.delivery.set(d);
+    if (d.state === 'FINALIZADA') {
+      const existing = await this.service.getRating(d.id);
+      if (existing) {
+        this.selectedStars.set(existing.stars);
+        this.ratingComment = existing.comment ?? '';
+        this.rated.set(true);
+      }
+    }
   }
 
   private async poll(): Promise<void> {
@@ -173,7 +235,6 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
     return d.state as TrackingState;
   }
 
-  protected readonly payOf = paymentMethodOf;
   protected readonly packageLabel = fmtPackage;
 
   /** Coords do destino para o mapa, ou null (lint/type-safe). */
@@ -192,6 +253,17 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
     if (d.state === 'CRIADA') return 'Cancelar (sem custo)';
     if (d.state === 'ACEITA') return 'Cancelar (cobra 50%)';
     return 'Cancelar (cobra 100% + retorno)';
+  }
+
+  protected async submitRating(d: DeliveryListItem): Promise<void> {
+    if (this.selectedStars() === 0 || this.ratingSubmitting()) return;
+    this.ratingSubmitting.set(true);
+    const ok = await this.service.rate(d.id, this.selectedStars(), this.ratingComment.trim() || null);
+    this.ratingSubmitting.set(false);
+    if (ok) {
+      this.rated.set(true);
+      this.justRated.set(true);
+    }
   }
 
   protected async cancel(d: DeliveryListItem): Promise<void> {

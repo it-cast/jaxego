@@ -11,7 +11,7 @@ import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { LiveMapComponent } from '@jaxego/shared/components/live-map/live-map.component';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen, faMapLocationDot } from '@fortawesome/free-solid-svg-icons';
 import { PageHeaderComponent, PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
 import {
   deliveryStateLabel,
@@ -137,6 +137,20 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
                 </p>
               }
             </div>
+          }
+
+          @if (delivery()!.state === 'ACEITA') {
+            <a class="jx-active__route-btn" [href]="pickupMapsUrl()" target="_blank">
+              <fa-icon [icon]="iconMap" aria-hidden="true" />
+              Ver rota ate a coleta
+            </a>
+          }
+
+          @if (delivery()!.state === 'COLETADA' && delivery()!.dropoff_address) {
+            <a class="jx-active__route-btn" [href]="routeMapsUrl()" target="_blank">
+              <fa-icon [icon]="iconMap" aria-hidden="true" />
+              Ver rota ate a entrega
+            </a>
           }
 
           @if (delivery()!.state === 'COLETADA' && !delivery()!.courier_collection_method) {
@@ -292,6 +306,19 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         cursor: pointer;
         min-height: 48px;
       }
+      .jx-active__map-link {
+        display: inline-flex; align-items: center; gap: var(--jx-space-1);
+        color: var(--brand, #e8722a); font-size: var(--jx-text-sm);
+        font-weight: 600; text-decoration: none; margin-top: var(--jx-space-1);
+      }
+      .jx-active__route-btn {
+        display: flex; align-items: center; justify-content: center; gap: var(--jx-space-2);
+        min-height: 48px; width: 100%;
+        background: #fff; border: 2px solid var(--brand, #e8722a);
+        border-radius: 999px; color: var(--brand, #e8722a);
+        font-size: var(--jx-text-sm); font-weight: 700;
+        text-decoration: none; cursor: pointer;
+      }
       .jx-active__store-name {
         font-size: var(--jx-text-md); color: var(--text);
       }
@@ -422,6 +449,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly iconNotes = faNoteSticky;
   protected readonly iconHand = faHandHoldingDollar;
   protected readonly iconMobile = faMobileScreen;
+  protected readonly iconMap = faMapLocationDot;
 
   protected readonly delivery = signal<CourierDelivery | null>(null);
   protected readonly loading = signal(true);
@@ -505,11 +533,33 @@ export class EntregadorEntregaAtivaPage implements OnInit {
 
   protected receiptLabel(): string {
     const map: Record<string, string> = {
-      dinheiro: '💵 Dinheiro',
-      maquina_loja: '💳 Máquina da loja',
-      aplicativo: '📱 Aplicativo',
+      dinheiro: 'Dinheiro',
+      maquina_loja: 'Máquina da loja',
+      aplicativo: 'Aplicativo',
+      ja_pago: 'Já pago',
     };
     return map[this.delivery()?.receipt_method ?? ''] ?? '';
+  }
+
+  protected pickupMapsUrl(): string {
+    const d = this.delivery();
+    if (!d) return '';
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d.pickup_address)}&travelmode=driving`;
+  }
+
+  protected dropoffMapsUrl(): string {
+    const d = this.delivery();
+    if (!d?.dropoff_address) return '';
+    const addr = d.dropoff_number ? `${d.dropoff_address}, ${d.dropoff_number}` : d.dropoff_address;
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}&travelmode=driving`;
+  }
+
+  protected routeMapsUrl(): string {
+    const d = this.delivery();
+    if (!d?.dropoff_address) return '';
+    const origin = encodeURIComponent(d.pickup_address);
+    const dest = encodeURIComponent(d.dropoff_number ? `${d.dropoff_address}, ${d.dropoff_number}` : d.dropoff_address);
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
   }
 
   protected collectionLabel(): string {

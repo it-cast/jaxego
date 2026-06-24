@@ -35,7 +35,6 @@ from app.workers.lifecycle import (
     purge_locations,
 )
 from app.workers.revalidate import revalidate_receita
-from app.workers.scores import snapshot_scores
 from app.workers.tasks import (
     charge_subscriptions_daily,
     close_platform_invoices,
@@ -86,8 +85,6 @@ class WorkerSettings:
         # Phase 12: public-API idempotency purge + outbound webhook delivery.
         purge_idempotency_keys,
         deliver_due_webhooks,
-        # Phase 13: daily score snapshot (idempotent, no financial effect — ADR-013).
-        snapshot_scores,
         # Phase 13: appeal SLA enforcement (auto-revert + alert, idempotent — LOW-1).
         enforce_appeal_sla,
         # Phase 15: back-office financial crons (fatura/bloqueio/conciliação — idempotent).
@@ -118,8 +115,6 @@ class WorkerSettings:
         cron(purge_idempotency_keys, minute={23}),
         # Phase 12 — sweep due webhook deliveries every minute (drives the 8× backoff).
         cron(deliver_due_webhooks, minute=set(range(0, 60))),
-        # Phase 13 — daily score snapshot at 05:00 UTC (1/dia/courier, idempotent).
-        cron(snapshot_scores, hour={5}, minute={0}),
         # Phase 13 — enforce appeal SLA every 5 min (auto-revert past-due undecided).
         cron(enforce_appeal_sla, minute=set(range(0, 60, 5))),
         # Re-dispatch CRIADA deliveries with no active offer every 5 min (fluxos.md E1).

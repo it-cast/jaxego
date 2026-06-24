@@ -26,7 +26,7 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
           <fa-icon [icon]="iconCheck" aria-hidden="true" />
         </div>
         <h1 class="jx-done__title">
-          Entrega <span class="jx-done__accent">concluida!</span>
+          Entrega <span class="jx-done__accent">concluída!</span>
         </h1>
 
         @if (delivery(); as d) {
@@ -178,7 +178,7 @@ export class EntregadorConcluidaPage implements OnInit {
 
   protected stateLabel(state: string): string {
     const map: Record<string, string> = {
-      ENTREGUE: 'Entregue ao destinatario',
+      ENTREGUE: 'Entregue ao destinatário',
       RECUSADA_NO_DESTINO: 'Recusada no destino',
       FINALIZADA: 'Finalizada',
     };
@@ -188,14 +188,15 @@ export class EntregadorConcluidaPage implements OnInit {
   protected receiptLabel(method: string): string {
     const map: Record<string, string> = {
       dinheiro: 'Dinheiro',
-      maquina_loja: 'Maquina da loja',
+      maquina_loja: 'Máquina da loja',
       aplicativo: 'Aplicativo',
+      ja_pago: 'Já pago',
     };
     return map[method] ?? method;
   }
 
   protected collectionLabel(method: string): string {
-    return method === 'pix_app' ? 'PIX' : 'Em maos';
+    return method === 'pix_app' ? 'PIX' : 'Em mãos';
   }
 
   protected goHome(): void {

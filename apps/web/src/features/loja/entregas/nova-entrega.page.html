@@ -8,7 +8,7 @@
     <jx-field
       label="Endereço de coleta"
       formControlName="pickup_address"
-      placeholder="Rua, número"
+      placeholder="Rua, Av., ..."
       hint="Pré-preenchido com o endereço da sua loja. Edite se a coleta for em outro lugar."
     />
   </fieldset>
@@ -19,7 +19,7 @@
     <jx-field
       label="Endereço de entrega"
       formControlName="dropoff_address"
-      placeholder="Rua, número"
+      placeholder="Rua, Av., ..."
     />
     <jx-field
       label="Número"
@@ -109,12 +109,6 @@
       </div>
     </div>
     <jx-field
-      label="Nº do pedido (opcional)"
-      formControlName="reference_number"
-      [mono]="true"
-      placeholder="2851"
-    />
-    <jx-field
       label="Observações para o entregador (opcional)"
       formControlName="notes"
       placeholder="Cuidado, não virar a caixa"
@@ -124,39 +118,35 @@
   <!-- Comprovação -->
   <fieldset class="jx-nova__section">
     <legend>Comprovação</legend>
-    <div role="radiogroup" aria-label="Método de comprovação" class="jx-nova__radios">
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="proofMethod() === 'photo'">
-        <input type="radio" formControlName="proof_method" value="photo" />
-        <span>Foto na entrega <small>padrão</small></span>
-      </label>
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="proofMethod() === 'photo_reference'">
-        <input type="radio" formControlName="proof_method" value="photo_reference" />
-        <span>Foto + nº do pedido</span>
-      </label>
-      <label class="jx-nova__radio jx-nova__radio--off">
-        <input type="radio" disabled aria-disabled="true" />
-        <span>Foto + código <small class="jx-nova__soon">em breve</small></span>
-      </label>
-    </div>
+    <label class="jx-nova__select">
+      <span>Tipo de comprovação</span>
+      <select formControlName="proof_method">
+        <option value="photo">Foto na entrega</option>
+        <option value="photo_reference">Foto + nº do pedido</option>
+      </select>
+    </label>
+    @if (proofMethod() === 'photo_reference') {
+      <jx-field
+        label="Nº do pedido"
+        formControlName="reference_number"
+        [mono]="true"
+        placeholder="2851"
+      />
+    }
   </fieldset>
 
   <!-- Recebimento -->
   <fieldset class="jx-nova__section">
     <legend>Recebimento</legend>
-    <div role="radiogroup" aria-label="Forma de recebimento" class="jx-nova__radios">
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="receiptMethod() === 'dinheiro'">
-        <input type="radio" formControlName="receipt_method" value="dinheiro" />
-        <span>Dinheiro</span>
-      </label>
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="receiptMethod() === 'maquina_loja'">
-        <input type="radio" formControlName="receipt_method" value="maquina_loja" />
-        <span>Maquina da loja</span>
-      </label>
-      <label class="jx-nova__radio" [class.jx-nova__radio--sel]="receiptMethod() === 'aplicativo'">
-        <input type="radio" formControlName="receipt_method" value="aplicativo" />
-        <span>Aplicativo</span>
-      </label>
-    </div>
+    <label class="jx-nova__select">
+      <span>Como o cliente vai pagar</span>
+      <select formControlName="receipt_method">
+        <option value="dinheiro">Dinheiro</option>
+        <option value="maquina_loja">Máquina da loja</option>
+        <option value="aplicativo">Aplicativo</option>
+        <option value="ja_pago">Já pago (não receber)</option>
+      </select>
+    </label>
   </fieldset>
 
   @if (noCouriersWarning()) {

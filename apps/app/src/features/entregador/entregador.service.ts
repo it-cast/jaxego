@@ -13,19 +13,17 @@ import { firstValueFrom } from 'rxjs';
  * `courierId` comes from AuthService.me(). Money is INTEGER cents (DRV-009);
  * destination PII (full address/recipient) is only present AFTER pickup (RN-013).
  */
-export interface ScoreComponent {
-  component: string;
-  raw: number;
-  weight: number;
-  contribution: number;
+export interface CourierScore {
+  avg_stars: number;
+  total_ratings: number;
 }
 
-export interface CourierScore {
-  courier_id: number;
-  snapshot_date: string;
-  total_score: number;
-  level: string;
-  components: ScoreComponent[];
+export interface RatingItem {
+  id: number;
+  stars: number;
+  comment: string | null;
+  merchant_name: string | null;
+  created_at: string | null;
 }
 
 export interface AvailabilityResult {
@@ -178,6 +176,23 @@ export class EntregadorService {
         { collection_method: method },
       ),
     );
+  }
+
+  async updateProfile(courierId: number, data: { full_name?: string; password?: string; current_password?: string }): Promise<boolean> {
+    try {
+      await firstValueFrom(this.http.patch(`/v1/couriers/${courierId}/profile`, data));
+      return true;
+    } catch { return false; }
+  }
+
+  async listRatings(courierId: number, limit = 10, offset = 0): Promise<{ items: RatingItem[]; total: number }> {
+    try {
+      return await firstValueFrom(
+        this.http.get<{ items: RatingItem[]; total: number }>(
+          `/v1/couriers/${courierId}/ratings`, { params: { limit, offset } }
+        )
+      );
+    } catch { return { items: [], total: 0 }; }
   }
 
   async listDeliveries(courierId: number): Promise<CourierDeliveryList> {

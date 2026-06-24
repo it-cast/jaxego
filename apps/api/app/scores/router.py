@@ -1,56 +1,53 @@
-"""/v1/scores + /v1/admin/scores endpoints (REQ-020 / ADR-013 — read-only, TH-05).
-
-There is NO write endpoint for a score (TH-05 — a note cannot be set by hand; it is
-derived by the daily job). Two reads:
-
-- `GET /v1/couriers/{courier_id}/score` — the courier sees their OWN latest snapshot
-  (ownership enforced: the courier row must belong to the caller's user).
-- `GET /v1/admin/scores/{courier_id}` — the area admin sees the breakdown for any
-  courier in their area (area in the WHERE clause — TH-03 → 404 outside scope).
-
-The breakdown (component → raw → weight → contribution) is the explainability
-requirement (ADR-013). No PII is in the response (only the score math).
-"""
+"""/v1/couriers/{id}/score — average of ratings from last 90 days."""
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from sqlalchemy import select, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import AreaScopeDep, CurrentUser, require_role
 from app.core.exceptions import NotFoundError
 from app.couriers.models import Courier
 from app.db.session import get_session
-from app.scores import service
-from app.scores.schemas import CourierScoreRead
+from app.merchants.models import Merchant
+from app.ratings.models import CourierRating
 
 router = APIRouter(prefix="/couriers", tags=["scores"])
 admin_router = APIRouter(prefix="/admin/scores", tags=["scores-admin"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
-
-def _to_read(snapshot) -> CourierScoreRead:  # noqa: ANN001 — ORM row
-    return CourierScoreRead(
-        courier_id=snapshot.courier_id,
-        snapshot_date=snapshot.snapshot_date,
-        total_score=float(snapshot.total_score),
-        level=snapshot.level,
-        components=snapshot.components,
-    )
+RATING_WINDOW_DAYS = 90
 
 
-@router.get("/{courier_id}/score", response_model=CourierScoreRead)
+async def _calc_score(session: AsyncSession, courier_id: int) -> dict:
+    cutoff = datetime.now(UTC) - timedelta(days=RATING_WINDOW_DAYS)
+    row = (
+        await session.execute(
+            select(
+                sa_func.avg(CourierRating.stars).label("avg"),
+                sa_func.count(CourierRating.id).label("total"),
+            ).where(
+                CourierRating.courier_id == courier_id,
+                CourierRating.created_at >= cutoff,
+            )
+        )
+    ).first()
+    avg = round(float(row.avg), 1) if row and row.avg else 0.0
+    total = int(row.total) if row else 0
+    return {"avg_stars": avg, "total_ratings": total}
+
+
+@router.get("/{courier_id}/score")
 async def get_my_score(
     courier_id: int,
     user: CurrentUser,
     session: SessionDep,
-) -> CourierScoreRead:
-    """The courier's OWN latest snapshot. Ownership in the WHERE clause (→ 404)."""
-    # The courier row must belong to the caller — ownership is part of the query.
+) -> dict:
     courier = (
         await session.execute(
             select(Courier).where(
@@ -60,22 +57,61 @@ async def get_my_score(
         )
     ).scalar_one_or_none()
     if courier is None:
-        raise NotFoundError("Entregador não encontrado.")
-    snapshot = await service.latest_snapshot(session, courier_id=courier.id)
-    if snapshot is None:
-        raise NotFoundError("Score ainda não calculado.")
-    return _to_read(snapshot)
+        raise NotFoundError("Entregador nao encontrado.")
+    return await _calc_score(session, courier.id)
 
 
-@admin_router.get("/{courier_id}", response_model=CourierScoreRead)
+@router.get("/{courier_id}/ratings")
+async def list_my_ratings(
+    courier_id: int,
+    user: CurrentUser,
+    session: SessionDep,
+    limit: int = 10,
+    offset: int = 0,
+) -> dict:
+    courier = (
+        await session.execute(
+            select(Courier).where(Courier.id == courier_id, Courier.user_id == user.id)
+        )
+    ).scalar_one_or_none()
+    if courier is None:
+        raise NotFoundError("Entregador nao encontrado.")
+    from sqlalchemy import func
+    total = (
+        await session.execute(
+            select(func.count()).select_from(CourierRating).where(CourierRating.courier_id == courier.id)
+        )
+    ).scalar() or 0
+    rows = (
+        await session.execute(
+            select(CourierRating, Merchant.trade_name)
+            .join(Merchant, CourierRating.merchant_id == Merchant.id)
+            .where(CourierRating.courier_id == courier.id)
+            .order_by(CourierRating.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+    ).all()
+    return {
+        "items": [
+            {
+                "id": r.id,
+                "stars": r.stars,
+                "comment": r.comment,
+                "merchant_name": trade_name,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r, trade_name in rows
+        ],
+        "total": total,
+    }
+
+
+@admin_router.get("/{courier_id}")
 async def get_courier_score(
     courier_id: int,
     session: SessionDep,
     admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
     scope: AreaScopeDep,
-) -> CourierScoreRead:
-    """Area admin sees a courier's breakdown. Area in the WHERE clause (TH-03 → 404)."""
-    snapshot = await service.latest_snapshot(session, courier_id=courier_id, area_id=scope)
-    if snapshot is None:
-        raise NotFoundError("Score não encontrado.")
-    return _to_read(snapshot)
+) -> dict:
+    return await _calc_score(session, courier_id)

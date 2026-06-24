@@ -105,6 +105,8 @@ async def get_profile(
         id=merchant.id,
         trade_name=merchant.trade_name,
         address=merchant.address,
+        address_number=merchant.address_number,
+        address_neighborhood=merchant.address_neighborhood,
         category=merchant.category,
         email=merchant.email,
     )
@@ -133,12 +135,18 @@ async def update_profile(
         merchant.trade_name = body.trade_name
     if body.address is not None:
         merchant.address = body.address
+    if body.address_number is not None:
+        merchant.address_number = body.address_number
+    if body.address_neighborhood is not None:
+        merchant.address_neighborhood = body.address_neighborhood
     await session.flush()
     await session.commit()
     return MerchantProfileRead(
         id=merchant.id,
         trade_name=merchant.trade_name,
         address=merchant.address,
+        address_number=merchant.address_number,
+        address_neighborhood=merchant.address_neighborhood,
         category=merchant.category,
         email=merchant.email,
     )

@@ -108,6 +108,28 @@ async def create_delivery(
     return result
 
 
+@router.get("/estimate")
+async def estimate_delivery(
+    dropoff_neighborhood_id: int,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> dict:
+    from app.deliveries.estimate import eligible_online_prices_cents, median_cents
+    prices = await eligible_online_prices_cents(
+        session,
+        area_id=scope.area_id,
+        pickup_nbhd_id=dropoff_neighborhood_id,
+        dropoff_nbhd_id=dropoff_neighborhood_id,
+        distance_m=None,
+    )
+    estimate = median_cents(prices)
+    return {
+        "estimate_min_cents": estimate,
+        "estimate_max_cents": estimate,
+        "courier_count": len(prices),
+    }
+
+
 @router.get("", response_model=DeliveryListOut)
 async def list_deliveries(
     scope: MerchantScopeDep,

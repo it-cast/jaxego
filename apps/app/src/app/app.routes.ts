@@ -49,6 +49,27 @@ const entregadorRoutes: Routes = [
           ),
       },
       {
+        path: 'perfil/editar-dados',
+        loadComponent: () =>
+          import('../features/entregador/perfil/editar-dados.page').then(
+            (m) => m.EditarDadosPage
+          ),
+      },
+      {
+        path: 'perfil/documentacao',
+        loadComponent: () =>
+          import('../features/entregador/perfil/documentacao.page').then(
+            (m) => m.DocumentacaoPage
+          ),
+      },
+      {
+        path: 'perfil/avaliacoes',
+        loadComponent: () =>
+          import('../features/entregador/perfil/avaliacoes.page').then(
+            (m) => m.AvaliacoesPage
+          ),
+      },
+      {
         path: 'cobertura',
         loadComponent: () =>
           import(

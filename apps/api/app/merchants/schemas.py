@@ -48,6 +48,9 @@ class MerchantSignupBody(BaseModel):
     password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
     # LGPD: explicit, non-pre-checked consent is required to submit (TH-09).
     consent: bool
+    address: str | None = Field(default=None, max_length=255)
+    address_number: str | None = Field(default=None, max_length=20)
+    address_neighborhood: str | None = Field(default=None, max_length=120)
     # Optional chosen plan; defaults to Free. A paid plan -> pending_payment (E3).
     plan_code: str | None = Field(default=None, max_length=32)
 
@@ -121,6 +124,8 @@ class MerchantProfileRead(BaseModel):
     id: int
     trade_name: str
     address: str | None = None
+    address_number: str | None = None
+    address_neighborhood: str | None = None
     category: str
     email: str
 
@@ -130,6 +135,8 @@ class MerchantProfileUpdate(BaseModel):
 
     trade_name: str | None = Field(default=None, min_length=1, max_length=120)
     address: str | None = Field(default=None, max_length=255)
+    address_number: str | None = Field(default=None, max_length=20)
+    address_neighborhood: str | None = Field(default=None, max_length=120)
 
 
 class PlanRead(BaseModel):

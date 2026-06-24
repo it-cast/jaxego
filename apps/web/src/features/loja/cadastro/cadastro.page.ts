@@ -8,7 +8,7 @@ import {
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faLocationCrosshairs } from '@fortawesome/free-solid-svg-icons';
 import {
   ErrorStateComponent,
   LoadingSkeletonComponent,
@@ -85,6 +85,10 @@ export class CadastroLojaPage {
   protected readonly showPassword = signal(false);
   protected readonly faEye = faEye;
   protected readonly faEyeSlash = faEyeSlash;
+  protected readonly iconLocation = faLocationCrosshairs;
+  protected readonly gpsLoading = signal(false);
+  protected readonly gpsError = signal<string | null>(null);
+  protected readonly gpsFilled = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     account_type: ['cnpj' as 'cnpj' | 'cpf', Validators.required],
@@ -100,8 +104,6 @@ export class CadastroLojaPage {
     rua: [''],
     numero: [''],
     bairro: [''],
-    cidade: [''],
-    uf: [''],
     consent: [false, Validators.requiredTrue],
   });
 
@@ -146,7 +148,6 @@ export class CadastroLojaPage {
     const area = this.areas().find((a) => a.id === Number(areaId));
     this.form.patchValue({
       area_id: area?.id ?? 0,
-      cidade: area?.name ?? this.form.controls.cidade.value,
     });
     this.noArea.set(false);
   }
@@ -232,9 +233,45 @@ export class CadastroLojaPage {
     this.form.patchValue({
       rua: res.logradouro ?? '',
       bairro: res.bairro ?? '',
-      cidade: res.localidade ?? '',
-      uf: res.uf ?? '',
     });
+  }
+
+  protected async fillFromGps(): Promise<void> {
+    if (!navigator.geolocation) {
+      this.gpsError.set('Seu navegador não suporta geolocalização.');
+      return;
+    }
+    this.gpsLoading.set(true);
+    this.gpsError.set(null);
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+      );
+      const { latitude, longitude } = pos.coords;
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+        { headers: { 'Accept-Language': 'pt-BR' } }
+      );
+      if (!resp.ok) { this.gpsError.set('Não foi possível obter o endereço.'); return; }
+      const data = await resp.json();
+      const addr = data.address ?? {};
+      const cep = (addr.postcode ?? '').replace(/\D/g, '');
+      const masked = cep.length === 8 ? cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : '';
+      this.form.patchValue({
+        cep: masked,
+        rua: addr.road ?? '',
+        numero: addr.house_number ?? '',
+        bairro: addr.suburb ?? addr.neighbourhood ?? '',
+      });
+      if (masked) this.form.controls.cep.setValue(masked);
+      this.gpsFilled.set(true);
+    } catch (err: any) {
+      if (err?.code === 1) this.gpsError.set('Permissão de localização negada. Habilite nas configurações do navegador.');
+      else if (err?.code === 3) this.gpsError.set('Tempo esgotado ao obter localização. Tente novamente.');
+      else this.gpsError.set('Não foi possível obter sua localização.');
+    } finally {
+      this.gpsLoading.set(false);
+    }
   }
 
   private async loadPlans(): Promise<void> {
@@ -273,15 +310,16 @@ export class CadastroLojaPage {
       email: f.email,
       password: f.password,
       consent: f.consent,
+      address: f.rua || undefined,
+      address_number: f.numero || undefined,
+      address_neighborhood: f.bairro || undefined,
       plan_code: this.selectedPlan(),
     });
     this.loading.set(false);
 
     if (result.ok) {
       this.clearDraft();
-      void this.router.navigate(['/loja/inicio'], {
-        queryParams: { status: result.data?.status },
-      });
+      void this.router.navigate(['/loja/cadastro/sucesso']);
       return;
     }
 

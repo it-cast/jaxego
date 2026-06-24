@@ -13,6 +13,8 @@ interface MerchantProfile {
   id: number;
   trade_name: string;
   address: string | null;
+  address_number: string | null;
+  address_neighborhood: string | null;
   category: string;
   email: string;
 }
@@ -35,6 +37,8 @@ export class LojaConfigPage implements OnInit {
   protected form = {
     trade_name: '',
     address: '',
+    address_number: '',
+    address_neighborhood: '',
   };
   protected email = '';
   protected category = '';
@@ -51,6 +55,8 @@ export class LojaConfigPage implements OnInit {
       );
       this.form.trade_name = profile.trade_name;
       this.form.address = profile.address ?? '';
+      this.form.address_number = profile.address_number ?? '';
+      this.form.address_neighborhood = profile.address_neighborhood ?? '';
       this.email = profile.email;
       this.category = profile.category;
     } catch {
@@ -68,6 +74,8 @@ export class LojaConfigPage implements OnInit {
         this.http.patch('/v1/merchants/profile', {
           trade_name: this.form.trade_name,
           address: this.form.address || null,
+          address_number: this.form.address_number || null,
+          address_neighborhood: this.form.address_neighborhood || null,
         }),
       );
       this.msg.set({ text: 'Dados atualizados com sucesso.', tone: 'ok' });

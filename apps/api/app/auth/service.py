@@ -201,6 +201,8 @@ async def resolve_surface(session: AsyncSession, user: User) -> MeResponse:
             merchant_id=link.merchant_id,
             trade_name=merchant.trade_name if merchant else None,
             address=merchant.address if merchant else None,
+            address_number=merchant.address_number if merchant else None,
+            address_neighborhood=merchant.address_neighborhood if merchant else None,
             status=merchant.status if merchant else None,
         )
 

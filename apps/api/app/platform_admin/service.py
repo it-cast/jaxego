@@ -21,7 +21,7 @@ from app.audit.service import write_audit
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery
 from app.merchants.models import Merchant
-from app.scores.models import CourierScoreSnapshot
+from app.ratings.models import CourierRating
 
 
 async def _audit_cross_area(session: AsyncSession, *, actor_id: int, action: str) -> None:
@@ -100,22 +100,20 @@ async def search_couriers(
 
     rows: list[dict] = []
     for c in couriers:
-        snapshot = (
+        rating_row = (
             await session.execute(
-                select(CourierScoreSnapshot)
-                .where(CourierScoreSnapshot.courier_id == c.id)
-                .order_by(CourierScoreSnapshot.snapshot_date.desc())
-                .limit(1)
+                select(func.avg(CourierRating.stars)).where(CourierRating.courier_id == c.id)
             )
-        ).scalar_one_or_none()
+        ).scalar()
+        avg = round(float(rating_row), 1) if rating_row else None
         rows.append(
             {
                 "courier_id": c.id,
                 "area_id": c.area_id,
                 "full_name": c.full_name,
                 "status": c.status,
-                "score_total": float(snapshot.total_score) if snapshot else None,
-                "score_level": snapshot.level if snapshot else None,
+                "score_total": avg * 20 if avg else None,
+                "score_level": None,
             }
         )
     return rows

@@ -12,8 +12,6 @@ import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import {
   MoneyComponent,
-  ScoreChipComponent,
-  type ScoreLevel,
 } from '@jaxego/shared/components';
 import { DotsLoaderComponent } from '@jaxego/shared/components';
 import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
@@ -33,14 +31,6 @@ import { deliveryStateLabel } from '@jaxego/shared/util/delivery-format';
 /** Mutually-exclusive dispatch states on the home (UI-SPEC §2.3). */
 type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
 
-const VALID_LEVELS: ScoreLevel[] = [
-  'probation',
-  'bronze',
-  'prata',
-  'ouro',
-  'diamante',
-];
-
 /**
  * Início do entregador (tela 04 / tpl-c-home, F-05). Smart component: loads the
  * courier's real saldo, score and recent deliveries, owns the online toggle
@@ -59,7 +49,6 @@ const VALID_LEVELS: ScoreLevel[] = [
     AvailabilityToggleComponent,
     OfferSheetComponent,
     MoneyComponent,
-    ScoreChipComponent,
     DotsLoaderComponent,
   ],
   template: `
@@ -111,11 +100,11 @@ const VALID_LEVELS: ScoreLevel[] = [
               </div>
             </article>
 
-            <!-- Score -->
+            <!-- Avaliacao -->
             @if (score(); as sc) {
-              <article class="jx-home-score" (click)="goProfile()">
-                <span class="jx-home-score__label">Seu score</span>
-                <jx-score-chip [level]="level()" [value]="sc.total_score" />
+              <article class="jx-home-score" (click)="goAvaliacoes()">
+                <span class="jx-home-score__label">Minha avaliação</span>
+                <span class="jx-home-score__value">{{ sc.avg_stars > 0 ? sc.avg_stars : '-' }} ★</span>
               </article>
             }
 
@@ -199,6 +188,9 @@ const VALID_LEVELS: ScoreLevel[] = [
       }
       .jx-home-score__label {
         font-size: var(--jx-text-sm); font-weight: 600; color: var(--text);
+      }
+      .jx-home-score__value {
+        font-size: var(--jx-text-sm); font-weight: 700; color: var(--brand, #e8722a);
       }
 
       /* Waiting */
@@ -300,11 +292,6 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     if (this.active()) return 'busy';
     if (!this.online()) return 'offline';
     return this.offer() ? 'offer' : 'waiting';
-  });
-
-  protected readonly level = computed<ScoreLevel>(() => {
-    const lvl = this.score()?.level as ScoreLevel | undefined;
-    return lvl && VALID_LEVELS.includes(lvl) ? lvl : 'probation';
   });
 
   private get courierId(): number | null {
@@ -417,5 +404,8 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   }
   protected goEntregas(): void {
     void this.router.navigate(['/entregador/entregas']);
+  }
+  protected goAvaliacoes(): void {
+    void this.router.navigate(['/entregador/perfil/avaliacoes'], { queryParams: { from: 'inicio' } });
   }
 }

@@ -387,6 +387,7 @@ export class EntregadorEntregasPage implements OnInit {
       dinheiro: 'Dinheiro',
       maquina_loja: 'Maquina da loja',
       aplicativo: 'Aplicativo',
+      ja_pago: 'Ja pago',
     };
     return map[method] ?? method;
   }

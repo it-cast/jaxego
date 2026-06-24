@@ -59,5 +59,7 @@ export interface Me {
   merchant_id: number | null;
   trade_name: string | null;
   address: string | null;
+  address_number: string | null;
+  address_neighborhood: string | null;
   status: string | null;
 }

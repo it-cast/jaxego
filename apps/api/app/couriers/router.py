@@ -442,6 +442,30 @@ async def get_courier_profile(
     )
 
 
+@router.patch("/{courier_id}/profile")
+async def update_courier_profile(
+    courier_id: int,
+    body: dict,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    if "full_name" in body and body["full_name"]:
+        courier.full_name = body["full_name"]
+    if "password" in body and body["password"]:
+        from app.core.security import hash_password, verify_password
+        current = body.get("current_password", "")
+        ok, _ = verify_password(user.password_hash, current)
+        if not ok:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=400, detail="Senha atual incorreta")
+        user.password_hash = hash_password(body["password"])
+    await session.flush()
+    await session.commit()
+    return {"ok": True}
+
+
 # ---------------------------------------------------------------------------
 # Admin of the area — review item-a-item (TH-09: area in the WHERE clause).
 # ---------------------------------------------------------------------------

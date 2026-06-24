@@ -14,6 +14,9 @@ import {
   faRightFromBracket,
   faChevronRight,
   faUser,
+  faPenToSquare,
+  faFolderOpen,
+  faStar,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import {
@@ -23,9 +26,6 @@ import {
 import {
   DotsLoaderComponent,
   PageHeaderComponent,
-  ScoreBreakdownComponent,
-  ScoreChipComponent,
-  type ScoreLevel,
 } from '@jaxego/shared/components';
 import { EmptyStateComponent } from '@jaxego/shared/state';
 import {
@@ -36,7 +36,6 @@ import {
 } from './entregador.service';
 import { CourierCadastroService } from './cadastro/cadastro.service';
 
-const VALID_LEVELS: ScoreLevel[] = ['probation', 'bronze', 'prata', 'ouro', 'diamante'];
 
 const REASON_LABELS: Record<string, string> = {
   ilegivel: 'Ilegível',
@@ -55,8 +54,6 @@ const REASON_LABELS: Record<string, string> = {
     FaIconComponent,
     DocCardComponent,
     EmptyStateComponent,
-    ScoreChipComponent,
-    ScoreBreakdownComponent,
     PageHeaderComponent,
     DotsLoaderComponent,
   ],
@@ -74,118 +71,41 @@ const REASON_LABELS: Record<string, string> = {
           @if (profile(); as p) {
             <strong class="jx-perfil__name">{{ p.full_name }}</strong>
             <p class="jx-perfil__sub">
-              CPF {{ p.cpf_masked }} · {{ vehicleLabel(p.vehicle_type) }}
+              {{ vehicleLabel(p.vehicle_type) }}
               @if (p.vehicle_plate) { · {{ p.vehicle_plate }} }
             </p>
           }
         </header>
 
-        <!-- Menu list -->
         <ul class="jx-perfil__list">
-          <li class="jx-perfil__item">
-            <span>Situacao</span>
-            <span class="jx-perfil__item-value">{{ statusLabel() }}</span>
+          <li class="jx-perfil__item" (click)="go('/entregador/perfil/editar-dados')">
+            <span class="jx-perfil__item-left">
+              <fa-icon [icon]="iconEdit" class="jx-perfil__item-icon" aria-hidden="true" />
+              <span>Editar dados</span>
+            </span>
+            <span class="jx-perfil__chevron">›</span>
           </li>
-
-          @if (profile(); as p) {
-            @for (d of p.documents; track d.id) {
-              <li class="jx-perfil__item" [class.jx-perfil__item--action]="d.status === 'rejected'">
-                <span>{{ docLabel(d.kind) }}</span>
-                <div class="jx-perfil__item-right">
-                  <span
-                    class="jx-perfil__status-pill"
-                    [class.jx-perfil__status-pill--ok]="d.status === 'approved'"
-                    [class.jx-perfil__status-pill--err]="d.status === 'rejected'"
-                    [class.jx-perfil__status-pill--pending]="d.status === 'pending' || d.status === 'pending_upload'"
-                  >{{ docStatusLabel(d.status) }}</span>
-                  @if (d.status === 'rejected') {
-                    <button type="button" class="jx-perfil__resend-btn" (click)="openResendModal(d)"
-                      [attr.aria-label]="'Reenviar ' + docLabel(d.kind)">
-                      <fa-icon [icon]="faRotateRight" aria-hidden="true" />
-                    </button>
-                  }
-                </div>
-              </li>
-            }
-          }
-
-          @if (score(); as sc) {
-            <li class="jx-perfil__item">
-              <span>Score</span>
-              <div class="jx-perfil__item-right">
-                <jx-score-chip [level]="level()" [value]="sc.total_score" />
-              </div>
-            </li>
-          }
+          <li class="jx-perfil__item" (click)="go('/entregador/perfil/documentacao')">
+            <span class="jx-perfil__item-left">
+              <fa-icon [icon]="iconDocs" class="jx-perfil__item-icon" aria-hidden="true" />
+              <span>Documentação</span>
+            </span>
+            <span class="jx-perfil__chevron">›</span>
+          </li>
+          <li class="jx-perfil__item" (click)="go('/entregador/perfil/avaliacoes')">
+            <span class="jx-perfil__item-left">
+              <fa-icon [icon]="iconStar" class="jx-perfil__item-icon" aria-hidden="true" />
+              <span>Avaliações</span>
+            </span>
+            <span class="jx-perfil__chevron">›</span>
+          </li>
         </ul>
-
-        @if (score(); as sc) {
-          <section class="jx-perfil__score-card">
-            <jx-score-breakdown [components]="sc.components" />
-            <p class="jx-perfil__note">
-              No M1 o score e so o seu historico publico — nao muda suas taxas.
-            </p>
-          </section>
-        } @else {
-          <jx-empty-state
-            icon="⭐"
-            title="Score ainda nao calculado"
-            message="Assim que voce fizer entregas, seu score aparece aqui."
-          />
-        }
 
         <button type="button" class="jx-perfil__logout" (click)="logout()">
           <fa-icon [icon]="faLogout" aria-hidden="true" />
           Sair da conta
         </button>
       </div>
-
-      <!-- Modal de reenvio -->
-      @if (resendDoc()) {
-        <div class="jx-resend-backdrop" (click)="closeResendModal()"></div>
-        <div class="jx-resend-modal" role="dialog" aria-modal="true">
-          <h2 class="jx-resend-modal__title">Reenviar {{ docLabel(resendDoc()!.kind) }}</h2>
-
-          <div class="jx-resend-modal__info">
-            <p><strong>Status:</strong> Reprovado</p>
-            <p><strong>Motivo:</strong> {{ reasonLabel(resendDoc()!.reject_reason) }}</p>
-            @if (resendDoc()!.reject_detail) {
-              <p><strong>Detalhe:</strong> {{ resendDoc()!.reject_detail }}</p>
-            }
-          </div>
-
-          <div class="jx-resend-modal__doc-wrap">
-            <jx-doc-card
-              [title]="docLabel(resendDoc()!.kind)"
-              mode="edit"
-              status="pending_upload"
-              [captureMode]="resendDoc()!.kind === 'selfie' ? 'user' : 'environment'"
-              purpose="Selecione a nova foto para reenviar"
-              [previewUrl]="resendPreview()"
-              [hideBadge]="true"
-              uploadState="idle"
-              (fileSelected)="onResendFile($event)"
-            />
-            @if (resendFile()) {
-              <button type="button" class="jx-resend-modal__remove-x"
-                aria-label="Remover foto" (click)="clearResendFile()">✕</button>
-            }
-          </div>
-
-          @if (resendError()) {
-            <p class="jx-resend-modal__err">{{ resendError() }}</p>
-          }
-
-          <div class="jx-resend-modal__actions">
-            <button type="button" class="jx-resend-modal__btn jx-resend-modal__btn--cancel"
-              [disabled]="resendUploading()" (click)="closeResendModal()">Cancelar</button>
-            <button type="button" class="jx-resend-modal__btn jx-resend-modal__btn--send"
-              [disabled]="!resendFile() || resendUploading()" (click)="submitResend()">
-              {{ resendUploading() ? 'Enviando…' : 'Enviar para analise' }}
-            </button>
-          </div>
-        </div>
-      }
       }
     </ion-content>
   `,
@@ -230,6 +150,8 @@ const REASON_LABELS: Record<string, string> = {
       border-bottom: 1px solid var(--border, hsl(0 0% 90%));
       font-size: var(--jx-text-sm); color: var(--text);
     }
+    .jx-perfil__item-left { display: flex; align-items: center; gap: 12px; }
+    .jx-perfil__item-icon { font-size: 18px; color: var(--brand, #e8722a); width: 24px; text-align: center; }
     .jx-perfil__item-value {
       font-size: var(--jx-text-xs); color: var(--text-muted); text-align: right; max-width: 60%;
     }
@@ -254,6 +176,15 @@ const REASON_LABELS: Record<string, string> = {
       background: var(--warning-wash, hsl(40 80% 92%)); color: var(--warning, hsl(40 80% 35%));
     }
 
+    .jx-perfil__chevron {
+      font-size: 20px; color: var(--text-muted, #ccc); font-weight: 300;
+    }
+    .jx-perfil__avg-stars {
+      font-size: var(--jx-text-sm); font-weight: 600; color: var(--brand, #e8722a);
+    }
+    .jx-perfil__avg-stars small {
+      font-weight: 400; color: var(--text-muted, #888); font-size: var(--jx-text-xs);
+    }
     .jx-perfil__resend-btn {
       width: 32px; height: 32px; display: grid; place-items: center;
       background: var(--brand); color: var(--brand-contrast, #fff);
@@ -310,6 +241,9 @@ export class EntregadorPerfilPage implements OnInit {
   protected readonly faRotateRight = faRotateRight;
   protected readonly faLogout = faRightFromBracket;
   protected readonly faUser = faUser;
+  protected readonly iconEdit = faPenToSquare;
+  protected readonly iconDocs = faFolderOpen;
+  protected readonly iconStar = faStar;
 
   protected readonly initialLoading = signal(true);
   protected readonly score = signal<CourierScore | null>(null);
@@ -322,10 +256,6 @@ export class EntregadorPerfilPage implements OnInit {
   protected readonly resendUploading = signal(false);
   protected readonly resendError = signal<string | null>(null);
 
-  protected readonly level = computed<ScoreLevel>(() => {
-    const lvl = this.score()?.level as ScoreLevel | undefined;
-    return lvl && VALID_LEVELS.includes(lvl) ? lvl : 'probation';
-  });
 
   protected readonly statusLabel = computed<string>(() => {
     const map: Record<string, string> = {
@@ -336,6 +266,10 @@ export class EntregadorPerfilPage implements OnInit {
     };
     return map[this.auth.me()?.status ?? ''] ?? 'Cadastro em andamento';
   });
+
+  protected go(path: string): void {
+    void this.router.navigate([path]);
+  }
 
   protected async logout(): Promise<void> {
     await this.auth.logout();

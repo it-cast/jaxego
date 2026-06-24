@@ -61,6 +61,27 @@ export class DeliveryService {
     }
   }
 
+  async getRating(deliveryId: number): Promise<{ stars: number; comment: string | null } | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<{ stars: number; comment: string | null }>(`/v1/deliveries/${deliveryId}/rating`),
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  async rate(deliveryId: number, stars: number, comment: string | null): Promise<boolean> {
+    try {
+      await firstValueFrom(
+        this.http.post(`/v1/deliveries/${deliveryId}/rating`, { stars, comment }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async cancel(deliveryId: number, reason?: string): Promise<boolean> {
     try {
       await firstValueFrom(
@@ -111,5 +132,17 @@ export class DeliveryService {
       code: 'unknown',
       message: 'Não foi possível criar a entrega agora. Tente de novo.',
     };
+  }
+
+  async estimate(dropoffNeighborhoodId: number): Promise<{ estimate_min_cents: number | null; estimate_max_cents: number | null; courier_count: number }> {
+    try {
+      return await firstValueFrom(
+        this.http.get<{ estimate_min_cents: number | null; estimate_max_cents: number | null; courier_count: number }>(
+          '/v1/deliveries/estimate', { params: { dropoff_neighborhood_id: dropoffNeighborhoodId } }
+        ),
+      );
+    } catch {
+      return { estimate_min_cents: null, estimate_max_cents: null, courier_count: 0 };
+    }
   }
 }

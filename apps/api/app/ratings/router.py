@@ -22,6 +22,29 @@ router = APIRouter(prefix="/deliveries", tags=["ratings"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
+@router.get(
+    "/{delivery_id}/rating",
+    response_model=RatingRead | None,
+)
+async def get_rating(
+    delivery_id: int,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> RatingRead | None:
+    """Get the rating for a delivery, or null if not rated yet."""
+    from sqlalchemy import select
+    from app.ratings.models import CourierRating
+
+    rating = (
+        await session.execute(
+            select(CourierRating).where(CourierRating.delivery_id == delivery_id)
+        )
+    ).scalar_one_or_none()
+    if rating is None:
+        return None
+    return RatingRead.model_validate(rating)
+
+
 @router.post(
     "/{delivery_id}/rating",
     response_model=RatingRead,

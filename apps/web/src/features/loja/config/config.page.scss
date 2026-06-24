@@ -1,6 +1,4 @@
 .jx-config {
-  max-width: 640px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: var(--jx-space-4);
@@ -97,6 +95,12 @@
 .jx-config__hint {
   font-size: var(--jx-text-xs);
   color: var(--text-muted);
+}
+
+.jx-config__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--jx-space-3);
 }
 
 .jx-config__readonly-group {

@@ -185,8 +185,19 @@
       <fieldset class="jx-cadastro__step">
         <legend class="jx-sr-only">Endereço</legend>
         @if (!noArea()) {
+          <button type="button" class="jx-gps-btn" [disabled]="gpsLoading()" (click)="fillFromGps()">
+            <fa-icon [icon]="iconLocation" aria-hidden="true" />
+            {{ gpsLoading() ? 'Localizando...' : 'Usar minha localização' }}
+          </button>
+          @if (gpsError(); as err) {
+            <jx-warn-banner [message]="err" />
+          }
+          @if (gpsFilled()) {
+            <p class="jx-gps-hint">Endereço preenchido pela sua localização. Confira os campos e corrija se necessário.</p>
+          }
+
           <div class="jx-field">
-            <label class="jx-label" for="area">Cidade atendida</label>
+            <label class="jx-label" for="area">Cidade/Área de atuação</label>
             <select
               id="area"
               class="jx-input"
@@ -225,7 +236,7 @@
           }
 
           <div class="jx-field">
-            <label class="jx-label" for="rua">Rua e número</label>
+            <label class="jx-label" for="rua">Endereço (Rua, Av., ...)</label>
             <input id="rua" class="jx-input" autocomplete="address-line1" formControlName="rua" />
           </div>
           <div class="jx-cadastro__row">
@@ -243,19 +254,9 @@
               />
             </div>
           </div>
-          <div class="jx-cadastro__row">
-            <div class="jx-field">
-              <label class="jx-label" for="cidade">Cidade</label>
-              <input id="cidade" class="jx-input" formControlName="cidade" readonly />
-            </div>
-            <div class="jx-field">
-              <label class="jx-label" for="uf">UF</label>
-              <input id="uf" class="jx-input jx-mono" formControlName="uf" readonly />
-            </div>
-          </div>
         } @else {
           <jx-sem-area
-            [cidade]="form.controls.cidade.value"
+            [cidade]="''"
             (interest)="onInterest($event.email, $event.cidade)"
           />
         }
@@ -290,9 +291,16 @@
     }
 
     @if (!noArea()) {
-      <button type="submit" class="jx-cadastro__submit" [disabled]="loading()">
-        {{ isLastStep() ? 'Ativar loja' : 'Continuar' }}
-      </button>
+      <div class="jx-cadastro__actions" [class.jx-cadastro__actions--single]="current() === 0">
+        @if (current() > 0) {
+          <button type="button" class="jx-cadastro__back" (click)="goToStep(current() - 1)">
+            Voltar
+          </button>
+        }
+        <button type="submit" class="jx-cadastro__submit" [disabled]="loading()">
+          {{ isLastStep() ? 'Ativar loja' : 'Continuar' }}
+        </button>
+      </div>
     }
   </form>
 

@@ -167,6 +167,7 @@ export class OfferSheetComponent {
       dinheiro: 'Dinheiro',
       maquina_loja: 'Maquina da loja',
       aplicativo: 'Aplicativo',
+      ja_pago: 'Ja pago',
     };
     const method = this._offer()?.receipt_method;
     return method ? (map[method] ?? 'Direto') : 'Direto';

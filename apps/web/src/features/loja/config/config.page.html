@@ -32,19 +32,41 @@
         </label>
 
         <label class="jx-config__field">
-          <span class="jx-config__label">Endereco</span>
+          <span class="jx-config__label">Endereço (Rua, Av., ...)</span>
           <input
             class="jx-config__input"
             type="text"
             [(ngModel)]="form.address"
             name="address"
             maxlength="255"
-            placeholder="Rua, numero, bairro, cidade"
           />
-          <span class="jx-config__hint">
-            Usado como endereco de coleta padrao nas entregas.
-          </span>
         </label>
+
+        <div class="jx-config__row">
+          <label class="jx-config__field">
+            <span class="jx-config__label">Número</span>
+            <input
+              class="jx-config__input"
+              type="text"
+              [(ngModel)]="form.address_number"
+              name="address_number"
+              maxlength="20"
+            />
+          </label>
+          <label class="jx-config__field">
+            <span class="jx-config__label">Bairro</span>
+            <input
+              class="jx-config__input"
+              type="text"
+              [(ngModel)]="form.address_neighborhood"
+              name="address_neighborhood"
+              maxlength="120"
+            />
+          </label>
+        </div>
+        <span class="jx-config__hint">
+          Usado como endereço de coleta padrão nas entregas.
+        </span>
 
         <div class="jx-config__readonly-group">
           <div class="jx-config__field">

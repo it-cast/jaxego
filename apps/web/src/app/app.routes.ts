@@ -18,6 +18,13 @@ export const authRoutes: Routes = [
 /** Loja (web) surface + public store onboarding. */
 export const lojaRoutes: Routes = [
   {
+    path: 'loja/cadastro/sucesso',
+    loadComponent: () =>
+      import('../features/loja/cadastro/cadastro-sucesso.page').then(
+        (m) => m.CadastroSucessoPage
+      ),
+  },
+  {
     path: 'loja/cadastro',
     loadComponent: () =>
       import('../features/loja/cadastro/cadastro.page').then(
