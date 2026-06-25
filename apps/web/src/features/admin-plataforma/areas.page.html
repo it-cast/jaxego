@@ -68,6 +68,15 @@
             </select>
           </label>
         </div>
+        <div class="jx-areas__field">
+          <span class="jx-areas__label">Área de cobertura</span>
+          <jx-area-map
+            [boundary]="formBoundary"
+            (boundaryChange)="formBoundary = $event"
+          />
+          <span class="jx-areas__hint">Use a ferramenta de polígono para desenhar os limites da área no mapa.</span>
+        </div>
+
         <div class="jx-areas__form-actions">
           <button
             type="submit"

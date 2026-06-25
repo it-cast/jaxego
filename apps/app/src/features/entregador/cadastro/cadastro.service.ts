@@ -122,4 +122,13 @@ export class CourierCadastroService {
       message: 'Não foi possível concluir o cadastro agora. Tente de novo.',
     };
   }
+
+  async listTeams(areaId: number): Promise<{ id: number; name: string }[]> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ items: { id: number; name: string }[] }>(`/v1/couriers/teams`, { params: { area_id: areaId } })
+      );
+      return res.items;
+    } catch { return []; }
+  }
 }

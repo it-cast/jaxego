@@ -9,9 +9,8 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { FieldComponent } from '@jaxego/shared/components/field/field.component';
-import { EstimateBoxComponent } from '@jaxego/shared/components/estimate-box/estimate-box.component';
 import { UpgradeModalComponent } from '@jaxego/shared/components/upgrade-modal/upgrade-modal.component';
-import { ErrorStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
+import { ErrorStateComponent } from '@jaxego/shared/state';
 import { CardFormComponent } from '../plano/components/jx-card-form.component';
 import { Plan } from '@jaxego/shared/components/plan-card/plan-card.component';
 import {
@@ -31,6 +30,19 @@ interface NeighborhoodOption {
   name: string;
 }
 
+interface CourierOnline {
+  id: number;
+  full_name: string;
+  avg_stars: number;
+  price_cents: number | null;
+}
+
+interface TeamOnline {
+  id: number;
+  name: string;
+  couriers: CourierOnline[];
+}
+
 /**
  * Tela 12 — new delivery form (F-03 / UI-SPEC §2). Reactive form, sections by
  * fieldset, BR masks (phone→E.164, CEP, BRL), inline validation, estimate before
@@ -47,10 +59,8 @@ interface NeighborhoodOption {
     ReactiveFormsModule,
     RouterLink,
     FieldComponent,
-    EstimateBoxComponent,
     UpgradeModalComponent,
     ErrorStateComponent,
-    WarnBannerComponent,
     CardFormComponent,
   ],
   templateUrl: './nova-entrega.page.html',
@@ -124,12 +134,10 @@ export class NovaEntregaPage {
   protected readonly submitting = signal(false);
   protected readonly submitError = signal<string | null>(null);
 
-  // Estimate / exceptions surfaced after create or pre-check.
-  protected readonly estimating = signal(false);
-  protected readonly estimateMin = signal<number | null>(null);
-  protected readonly estimateMax = signal<number | null>(null);
-  protected readonly courierCount = signal(0);
-  protected readonly noCouriersWarning = signal(false); // E2
+  // Teams accordion
+  protected readonly teamsOnline = signal<TeamOnline[]>([]);
+  protected readonly openTeamId = signal<number | null>(null);
+  protected readonly selectedTeamIds = signal<Set<number>>(new Set());
 
   // E1 (out of area) and E4 (plan limit) state.
   protected readonly outOfArea = signal(false);
@@ -146,6 +154,7 @@ export class NovaEntregaPage {
 
   constructor() {
     void this.loadNeighborhoods();
+    void this.loadTeamsOnline();
     const me = this.auth.me();
     const parts = [me?.address, me?.address_number, me?.address_neighborhood].filter(Boolean);
     const pickup = parts.length ? parts.join(', ') : me?.trade_name;
@@ -176,7 +185,7 @@ export class NovaEntregaPage {
       }
     });
     this.form.controls.dropoff_neighborhood_id.valueChanges.subscribe((v) => {
-      if (v) void this.loadEstimate(v);
+      void this.loadTeamsOnline(v ?? undefined);
     });
     this.form.controls.payment_method.valueChanges.subscribe((v) => {
       this.paymentMethod.set((v as 'direct' | 'pix' | 'card') ?? 'direct');
@@ -215,14 +224,35 @@ export class NovaEntregaPage {
     this.form.controls.payment_method.setValue('direct');
   }
 
-  private async loadEstimate(neighborhoodId: number): Promise<void> {
-    this.estimating.set(true);
-    const res = await this.service.estimate(neighborhoodId);
-    this.estimateMin.set(res.estimate_min_cents);
-    this.estimateMax.set(res.estimate_max_cents);
-    this.courierCount.set(res.courier_count);
-    this.noCouriersWarning.set(res.courier_count === 0);
-    this.estimating.set(false);
+  private async loadTeamsOnline(neighborhoodId?: number): Promise<void> {
+    try {
+      const params: Record<string, any> = {};
+      if (neighborhoodId) params['dropoff_neighborhood_id'] = neighborhoodId;
+      const res = await firstValueFrom(
+        this.http.get<TeamOnline[]>('/v1/deliveries/teams-online', { params })
+      );
+      this.teamsOnline.set(res);
+    } catch {
+      this.teamsOnline.set([]);
+    }
+  }
+
+  protected toggleTeam(teamId: number | null): void {
+    this.openTeamId.set(this.openTeamId() === teamId ? null : teamId);
+  }
+
+  protected toggleTeamSelection(teamId: number): void {
+    const current = new Set(this.selectedTeamIds());
+    if (current.has(teamId)) {
+      current.delete(teamId);
+    } else {
+      current.add(teamId);
+    }
+    this.selectedTeamIds.set(current);
+  }
+
+  protected isTeamSelected(teamId: number): boolean {
+    return this.selectedTeamIds().has(teamId);
   }
 
   private async loadNeighborhoods(): Promise<void> {
@@ -247,7 +277,7 @@ export class NovaEntregaPage {
   }
 
   protected canSubmit(): boolean {
-    return this.form.valid && !this.outOfArea() && !this.submitting();
+    return this.form.valid && !this.outOfArea() && !this.submitting() && this.selectedTeamIds().size > 0;
   }
 
   protected async submit(): Promise<void> {
@@ -282,7 +312,8 @@ export class NovaEntregaPage {
       height_cm: toInt(v.height_cm),
       reference_number: v.reference_number || null,
       notes: v.notes || null,
-      proof_method: this.proofMethod() as 'photo' | 'photo_reference' | 'otp',
+      team_ids: [...this.selectedTeamIds()],
+      proof_method: this.proofMethod() as 'none' | 'photo' | 'photo_reference' | 'otp',
       payment_method: 'direct',
       receipt_method: this.receiptMethod(),
     };
@@ -291,11 +322,6 @@ export class NovaEntregaPage {
     this.submitting.set(false);
 
     if (result.ok) {
-      this.estimateMin.set(result.data.estimate_min_cents);
-      this.estimateMax.set(result.data.estimate_max_cents);
-      this.noCouriersWarning.set(result.data.no_couriers_warning);
-      // Born CRIADA → go to the detail, which shows "procurando entregador" and
-      // polls until a courier accepts (F4.1 / tpl-m-searching).
       void this.router.navigate(['/loja/entregas', result.data.delivery_id]);
       return;
     }

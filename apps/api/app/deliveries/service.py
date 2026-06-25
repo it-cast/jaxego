@@ -343,8 +343,7 @@ async def create_delivery(
         dropoff_nbhd_id=body.dropoff_neighborhood_id,
         distance_m=body.distance_m,
     )
-    estimate = median_cents(prices)
-    no_couriers_warning = estimate is None  # E2 (D-06) — non-blocking
+    no_couriers_warning = len(prices) == 0
 
     recipient = await upsert_recipient(session, area_id=area_id, body=body)
 
@@ -364,9 +363,7 @@ async def create_delivery(
         dropoff_complement=body.dropoff_complement,
         dropoff_neighborhood_id=body.dropoff_neighborhood_id,
         distance_m=body.distance_m,
-        estimate_min_cents=estimate,
-        estimate_max_cents=estimate,
-        fee_cents=0,  # accrues on settle (Phase 11)
+        fee_cents=0,
         items_description=body.items_description,
         items_quantity=body.items_quantity,
         declared_value_cents=body.declared_value_cents,
@@ -377,6 +374,7 @@ async def create_delivery(
         reference_number=body.reference_number,
         notes=body.notes,
         receipt_method=body.receipt_method,
+        team_ids=body.team_ids,
         public_token=_new_public_token(),
         origin="manual",
     )
@@ -435,8 +433,7 @@ async def create_delivery(
         delivery_id=delivery.id,
         public_token=delivery.public_token,
         state=delivery.state,
-        estimate_min_cents=delivery.estimate_min_cents,
-        estimate_max_cents=delivery.estimate_max_cents,
+        price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
         no_couriers_warning=no_couriers_warning,
     )
@@ -479,10 +476,10 @@ def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
     - ACEITA (accepted, not collected): 50% of the estimate.
     - COLETADA (collected): 100% of the estimate + the area's return policy %.
 
-    The estimate base is `estimate_max_cents` (or 0 if unpriced). This is only
+    The price base is `price_cents` (or 0 if not yet accepted). This is only
     RECORDED on the delivery; the effective charge is the Phase 11 invoice.
     """
-    base = delivery.estimate_max_cents or 0
+    base = delivery.price_cents or 0
     state = delivery.state
     if state == "CRIADA":
         return 0

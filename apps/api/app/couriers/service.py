@@ -194,6 +194,7 @@ async def signup(
         status="pending_kyc",
         vehicle_type=body.vehicle_type,
         vehicle_plate=body.vehicle_plate,
+        team_id=body.team_id,
         mei_pending=False,
     )
     session.add(courier)

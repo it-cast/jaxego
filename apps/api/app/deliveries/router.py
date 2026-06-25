@@ -59,8 +59,7 @@ def _delivery_out(delivery, recipient) -> DeliveryOut:
         length_cm=delivery.length_cm,
         width_cm=delivery.width_cm,
         height_cm=delivery.height_cm,
-        estimate_min_cents=delivery.estimate_min_cents,
-        estimate_max_cents=delivery.estimate_max_cents,
+        price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
         reference_number=delivery.reference_number,
         recipient_name=recipient.name if recipient else None,
@@ -108,11 +107,108 @@ async def create_delivery(
     return result
 
 
+@router.get("/teams-online")
+async def teams_with_online_couriers(
+    scope: MerchantScopeDep,
+    session: SessionDep,
+    dropoff_neighborhood_id: int | None = None,
+) -> list[dict]:
+    """Teams with their online couriers for the delivery form sidebar."""
+    from sqlalchemy import func as sa_func, select
+    from datetime import UTC, timedelta, datetime
+    from app.teams.models import Team
+    from app.couriers.models import Courier, CourierCoverageArea
+    from app.ratings.models import CourierRating
+    from app.couriers.models import CourierPricingTable
+    from app.couriers.coverage import is_eligible
+
+    teams = list(
+        (await session.execute(
+            select(Team).where(Team.area_id == scope.area_id, Team.deleted_at.is_(None)).order_by(Team.id)
+        )).scalars().all()
+    )
+    couriers = list(
+        (await session.execute(
+            select(Courier).where(
+                Courier.area_id == scope.area_id,
+                Courier.is_online.is_(True),
+                Courier.status == "active",
+                Courier.deleted_at.is_(None),
+            )
+        )).scalars().all()
+    )
+
+    if dropoff_neighborhood_id is not None and couriers:
+        cov_rows = list(
+            (await session.execute(
+                select(CourierCoverageArea).where(
+                    CourierCoverageArea.area_id == scope.area_id,
+                    CourierCoverageArea.courier_id.in_([c.id for c in couriers]),
+                )
+            )).scalars().all()
+        )
+        cov_by: dict[int, list] = {}
+        for row in cov_rows:
+            cov_by.setdefault(row.courier_id, []).append(row)
+        couriers = [
+            c for c in couriers
+            if is_eligible(cov_by.get(c.id, []), dropoff_neighborhood_id, dropoff_neighborhood_id)
+        ]
+
+    courier_ids = [c.id for c in couriers]
+
+    ratings: dict[int, float] = {}
+    if courier_ids:
+        cutoff = datetime.now(UTC) - timedelta(days=90)
+        rows = (await session.execute(
+            select(
+                CourierRating.courier_id,
+                sa_func.avg(CourierRating.stars).label("avg"),
+            ).where(
+                CourierRating.courier_id.in_(courier_ids),
+                CourierRating.created_at >= cutoff,
+            ).group_by(CourierRating.courier_id)
+        )).all()
+        ratings = {int(r.courier_id): round(float(r.avg), 1) for r in rows}
+
+    pricing: dict[int, int | None] = {}
+    if courier_ids:
+        price_rows = (await session.execute(
+            select(CourierPricingTable).where(
+                CourierPricingTable.courier_id.in_(courier_ids),
+                CourierPricingTable.area_id == scope.area_id,
+            )
+        )).scalars().all()
+        for pr in price_rows:
+            if pr.courier_id not in pricing and pr.price is not None:
+                pricing[pr.courier_id] = int(pr.price * 100)
+
+    def courier_dict(c: Courier) -> dict:
+        return {
+            "id": c.id,
+            "full_name": c.full_name,
+            "avg_stars": ratings.get(c.id, 0.0),
+            "price_cents": pricing.get(c.id),
+        }
+
+    result = []
+    for team in teams:
+        members = [c for c in couriers if c.team_id == team.id]
+        result.append({
+            "id": team.id,
+            "name": team.name,
+            "couriers": [courier_dict(c) for c in members],
+        })
+
+    return result
+
+
 @router.get("/estimate")
 async def estimate_delivery(
     dropoff_neighborhood_id: int,
     scope: MerchantScopeDep,
     session: SessionDep,
+    team_id: int | None = None,
 ) -> dict:
     from app.deliveries.estimate import eligible_online_prices_cents, median_cents
     prices = await eligible_online_prices_cents(
@@ -121,11 +217,11 @@ async def estimate_delivery(
         pickup_nbhd_id=dropoff_neighborhood_id,
         dropoff_nbhd_id=dropoff_neighborhood_id,
         distance_m=None,
+        team_id=team_id,
     )
     estimate = median_cents(prices)
     return {
-        "estimate_min_cents": estimate,
-        "estimate_max_cents": estimate,
+        "price_cents": estimate,
         "courier_count": len(prices),
     }
 
@@ -156,8 +252,7 @@ async def list_deliveries(
             state=d.state,
             payment_method=d.payment_method,
             dropoff_neighborhood_id=d.dropoff_neighborhood_id,
-            estimate_min_cents=d.estimate_min_cents,
-            estimate_max_cents=d.estimate_max_cents,
+            price_cents=d.price_cents,
             fee_cents=d.fee_cents,
             reference_number=d.reference_number,
             recipient_name=r.name if r else None,

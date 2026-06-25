@@ -76,19 +76,36 @@
   color: var(--text);
 }
 
-.jx-availability__cta {
+.jx-availability__kyc-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-3);
+  background: var(--warning-wash, hsl(40 80% 92%));
+  border: 1px solid var(--warning, hsl(40 80% 50%));
+  border-radius: 12px;
+}
+
+.jx-availability__kyc-msg {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--warning-text, #856404);
+}
+
+.jx-availability__kyc-btn {
   align-self: flex-start;
-  min-height: 44px;
+  min-height: 36px;
   padding: 0 var(--jx-space-3);
-  border: 1px solid var(--info);
-  border-radius: var(--jx-radius-md);
-  background: transparent;
-  color: var(--info);
-  font-size: var(--jx-text-sm);
+  border: 0;
+  border-radius: 999px;
+  background: var(--warning, hsl(40 80% 50%));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.jx-availability__cta:focus-visible {
+.jx-availability__kyc-btn:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }

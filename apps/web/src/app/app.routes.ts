@@ -157,6 +157,13 @@ export const adminRoutes: Routes = [
           ),
       },
       {
+        path: 'equipes',
+        loadComponent: () =>
+          import('../features/admin/equipes/equipes.page').then(
+            (m) => m.AdminEquipesPage
+          ),
+      },
+      {
         path: 'entregadores',
         loadComponent: () =>
           import(

@@ -51,6 +51,8 @@ export interface CourierProfile {
   status: string;
   is_online: boolean;
   mei_pending: boolean;
+  team_id: number | null;
+  team_name: string | null;
   documents: CourierDocumentItem[];
 }
 
@@ -165,6 +167,18 @@ export class EntregadorService {
     );
   }
 
+  async finalizeNoProof(courierId: number, deliveryId: number): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/finalize-no-proof`, {}),
+    );
+  }
+
+  async markCollected(courierId: number, deliveryId: number): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/collect`, {}),
+    );
+  }
+
   async setCollectionMethod(
     courierId: number,
     deliveryId: number,
@@ -178,7 +192,7 @@ export class EntregadorService {
     );
   }
 
-  async updateProfile(courierId: number, data: { full_name?: string; password?: string; current_password?: string }): Promise<boolean> {
+  async updateProfile(courierId: number, data: { full_name?: string; password?: string; current_password?: string; team_id?: number | null }): Promise<boolean> {
     try {
       await firstValueFrom(this.http.patch(`/v1/couriers/${courierId}/profile`, data));
       return true;
@@ -199,5 +213,14 @@ export class EntregadorService {
     return firstValueFrom(
       this.http.get<CourierDeliveryList>(`/v1/couriers/${courierId}/deliveries`)
     );
+  }
+
+  async coverageCount(courierId: number): Promise<number> {
+    try {
+      const rows = await firstValueFrom(
+        this.http.get<{ neighborhood_id: number }[]>(`/v1/couriers/${courierId}/coverage`)
+      );
+      return rows.length;
+    } catch { return 0; }
   }
 }

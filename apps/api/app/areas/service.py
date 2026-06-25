@@ -84,7 +84,7 @@ async def create_area(session: AsyncSession, body: AreaCreate) -> Area:
     ).scalar_one_or_none()
     if existing is not None:
         raise DuplicateAreaError()
-    area = Area(codename=body.codename, name=body.name, config=body.config)
+    area = Area(codename=body.codename, name=body.name, config=body.config, boundary=body.boundary)
     session.add(area)
     await session.flush()
     return area
@@ -120,6 +120,9 @@ async def update_area(
     area = await get_area(session, area_id)
     if body.name is not None:
         area.name = body.name
+
+    if body.boundary is not None:
+        area.boundary = body.boundary
 
     diff: tuple[dict, dict] | None = None
     if body.config is not None:

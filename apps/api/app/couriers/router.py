@@ -79,6 +79,17 @@ def _client_ip(request: Request) -> str | None:
 # ---------------------------------------------------------------------------
 # Public + authenticated courier flow
 # ---------------------------------------------------------------------------
+@router.get("/teams")
+async def list_teams_public(
+    area_id: int,
+    session: SessionDep,
+) -> dict:
+    """Public list of teams for a given area (courier signup)."""
+    from app.teams.service import list_teams
+    teams, total = await list_teams(session, area_id=area_id)
+    return {"items": [{"id": t.id, "name": t.name} for t in teams]}
+
+
 @router.post(
     "/signup",
     response_model=CourierSignupResponse,
@@ -276,7 +287,6 @@ _COURIER_DROPOFF_REVEALED = frozenset({"COLETADA", "ENTREGUE", "RECUSADA_NO_DEST
 def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | None = None) -> CourierDeliveryOut:
     """Serialize a delivery for the assigned courier, hiding destination PII
     until pickup (RN-013). The recipient phone is masked even when revealed."""
-    revealed = delivery.state in _COURIER_DROPOFF_REVEALED
     return CourierDeliveryOut(
         id=delivery.id,
         public_token=delivery.public_token,
@@ -290,17 +300,14 @@ def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | Non
         pickup_lng=delivery.pickup_lng,
         dropoff_neighborhood_id=delivery.dropoff_neighborhood_id,
         distance_m=delivery.distance_m,
-        dropoff_address=delivery.dropoff_address if revealed else None,
-        dropoff_number=delivery.dropoff_number if revealed else None,
-        dropoff_complement=delivery.dropoff_complement if revealed else None,
-        dropoff_lat=delivery.dropoff_lat if revealed else None,
-        dropoff_lng=delivery.dropoff_lng if revealed else None,
-        recipient_name=(recipient.name if recipient else None) if revealed else None,
-        recipient_phone_masked=(mask_phone_display(recipient.phone_e164) if recipient else None)
-        if revealed
-        else None,
-        estimate_min_cents=delivery.estimate_min_cents,
-        estimate_max_cents=delivery.estimate_max_cents,
+        dropoff_address=delivery.dropoff_address,
+        dropoff_number=delivery.dropoff_number,
+        dropoff_complement=delivery.dropoff_complement,
+        dropoff_lat=delivery.dropoff_lat,
+        dropoff_lng=delivery.dropoff_lng,
+        recipient_name=recipient.name if recipient else None,
+        recipient_phone_masked=mask_phone_display(recipient.phone_e164) if recipient else None,
+        price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
         reference_number=delivery.reference_number,
         items_description=delivery.items_description,
@@ -358,8 +365,7 @@ async def list_courier_deliveries(
             dropoff_number=d.dropoff_number,
             dropoff_neighborhood_id=d.dropoff_neighborhood_id,
             distance_m=d.distance_m,
-            estimate_min_cents=d.estimate_min_cents,
-            estimate_max_cents=d.estimate_max_cents,
+            price_cents=d.price_cents,
             fee_cents=d.fee_cents,
             created_at=d.created_at.isoformat() if d.created_at else None,
         )
@@ -385,6 +391,48 @@ async def get_courier_delivery(
     )
     merchant = await session.get(Merchant, delivery.merchant_id)
     return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None)
+
+
+@router.post("/{courier_id}/deliveries/{delivery_id}/collect")
+async def mark_collected(
+    courier_id: int,
+    delivery_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Mark a delivery as collected (ACEITA → COLETADA) without photo proof."""
+    from app.deliveries.service import transition
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery, _ = await delivery_service.get_courier_delivery(
+        session, courier_id=courier.id, delivery_id=delivery_id
+    )
+    await transition(session, delivery=delivery, to_state="COLETADA", actor_id=user.id, ip=None)
+    await session.commit()
+    return {"ok": True, "state": "COLETADA"}
+
+
+@router.post("/{courier_id}/deliveries/{delivery_id}/finalize-no-proof")
+async def finalize_no_proof(
+    courier_id: int,
+    delivery_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Finalize a delivery without proof (proof_method=none): COLETADA → ENTREGUE → FINALIZADA."""
+    from app.deliveries.service import transition
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery, _ = await delivery_service.get_courier_delivery(
+        session, courier_id=courier.id, delivery_id=delivery_id
+    )
+    if delivery.proof_method != "none":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Esta entrega exige comprovação.")
+    await transition(session, delivery=delivery, to_state="ENTREGUE", actor_id=user.id, ip=None)
+    await transition(session, delivery=delivery, to_state="FINALIZADA", actor_id=user.id, ip=None)
+    await session.commit()
+    return {"ok": True, "state": "FINALIZADA"}
 
 
 @router.patch("/{courier_id}/deliveries/{delivery_id}/collection-method")
@@ -421,6 +469,11 @@ async def get_courier_profile(
     """The courier's OWN profile (F1.6): identity + documents, PII masked. Self-only."""
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     docs = await service.list_courier_documents(session, courier_id=courier.id)
+    team_name = None
+    if courier.team_id:
+        from app.teams.models import Team
+        team = await session.get(Team, courier.team_id)
+        team_name = team.name if team else None
     return CourierProfileOut(
         id=courier.id,
         full_name=courier.full_name,
@@ -433,6 +486,8 @@ async def get_courier_profile(
         status=courier.status,
         is_online=courier.is_online,
         mei_pending=courier.mei_pending,
+        team_id=courier.team_id,
+        team_name=team_name,
         documents=[
             CourierDocumentItem(
                 id=d.id, kind=d.kind, status=d.status,
@@ -453,6 +508,8 @@ async def update_courier_profile(
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     if "full_name" in body and body["full_name"]:
         courier.full_name = body["full_name"]
+    if "team_id" in body:
+        courier.team_id = body["team_id"] if body["team_id"] else None
     if "password" in body and body["password"]:
         from app.core.security import hash_password, verify_password
         current = body.get("current_password", "")

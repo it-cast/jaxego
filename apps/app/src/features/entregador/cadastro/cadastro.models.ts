@@ -12,6 +12,7 @@ export interface CourierSignupRequest {
   password: string;
   vehicle_type: VehicleType;
   vehicle_plate?: string | null;
+  team_id: number;
   consent: boolean;
 }
 

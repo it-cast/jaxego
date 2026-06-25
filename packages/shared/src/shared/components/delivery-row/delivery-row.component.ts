@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faEye } from '@fortawesome/free-solid-svg-icons';
 import { StateBadgeComponent } from '../state-badge/state-badge.component';
 import type { DeliveryListItem } from '../../models/delivery.models';
 import { formatBrl } from '../../util/money';
@@ -15,7 +17,7 @@ import { formatBrl } from '../../util/money';
   selector: 'jx-delivery-row',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [StateBadgeComponent],
+  imports: [StateBadgeComponent, FaIconComponent],
   template: `
     <td class="jx-delivery-row__num">{{ shortToken }}</td>
     <td class="jx-delivery-row__date">{{ dateLabel }}</td>
@@ -33,14 +35,15 @@ import { formatBrl } from '../../util/money';
           Cancelar
         </button>
       }
-      <button type="button" class="jx-delivery-row__view" (click)="view.emit(delivery)">
-        ver
+      <button type="button" class="jx-delivery-row__view" (click)="view.emit(delivery)" aria-label="Ver entrega">
+        <fa-icon [icon]="iconEye" aria-hidden="true" />
       </button>
     </td>
   `,
   styleUrl: './delivery-row.component.scss',
 })
 export class DeliveryRowComponent {
+  protected readonly iconEye = faEye;
   @Input({ required: true }) delivery!: DeliveryListItem;
   @Output() cancelDelivery = new EventEmitter<DeliveryListItem>();
   @Output() view = new EventEmitter<DeliveryListItem>();
@@ -59,11 +62,11 @@ export class DeliveryRowComponent {
   }
 
   protected get freightLabel(): string {
-    const min = this.delivery.estimate_min_cents;
-    if (min === null) {
+    const price = this.delivery.price_cents;
+    if (price === null || price === undefined) {
       return '—';
     }
-    return formatBrl(min / 100);
+    return formatBrl(price / 100);
   }
 
   protected get paymentLabel(): string {

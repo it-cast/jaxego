@@ -33,6 +33,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     UniqueConstraint,
 )
@@ -134,8 +135,7 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     distance_m: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # --- Money (integer cents — never Float) ---
-    estimate_min_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    estimate_max_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # The platform fee accrues to the monthly invoice (Phase 11); 0 until priced.
     fee_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
@@ -150,6 +150,8 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     height_cm: Mapped[int | None] = mapped_column(Integer, nullable=True)
     reference_number: Mapped[str | None] = mapped_column(String(64), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Target teams (JSON array of team IDs — at least one required).
+    team_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     # Opaque, non-sequential token for public tracking (Phase 9 — A01). ULID-like.
     public_token: Mapped[str] = mapped_column(String(32), nullable=False)

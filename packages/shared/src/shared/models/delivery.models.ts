@@ -3,7 +3,7 @@
 import type { DeliveryState } from '../components/state-badge/state-badge.component';
 
 export type DeliveryPaymentMethod = 'direct' | 'card' | 'pix';
-export type DeliveryProofMethod = 'photo' | 'photo_reference' | 'otp';
+export type DeliveryProofMethod = 'none' | 'photo' | 'photo_reference' | 'otp';
 
 export interface CreateDeliveryRequest {
   pickup_address: string;
@@ -27,6 +27,7 @@ export interface CreateDeliveryRequest {
   height_cm?: number | null;
   reference_number?: string | null;
   notes?: string | null;
+  team_ids: number[];
   proof_method: DeliveryProofMethod;
   payment_method?: DeliveryPaymentMethod;
   receipt_method?: string | null;
@@ -39,8 +40,7 @@ export interface CreateDeliveryResponse {
   delivery_id: number;
   public_token: string;
   state: DeliveryState;
-  estimate_min_cents: number | null;
-  estimate_max_cents: number | null;
+  price_cents: number | null;
   fee_cents: number;
   no_couriers_warning: boolean;
 }
@@ -51,8 +51,7 @@ export interface DeliveryListItem {
   state: DeliveryState;
   payment_method: DeliveryPaymentMethod;
   dropoff_neighborhood_id: number;
-  estimate_min_cents: number | null;
-  estimate_max_cents: number | null;
+  price_cents: number | null;
   fee_cents: number;
   reference_number: string | null;
   recipient_name: string | null;

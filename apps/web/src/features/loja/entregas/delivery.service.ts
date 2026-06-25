@@ -134,11 +134,13 @@ export class DeliveryService {
     };
   }
 
-  async estimate(dropoffNeighborhoodId: number): Promise<{ estimate_min_cents: number | null; estimate_max_cents: number | null; courier_count: number }> {
+  async estimate(dropoffNeighborhoodId: number, teamId?: number | null): Promise<{ estimate_min_cents: number | null; estimate_max_cents: number | null; courier_count: number }> {
     try {
+      const params: Record<string, any> = { dropoff_neighborhood_id: dropoffNeighborhoodId };
+      if (teamId) params['team_id'] = teamId;
       return await firstValueFrom(
         this.http.get<{ estimate_min_cents: number | null; estimate_max_cents: number | null; courier_count: number }>(
-          '/v1/deliveries/estimate', { params: { dropoff_neighborhood_id: dropoffNeighborhoodId } }
+          '/v1/deliveries/estimate', { params }
         ),
       );
     } catch {

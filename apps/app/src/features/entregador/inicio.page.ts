@@ -64,11 +64,20 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         </div>
         <jx-availability-toggle
           [isOnline]="online()"
-          [disabled]="kycPending()"
+          [disabled]="toggleDisabled()"
+          [disabledReason]="kycPending() ? 'kyc' : noCoverage() ? 'coverage' : ''"
           (onlineChange)="setOnline($event)"
           (seeValidation)="goProfile()"
         />
       </header>
+
+      @if (noCoverage() && !kycPending()) {
+        <div class="jx-home-warn-wrap">
+          <jx-warn-banner
+            message="Cadastre pelo menos um bairro de entrega para ficar online. Acesse seu perfil para configurar."
+          />
+        </div>
+      }
 
       @if (meiPending()) {
         <jx-warn-banner
@@ -251,6 +260,8 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         padding: var(--jx-space-3) 0;
       }
 
+      .jx-home-warn-wrap { padding: 0 var(--jx-space-4); }
+
       /* Shared */
       .jx-home-link {
         background: transparent; border: 0; padding: 0;
@@ -281,11 +292,16 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
-  protected readonly kycPending = computed(
-    () => (this.auth.me()?.status ?? 'active') !== 'active'
-  );
+  protected readonly noCoverage = signal(false);
+  protected readonly kycPending = computed(() => {
+    const s = this.auth.me()?.status ?? 'active';
+    return s !== 'active' && s !== 'mei_pending';
+  });
   protected readonly meiPending = computed(
     () => this.auth.me()?.status === 'mei_pending'
+  );
+  protected readonly toggleDisabled = computed(
+    () => this.kycPending() || this.noCoverage()
   );
 
   protected readonly state = computed<HomeState>(() => {
@@ -299,16 +315,19 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    await this.auth.loadMe();
     const id = this.courierId;
     if (!id) return;
-    const [balance, score, list, active, extract, profile] = await Promise.all([
+    const [balance, score, list, active, extract, profile, covCount] = await Promise.all([
       this.saldo.balance().catch(() => null),
       this.svc.score(id),
       this.svc.listDeliveries(id).catch(() => null),
       this.svc.activeDelivery(id).catch(() => null),
       this.saldo.extract().catch(() => []),
       this.svc.profile(id),
+      this.svc.coverageCount(id),
     ]);
+    this.noCoverage.set(covCount === 0);
     if (profile) {
       this.online.set(profile.is_online ?? false);
       this.firstName.set(profile.full_name?.split(' ')[0] ?? '');
@@ -335,11 +354,14 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   private notificationSound = new Audio('notificacao.mp3');
 
   private async pollOffer(): Promise<void> {
-    if (!this.online() || this.active() || this.offer() || this.processing()) return;
+    if (!this.online() || this.active() || this.processing()) return;
     try {
       const offer = await this.offers.active();
       if (offer && !this.offer()) {
         this.notificationSound.play().catch(() => {});
+      }
+      if (!offer && this.offer()) {
+        this.offerResult.set(null);
       }
       this.offer.set(offer);
     } catch {

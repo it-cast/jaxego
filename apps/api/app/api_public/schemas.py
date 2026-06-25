@@ -64,7 +64,6 @@ class PublicDeliveryResponse(BaseModel):
     delivery_id: int
     public_token: str
     state: str
-    estimate_min_cents: int | None
-    estimate_max_cents: int | None
+    price_cents: int | None = None
     fee_cents: int
     no_couriers_warning: bool

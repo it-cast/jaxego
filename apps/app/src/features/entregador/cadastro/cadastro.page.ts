@@ -90,6 +90,7 @@ export class CadastroEntregadorPage implements OnInit {
   protected readonly faEye = faEye;
   protected readonly faEyeSlash = faEyeSlash;
   protected readonly docs = signal<DocItem[]>([]);
+  protected readonly teams = signal<{ id: number; name: string }[]>([]);
 
   protected readonly form = this.fb.nonNullable.group({
     area_id: [0, Validators.min(1)],
@@ -99,6 +100,7 @@ export class CadastroEntregadorPage implements OnInit {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(10)]],
     password_confirm: ['', Validators.required],
+    team_id: [null as number | null, Validators.required],
     vehicle_type: ['moto' as VehicleType, Validators.required],
     vehicle_plate: [''],
     mei_cnpj: [''],
@@ -148,6 +150,17 @@ export class CadastroEntregadorPage implements OnInit {
     const level = normalizeKycLevel(area?.level);
     this.level.set(level);
     this.initDocs(level);
+    this.form.controls.team_id.setValue(null);
+    if (area) void this.loadTeams(area.id);
+  }
+
+  private async loadTeams(areaId: number): Promise<void> {
+    try {
+      const res = await this.couriers.listTeams(areaId);
+      this.teams.set(res);
+    } catch {
+      this.teams.set([]);
+    }
   }
 
   protected togglePassword(): void {
@@ -275,6 +288,7 @@ export class CadastroEntregadorPage implements OnInit {
       password: f.password,
       vehicle_type: f.vehicle_type,
       vehicle_plate: this.motorized ? f.vehicle_plate || null : null,
+      team_id: f.team_id!,
       consent: f.consent,
     });
 

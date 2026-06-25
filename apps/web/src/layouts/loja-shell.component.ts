@@ -203,16 +203,13 @@ import { AuthService } from '@jaxego/core/auth/auth.service';
     /* Main content */
     .jx-loja-main {
       flex: 1;
-      padding: var(--jx-space-5) var(--jx-space-4);
-      padding-top: calc(56px + var(--jx-space-5));
-      max-width: 860px;
-      margin: 0 auto;
-      width: 100%;
+      padding: 3em;
+      padding-top: calc(56px + 3em);
     }
     @media (min-width: 860px) {
       .jx-loja-main {
         margin-left: 260px;
-        padding-top: var(--jx-space-5);
+        padding-top: 3em;
       }
     }
 

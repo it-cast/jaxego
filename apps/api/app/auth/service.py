@@ -274,9 +274,8 @@ async def authenticate(
     if new_hash is not None:
         user.password_hash = new_hash  # transparent argon2 param upgrade
 
-    # TOTP: required when enrolled. (Platform admin without TOTP is forced to
-    # enrol before any protected access — enforced in the dependency layer.)
-    if user.totp_enrolled and user.totp_secret is not None:
+    # TOTP: only required when totp_required is set AND the user has enrolled.
+    if user.totp_required and user.totp_enrolled and user.totp_secret is not None:
         if not totp or not verify_totp(user.totp_secret, totp):
             register_failed_attempt(user)
             await session.commit()

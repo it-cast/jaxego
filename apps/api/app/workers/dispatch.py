@@ -145,6 +145,7 @@ async def dispatch_offer_task(ctx: dict[str, Any], delivery_id: int) -> str:
                     pickup_nbhd_id=pickup_id,
                     dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
                     distance_m=delivery.distance_m,
+                    team_ids=delivery.team_ids,
                 )
                 # Queue lives for the whole favorites+ranking window.
                 ttl = cfg.timeout_oferta_s * (len(candidates) + 1) + cfg.timeout_favoritos_s

@@ -50,6 +50,7 @@ class CourierSignupBody(BaseModel):
     password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
     vehicle_type: VehicleType
     vehicle_plate: str | None = Field(default=None, max_length=8)
+    team_id: int = Field(gt=0)
     # LGPD: explicit, non-pre-checked consent is required to submit (TH-09).
     consent: bool
 
@@ -327,4 +328,6 @@ class CourierProfileOut(BaseModel):
     status: str
     is_online: bool
     mei_pending: bool
+    team_id: int
+    team_name: str | None = None
     documents: list[CourierDocumentItem]

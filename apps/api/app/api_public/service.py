@@ -137,8 +137,7 @@ async def create_public_delivery(
         delivery_id=result.delivery_id,
         public_token=result.public_token,
         state=result.state,
-        estimate_min_cents=result.estimate_min_cents,
-        estimate_max_cents=result.estimate_max_cents,
+        price_cents=result.price_cents,
         fee_cents=result.fee_cents,
         no_couriers_warning=result.no_couriers_warning,
     )

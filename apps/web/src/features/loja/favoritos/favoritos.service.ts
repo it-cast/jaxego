@@ -33,6 +33,12 @@ export class FavoritosService {
     return firstValueFrom(this.http.delete<void>(`${this.base}/favorites/${courierId}`));
   }
 
+  addBlock(courierId: number, reason?: string | null): Promise<BlockedRow> {
+    return firstValueFrom(
+      this.http.post<BlockedRow>(`${this.base}/blocks`, { courier_id: courierId, reason: reason ?? null }),
+    );
+  }
+
   listBlocks(): Promise<BlockedRow[]> {
     return firstValueFrom(this.http.get<BlockedRow[]>(`${this.base}/blocks`));
   }

@@ -27,6 +27,8 @@ class Area(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     # Local, configurable business rules (REQ-002) — JSON keeps it flexible.
     config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    # GeoJSON polygon boundary for the area (drawn on a map by the admin).
+    boundary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Soft-archive (DRV-002): not deletable with dependents -> archive instead.
     deleted_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
 

@@ -72,7 +72,7 @@ class FavoriteRow(BaseModel):
     courier_id: int
     priority: int
     courier_name: str
-    vehicle_plate: str | None
+    avg_stars: float
 
 
 class BlockCreateBody(BaseModel):
@@ -133,7 +133,11 @@ async def _assert_served(
 # ---------------------------------------------------------------------------
 @router.get("/favorites", response_model=list[FavoriteRow])
 async def list_favorites(scope: MerchantScopeDep, session: SessionDep) -> list[FavoriteRow]:
-    """List the store's favorites ordered by priority (single join, no N+1)."""
+    """List the store's favorites ordered by priority with avg rating."""
+    from sqlalchemy import func as sa_func
+    from datetime import UTC, timedelta, datetime
+    from app.ratings.models import CourierRating
+
     rows = (
         await session.execute(
             select(MerchantCourierFavorite, Courier)
@@ -145,12 +149,28 @@ async def list_favorites(scope: MerchantScopeDep, session: SessionDep) -> list[F
             .order_by(MerchantCourierFavorite.priority, MerchantCourierFavorite.id)
         )
     ).all()
+
+    courier_ids = [fav.courier_id for fav, _ in rows]
+    ratings: dict[int, float] = {}
+    if courier_ids:
+        cutoff = datetime.now(UTC) - timedelta(days=90)
+        rating_rows = (await session.execute(
+            select(
+                CourierRating.courier_id,
+                sa_func.avg(CourierRating.stars).label("avg"),
+            ).where(
+                CourierRating.courier_id.in_(courier_ids),
+                CourierRating.created_at >= cutoff,
+            ).group_by(CourierRating.courier_id)
+        )).all()
+        ratings = {int(r.courier_id): round(float(r.avg), 1) for r in rating_rows}
+
     return [
         FavoriteRow(
             courier_id=fav.courier_id,
             priority=fav.priority,
             courier_name=courier.full_name,
-            vehicle_plate=courier.vehicle_plate,
+            avg_stars=ratings.get(fav.courier_id, 0.0),
         )
         for fav, courier in rows
     ]
@@ -201,7 +221,7 @@ async def add_favorite(
         courier_id=fav.courier_id,
         priority=fav.priority,
         courier_name=courier.full_name,
-        vehicle_plate=courier.vehicle_plate,
+        avg_stars=0.0,
     )
 
 

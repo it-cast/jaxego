@@ -29,6 +29,14 @@
           }
         </select>
 
+        <label class="jx-cad__label" for="team">Equipe</label>
+        <select id="team" class="jx-cad__select" formControlName="team_id" required>
+          <option [ngValue]="null" disabled>Selecione a equipe</option>
+          @for (t of teams(); track t.id) {
+            <option [ngValue]="t.id">{{ t.name }}</option>
+          }
+        </select>
+
         <label class="jx-cad__label" for="name">Nome completo</label>
         <input id="name" class="jx-cad__input" type="text" autocomplete="name" formControlName="full_name" />
 

@@ -153,17 +153,18 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             </a>
           }
 
-          @if (delivery()!.state === 'COLETADA' && !delivery()!.courier_collection_method) {
+          @if (delivery()!.state === 'ACEITA') {
+            <button type="button" class="jx-active__primary" (click)="collectAndCharge()">
+              Coletar e cobrar entrega
+            </button>
+          } @else if (delivery()!.state === 'COLETADA' && !delivery()!.courier_collection_method) {
             <button type="button" class="jx-active__primary" (click)="showCollectionModal.set(true)">
               Cobrar entrega
             </button>
-          } @else {
+          } @else if (delivery()!.state === 'COLETADA') {
             <button type="button" class="jx-active__primary" (click)="advance()">
-              {{ primaryLabel() }}
+              Cheguei no destino
             </button>
-          }
-
-          @if (delivery()!.courier_collection_method && delivery()!.state === 'COLETADA') {
             <button type="button" class="jx-active__secondary" (click)="refusal()">
               Destinatario ausente / recusou
             </button>
@@ -525,7 +526,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     const collected = state === 'COLETADA';
     return [
       { key: 'aceita', label: 'Aceita', done: true, current: false },
-      { key: 'coleta', label: 'Coletar e fotografar', done: collected, current: !collected },
+      { key: 'coleta', label: 'Coletar', done: collected, current: !collected },
       { key: 'entrega', label: 'Entregar no destino', done: false, current: collected },
       { key: 'comprovar', label: 'Comprovar entrega', done: false, current: false },
     ];
@@ -580,11 +581,25 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     }
   }
 
-  protected advance(): void {
+  protected async collectAndCharge(): Promise<void> {
     const d = this.delivery();
-    if (!d) return;
-    const kind = d.state === 'COLETADA' ? 'delivery' : 'pickup';
-    void this.router.navigate(['/entregador/entrega', d.id, 'comprovar', kind]);
+    const courierId = this.auth.me()?.courier_id;
+    if (!d || !courierId) return;
+    await this.svc.markCollected(courierId, d.id);
+    await this.reload();
+    this.showCollectionModal.set(true);
+  }
+
+  protected async advance(): Promise<void> {
+    const d = this.delivery();
+    const courierId = this.auth.me()?.courier_id;
+    if (!d || !courierId) return;
+    if (d.proof_method === 'none') {
+      await this.svc.finalizeNoProof(courierId, d.id);
+      void this.router.navigate(['/entregador/entrega', d.id, 'concluida']);
+    } else {
+      void this.router.navigate(['/entregador/entrega', d.id, 'comprovar', 'delivery']);
+    }
   }
 
   protected refusal(): void {

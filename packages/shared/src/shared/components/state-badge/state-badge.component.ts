@@ -46,7 +46,6 @@ interface StateMeta {
       [style.--state-color]="'var(' + meta().cssVar + ')'"
       [class.jx-state-badge--dashboard]="variant === 'dashboard'"
     >
-      <span class="jx-state-badge__icon" aria-hidden="true">{{ meta().icon }}</span>
       <span class="jx-state-badge__label">{{ label() }}</span>
     </span>
   `,

@@ -15,7 +15,7 @@
   width: 100%;
   min-height: 44px;
   padding: var(--jx-space-3);
-  background: var(--surface-elevated);
+  background: var(--surface, #fff);
   color: var(--text);
   border: 1px solid var(--border-strong);
   border-radius: var(--jx-radius-md);

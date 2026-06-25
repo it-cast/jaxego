@@ -30,7 +30,9 @@ class OfferOut(BaseModel):
     # Pickup — the store's own address (full is allowed, D-04).
     pickup_address: str
     pickup_neighborhood: str | None
-    # Dropoff — RN-013: neighborhood + distance ONLY. NO street/number/complement.
+    # Dropoff — full address visible from the offer.
+    dropoff_address: str | None
+    dropoff_number: str | None
     dropoff_neighborhood: str
     distance_m: int | None
     # Money (integer cents).

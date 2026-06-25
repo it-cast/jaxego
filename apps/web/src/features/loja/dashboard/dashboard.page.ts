@@ -69,7 +69,7 @@ export class LojaDashboardPage implements OnInit {
   private computeKpis(items: DeliveryListItem[], total: number): void {
     const today = new Date().toISOString().slice(0, 10);
     const todays = items.filter((d) => (d.created_at ?? '').startsWith(today));
-    const freightToday = todays.reduce((sum, d) => sum + (d.estimate_min_cents ?? 0), 0);
+    const freightToday = todays.reduce((sum, d) => sum + (d.price_cents ?? 0), 0);
     this.kpis.set([
       { label: 'Entregas em curso', value: String(items.length) },
       { label: 'Entregas hoje', value: String(todays.length) },

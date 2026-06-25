@@ -23,10 +23,18 @@
   color: var(--text);
 }
 
-.jx-favorite-row__stats {
-  font-family: var(--jx-font-mono);
-  font-size: var(--jx-text-xs);
+.jx-favorite-row__rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--jx-text-sm);
   color: var(--text-muted);
+  font-weight: 600;
+}
+
+.jx-favorite-row__star {
+  color: var(--brand, #e8722a);
+  font-size: 14px;
 }
 
 .jx-favorite-row__actions {

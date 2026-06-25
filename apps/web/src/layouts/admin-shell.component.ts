@@ -15,6 +15,7 @@ import {
   faKey,
   faUsers,
   faStore,
+  faPeopleGroup,
   faRightFromBracket,
   type IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
@@ -185,6 +186,7 @@ export class AdminShellComponent {
 
   protected readonly links: { path: string; label: string; icon: IconDefinition }[] = [
     { path: 'inicio', label: 'Painel', icon: faGaugeHigh },
+    { path: 'equipes', label: 'Equipes', icon: faPeopleGroup },
     { path: 'entregadores', label: 'Entregadores', icon: faUsers },
     { path: 'config', label: 'Configurações', icon: faGear },
     { path: 'bairros', label: 'Bairros', icon: faMap },

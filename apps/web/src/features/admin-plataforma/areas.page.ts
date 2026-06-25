@@ -20,6 +20,7 @@ import {
   faCheck,
 } from '@fortawesome/free-solid-svg-icons';
 import { Area, PlatformAdminService } from './platform-admin.service';
+import { AreaMapComponent } from './area-map.component';
 
 type ViewMode = 'list' | 'create' | 'edit';
 
@@ -27,7 +28,7 @@ type ViewMode = 'list' | 'create' | 'edit';
   selector: 'jx-plataforma-areas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, DataTableComponent, FaIconComponent],
+  imports: [FormsModule, DataTableComponent, FaIconComponent, AreaMapComponent],
   templateUrl: './areas.page.html',
   styleUrl: './areas.page.scss',
 })
@@ -59,6 +60,7 @@ export class PlataformaAreasPage implements OnInit {
   ];
 
   protected form = this.emptyForm();
+  protected formBoundary: any = null;
   protected editingArea: Area | null = null;
 
   async ngOnInit(): Promise<void> {
@@ -92,6 +94,7 @@ export class PlataformaAreasPage implements OnInit {
 
   protected showCreate(): void {
     this.form = this.emptyForm();
+    this.formBoundary = null;
     this.editingArea = null;
     this.mode.set('create');
     this.msg.set(null);
@@ -104,6 +107,7 @@ export class PlataformaAreasPage implements OnInit {
       name: area.name,
       kyc_level: (area.config?.['kyc_level'] as string) ?? 'simples',
     };
+    this.formBoundary = area.boundary ?? null;
     this.mode.set('edit');
     this.msg.set(null);
   }
@@ -123,12 +127,14 @@ export class PlataformaAreasPage implements OnInit {
           codename: this.form.codename,
           name: this.form.name,
           config: { kyc_level: this.form.kyc_level },
+          boundary: this.formBoundary,
         });
         this.msg.set({ text: 'Area criada com sucesso.', tone: 'ok' });
       } else if (this.editingArea) {
         await this.svc.updateArea(this.editingArea.id, {
           name: this.form.name,
           config: { kyc_level: this.form.kyc_level },
+          boundary: this.formBoundary,
         });
         this.msg.set({ text: 'Area atualizada com sucesso.', tone: 'ok' });
       }

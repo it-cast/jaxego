@@ -29,6 +29,9 @@ api_router.include_router(auth_router)
 api_router.include_router(areas_router)
 api_router.include_router(area_admin_router)
 
+from app.teams.router import router as teams_admin_router  # noqa: E402
+api_router.include_router(teams_admin_router)
+
 # Phase 4 domain sub-routers (F-01).
 api_router.include_router(merchants_router)
 api_router.include_router(merchants_admin_router)

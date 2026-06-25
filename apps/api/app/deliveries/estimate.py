@@ -78,6 +78,7 @@ async def eligible_online_prices_cents(
     pickup_nbhd_id: int,
     dropoff_nbhd_id: int,
     distance_m: int | None,
+    team_ids: list[int] | None = None,
 ) -> list[int]:
     """Effective prices (cents) of online, active, eligible couriers for the trip.
 
@@ -87,19 +88,16 @@ async def eligible_online_prices_cents(
     over the area's online couriers (no N+1 over a large table — the online,
     active set is small).
     """
+    filters = [
+        Courier.area_id == area_id,
+        Courier.is_online.is_(True),
+        Courier.status == "active",
+        Courier.deleted_at.is_(None),
+    ]
+    if team_ids:
+        filters.append(Courier.team_id.in_(team_ids))
     couriers = list(
-        (
-            await session.execute(
-                select(Courier).where(
-                    Courier.area_id == area_id,
-                    Courier.is_online.is_(True),
-                    Courier.status == "active",
-                    Courier.deleted_at.is_(None),
-                )
-            )
-        )
-        .scalars()
-        .all()
+        (await session.execute(select(Courier).where(*filters))).scalars().all()
     )
     if not couriers:
         return []

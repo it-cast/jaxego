@@ -53,15 +53,38 @@ async def build_offer_view(
     timeout_s = int(offer["timeout_s"]) if offer and "timeout_s" in offer else 0
     remaining = await offer_state.offer_ttl_remaining_s(r, delivery.id)
 
+    # Resolve the courier's own price for this trip (not the median estimate).
+    courier_price = delivery.price_cents
+    if offer and "courier_id" in offer:
+        from app.deliveries.estimate import effective_price_cents
+        from app.couriers.models import CourierPricingTable
+        courier_id = int(offer["courier_id"])
+        pricing_rows = list(
+            (await session.execute(
+                select(CourierPricingTable).where(
+                    CourierPricingTable.courier_id == courier_id,
+                    CourierPricingTable.area_id == delivery.area_id,
+                )
+            )).scalars().all()
+        )
+        price = effective_price_cents(
+            pricing_rows,
+            dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
+            distance_m=delivery.distance_m,
+        )
+        if price is not None:
+            courier_price = price
+
     return OfferOut(
         delivery_id=delivery.id,
         loja_nome=merchant.trade_name if merchant else "",
         pickup_address=delivery.pickup_address,
         pickup_neighborhood=delivery.pickup_neighborhood,
-        # RN-013 — neighborhood name + distance ONLY (no street/number/complement).
+        dropoff_address=delivery.dropoff_address,
+        dropoff_number=delivery.dropoff_number,
         dropoff_neighborhood=nbhd.name if nbhd else "",
         distance_m=delivery.distance_m,
-        value_cents=delivery.estimate_max_cents,
+        value_cents=courier_price,
         payment_method=delivery.payment_method,
         receipt_method=delivery.receipt_method,
         eta_s=None,
@@ -117,7 +140,24 @@ async def accept_offer(
             # Already accepted/cancelled — the race is lost. No penalty (F-05 E3).
             raise OfferAlreadyTakenError()
         try:
-            locked.courier_id = courier_id  # bind the winner before the transition
+            locked.courier_id = courier_id
+            # Set price_cents to the courier's actual price for this trip.
+            from app.deliveries.estimate import effective_price_cents
+            from app.couriers.models import CourierPricingTable
+            pricing_rows = list(
+                (await session.execute(
+                    select(CourierPricingTable).where(
+                        CourierPricingTable.courier_id == courier_id,
+                        CourierPricingTable.area_id == area_id,
+                    )
+                )).scalars().all()
+            )
+            real_price = effective_price_cents(
+                pricing_rows,
+                dropoff_nbhd_id=locked.dropoff_neighborhood_id,
+                distance_m=locked.distance_m,
+            )
+            locked.price_cents = real_price
             await transition(
                 session,
                 delivery=locked,

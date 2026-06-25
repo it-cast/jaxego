@@ -7,7 +7,6 @@ import {
 import {
   FavoriteRowComponent,
   BlockedRowComponent,
-  type ScoreLevel,
 } from '@jaxego/shared/components';
 import { FavoritosService } from './favoritos.service';
 import type { BlockedRow, FavoriteRow } from './favoritos.models';
@@ -56,9 +55,7 @@ import type { BlockedRow, FavoriteRow } from './favoritos.models';
                 <jx-favorite-row
                   [position]="i + 1"
                   [name]="fav.courier_name"
-                  [scoreLevel]="placeholderScoreLevel"
-                  [scoreValue]="null"
-                  [stats]="plateStats(fav)"
+                  [avgStars]="fav.avg_stars"
                   [canMoveUp]="i > 0"
                   [canMoveDown]="i < favorites().length - 1"
                   (moveUp)="moveUp(i)"
@@ -121,12 +118,6 @@ export class FavoritosPage implements OnInit {
     }
   }
 
-  /** Score endpoint lands later (ADR-013 — exhibited only); placeholder for now. */
-  protected readonly placeholderScoreLevel: ScoreLevel = 'probation';
-
-  protected plateStats(fav: FavoriteRow): string | null {
-    return fav.vehicle_plate;
-  }
 
   protected formatDate(iso: string | null): string | null {
     if (!iso) return null;

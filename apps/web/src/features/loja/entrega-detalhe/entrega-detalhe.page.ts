@@ -19,6 +19,9 @@ import {
 } from '@jaxego/shared/components/tracking-timeline/tracking-timeline.component';
 import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 import { DeliveryService } from '../entregas/delivery.service';
+import { FavoritosService } from '../favoritos/favoritos.service';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
 
 /**
  * Store delivery detail (tela 13). Reuses jx-tracking-timeline + jx-state-badge.
@@ -37,6 +40,7 @@ import { DeliveryService } from '../entregas/delivery.service';
     TrackingTimelineComponent,
     StateBadgeComponent,
     LiveMapComponent,
+    FaIconComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -82,6 +86,31 @@ import { DeliveryService } from '../entregas/delivery.service';
               <button type="button" class="jx-detail__cancel" (click)="cancel(d)">
                 {{ cancelLabel(d) }}
               </button>
+            }
+
+            @if (d.state === 'FINALIZADA' && d.courier_id) {
+              <div class="jx-detail__courier-actions">
+                <button
+                  type="button"
+                  class="jx-detail__fav-btn"
+                  [class.jx-detail__fav-btn--active]="isFavorited()"
+                  [disabled]="favProcessing() || isBlocked()"
+                  (click)="toggleFavorite(d.courier_id!)"
+                >
+                  <fa-icon [icon]="iconStar" aria-hidden="true" />
+                  {{ isFavorited() ? 'Favoritado' : 'Favoritar' }}
+                </button>
+                <button
+                  type="button"
+                  class="jx-detail__block-btn"
+                  [class.jx-detail__block-btn--active]="isBlocked()"
+                  [disabled]="blockProcessing() || isFavorited()"
+                  (click)="toggleBlock(d.courier_id!)"
+                >
+                  <fa-icon [icon]="iconBan" aria-hidden="true" />
+                  {{ isBlocked() ? 'Bloqueado' : 'Bloquear' }}
+                </button>
+              </div>
             }
 
             @if (d.state === 'FINALIZADA' && !rated()) {
@@ -182,6 +211,10 @@ import { DeliveryService } from '../entregas/delivery.service';
 export class EntregaDetalhePage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly service = inject(DeliveryService);
+  private readonly favService = inject(FavoritosService);
+
+  protected readonly iconStar = faStar;
+  protected readonly iconBan = faBan;
 
   protected readonly delivery = signal<DeliveryListItem | null>(null);
   protected readonly notFound = signal(false);
@@ -189,6 +222,10 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   protected readonly rated = signal(false);
   protected readonly justRated = signal(false);
   protected readonly ratingSubmitting = signal(false);
+  protected readonly isFavorited = signal(false);
+  protected readonly favProcessing = signal(false);
+  protected readonly isBlocked = signal(false);
+  protected readonly blockProcessing = signal(false);
   protected ratingComment = '';
 
   private deliveryId = 0;
@@ -218,6 +255,14 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
         this.selectedStars.set(existing.stars);
         this.ratingComment = existing.comment ?? '';
         this.rated.set(true);
+      }
+      if (d.courier_id) {
+        const [favs, blocks] = await Promise.all([
+          this.favService.listFavorites(),
+          this.favService.listBlocks(),
+        ]);
+        this.isFavorited.set(favs.some(f => f.courier_id === d.courier_id));
+        this.isBlocked.set(blocks.some(b => b.courier_id === d.courier_id));
       }
     }
   }
@@ -264,6 +309,35 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
       this.rated.set(true);
       this.justRated.set(true);
     }
+  }
+
+  protected async toggleFavorite(courierId: number): Promise<void> {
+    this.favProcessing.set(true);
+    try {
+      if (this.isFavorited()) {
+        await this.favService.removeFavorite(courierId);
+        this.isFavorited.set(false);
+      } else {
+        await this.favService.addFavorite(courierId);
+        this.isFavorited.set(true);
+      }
+    } catch { /* already exists or not found — ignore */ }
+    this.favProcessing.set(false);
+  }
+
+  protected async toggleBlock(courierId: number): Promise<void> {
+    this.blockProcessing.set(true);
+    try {
+      if (this.isBlocked()) {
+        await this.favService.removeBlock(courierId);
+        this.isBlocked.set(false);
+      } else {
+        await this.favService.addBlock(courierId);
+        this.isBlocked.set(true);
+        this.isFavorited.set(false);
+      }
+    } catch { /* already exists or not found */ }
+    this.blockProcessing.set(false);
   }
 
   protected async cancel(d: DeliveryListItem): Promise<void> {

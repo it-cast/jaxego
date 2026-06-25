@@ -6,7 +6,6 @@ import {
   Output,
   signal,
 } from '@angular/core';
-import { WarnBannerComponent } from '@jaxego/shared/state';
 
 /**
  * jx-availability-toggle — online/offline switch (UI-SPEC §5, REQ-018/D-06).
@@ -21,7 +20,7 @@ import { WarnBannerComponent } from '@jaxego/shared/state';
   selector: 'jx-availability-toggle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [WarnBannerComponent],
+  imports: [],
   template: `
     <div class="jx-availability">
       <button
@@ -41,13 +40,13 @@ import { WarnBannerComponent } from '@jaxego/shared/state';
         </span>
       </button>
 
-      @if (disabled) {
-        <jx-warn-banner
-          message="Termine sua validação para ficar online e receber ofertas."
-        />
-        <button type="button" class="jx-availability__cta" (click)="seeValidation.emit()">
-          Ver validação
-        </button>
+      @if (disabled && disabledReason === 'kyc') {
+        <div class="jx-availability__kyc-card">
+          <span class="jx-availability__kyc-msg">Termine sua validação para ficar online e receber ofertas.</span>
+          <button type="button" class="jx-availability__kyc-btn" (click)="seeValidation.emit()">
+            Ver validação
+          </button>
+        </div>
       }
     </div>
   `,
@@ -56,6 +55,7 @@ import { WarnBannerComponent } from '@jaxego/shared/state';
 export class AvailabilityToggleComponent {
   /** Non-active courier → the switch is inert and the warn-banner shows. */
   @Input() disabled = false;
+  @Input() disabledReason: 'kyc' | 'coverage' | '' = '';
 
   @Input() set isOnline(value: boolean) {
     this.online.set(value);

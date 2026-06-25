@@ -108,6 +108,15 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
     # so the delivery split can pay the courier's corrida. NULL → no platform repasse.
     s2p_recipient_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Team (every courier must belong to a team).
+    team_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("teams.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+        default=0,
+    )
+
     # Availability (Phase 6, D-06): online/offline is persisted; `busy` is DERIVED
     # from the load (active deliveries vs max_concurrent) — NOT a column. Only an
     # `active` courier may go online (guarded in availability.py).

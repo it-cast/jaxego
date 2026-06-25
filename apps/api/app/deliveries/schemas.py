@@ -38,8 +38,7 @@ class PaymentMethod(str, Enum):
 
 
 class ProofMethod(str, Enum):
-    """Proof of delivery (D-01). Only `photo` active; `otp` is "em breve"."""
-
+    none = "none"
     photo = "photo"
     photo_reference = "photo_reference"
     otp = "otp"
@@ -81,6 +80,9 @@ class CreateDeliveryBody(BaseModel):
     reference_number: str | None = Field(default=None, max_length=64)
     notes: str | None = Field(default=None, max_length=500)
 
+    # --- Target teams (at least one required) ---
+    team_ids: list[int] = Field(min_length=1)
+
     # --- Choices ---
     proof_method: ProofMethod = ProofMethod.photo
     payment_method: PaymentMethod = PaymentMethod.direct
@@ -117,8 +119,7 @@ class DeliveryOut(BaseModel):
     dropoff_lat: float | None = None
     dropoff_lng: float | None = None
     # Money (integer cents).
-    estimate_min_cents: int | None
-    estimate_max_cents: int | None
+    price_cents: int | None = None
     fee_cents: int
     reference_number: str | None
     # Package size/weight (MG-1) — optional.
@@ -141,8 +142,7 @@ class DeliveryListItem(BaseModel):
     state: str
     payment_method: str
     dropoff_neighborhood_id: int
-    estimate_min_cents: int | None
-    estimate_max_cents: int | None
+    price_cents: int | None = None
     fee_cents: int
     reference_number: str | None
     recipient_name: str | None
@@ -174,8 +174,7 @@ class CreateDeliveryResponse(BaseModel):
     delivery_id: int
     public_token: str
     state: str
-    estimate_min_cents: int | None
-    estimate_max_cents: int | None
+    price_cents: int | None = None
     fee_cents: int
     # E2 (D-06): 0 eligible online couriers — non-blocking warning.
     no_couriers_warning: bool
@@ -216,8 +215,7 @@ class CourierDeliveryOut(BaseModel):
     recipient_name: str | None
     recipient_phone_masked: str | None
     # Money (centavos) + order metadata.
-    estimate_min_cents: int | None
-    estimate_max_cents: int | None
+    price_cents: int | None = None
     fee_cents: int
     reference_number: str | None
     items_description: str | None
@@ -245,8 +243,7 @@ class CourierDeliveryListItem(BaseModel):
     dropoff_number: str | None = None
     dropoff_neighborhood_id: int
     distance_m: int | None
-    estimate_min_cents: int | None
-    estimate_max_cents: int | None
+    price_cents: int | None = None
     fee_cents: int
     created_at: str | None
 

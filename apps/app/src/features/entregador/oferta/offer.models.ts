@@ -8,7 +8,8 @@ export interface OfferOut {
   loja_nome: string;
   pickup_address: string;
   pickup_neighborhood: string | null;
-  /** RN-013 — neighborhood name only (NEVER the full destination address). */
+  dropoff_address: string | null;
+  dropoff_number: string | null;
   dropoff_neighborhood: string;
   distance_m: number | null;
   value_cents: number | null;

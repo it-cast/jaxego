@@ -60,6 +60,7 @@ async def build_candidates(
     pickup_nbhd_id: int,
     dropoff_nbhd_id: int,
     distance_m: int | None,
+    team_ids: list[int] | None = None,
 ) -> list[int]:
     """Ordered candidate courier ids: favorites first, then ranking (RN-009).
 
@@ -89,17 +90,18 @@ async def build_candidates(
     ).all()
     favorite_priority: dict[int, int] = {int(cid): int(prio) for cid, prio in favorite_rows}
 
-    # Online active couriers in the area.
+    # Online active couriers in the area (filtered by team if specified).
+    courier_filter = [
+        Courier.area_id == area_id,
+        Courier.is_online.is_(True),
+        Courier.status == "active",
+        Courier.deleted_at.is_(None),
+    ]
+    if team_ids:
+        courier_filter.append(Courier.team_id.in_(team_ids))
     couriers = list(
         (
-            await session.execute(
-                select(Courier).where(
-                    Courier.area_id == area_id,
-                    Courier.is_online.is_(True),
-                    Courier.status == "active",
-                    Courier.deleted_at.is_(None),
-                )
-            )
+            await session.execute(select(Courier).where(*courier_filter))
         )
         .scalars()
         .all()

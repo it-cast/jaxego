@@ -63,9 +63,9 @@ import type { OfferOut, OfferResult } from './offer.models';
                 <span class="jx-stop__overline">ENTREGA</span>
               </div>
               <span class="jx-stop__line">
-                {{ o.dropoff_neighborhood }} · {{ distanceKm() }}
+                {{ o.dropoff_address }}@if (o.dropoff_number) {, {{ o.dropoff_number }}}
               </span>
-              <span class="jx-stop__hint">(endereco completo apos a coleta)</span>
+              <span class="jx-stop__hint">{{ o.dropoff_neighborhood }} · {{ distanceKm() }}</span>
             </div>
           </div>
 

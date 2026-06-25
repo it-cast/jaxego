@@ -3,7 +3,7 @@ export interface FavoriteRow {
   courier_id: number;
   priority: number;
   courier_name: string;
-  vehicle_plate: string | null;
+  avg_stars: number;
 }
 
 export interface BlockedRow {

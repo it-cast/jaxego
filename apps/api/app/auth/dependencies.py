@@ -87,9 +87,8 @@ async def get_current_user(request: Request, session: SessionDep) -> User:
     # Populate the reserved user_id log field (no PII) — observability.
     structlog.contextvars.bind_contextvars(user_id=user.id)
 
-    # Platform admin MUST enrol TOTP before any protected access (D-03/REQ-005).
-    if user.platform_role == PLATFORM_ADMIN_ROLE and not user.totp_enrolled:
-        # The enrolment endpoints and /me (surface routing) bypass this guard.
+    # TOTP guard: only block if totp_required is set and user hasn't enrolled yet.
+    if user.totp_required and not user.totp_enrolled:
         if not request.url.path.endswith(("/auth/totp/enroll", "/auth/totp/verify", "/auth/me")):
             raise TotpEnrollmentRequiredError()
 
