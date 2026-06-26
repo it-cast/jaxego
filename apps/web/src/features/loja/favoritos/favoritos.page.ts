@@ -42,10 +42,10 @@ import type { BlockedRow, FavoriteRow } from './favoritos.models';
         <jx-error-state message="Não deu pra carregar." retryLabel="Tentar de novo" (retry)="load()" />
       } @else {
         <section class="jx-favoritos__card" aria-labelledby="fav-title">
-          <h2 id="fav-title" class="jx-favoritos__title">⭐ Favoritos (ordem de prioridade)</h2>
+          <h2 id="fav-title" class="jx-favoritos__title">Favoritos (ordem de prioridade)</h2>
           @if (favorites().length === 0) {
             <jx-empty-state
-              icon="⭐"
+              icon=""
               title="Você ainda não tem favoritos."
               message="Marque a estrela em qualquer entrega concluída."
             />
@@ -68,9 +68,9 @@ import type { BlockedRow, FavoriteRow } from './favoritos.models';
         </section>
 
         <section class="jx-favoritos__card" aria-labelledby="blk-title">
-          <h2 id="blk-title" class="jx-favoritos__title">🚫 Bloqueados</h2>
+          <h2 id="blk-title" class="jx-favoritos__title">Bloqueados</h2>
           @if (blocks().length === 0) {
-            <jx-empty-state icon="🚫" title="Nenhum entregador bloqueado." />
+            <jx-empty-state icon="" title="Nenhum entregador bloqueado." />
           } @else {
             <ul class="jx-favoritos__list">
               @for (blk of blocks(); track blk.courier_id) {

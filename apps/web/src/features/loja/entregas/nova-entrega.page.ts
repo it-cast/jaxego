@@ -11,6 +11,8 @@ import { firstValueFrom } from 'rxjs';
 import { FieldComponent } from '@jaxego/shared/components/field/field.component';
 import { UpgradeModalComponent } from '@jaxego/shared/components/upgrade-modal/upgrade-modal.component';
 import { ErrorStateComponent } from '@jaxego/shared/state';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faBoxOpen } from '@fortawesome/free-solid-svg-icons';
 import { CardFormComponent } from '../plano/components/jx-card-form.component';
 import { Plan } from '@jaxego/shared/components/plan-card/plan-card.component';
 import {
@@ -62,6 +64,7 @@ interface TeamOnline {
     UpgradeModalComponent,
     ErrorStateComponent,
     CardFormComponent,
+    FaIconComponent,
   ],
   templateUrl: './nova-entrega.page.html',
   styleUrl: './nova-entrega.page.scss',
@@ -147,6 +150,7 @@ export class NovaEntregaPage {
   // Phase 10 — online payment (card/pix). F-03 E3: a refusal does NOT create the
   // delivery; the store gets retry or switch-to-direct (no form data lost).
   protected readonly paymentMethod = signal<'direct' | 'pix' | 'card'>('direct');
+  protected readonly iconBox = faBoxOpen;
   protected readonly proofMethod = signal<string>('photo');
   protected readonly receiptMethod = signal<string>('dinheiro');
   protected readonly deliveryRefused = signal(false);

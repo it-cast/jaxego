@@ -14,7 +14,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faEye, faEyeSlash, faEnvelope, faLock, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import {
   ErrorStateComponent,
@@ -37,10 +37,13 @@ export class LoginPage implements AfterViewInit {
 
   protected readonly isApp = this.route.snapshot.data['surface'] === 'app';
 
+  private readonly REMEMBER_KEY = 'jx-remember-email';
+
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
     totp: [''],
+    remember: [false],
   });
 
   protected readonly loading = signal(false);
@@ -49,6 +52,9 @@ export class LoginPage implements AfterViewInit {
   protected readonly showPassword = signal(false);
   protected readonly faEye = faEye;
   protected readonly faEyeSlash = faEyeSlash;
+  protected readonly faEnvelope = faEnvelope;
+  protected readonly faLock = faLock;
+  protected readonly faShield = faShieldHalved;
 
   private readonly errorRef =
     viewChild<ElementRef<HTMLElement>>('errorBlock');
@@ -57,7 +63,11 @@ export class LoginPage implements AfterViewInit {
     viewChild<ElementRef<HTMLInputElement>>('emailInput');
 
   ngAfterViewInit(): void {
-    // Initial focus on the e-mail field (UI-SPEC §5.3 idle state).
+    const saved = localStorage.getItem(this.REMEMBER_KEY);
+    if (saved) {
+      this.form.controls.email.setValue(saved);
+      this.form.controls.remember.setValue(true);
+    }
     this.emailRef()?.nativeElement.focus();
   }
 
@@ -81,7 +91,12 @@ export class LoginPage implements AfterViewInit {
     }
 
     this.loading.set(true);
-    const { email, password, totp } = this.form.getRawValue();
+    const { email, password, totp, remember } = this.form.getRawValue();
+    if (remember) {
+      localStorage.setItem(this.REMEMBER_KEY, email);
+    } else {
+      localStorage.removeItem(this.REMEMBER_KEY);
+    }
     const result = await this.auth.login({
       email,
       password,

@@ -1,4 +1,3 @@
-<a routerLink="/loja" class="jx-nova__back">← Painel</a>
 <h1 class="jx-nova__title">Nova entrega</h1>
 
 <div class="jx-nova__layout">
@@ -100,7 +99,7 @@
               [class.jx-nova__pkg-card--sel]="selectedPackage() === pkg.nome"
               (click)="selectPackage(pkg)"
             >
-              <span class="jx-nova__pkg-icon">📦</span>
+              <span class="jx-nova__pkg-icon"><fa-icon [icon]="iconBox" aria-hidden="true" /></span>
               <strong class="jx-nova__pkg-name">{{ pkg.nome }}</strong>
               <span class="jx-nova__pkg-desc">{{ pkg.descricao }}</span>
               <span class="jx-nova__pkg-dims">
