@@ -61,11 +61,12 @@ async def build_candidates(
     dropoff_nbhd_id: int,
     distance_m: int | None,
     team_ids: list[int] | None = None,
+    excluded_ids: set[int] | None = None,
 ) -> list[int]:
     """Ordered candidate courier ids: favorites first, then ranking (RN-009).
 
     Eligible = online + active + not deleted + covers BOTH points + load < max +
-    NOT blocked by the store. Bulk-loads coverage/pricing/favorites/blocks (no N+1).
+    NOT blocked by the store + NOT in excluded_ids (declined). Bulk-loads coverage/pricing/favorites/blocks (no N+1).
     """
     # Blocked set — removed BEFORE favorites/ranking (TH-5). Set difference.
     blocked = {
@@ -144,9 +145,10 @@ async def build_candidates(
 
     favorites: list[tuple[int, int]] = []  # (priority, courier_id)
     ranked: list[tuple[tuple, int]] = []  # (rank_key, courier_id)
+    _excluded = excluded_ids or set()
     for courier in couriers:
-        if courier.id in blocked:
-            continue  # blocked never receives an offer (RN-014 / TH-5)
+        if courier.id in blocked or courier.id in _excluded:
+            continue
         coverage = coverage_by.get(courier.id, [])
         if not is_eligible(coverage, pickup_nbhd_id, dropoff_nbhd_id):
             continue
@@ -206,6 +208,7 @@ async def advance_after_decline(
         if offer is None or offer.get("courier_id") != declined_by:
             return  # the offer already moved on — nothing to do (idempotent)
         await offer_state.close_offer(r, delivery_id)
+        await offer_state.add_declined(r, delivery_id, declined_by)
         logger.info(
             "dispatch.offer.declined",
             area_id=area_id,

@@ -127,3 +127,25 @@ async def next_candidate(r: aioredis.Redis, delivery_id: int) -> int | None:
 async def clear_candidates(r: aioredis.Redis, delivery_id: int) -> None:
     """Drop the candidate queue (cancel / done)."""
     await r.delete(_candidates_key(delivery_id))
+
+
+def _declined_key(delivery_id: int) -> str:
+    return f"dispatch:{delivery_id}:declined"
+
+
+async def add_declined(r: aioredis.Redis, delivery_id: int, courier_id: int) -> None:
+    """Track a courier who declined this delivery."""
+    key = _declined_key(delivery_id)
+    await r.sadd(key, str(courier_id))  # type: ignore[misc]
+    await r.expire(key, 86400)
+
+
+async def get_declined(r: aioredis.Redis, delivery_id: int) -> set[int]:
+    """Get all courier IDs who declined this delivery."""
+    raw = await r.smembers(_declined_key(delivery_id))  # type: ignore[misc]
+    return {int(x) for x in raw} if raw else set()
+
+
+async def clear_declined(r: aioredis.Redis, delivery_id: int) -> None:
+    """Clear the declined set (delivery finished)."""
+    await r.delete(_declined_key(delivery_id))

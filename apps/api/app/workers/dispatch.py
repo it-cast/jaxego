@@ -138,6 +138,7 @@ async def dispatch_offer_task(ctx: dict[str, Any], delivery_id: int) -> str:
             existing = await r.exists(f"dispatch:{delivery_id}:candidates")
             if not existing:
                 pickup_id = delivery.dropoff_neighborhood_id  # pickup polygon optional (Phase 7)
+                declined = await offer_state.get_declined(r, delivery_id)
                 candidates = await cascade.build_candidates(
                     session,
                     area_id=delivery.area_id,
@@ -146,6 +147,7 @@ async def dispatch_offer_task(ctx: dict[str, Any], delivery_id: int) -> str:
                     dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
                     distance_m=delivery.distance_m,
                     team_ids=delivery.team_ids,
+                    excluded_ids=declined,
                 )
                 # Queue lives for the whole favorites+ranking window.
                 ttl = cfg.timeout_oferta_s * (len(candidates) + 1) + cfg.timeout_favoritos_s
