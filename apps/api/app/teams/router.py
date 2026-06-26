@@ -22,6 +22,22 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 AreaAdminDep = Annotated[User, Depends(require_role("admin_area"))]
 
 
+async def _team_read(session: AsyncSession, team) -> TeamRead:
+    email = await service.get_responsavel_email(session, team)
+    return TeamRead(
+        id=team.id,
+        area_id=team.area_id,
+        name=team.name,
+        cnpj=team.cnpj,
+        razao_social=team.razao_social,
+        responsavel=team.responsavel,
+        responsavel_cpf=team.responsavel_cpf,
+        responsavel_email=email,
+        deleted_at=team.deleted_at,
+        created_at=team.created_at,
+    )
+
+
 @router.get("")
 async def list_teams(
     admin: AreaAdminDep,
@@ -31,10 +47,10 @@ async def list_teams(
     offset: int = 0,
 ) -> dict:
     teams, total = await service.list_teams(session, area_id=scope, limit=limit, offset=offset)
-    return {
-        "items": [TeamRead.model_validate(t) for t in teams],
-        "total": total,
-    }
+    items = []
+    for t in teams:
+        items.append(await _team_read(session, t))
+    return {"items": items, "total": total}
 
 
 @router.post("", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
@@ -46,7 +62,7 @@ async def create_team(
 ) -> TeamRead:
     team = await service.create_team(session, body, area_id=scope)
     await session.commit()
-    return TeamRead.model_validate(team)
+    return await _team_read(session, team)
 
 
 @router.patch("/{team_id}", response_model=TeamRead)
@@ -59,7 +75,7 @@ async def update_team(
 ) -> TeamRead:
     team = await service.update_team(session, team_id, body, area_id=scope)
     await session.commit()
-    return TeamRead.model_validate(team)
+    return await _team_read(session, team)
 
 
 @router.post("/{team_id}/archive", response_model=TeamRead)
@@ -71,4 +87,4 @@ async def archive_team(
 ) -> TeamRead:
     team = await service.archive_team(session, team_id, area_id=scope)
     await session.commit()
-    return TeamRead.model_validate(team)
+    return await _team_read(session, team)

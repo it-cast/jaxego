@@ -309,6 +309,7 @@ def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | Non
         recipient_phone_masked=mask_phone_display(recipient.phone_e164) if recipient else None,
         price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
+        has_image=delivery.image_key is not None,
         reference_number=delivery.reference_number,
         items_description=delivery.items_description,
         items_quantity=delivery.items_quantity,
@@ -367,6 +368,7 @@ async def list_courier_deliveries(
             distance_m=d.distance_m,
             price_cents=d.price_cents,
             fee_cents=d.fee_cents,
+            has_image=d.image_key is not None,
             created_at=d.created_at.isoformat() if d.created_at else None,
         )
         for d, _ in page.items
@@ -391,6 +393,26 @@ async def get_courier_delivery(
     )
     merchant = await session.get(Merchant, delivery.merchant_id)
     return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None)
+
+
+@router.get("/{courier_id}/deliveries/{delivery_id}/image")
+async def get_courier_delivery_image(
+    courier_id: int,
+    delivery_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Presigned GET for the delivery product image (courier-facing)."""
+    from app.integrations.factory import get_storage_adapter
+    from fastapi import HTTPException
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery, _ = await delivery_service.get_courier_delivery(session, courier_id=courier.id, delivery_id=delivery_id)
+    if not delivery.image_key:
+        raise HTTPException(status_code=404, detail="Sem imagem.")
+    storage = get_storage_adapter()
+    presign = await storage.presign_get(delivery.image_key, expires_in=180)
+    return {"url": presign.url, "expires_in": 180}
 
 
 @router.post("/{courier_id}/deliveries/{delivery_id}/collect")

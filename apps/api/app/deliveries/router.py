@@ -61,6 +61,7 @@ def _delivery_out(delivery, recipient) -> DeliveryOut:
         height_cm=delivery.height_cm,
         price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
+        has_image=delivery.image_key is not None,
         reference_number=delivery.reference_number,
         recipient_name=recipient.name if recipient else None,
         recipient_phone_masked=(mask_phone_display(recipient.phone_e164) if recipient else None),
@@ -226,6 +227,51 @@ async def estimate_delivery(
     }
 
 
+@router.post("/{delivery_id}/image/presign")
+async def presign_delivery_image(
+    delivery_id: int,
+    body: dict,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Presign a PUT for the delivery product image."""
+    import secrets
+    from app.integrations.factory import get_storage_adapter
+
+    delivery = await service.get_delivery(session, delivery_id=delivery_id, area_id=scope.area_id, merchant_id=scope.merchant_id)
+    token = secrets.token_urlsafe(16)
+    key = f"deliveries/{delivery.id}/{token}.webp"
+    storage = get_storage_adapter()
+    content_type = body.get("content_type", "image/jpeg")
+    presign = await storage.presign_put(key, content_type=content_type, expires_in=300)
+    delivery.image_key = key
+    await session.commit()
+    return {
+        "presigned_url": presign.url,
+        "method": presign.method,
+        "headers": presign.headers,
+        "key": key,
+    }
+
+
+@router.get("/{delivery_id}/image")
+async def get_delivery_image(
+    delivery_id: int,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Presigned GET for the delivery product image."""
+    from app.integrations.factory import get_storage_adapter
+
+    delivery = await service.get_delivery(session, delivery_id=delivery_id, area_id=scope.area_id, merchant_id=scope.merchant_id)
+    if not delivery.image_key:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Sem imagem.")
+    storage = get_storage_adapter()
+    presign = await storage.presign_get(delivery.image_key, expires_in=180)
+    return {"url": presign.url, "expires_in": 180}
+
+
 @router.get("", response_model=DeliveryListOut)
 async def list_deliveries(
     scope: MerchantScopeDep,
@@ -254,6 +300,7 @@ async def list_deliveries(
             dropoff_neighborhood_id=d.dropoff_neighborhood_id,
             price_cents=d.price_cents,
             fee_cents=d.fee_cents,
+            has_image=d.image_key is not None,
             reference_number=d.reference_number,
             recipient_name=r.name if r else None,
             recipient_phone_masked=mask_phone_display(r.phone_e164) if r else None,

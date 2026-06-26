@@ -101,6 +101,8 @@ export class AuthService {
         return '/admin';
       case 'plataforma':
         return '/plataforma';
+      case 'equipe':
+        return '/equipe';
       default:
         return '/entrar';
     }

@@ -109,6 +109,33 @@
           }
         </div>
       </div>
+      <div class="jx-nova__image-field">
+        <span class="jx-nova__packages-label">Foto do produto (opcional)</span>
+        @if (imagePreview()) {
+          <div class="jx-nova__image-preview">
+            <button type="button" class="jx-nova__image-thumb" (click)="lightboxUrl.set(imagePreview())">
+              <img [src]="imagePreview()" alt="Produto" />
+            </button>
+            <button type="button" class="jx-nova__image-remove" (click)="removeImage()">
+              <fa-icon [icon]="iconXmark" aria-hidden="true" /> Remover
+            </button>
+          </div>
+        } @else {
+          <div class="jx-nova__image-options">
+            <label class="jx-nova__image-upload">
+              <fa-icon [icon]="iconBox" aria-hidden="true" />
+              <span>Selecionar da galeria</span>
+              <input type="file" accept="image/*" (change)="onImageSelect($event)" hidden />
+            </label>
+            <label class="jx-nova__image-upload">
+              <fa-icon [icon]="iconCamera" aria-hidden="true" />
+              <span>Tirar foto</span>
+              <input type="file" accept="image/*" capture="environment" (change)="onImageSelect($event)" hidden />
+            </label>
+          </div>
+        }
+      </div>
+
       <jx-field
         label="Observações para o entregador (opcional)"
         formControlName="notes"
@@ -156,7 +183,7 @@
     }
 
     <button type="submit" class="jx-nova__cta" [disabled]="!canSubmit()" [attr.aria-busy]="submitting() ? 'true' : null">
-      {{ submitting() ? 'Criando…' : 'Chamar entregador' }}
+      {{ submitLabel() }}
     </button>
   </form>
 
@@ -209,6 +236,13 @@
     }
   </aside>
 </div>
+
+@if (lightboxUrl()) {
+  <div class="jx-nova__lightbox" (click)="lightboxUrl.set(null)">
+    <button type="button" class="jx-nova__lightbox-close">✕</button>
+    <img [src]="lightboxUrl()" alt="Produto" (click)="$event.stopPropagation()" />
+  </div>
+}
 
 @if (showUpgrade()) {
   <jx-upgrade-modal

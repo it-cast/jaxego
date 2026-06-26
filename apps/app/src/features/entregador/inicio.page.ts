@@ -65,17 +65,27 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         <jx-availability-toggle
           [isOnline]="online()"
           [disabled]="toggleDisabled()"
-          [disabledReason]="kycPending() ? 'kyc' : noCoverage() ? 'coverage' : ''"
+          disabledReason=""
           (onlineChange)="setOnline($event)"
           (seeValidation)="goProfile()"
         />
       </header>
 
+      @if (kycPending()) {
+        <div class="jx-home-warn-wrap">
+          <div class="jx-home-kyc-card">
+            <span class="jx-home-kyc-msg">Termine sua validação para ficar online e receber ofertas.</span>
+            <button type="button" class="jx-home-kyc-btn" (click)="goDocumentacao()">Ver validação</button>
+          </div>
+        </div>
+      }
+
       @if (noCoverage() && !kycPending()) {
         <div class="jx-home-warn-wrap">
-          <jx-warn-banner
-            message="Cadastre pelo menos um bairro de entrega para ficar online. Acesse seu perfil para configurar."
-          />
+          <div class="jx-home-kyc-card">
+            <span class="jx-home-kyc-msg">Cadastre pelo menos um bairro de entrega para ficar online.</span>
+            <button type="button" class="jx-home-kyc-btn" (click)="goCobertura()">Cadastrar bairros</button>
+          </div>
         </div>
       }
 
@@ -261,6 +271,9 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
       }
 
       .jx-home-warn-wrap { padding: 0 var(--jx-space-4); }
+      .jx-home-kyc-card { display: flex; flex-direction: column; gap: 8px; padding: var(--jx-space-3); background: hsl(40 80% 92%); border: 1px solid hsl(40 80% 50%); border-radius: 12px; }
+      .jx-home-kyc-msg { font-size: 13px; font-weight: 600; color: #856404; }
+      .jx-home-kyc-btn { align-self: flex-start; min-height: 36px; padding: 0 var(--jx-space-3); border: 0; border-radius: 999px; background: hsl(40 80% 50%); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
 
       /* Shared */
       .jx-home-link {
@@ -420,6 +433,12 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   }
   protected goProfile(): void {
     void this.router.navigate(['/entregador/perfil']);
+  }
+  protected goDocumentacao(): void {
+    void this.router.navigate(['/entregador/perfil/documentacao']);
+  }
+  protected goCobertura(): void {
+    void this.router.navigate(['/entregador/cobertura']);
   }
   protected goActive(): void {
     void this.router.navigate(['/entregador/entrega-ativa']);

@@ -153,6 +153,9 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     # Target teams (JSON array of team IDs — at least one required).
     team_ids: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
+    # Product image (optional, uploaded by the store).
+    image_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     # Opaque, non-sequential token for public tracking (Phase 9 — A01). ULID-like.
     public_token: Mapped[str] = mapped_column(String(32), nullable=False)
     # Origin of this delivery (manual create here; api/import later).

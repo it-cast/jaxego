@@ -12,7 +12,7 @@ import { FieldComponent } from '@jaxego/shared/components/field/field.component'
 import { UpgradeModalComponent } from '@jaxego/shared/components/upgrade-modal/upgrade-modal.component';
 import { ErrorStateComponent } from '@jaxego/shared/state';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { faBoxOpen, faCamera, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { CardFormComponent } from '../plano/components/jx-card-form.component';
 import { Plan } from '@jaxego/shared/components/plan-card/plan-card.component';
 import {
@@ -151,6 +151,12 @@ export class NovaEntregaPage {
   // delivery; the store gets retry or switch-to-direct (no form data lost).
   protected readonly paymentMethod = signal<'direct' | 'pix' | 'card'>('direct');
   protected readonly iconBox = faBoxOpen;
+  protected readonly iconCamera = faCamera;
+  protected readonly iconXmark = faXmark;
+  protected readonly imagePreview = signal<string | null>(null);
+  protected readonly lightboxUrl = signal<string | null>(null);
+  protected readonly submitLabel = signal('Chamar entregador');
+  protected imageFile: File | null = null;
   protected readonly proofMethod = signal<string>('photo');
   protected readonly receiptMethod = signal<string>('dinheiro');
   protected readonly deliveryRefused = signal(false);
@@ -228,6 +234,37 @@ export class NovaEntregaPage {
     this.form.controls.payment_method.setValue('direct');
   }
 
+  protected onImageSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.imageFile = file;
+    this.imagePreview.set(URL.createObjectURL(file));
+  }
+
+  protected removeImage(): void {
+    if (this.imagePreview()) URL.revokeObjectURL(this.imagePreview()!);
+    this.imageFile = null;
+    this.imagePreview.set(null);
+  }
+
+  private async uploadImage(deliveryId: number): Promise<void> {
+    if (!this.imageFile) return;
+    try {
+      const presign = await firstValueFrom(
+        this.http.post<{ presigned_url: string; method: string; headers: Record<string, string> }>(
+          `/v1/deliveries/${deliveryId}/image/presign`,
+          { content_type: this.imageFile.type || 'image/jpeg' }
+        )
+      );
+      await fetch(presign.presigned_url, {
+        method: presign.method,
+        headers: presign.headers,
+        body: this.imageFile,
+      });
+    } catch { /* non-blocking */ }
+  }
+
   private async loadTeamsOnline(neighborhoodId?: number): Promise<void> {
     try {
       const params: Record<string, any> = {};
@@ -290,6 +327,7 @@ export class NovaEntregaPage {
       return;
     }
     this.submitting.set(true);
+    this.submitLabel.set('Salvando os dados...');
     this.submitError.set(null);
     this.deliveryRefused.set(false);
 
@@ -323,12 +361,19 @@ export class NovaEntregaPage {
     };
 
     const result = await this.service.create(req);
-    this.submitting.set(false);
 
     if (result.ok) {
+      if (this.imageFile) {
+        this.submitLabel.set('Enviando imagem...');
+        await this.uploadImage(result.data.delivery_id);
+      }
+      this.submitting.set(false);
+      this.submitLabel.set('Chamar entregador');
       void this.router.navigate(['/loja/entregas', result.data.delivery_id]);
       return;
     }
+    this.submitting.set(false);
+    this.submitLabel.set('Chamar entregador');
 
     if (result.planLimit) {
       await this.openUpgrade();

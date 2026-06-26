@@ -83,6 +83,7 @@ class MeResponse(BaseModel):
     area_id: int | None = None
     courier_id: int | None = None
     merchant_id: int | None = None
+    team_id: int | None = None
     trade_name: str | None = None
     address: str | None = None
     address_number: str | None = None

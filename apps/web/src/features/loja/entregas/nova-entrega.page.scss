@@ -298,6 +298,42 @@
   color: var(--text-muted);
 }
 
+/* Image upload */
+.jx-nova__image-field { display: flex; flex-direction: column; gap: var(--jx-space-2); }
+.jx-nova__image-options { display: grid; grid-template-columns: 1fr 1fr; gap: var(--jx-space-2); }
+.jx-nova__image-upload {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  min-height: 100px; border: 2px dashed var(--border, #ddd); border-radius: 12px;
+  color: var(--text-muted, #888); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.jx-nova__image-upload:hover { border-color: var(--brand, #e8722a); color: var(--brand, #e8722a); }
+.jx-nova__image-preview { display: flex; align-items: center; gap: var(--jx-space-3); }
+.jx-nova__image-thumb {
+  width: 120px; height: 90px; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--border, #ddd); cursor: pointer; padding: 0; background: #f5f5f5;
+}
+.jx-nova__image-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.jx-nova__image-thumb:hover { border-color: var(--brand, #e8722a); }
+.jx-nova__image-remove {
+  display: flex; align-items: center; gap: 4px;
+  border: 1px solid var(--error, #d32f2f); border-radius: 8px; background: transparent;
+  color: var(--error, #d32f2f); font-size: 13px; font-weight: 600; padding: 6px 12px; cursor: pointer;
+}
+.jx-nova__image-remove:hover { background: hsl(0 70% 95%); }
+
+/* Lightbox */
+.jx-nova__lightbox {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.jx-nova__lightbox img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; cursor: default; }
+.jx-nova__lightbox-close {
+  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px;
+  background: rgba(255,255,255,0.2); border: 0; border-radius: 50%;
+  color: #fff; font-size: 20px; cursor: pointer; display: grid; place-items: center;
+}
+
 /* 50/50 layout */
 .jx-nova__layout {
   display: grid;

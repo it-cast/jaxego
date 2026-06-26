@@ -124,6 +124,22 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             }
           </section>
 
+          @if (productImageUrl()) {
+            <section class="jx-active__card">
+              <span class="jx-active__eyebrow">FOTO DO PRODUTO</span>
+              <button type="button" class="jx-active__product-thumb" (click)="showLightbox.set(true)">
+                <img [src]="productImageUrl()" alt="Produto" class="jx-active__product-img" />
+              </button>
+            </section>
+          }
+
+          @if (showLightbox() && productImageUrl()) {
+            <div class="jx-active__lightbox" (click)="showLightbox.set(false)">
+              <button type="button" class="jx-active__lightbox-close">✕</button>
+              <img [src]="productImageUrl()" alt="Produto" (click)="$event.stopPropagation()" />
+            </div>
+          }
+
           @if (delivery()!.receipt_method || delivery()!.courier_collection_method) {
             <div class="jx-active__payment-info">
               @if (delivery()!.receipt_method) {
@@ -237,6 +253,11 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         flex-direction: column;
         gap: var(--jx-space-1);
       }
+      .jx-active__product-thumb { border: 0; background: transparent; padding: 0; cursor: pointer; width: 100%; }
+      .jx-active__product-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--jx-radius-md); }
+      .jx-active__lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+      .jx-active__lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; cursor: default; }
+      .jx-active__lightbox-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: 0; border-radius: 50%; color: #fff; font-size: 20px; cursor: pointer; display: grid; place-items: center; }
       .jx-active__card + .jx-active__card {
         margin-top: 2em;
       }
@@ -456,6 +477,8 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
   protected readonly showCollectionModal = signal(false);
+  protected readonly productImageUrl = signal<string | null>(null);
+  protected readonly showLightbox = signal(false);
 
   /** Map focuses the destination after pickup (COLETADA), else the pickup point. */
   protected readonly mapLat = computed<number | null>(() => {
@@ -497,7 +520,14 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     this.loading.set(true);
     this.error.set(false);
     try {
-      this.delivery.set(await this.svc.activeDelivery(courierId));
+      const d = await this.svc.activeDelivery(courierId);
+      this.delivery.set(d);
+      if (d?.has_image) {
+        const url = await this.svc.deliveryImageUrl(courierId, d.id);
+        this.productImageUrl.set(url);
+      } else {
+        this.productImageUrl.set(null);
+      }
     } catch {
       this.error.set(true);
     } finally {

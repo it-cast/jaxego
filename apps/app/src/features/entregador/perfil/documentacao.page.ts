@@ -18,7 +18,7 @@ import { CourierCadastroService } from '../cadastro/cadastro.service';
       @if (loading()) {
         <jx-dots-loader />
       } @else {
-        <jx-page-header title="Documentacao" backLink="/entregador/perfil" />
+        <jx-page-header title="Documentação" backLink="/entregador/perfil" />
         <div class="jx-docs">
           @if (profile(); as p) {
             <ul class="jx-docs__list">

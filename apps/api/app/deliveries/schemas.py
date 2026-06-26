@@ -121,6 +121,7 @@ class DeliveryOut(BaseModel):
     # Money (integer cents).
     price_cents: int | None = None
     fee_cents: int
+    has_image: bool = False
     reference_number: str | None
     # Package size/weight (MG-1) — optional.
     weight_g: int | None = None
@@ -144,6 +145,7 @@ class DeliveryListItem(BaseModel):
     dropoff_neighborhood_id: int
     price_cents: int | None = None
     fee_cents: int
+    has_image: bool = False
     reference_number: str | None
     recipient_name: str | None
     recipient_phone_masked: str | None
@@ -176,6 +178,7 @@ class CreateDeliveryResponse(BaseModel):
     state: str
     price_cents: int | None = None
     fee_cents: int
+    has_image: bool = False
     # E2 (D-06): 0 eligible online couriers — non-blocking warning.
     no_couriers_warning: bool
 
@@ -217,6 +220,7 @@ class CourierDeliveryOut(BaseModel):
     # Money (centavos) + order metadata.
     price_cents: int | None = None
     fee_cents: int
+    has_image: bool = False
     reference_number: str | None
     items_description: str | None
     items_quantity: int
@@ -245,6 +249,7 @@ class CourierDeliveryListItem(BaseModel):
     distance_m: int | None
     price_cents: int | None = None
     fee_cents: int
+    has_image: bool = False
     created_at: str | None
 
 

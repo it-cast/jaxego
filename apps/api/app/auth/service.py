@@ -177,6 +177,13 @@ async def resolve_surface(session: AsyncSession, user: User) -> MeResponse:
     if membership is not None:
         return MeResponse(user_id=user.id, surface="admin", area_id=membership.area_id)
 
+    from app.teams.models import Team
+    team = (
+        await session.execute(select(Team).where(Team.responsavel_user_id == user.id, Team.deleted_at.is_(None)).limit(1))
+    ).scalar_one_or_none()
+    if team is not None:
+        return MeResponse(user_id=user.id, surface="equipe", area_id=team.area_id, team_id=team.id)
+
     courier = (
         await session.execute(select(Courier).where(Courier.user_id == user.id).limit(1))
     ).scalar_one_or_none()

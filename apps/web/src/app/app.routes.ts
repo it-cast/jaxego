@@ -115,13 +115,6 @@ export const adminRoutes: Routes = [
           import('../features/admin/inicio.page').then((m) => m.AdminInicioPage),
       },
       {
-        path: 'kyc/:courierId',
-        loadComponent: () =>
-          import('../features/admin/kyc/kyc-detalhe.page').then(
-            (m) => m.AdminKycDetalhePage
-          ),
-      },
-      {
         path: 'config',
         loadComponent: () =>
           import('../features/admin/area-config/area-config.page').then(
@@ -161,20 +154,6 @@ export const adminRoutes: Routes = [
         loadComponent: () =>
           import('../features/admin/equipes/equipes.page').then(
             (m) => m.AdminEquipesPage
-          ),
-      },
-      {
-        path: 'entregadores',
-        loadComponent: () =>
-          import(
-            '../features/admin/entregadores/entregadores-list.page'
-          ).then((m) => m.AdminEntregadoresPage),
-      },
-      {
-        path: 'entregadores/:courierId',
-        loadComponent: () =>
-          import('../features/admin/governanca/entregador-detalhe.page').then(
-            (m) => m.AdminEntregadorDetalhePage
           ),
       },
     ],
@@ -260,6 +239,41 @@ export const publicRoutes: Routes = [
   },
 ];
 
+/** Admin da equipe (responsável) surface. */
+export const equipeRoutes: Routes = [
+  {
+    path: 'equipe',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('../layouts/equipe-shell.component').then(
+        (m) => m.EquipeShellComponent
+      ),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'painel' },
+      {
+        path: 'painel',
+        loadComponent: () =>
+          import('../features/equipe/dashboard.page').then((m) => m.EquipeDashboardPage),
+      },
+      {
+        path: 'entregadores',
+        loadComponent: () =>
+          import('../features/equipe/entregadores.page').then((m) => m.EquipeEntregadoresPage),
+      },
+      {
+        path: 'entregadores/:courierId',
+        loadComponent: () =>
+          import('../features/equipe/kyc-detalhe.page').then((m) => m.EquipeKycDetalhePage),
+      },
+      {
+        path: 'entregas',
+        loadComponent: () =>
+          import('../features/equipe/entregas.page').then((m) => m.EquipeEntregasPage),
+      },
+    ],
+  },
+];
+
 /** Wildcard → 404. Always last. */
 export const notFoundRoute: Routes = [
   {
@@ -278,6 +292,7 @@ export const routes: Routes = [
   ...lojaRoutes,
   ...adminRoutes,
   ...plataformaRoutes,
+  ...equipeRoutes,
   ...publicRoutes,
   ...notFoundRoute,
 ];

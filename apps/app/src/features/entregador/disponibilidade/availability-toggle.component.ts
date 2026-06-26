@@ -39,16 +39,15 @@ import {
           {{ online() ? 'Online' : 'Offline' }}
         </span>
       </button>
-
-      @if (disabled && disabledReason === 'kyc') {
-        <div class="jx-availability__kyc-card">
-          <span class="jx-availability__kyc-msg">Termine sua validação para ficar online e receber ofertas.</span>
-          <button type="button" class="jx-availability__kyc-btn" (click)="seeValidation.emit()">
-            Ver validação
-          </button>
-        </div>
-      }
     </div>
+    @if (disabled && disabledReason === 'kyc') {
+      <div class="jx-availability__kyc-card">
+        <span class="jx-availability__kyc-msg">Termine sua validação para ficar online e receber ofertas.</span>
+        <button type="button" class="jx-availability__kyc-btn" (click)="seeValidation.emit()">
+          Ver validação
+        </button>
+      </div>
+    }
   `,
   styleUrl: './availability-toggle.component.scss',
 })

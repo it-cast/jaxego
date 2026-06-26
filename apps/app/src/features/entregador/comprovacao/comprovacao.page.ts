@@ -156,8 +156,17 @@ export class ComprovacaoPage implements OnInit {
     return true;
   }
 
+  private readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   protected onCaptured(payload: ProofCapturePayload): void {
     this.error.set(null);
+
+    if (payload.file.size > this.MAX_FILE_SIZE) {
+      this.error.set('A imagem é muito grande (máximo 10MB). Tire outra foto ou selecione uma imagem menor.');
+      this.captureState.set('error');
+      return;
+    }
+
     this.previewUrl.set(URL.createObjectURL(payload.file));
     this.capturedPayload = payload;
 
@@ -190,9 +199,14 @@ export class ComprovacaoPage implements OnInit {
       } else if (this.kind === 'refusal') {
         void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
       }
-    } catch {
+    } catch (err: any) {
       this.captureState.set('error');
-      this.error.set('Nao foi possivel enviar a foto agora. Tente de novo.');
+      const status = err?.status;
+      if (status === 413 || status === 400) {
+        this.error.set('A imagem é muito grande. Tire outra foto ou selecione uma imagem menor.');
+      } else {
+        this.error.set('Não foi possível enviar a foto agora. Tente de novo.');
+      }
     }
   }
 
@@ -242,8 +256,13 @@ export class ComprovacaoPage implements OnInit {
         this.capturedPayload.file, this.capturedPayload.lat, this.capturedPayload.lng,
       );
       void this.router.navigate(['/entregador/entrega', this.deliveryId, 'concluida']);
-    } catch {
-      this.error.set('Nao foi possivel finalizar. Tente de novo.');
+    } catch (err: any) {
+      const status = err?.status;
+      if (status === 413 || status === 400) {
+        this.error.set('A imagem é muito grande. Tire outra foto ou selecione uma imagem menor.');
+      } else {
+        this.error.set('Não foi possível finalizar. Tente de novo.');
+      }
       this.finalizing.set(false);
     }
   }

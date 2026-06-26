@@ -62,6 +62,7 @@ export interface CourierDelivery {
   state: string;
   payment_method: string;
   proof_method: string;
+  has_image: boolean;
   merchant_trade_name: string | null;
   courier_collection_method: string | null;
   receipt_method: string | null;
@@ -171,6 +172,15 @@ export class EntregadorService {
     await firstValueFrom(
       this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/finalize-no-proof`, {}),
     );
+  }
+
+  async deliveryImageUrl(courierId: number, deliveryId: number): Promise<string | null> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ url: string }>(`/v1/couriers/${courierId}/deliveries/${deliveryId}/image`)
+      );
+      return res.url;
+    } catch { return null; }
   }
 
   async markCollected(courierId: number, deliveryId: number): Promise<void> {
