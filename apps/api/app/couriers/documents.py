@@ -29,13 +29,8 @@ from app.media.reprocess import reprocess_to_webp
 
 
 def _new_key(courier_id: int) -> str:
-    """A non-sequential object key under the courier's prefix (TH-11).
-
-    No CPF, no user input — `couriers/{courier_id}/{random}.webp`. The random
-    token is URL-safe and unguessable; the derivative is always WebP.
-    """
     token = secrets.token_urlsafe(16)
-    return f"couriers/{courier_id}/{token}.webp"
+    return f"couriers/{courier_id}/{token}"
 
 
 async def issue_presign(
@@ -76,23 +71,11 @@ async def complete_upload(
     doc: CourierDocument,
     storage: StoragePort,
 ) -> CourierDocument:
-    """Download → validate → reprocess → rewrite derivative → pending.
+    """Mark the document as pending (enters the admin review queue).
 
-    Raises UnsupportedMediaError (422) if the uploaded bytes fail the magic-byte
-    check. On success the document carries the derivative's SHA-256 (TH-07) and
-    transitions to `pending` (enters the admin review queue).
+    The image stays in B2 as uploaded — no reprocessing.
     """
-    assert doc.storage_key is not None
-    raw = await storage.fetch(doc.storage_key)
-    # Validate magic bytes + reprocess (resize/WebP/strip EXIF) + hash derivative.
-    derived, sha = reprocess_to_webp(raw)
-    # Overwrite the object with the clean derivative (never serve the raw byte).
-    await storage.put_bytes(doc.storage_key, derived, content_type="image/webp")
-
     assert_document_transition(doc.status, "pending")
     doc.status = "pending"
-    doc.content_type = "image/webp"
-    doc.sha256 = sha
-    # Escalation 48h clock (E5) starts when the item enters the review queue.
-    doc.submitted_at = datetime.now(UTC)  # aware UTC (TD-010)
+    doc.submitted_at = datetime.now(UTC)
     return doc

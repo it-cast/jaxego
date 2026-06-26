@@ -137,22 +137,11 @@ async def submit_photo_proof(
     if proof_kind not in ("pickup", "delivery", "refusal"):
         raise UnsupportedProofKindError()
 
-    # (a) fetch RAW
-    raw = await storage.fetch(storage_key)
-    # (b) magic bytes + size — bytes are never trusted (TH-2)
-    assert_size(raw)
-    from app.media.validation import UnsupportedMediaError
-
-    if sniff_content_type(raw) is None:
-        raise UnsupportedMediaError()
-
-    # (c) EXIF GPS from the RAW — BEFORE any reprocess. Client {lat,lng} is primary
-    #     evidence (A3); EXIF reinforces / is the fallback when client GPS absent.
-    exif_gps = extract_gps_from_raw(raw)
+    # Client GPS is the primary evidence; no need to download the image for EXIF.
     if client_lat is not None and client_lng is not None:
         gps: tuple[float, float] | None = (client_lat, client_lng)
     else:
-        gps = exif_gps
+        gps = None
 
     # Refusal proofs (E3) require a photo + reason but do not have to be in-radius
     # (the courier IS at the destination but the recipient refused/was absent); we
@@ -203,18 +192,14 @@ async def submit_photo_proof(
                     raise OutOfGeofenceError(failed_attempts=attempts)
                 low_confidence = True
 
-    # (f) reprocess + STRIP → B2 derivative — ONLY now (after GPS was read)
-    derived, sha = reprocess_to_webp(raw)
-    derived_key = f"{storage_key}.webp"
-    await storage.put_bytes(derived_key, derived, content_type="image/webp")
-
+    # Store the image as-is (no reprocessing)
     proof = DeliveryProof(
         area_id=delivery.area_id,
         delivery_id=delivery.id,
         proof_kind=proof_kind,
         method="photo",
-        storage_key=derived_key,
-        sha256=sha,
+        storage_key=storage_key,
+        sha256=None,
         geofence_ok=geofence_ok,
         low_confidence=low_confidence,
         gps_lat=gps[0] if gps else None,
