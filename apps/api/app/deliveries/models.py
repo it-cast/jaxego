@@ -42,9 +42,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
 
-# The 7 canonical delivery states (RN-019 / D-03). Transitions live in
-# `state_machine.py`. Only CRIADA / CANCELADA are reachable in Phase 7.
+# The 8 canonical delivery states (RN-019 / D-03). Transitions live in
+# `state_machine.py`. AGENDADA is the initial state for scheduled deliveries;
+# Inngest transitions it to CRIADA at the scheduled time.
 DELIVERY_STATES = (
+    "AGENDADA",
     "CRIADA",
     "ACEITA",
     "COLETADA",
@@ -177,6 +179,13 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
 
     courier_collection_method: Mapped[str | None] = mapped_column(String(16), nullable=True)
     receipt_method: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    # Scheduled dispatch (Inngest integration). NULL = immediate delivery.
+    # `scheduled_at` is the intended dispatch time (aware UTC). Inngest fires a
+    # webhook at this time to transition AGENDADA → CRIADA + enqueue_dispatch.
+    # `inngest_event_id` is stored for dashboard traceability / debugging.
+    scheduled_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+    inngest_event_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     # LGPD retention (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)

@@ -21,8 +21,11 @@ from __future__ import annotations
 
 from app.core.exceptions import AppError
 
-# The 7 canonical states (RN-019 / D-03).
+# The 8 canonical states (RN-019 / D-03).
+# AGENDADA is the initial state for scheduled deliveries; Inngest transitions
+# it to CRIADA at the scheduled time to kick off the dispatch cascade.
 DELIVERY_STATES = (
+    "AGENDADA",
     "CRIADA",
     "ACEITA",
     "COLETADA",
@@ -35,6 +38,7 @@ DELIVERY_STATES = (
 # Valid transitions (RN-019). Defined in full now; only CRIADA/CANCELADA are
 # exercised in Phase 7, the rest are covered by tests and enabled in Phases 8/9.
 DELIVERY_TRANSITIONS: dict[str, set[str]] = {
+    "AGENDADA": {"CRIADA", "CANCELADA"},  # CRIADA = Inngest fires; CANCELADA = store cancels
     "CRIADA": {"ACEITA", "CANCELADA"},
     "ACEITA": {"COLETADA", "CANCELADA"},
     "COLETADA": {"ENTREGUE", "RECUSADA_NO_DESTINO", "CANCELADA"},

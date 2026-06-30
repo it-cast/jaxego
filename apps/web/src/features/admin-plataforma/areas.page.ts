@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -18,11 +19,15 @@ import {
   faPlus,
   faXmark,
   faCheck,
+  faChevronLeft,
+  faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { Area, PlatformAdminService } from './platform-admin.service';
 import { AreaMapComponent } from './area-map.component';
 
 type ViewMode = 'list' | 'create' | 'edit';
+
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'jx-plataforma-areas',
@@ -40,6 +45,8 @@ export class PlataformaAreasPage implements OnInit {
   protected readonly iconPlus = faPlus;
   protected readonly iconCancel = faXmark;
   protected readonly iconSave = faCheck;
+  protected readonly iconPrev = faChevronLeft;
+  protected readonly iconNext = faChevronRight;
 
   protected readonly state = signal<DataTableState>('loading');
   protected readonly areas = signal<Area[]>([]);
@@ -48,6 +55,15 @@ export class PlataformaAreasPage implements OnInit {
   protected readonly saving = signal(false);
   protected readonly msg = signal<{ text: string; tone: 'ok' | 'err' } | null>(null);
   protected readonly confirmArchiveId = signal<number | null>(null);
+
+  protected readonly page = signal(1);
+  protected readonly paged = computed(() => {
+    const start = (this.page() - 1) * PAGE_SIZE;
+    return this.filtered().slice(start, start + PAGE_SIZE);
+  });
+  protected readonly hasNext = computed(
+    () => this.page() * PAGE_SIZE < this.filtered().length,
+  );
 
   protected searchQuery = '';
 
@@ -90,6 +106,11 @@ export class PlataformaAreasPage implements OnInit {
       );
     }
     this.filtered.set(result);
+    this.page.set(1);
+  }
+
+  protected goTo(delta: number): void {
+    this.page.update((p) => p + delta);
   }
 
   protected showCreate(): void {

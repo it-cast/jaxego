@@ -31,59 +31,79 @@ import type { BlockedRow, FavoriteRow } from './favoritos.models';
   ],
   template: `
     <main class="jx-favoritos">
-      <p class="jx-favoritos__hint">
-        Favoritos recebem suas ofertas primeiro, um por vez. Bloqueados nunca recebem suas
-        ofertas — a lista é privada e não afeta o score de ninguém.
-      </p>
+      <h1 class="jx-favoritos__page-title">Favoritos e Bloqueados</h1>
+
+      <div class="jx-favoritos__tabs" role="tablist" aria-label="Lista">
+        <button
+          type="button"
+          role="tab"
+          class="jx-favoritos__tab"
+          [class.jx-favoritos__tab--active]="tab() === 'favorites'"
+          [attr.aria-selected]="tab() === 'favorites'"
+          (click)="tab.set('favorites')"
+        >
+          Favoritos
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="jx-favoritos__tab"
+          [class.jx-favoritos__tab--active]="tab() === 'blocked'"
+          [attr.aria-selected]="tab() === 'blocked'"
+          (click)="tab.set('blocked')"
+        >
+          Bloqueados
+        </button>
+      </div>
 
       @if (loading()) {
         <jx-loading-skeleton variant="line" />
       } @else if (error()) {
         <jx-error-state message="Não deu pra carregar." retryLabel="Tentar de novo" (retry)="load()" />
+      } @else if (tab() === 'favorites') {
+        @if (favorites().length === 0) {
+          <jx-empty-state
+            icon=""
+            title="Você ainda não tem favoritos."
+            message="Marque a estrela em qualquer entrega concluída."
+          />
+        } @else {
+          <p class="jx-favoritos__hint">Favoritos recebem suas ofertas primeiro, na ordem abaixo.</p>
+          <ul class="jx-favoritos__list">
+            @for (fav of favorites(); track fav.courier_id; let i = $index) {
+              <jx-favorite-row
+                [position]="i + 1"
+                [name]="fav.courier_name"
+                [avgStars]="fav.avg_stars"
+                [canMoveUp]="i > 0"
+                [canMoveDown]="i < favorites().length - 1"
+                (moveUp)="moveUp(i)"
+                (moveDown)="moveDown(i)"
+                (remove)="removeFavorite(fav.courier_id)"
+              />
+            }
+          </ul>
+        }
       } @else {
-        <section class="jx-favoritos__card" aria-labelledby="fav-title">
-          <h2 id="fav-title" class="jx-favoritos__title">Favoritos (ordem de prioridade)</h2>
-          @if (favorites().length === 0) {
-            <jx-empty-state
-              icon=""
-              title="Você ainda não tem favoritos."
-              message="Marque a estrela em qualquer entrega concluída."
-            />
-          } @else {
-            <ul class="jx-favoritos__list">
-              @for (fav of favorites(); track fav.courier_id; let i = $index) {
-                <jx-favorite-row
-                  [position]="i + 1"
-                  [name]="fav.courier_name"
-                  [avgStars]="fav.avg_stars"
-                  [canMoveUp]="i > 0"
-                  [canMoveDown]="i < favorites().length - 1"
-                  (moveUp)="moveUp(i)"
-                  (moveDown)="moveDown(i)"
-                  (remove)="removeFavorite(fav.courier_id)"
-                />
-              }
-            </ul>
-          }
-        </section>
-
-        <section class="jx-favoritos__card" aria-labelledby="blk-title">
-          <h2 id="blk-title" class="jx-favoritos__title">Bloqueados</h2>
-          @if (blocks().length === 0) {
-            <jx-empty-state icon="" title="Nenhum entregador bloqueado." />
-          } @else {
-            <ul class="jx-favoritos__list">
-              @for (blk of blocks(); track blk.courier_id) {
-                <jx-blocked-row
-                  [name]="blk.courier_name"
-                  [blockedAt]="formatDate(blk.created_at)"
-                  [reason]="blk.reason"
-                  (unblock)="unblock(blk.courier_id)"
-                />
-              }
-            </ul>
-          }
-        </section>
+        @if (blocks().length === 0) {
+          <jx-empty-state
+            icon=""
+            title="Nenhum entregador bloqueado."
+            message="Bloqueados nunca recebem suas ofertas. A lista é privada."
+          />
+        } @else {
+          <p class="jx-favoritos__hint">Bloqueados nunca recebem suas ofertas — a lista é privada.</p>
+          <ul class="jx-favoritos__list">
+            @for (blk of blocks(); track blk.courier_id) {
+              <jx-blocked-row
+                [name]="blk.courier_name"
+                [blockedAt]="formatDate(blk.created_at)"
+                [reason]="blk.reason"
+                (unblock)="unblock(blk.courier_id)"
+              />
+            }
+          </ul>
+        }
       }
     </main>
   `,
@@ -92,6 +112,7 @@ import type { BlockedRow, FavoriteRow } from './favoritos.models';
 export class FavoritosPage implements OnInit {
   private readonly service = inject(FavoritosService);
 
+  protected readonly tab = signal<'favorites' | 'blocked'>('favorites');
   protected readonly favorites = signal<FavoriteRow[]>([]);
   protected readonly blocks = signal<BlockedRow[]>([]);
   protected readonly loading = signal(true);

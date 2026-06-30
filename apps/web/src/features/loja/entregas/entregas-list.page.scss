@@ -83,3 +83,40 @@
     }
   }
 }
+
+.jx-entregas__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-3) 0;
+}
+
+.jx-entregas__page-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  min-height: 36px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-elevated);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.jx-entregas__page-info {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  font-weight: var(--jx-weight-semibold);
+}

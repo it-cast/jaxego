@@ -24,20 +24,21 @@ export interface AreaOverviewRow {
   deliveries: number;
 }
 
-/** Resultado de busca de entregador com nível de score (tela 24). */
+/** Resultado de busca de entregador com média de avaliação (tela 24). */
 export interface CourierSearchRow {
   courier_id: number;
   area_id: number;
+  area_name: string;
   full_name: string;
   status: string;
-  score_total: number | null;
-  score_level: ScoreLevel | null;
+  avg_stars: number | null;
 }
 
 /** Resultado de busca de loja (tela 24). */
 export interface MerchantSearchRow {
   merchant_id: number;
   area_id: number;
+  area_name: string;
   name: string;
   status: string;
 }

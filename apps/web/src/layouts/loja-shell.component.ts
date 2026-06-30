@@ -231,7 +231,7 @@ export class LojaShellComponent {
   protected readonly nav = [
     { path: '/loja/painel', label: 'Painel', icon: faGauge },
     { path: '/loja/entregas', label: 'Entregas', icon: faTruckFast },
-    { path: '/loja/favoritos', label: 'Favoritos', icon: faStar },
+    { path: '/loja/favoritos', label: 'Favoritos/Bloqueados', icon: faStar },
     { path: '/loja/faturas', label: 'Faturas', icon: faFileInvoiceDollar },
     { path: '/loja/plano', label: 'Plano', icon: faCreditCard },
     { path: '/loja/config', label: 'Configurações', icon: faGear },

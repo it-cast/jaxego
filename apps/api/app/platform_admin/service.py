@@ -89,31 +89,37 @@ async def search_couriers(
     """Cross-area courier search with the latest score level (audited)."""
     await _audit_cross_area(session, actor_id=actor_id, action="platform.search_couriers")
 
-    stmt = select(Courier).where(Courier.deleted_at.is_(None))
+    avg_subq = (
+        select(func.avg(CourierRating.stars))
+        .where(CourierRating.courier_id == Courier.id)
+        .correlate(Courier)
+        .scalar_subquery()
+        .label("avg_stars")
+    )
+    stmt = (
+        select(Courier, Area.name.label("area_name"), avg_subq)
+        .join(Area, Area.id == Courier.area_id)
+        .where(Courier.deleted_at.is_(None))
+    )
     if area_id is not None:
         stmt = stmt.where(Courier.area_id == area_id)
     if q:
         # Bound LIKE (TH-06 — parameter, never string-built SQL).
         stmt = stmt.where(Courier.full_name.ilike(f"%{q}%"))
     stmt = stmt.order_by(Courier.id.desc()).limit(limit).offset(offset)
-    couriers = (await session.execute(stmt)).scalars().all()
+    courier_rows = (await session.execute(stmt)).all()
 
     rows: list[dict] = []
-    for c in couriers:
-        rating_row = (
-            await session.execute(
-                select(func.avg(CourierRating.stars)).where(CourierRating.courier_id == c.id)
-            )
-        ).scalar()
-        avg = round(float(rating_row), 1) if rating_row else None
+    for c, area_name, raw_avg in courier_rows:
+        avg_stars = round(float(raw_avg), 1) if raw_avg else None
         rows.append(
             {
                 "courier_id": c.id,
                 "area_id": c.area_id,
+                "area_name": area_name,
                 "full_name": c.full_name,
                 "status": c.status,
-                "score_total": avg * 20 if avg else None,
-                "score_level": None,
+                "avg_stars": avg_stars,
             }
         )
     return rows
@@ -131,19 +137,23 @@ async def search_merchants(
     """Cross-area merchant search (audited)."""
     await _audit_cross_area(session, actor_id=actor_id, action="platform.search_merchants")
 
-    stmt = select(Merchant)
+    stmt = (
+        select(Merchant, Area.name.label("area_name"))
+        .join(Area, Area.id == Merchant.area_id)
+    )
     if area_id is not None:
         stmt = stmt.where(Merchant.area_id == area_id)
     if q:
         stmt = stmt.where(Merchant.trade_name.ilike(f"%{q}%"))
     stmt = stmt.order_by(Merchant.id.desc()).limit(limit).offset(offset)
-    merchants = (await session.execute(stmt)).scalars().all()
+    rows = (await session.execute(stmt)).all()
     return [
         {
             "merchant_id": m.id,
             "area_id": m.area_id,
+            "area_name": area_name,
             "name": m.trade_name,
             "status": m.status,
         }
-        for m in merchants
+        for m, area_name in rows
     ]

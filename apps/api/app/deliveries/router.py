@@ -29,6 +29,7 @@ from app.deliveries.schemas import (
     mask_phone_display,
 )
 from app.deliveries.service import delivery_create_limiter
+from app.core.config import get_settings
 
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
 
@@ -39,9 +40,10 @@ def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
-def _delivery_out(delivery, recipient) -> DeliveryOut:
+def _delivery_out(delivery, recipient, courier_name: str | None = None) -> DeliveryOut:
     """Serialize a delivery for the store; recipient phone is MASKED (TH-04)."""
     created = delivery.created_at.isoformat() if delivery.created_at else None
+    scheduled = delivery.scheduled_at.isoformat() if delivery.scheduled_at else None
     return DeliveryOut(
         id=delivery.id,
         public_token=delivery.public_token,
@@ -66,7 +68,9 @@ def _delivery_out(delivery, recipient) -> DeliveryOut:
         recipient_name=recipient.name if recipient else None,
         recipient_phone_masked=(mask_phone_display(recipient.phone_e164) if recipient else None),
         courier_id=delivery.courier_id,
+        courier_name=courier_name,
         created_at=created,
+        scheduled_at=scheduled,
     )
 
 
@@ -101,11 +105,69 @@ async def create_delivery(
         customer_email=str(body.payer_email) if body.payer_email else None,
     )
     await session.commit()
-    # Kick off the cascade (Phase 8) — enqueued, never inline (RN-009 / D-01).
-    from app.workers.dispatch import enqueue_dispatch
+    # Kick off the cascade only for immediate deliveries (Phase 8 — RN-009 / D-01).
+    # Scheduled deliveries (AGENDADA) are released by the Inngest webhook.
+    if result.state != "AGENDADA":
+        from app.workers.dispatch import enqueue_dispatch
 
-    await enqueue_dispatch(result.delivery_id)
+        await enqueue_dispatch(result.delivery_id)
     return result
+
+
+@router.post("/scheduled/release", status_code=status.HTTP_200_OK)
+async def inngest_release_scheduled(
+    request: Request,
+    session: SessionDep,
+) -> dict:
+    """Inngest webhook — transition AGENDADA → CRIADA and enqueue dispatch.
+
+    Called by Inngest at the delivery's `scheduled_at` time. Protected by
+    HMAC-SHA256 signature verification (x-inngest-signature header). Returns 200
+    in all cases so Inngest does not retry on a stale/cancelled delivery.
+    """
+    import hashlib
+    import hmac
+    import json as json_lib
+    import structlog
+
+    wh_logger = structlog.get_logger("deliveries.inngest_webhook")
+
+    # Signature verification — skip in dev when no signing key is configured.
+    signing_key = get_settings().inngest_signing_key
+    if signing_key:
+        sig_header = request.headers.get("x-inngest-signature", "")
+        body_bytes = await request.body()
+        # Header format: "t=<ts>&s=<hmac_hex>"
+        parts = dict(p.split("=", 1) for p in sig_header.split("&") if "=" in p)
+        ts = parts.get("t", "")
+        received_sig = parts.get("s", "")
+        expected = hmac.new(
+            signing_key.encode(),
+            msg=f"{ts}{body_bytes.decode()}".encode(),
+            digestmod=hashlib.sha256,
+        ).hexdigest()
+        if not hmac.compare_digest(received_sig, expected):
+            wh_logger.warning("inngest_webhook.invalid_signature")
+            from fastapi import HTTPException
+            raise HTTPException(status_code=401, detail="Invalid Inngest signature.")
+        payload = json_lib.loads(body_bytes)
+    else:
+        payload = await request.json()
+
+    # Inngest wraps the event data in {"event": {"data": {...}}}
+    event_data = payload.get("event", {}).get("data", payload.get("data", {}))
+    delivery_id = event_data.get("delivery_id")
+    if not isinstance(delivery_id, int):
+        wh_logger.warning("inngest_webhook.missing_delivery_id", payload=payload)
+        return {"ok": False, "reason": "missing delivery_id"}
+
+    released = await service.release_scheduled_delivery(session, delivery_id=delivery_id)
+    if released:
+        from app.workers.dispatch import enqueue_dispatch
+        await enqueue_dispatch(delivery_id)
+        wh_logger.info("inngest_webhook.released", delivery_id=delivery_id)
+
+    return {"ok": True, "released": released}
 
 
 @router.get("/teams-online")
@@ -306,6 +368,7 @@ async def list_deliveries(
             recipient_phone_masked=mask_phone_display(r.phone_e164) if r else None,
             courier_id=d.courier_id,
             created_at=d.created_at.isoformat() if d.created_at else None,
+            scheduled_at=d.scheduled_at.isoformat() if d.scheduled_at else None,
         )
         for d, r in page.items
     ]
@@ -330,7 +393,14 @@ async def get_delivery(
         from app.deliveries.models import Recipient
 
         recipient = await session.get(Recipient, delivery.recipient_id)
-    return _delivery_out(delivery, recipient)
+    courier_name: str | None = None
+    if delivery.courier_id is not None:
+        from app.couriers.models import Courier
+
+        courier = await session.get(Courier, delivery.courier_id)
+        if courier is not None:
+            courier_name = courier.full_name
+    return _delivery_out(delivery, recipient, courier_name=courier_name)
 
 
 @router.post("/{delivery_id}/cancel", response_model=DeliveryOut)

@@ -59,6 +59,20 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     )
 
 
+async def validation_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Log Pydantic validation errors (422) so we can debug which field fails."""
+    from fastapi.exceptions import RequestValidationError
+    request_id = structlog.contextvars.get_contextvars().get("request_id")
+    errors = exc.errors() if isinstance(exc, RequestValidationError) else str(exc)  # type: ignore[union-attr]
+    logger.warning("request_validation_error", errors=errors, path=request.url.path)
+    return JSONResponse(
+        status_code=422,
+        content=_error_payload("validation_error", str(errors), request_id),
+    )
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register the global AppError handler on the app."""
+    from fastapi.exceptions import RequestValidationError
     app.add_exception_handler(AppError, app_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, validation_error_handler)  # type: ignore[arg-type]

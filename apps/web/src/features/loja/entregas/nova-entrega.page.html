@@ -178,6 +178,55 @@
       </label>
     </fieldset>
 
+    <!-- Quando -->
+    <fieldset class="jx-nova__section">
+      <legend>Quando</legend>
+      <div class="jx-nova__radios jx-nova__radios--2col">
+        <label class="jx-nova__radio" [class.jx-nova__radio--sel]="deliveryMode() === 'immediate'">
+          <input
+            type="radio"
+            name="delivery_mode"
+            value="immediate"
+            [checked]="deliveryMode() === 'immediate'"
+            (change)="setDeliveryMode('immediate')"
+          />
+          <span>
+            <strong>Imediata</strong>
+            <small>Chamar entregador agora</small>
+          </span>
+        </label>
+        <label class="jx-nova__radio" [class.jx-nova__radio--sel]="deliveryMode() === 'scheduled'">
+          <input
+            type="radio"
+            name="delivery_mode"
+            value="scheduled"
+            [checked]="deliveryMode() === 'scheduled'"
+            (change)="setDeliveryMode('scheduled')"
+          />
+          <span>
+            <strong>Agendada</strong>
+            <small>Escolher data e hora</small>
+          </span>
+        </label>
+      </div>
+
+      @if (deliveryMode() === 'scheduled') {
+        <label class="jx-nova__select">
+          <span>Data e hora do despacho</span>
+          <input
+            class="jx-nova__datetime"
+            type="datetime-local"
+            [min]="scheduledAtMin"
+            [value]="scheduledAt()"
+            (change)="scheduledAt.set($any($event.target).value); scheduledAtError.set(null)"
+          />
+        </label>
+        @if (scheduledAtError()) {
+          <p class="jx-nova__sched-err" role="alert">{{ scheduledAtError() }}</p>
+        }
+      }
+    </fieldset>
+
     @if (submitError()) {
       <jx-error-state [message]="submitError()!" retryLabel="Tentar de novo" (retry)="submit()" />
     }

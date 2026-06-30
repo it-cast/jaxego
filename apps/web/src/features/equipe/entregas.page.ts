@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 interface DeliveryItem {
   id: number;
@@ -18,7 +20,7 @@ const PAGE_SIZE = 20;
   selector: 'jx-equipe-entregas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [FaIconComponent],
   template: `
     <h1 class="jx-eq-del__title">Entregas da equipe</h1>
 
@@ -83,11 +85,15 @@ const PAGE_SIZE = 20;
       </table>
 
       @if (totalPages() > 1) {
-        <div class="jx-eq-del__pagination">
-          <button [disabled]="page() === 0" (click)="page.set(page() - 1)">Anterior</button>
-          <span>{{ page() + 1 }} de {{ totalPages() }}</span>
-          <button [disabled]="page() >= totalPages() - 1" (click)="page.set(page() + 1)">Próxima</button>
-        </div>
+        <nav class="jx-eq-del__pagination" aria-label="Paginação de entregas">
+          <button class="jx-eq-del__pager-btn" [disabled]="page() === 0" (click)="page.set(page() - 1)" aria-label="Página anterior">
+            <fa-icon [icon]="iconPrev" aria-hidden="true" /> Anterior
+          </button>
+          <span class="jx-eq-del__pager-info">Página {{ page() + 1 }} de {{ totalPages() }}</span>
+          <button class="jx-eq-del__pager-btn" [disabled]="page() >= totalPages() - 1" (click)="page.set(page() + 1)" aria-label="Próxima página">
+            Próxima <fa-icon [icon]="iconNext" aria-hidden="true" />
+          </button>
+        </nav>
       }
     }
   `,
@@ -105,14 +111,18 @@ const PAGE_SIZE = 20;
     .jx-eq-del__table td { padding: var(--jx-space-2) var(--jx-space-3); border-bottom: 1px solid var(--border, #eee); color: var(--text); }
     .jx-eq-del__mono { font-family: var(--jx-font-mono, monospace); font-size: 13px; }
     .jx-eq-del__state { font-size: 12px; font-weight: 600; }
-    .jx-eq-del__pagination { display: flex; align-items: center; justify-content: center; gap: var(--jx-space-3); padding: var(--jx-space-3) 0; }
-    .jx-eq-del__pagination button { min-height: 36px; padding: 0 var(--jx-space-3); border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; }
-    .jx-eq-del__pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .jx-eq-del__pagination span { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+    .jx-eq-del__pagination { display: flex; align-items: center; justify-content: center; gap: var(--jx-space-3); padding: var(--jx-space-2) 0; }
+    .jx-eq-del__pager-btn { display: inline-flex; align-items: center; gap: var(--jx-space-2); min-height: 36px; padding: 0 var(--jx-space-3); background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--jx-radius-lg); color: var(--text); font-family: var(--jx-font-display); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-medium); cursor: pointer; transition: background 120ms ease; }
+    .jx-eq-del__pager-btn:hover:not(:disabled) { background: var(--surface-sunken); }
+    .jx-eq-del__pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .jx-eq-del__pager-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    .jx-eq-del__pager-info { font-size: var(--jx-text-sm); color: var(--text-muted); min-width: 100px; text-align: center; }
   `],
 })
 export class EquipeEntregasPage implements OnInit {
   private readonly http = inject(HttpClient);
+  protected readonly iconPrev = faChevronLeft;
+  protected readonly iconNext = faChevronRight;
   protected readonly loading = signal(true);
   protected readonly deliveriesAll = signal<DeliveryItem[]>([]);
   protected readonly page = signal(0);

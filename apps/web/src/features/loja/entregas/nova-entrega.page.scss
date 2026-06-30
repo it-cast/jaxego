@@ -139,6 +139,34 @@
   color: var(--text-subtle);
 }
 
+.jx-nova__radios--2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.jx-nova__datetime {
+  min-height: 44px;
+  padding: 0 var(--jx-space-2);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font-size: var(--jx-text-base);
+  font-family: var(--jx-font-display);
+  width: 100%;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-nova__sched-err {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--error);
+  font-weight: var(--jx-weight-semibold);
+}
+
 .jx-nova__soon {
   display: inline-block;
   padding: 0 var(--jx-space-1);

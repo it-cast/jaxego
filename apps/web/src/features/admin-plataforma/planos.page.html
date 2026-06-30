@@ -163,7 +163,7 @@
     <!-- Data table -->
     <jx-data-table
       [columns]="columns"
-      [rows]="filtered()"
+      [rows]="paged()"
       [state]="state()"
       [trackBy]="trackPlan"
       caption="Planos de assinatura da plataforma"
@@ -237,5 +237,29 @@
         </td>
       </ng-template>
     </jx-data-table>
+
+    <nav class="jx-planos__pager" aria-label="Paginação de planos">
+      <button
+        type="button"
+        class="jx-planos__pager-btn"
+        [disabled]="page() === 1"
+        (click)="goTo(-1)"
+        aria-label="Página anterior"
+      >
+        <fa-icon [icon]="iconPrev" aria-hidden="true" />
+        Anterior
+      </button>
+      <span class="jx-planos__pager-info">Página {{ page() }}</span>
+      <button
+        type="button"
+        class="jx-planos__pager-btn"
+        [disabled]="!hasNext()"
+        (click)="goTo(1)"
+        aria-label="Próxima página"
+      >
+        Próxima
+        <fa-icon [icon]="iconNext" aria-hidden="true" />
+      </button>
+    </nav>
   }
 </main>

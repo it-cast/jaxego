@@ -83,20 +83,45 @@
             {{ item.full_name }}
           </button>
         </td>
-        <td class="jx-plat-people__num">{{ item.area_id }}</td>
+        <td>{{ item.area_name }}</td>
         <td>{{ statusLabel(item.status) }}</td>
         <td>
-          @if (item.score_level) {
-            <jx-score-badge
-              [level]="item.score_level"
-              [value]="item.score_total"
-            />
+          @if (item.avg_stars) {
+            <span class="jx-plat-people__stars">
+              <fa-icon [icon]="iconStar" aria-hidden="true" />
+              {{ item.avg_stars | number:'1.1-1' }}
+            </span>
           } @else {
-            <span class="jx-plat-people__no-score">Sem score ainda</span>
+            <span class="jx-plat-people__no-score">Sem avaliação</span>
           }
         </td>
       </ng-template>
     </jx-data-table>
+
+    <nav class="jx-plat-people__pager" aria-label="Paginação de entregadores">
+      <button
+        type="button"
+        class="jx-plat-people__pager-btn"
+        [disabled]="courierPage() === 1"
+        (click)="courierGoTo(-1)"
+        aria-label="Página anterior"
+      >
+        <fa-icon [icon]="iconPrev" aria-hidden="true" />
+        Anterior
+      </button>
+      <span class="jx-plat-people__pager-info">Página {{ courierPage() }}</span>
+      <button
+        type="button"
+        class="jx-plat-people__pager-btn"
+        [disabled]="!courierHasNext()"
+        (click)="courierGoTo(1)"
+        aria-label="Próxima página"
+      >
+        Próxima
+        <fa-icon [icon]="iconNext" aria-hidden="true" />
+      </button>
+    </nav>
+
   } @else {
     <!-- Lojas -->
     <jx-data-table
@@ -113,10 +138,34 @@
     >
       <ng-template #row let-item>
         <td>{{ item.name }}</td>
-        <td class="jx-plat-people__num">{{ item.area_id }}</td>
+        <td>{{ item.area_name }}</td>
         <td>{{ statusLabel(item.status) }}</td>
       </ng-template>
     </jx-data-table>
+
+    <nav class="jx-plat-people__pager" aria-label="Paginação de lojas">
+      <button
+        type="button"
+        class="jx-plat-people__pager-btn"
+        [disabled]="merchantPage() === 1"
+        (click)="merchantGoTo(-1)"
+        aria-label="Página anterior"
+      >
+        <fa-icon [icon]="iconPrev" aria-hidden="true" />
+        Anterior
+      </button>
+      <span class="jx-plat-people__pager-info">Página {{ merchantPage() }}</span>
+      <button
+        type="button"
+        class="jx-plat-people__pager-btn"
+        [disabled]="!merchantHasNext()"
+        (click)="merchantGoTo(1)"
+        aria-label="Próxima página"
+      >
+        Próxima
+        <fa-icon [icon]="iconNext" aria-hidden="true" />
+      </button>
+    </nav>
   }
 
   <!-- Drawer: breakdown do score -->

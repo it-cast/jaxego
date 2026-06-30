@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     jwt_algorithm: Literal["HS256"] = Field(default="HS256")
     jwt_issuer: str = Field(default="jaxego")
     jwt_audience: str = Field(default="jaxego-api")
-    access_token_minutes: int = Field(default=15)
+    access_token_minutes: int = Field(default=43200)  # 30 days
     refresh_token_days: int = Field(default=30)
 
     # --- External integrations (Phase 4) — adapters; secrets only via env ---
@@ -146,6 +146,18 @@ class Settings(BaseSettings):
     dispute_block_threshold: int = Field(default=2)
     dispute_block_window_days: int = Field(default=30)
     dispute_block_duration_days: int = Field(default=90)
+
+    # --- Inngest (scheduled deliveries) — SECRETS only via env (Gate 8) ---
+    # `inngest_event_key` authenticates POST /v1/events to the Inngest API.
+    # `inngest_signing_key` verifies the HMAC-SHA256 signature on incoming
+    # webhook calls from Inngest (x-inngest-signature header). Both are NULL
+    # in dev/test → the stub client is used (no network, no scheduling).
+    inngest_event_key: str | None = Field(default=None)
+    inngest_signing_key: str | None = Field(default=None)
+    inngest_api_url: str = Field(default="https://inn.gs")
+    # False em dev/ngrok — desabilita verificação de assinatura no SDK.
+    # True somente em produção real com URL pública fixa.
+    inngest_is_production: bool = Field(default=False)
 
     # --- LLM infra (Phase 14 — REQ-053 / D-03) — INFRA ONLY, no AI feature in M1 ---
     # The router selects a provider/model per task. In dev/test the factory returns the

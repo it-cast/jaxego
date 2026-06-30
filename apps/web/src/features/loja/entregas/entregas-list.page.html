@@ -3,11 +3,12 @@
   <button type="button" class="jx-entregas__new" (click)="goNova()">+ Nova entrega</button>
 </header>
 
-<form class="jx-entregas__filters" (submit)="$event.preventDefault(); load()">
+<form class="jx-entregas__filters" (submit)="$event.preventDefault(); filterAndLoad()">
   <label class="jx-entregas__filter">
     <span>Estado</span>
-    <select [(ngModel)]="stateFilter" name="state" (change)="load()">
+    <select [(ngModel)]="stateFilter" name="state" (change)="filterAndLoad()">
       <option value="">Todos</option>
+      <option value="AGENDADA">Agendada</option>
       <option value="CRIADA">Procurando</option>
       <option value="ACEITA">Aceita</option>
       <option value="COLETADA">A caminho</option>
@@ -19,7 +20,7 @@
   </label>
   <label class="jx-entregas__filter">
     <span>Pagamento</span>
-    <select [(ngModel)]="paymentFilter" name="payment" (change)="load()">
+    <select [(ngModel)]="paymentFilter" name="payment" (change)="filterAndLoad()">
       <option value="">Todos</option>
       <option value="direct">Direto</option>
       <option value="pix">PIX</option>
@@ -50,3 +51,27 @@
     ></jx-delivery-row>
   </ng-template>
 </jx-data-table>
+
+@if (totalPages() > 1) {
+  <nav class="jx-entregas__pagination" aria-label="Paginação">
+    <button
+      type="button"
+      class="jx-entregas__page-btn"
+      [disabled]="currentPage() === 0"
+      (click)="goPage(currentPage() - 1)"
+      aria-label="Página anterior"
+    >
+      <fa-icon [icon]="iconPrev" aria-hidden="true" /> Anterior
+    </button>
+    <span class="jx-entregas__page-info">Página {{ currentPage() + 1 }} de {{ totalPages() }}</span>
+    <button
+      type="button"
+      class="jx-entregas__page-btn"
+      [disabled]="currentPage() >= totalPages() - 1"
+      (click)="goPage(currentPage() + 1)"
+      aria-label="Próxima página"
+    >
+      Próxima <fa-icon [icon]="iconNext" aria-hidden="true" />
+    </button>
+  </nav>
+}

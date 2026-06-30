@@ -37,7 +37,7 @@ interface MerchantRow extends MerchantListItem {
 }
 
 type SortDir = 'asc' | 'desc' | 'none';
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 /**
  * Lojas da área (F2.4) com profundidade operacional (MG-2.3): busca + jx-data-table

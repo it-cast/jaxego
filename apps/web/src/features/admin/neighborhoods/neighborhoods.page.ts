@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -6,149 +12,150 @@ import {
   DataTableComponent,
   DataTableState,
 } from '@jaxego/shared/components/data-table/data-table.component';
-import { NeighborhoodRowComponent } from './neighborhood-row.component';
-import { ErrorStateComponent } from '@jaxego/shared/state/error-state.component';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import {
+  faPlus,
+  faCheck,
+  faXmark,
+  faTrashCan,
+  faChevronLeft,
+  faChevronRight,
+} from '@fortawesome/free-solid-svg-icons';
 import {
   AdminNeighborhoodsService,
   Neighborhood,
+  NeighborhoodCreate,
 } from './neighborhoods.service';
 
-/**
- * Tela 21B — Catálogo de bairros (UI-SPEC §3.2–3.4, REQ-003).
- *
- * Lists the area's catalog over jx-data-table; adds a neighborhood by name with
- * an optional GeoJSON polygon (textarea mono, validated on blur — UX; the backend
- * is the authority). Removal blocked by active deliveries surfaces the backend's
- * 409 message (role=alert) citing the neighborhood. Empty = jx-empty-state with a
- * CTA. Tokens only; AA light+dark.
- */
+type ViewMode = 'list' | 'create';
+
 @Component({
   selector: 'jx-neighborhoods-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    FormsModule,
-    DataTableComponent,
-    NeighborhoodRowComponent,
-    ErrorStateComponent,
-  ],
+  imports: [FormsModule, DataTableComponent, FaIconComponent],
   templateUrl: './neighborhoods.page.html',
   styleUrl: './neighborhoods.page.scss',
 })
 export class NeighborhoodsPage implements OnInit {
   private readonly service = inject(AdminNeighborhoodsService);
 
+  protected readonly iconPlus = faPlus;
+  protected readonly iconSave = faCheck;
+  protected readonly iconCancel = faXmark;
+  protected readonly iconRemove = faTrashCan;
+  protected readonly iconPrev = faChevronLeft;
+  protected readonly iconNext = faChevronRight;
+
   protected readonly columns: DataTableColumn[] = [
     { key: 'name', label: 'Nome' },
-    { key: 'polygon', label: 'Polígono' },
+    { key: 'actions', label: 'Ações' },
   ];
 
-  protected readonly rows = signal<Neighborhood[]>([]);
+  private allRows: Neighborhood[] = [];
+  protected readonly filteredRows = signal<Neighborhood[]>([]);
   protected readonly tableState = signal<DataTableState>('loading');
-  protected readonly removeError = signal<string | null>(null);
-
-  // Add form.
-  protected newName = '';
-  protected geojsonText = '';
-  protected readonly geojsonError = signal<string | null>(null);
+  protected readonly mode = signal<ViewMode>('list');
+  protected readonly msg = signal<{ text: string; tone: 'ok' | 'err' } | null>(null);
   protected readonly adding = signal(false);
+  protected readonly confirmRemoveId = signal<number | null>(null);
+  protected readonly currentPage = signal(0);
+  protected readonly PAGE_SIZE = 20;
+
+  protected searchQuery = '';
+  protected newName = '';
+
+  protected get totalPages(): number {
+    return Math.ceil(this.filteredRows().length / this.PAGE_SIZE);
+  }
+
+  protected get pagedRows(): Neighborhood[] {
+    const start = this.currentPage() * this.PAGE_SIZE;
+    return this.filteredRows().slice(start, start + this.PAGE_SIZE);
+  }
 
   protected readonly trackById = (item: unknown): number => (item as Neighborhood).id;
 
   async ngOnInit(): Promise<void> {
-    await this.reload();
+    await this.load();
   }
 
-  private async reload(): Promise<void> {
+  protected async load(): Promise<void> {
     this.tableState.set('loading');
     try {
       const list = await this.service.list();
-      this.rows.set(list);
+      this.allRows = list;
+      this.applyFilter();
       this.tableState.set(list.length === 0 ? 'empty' : 'ready');
     } catch {
       this.tableState.set('error');
     }
   }
 
-  /** Client-side GeoJSON syntax/range check (UX only — backend is authority). */
-  protected validateGeojson(): unknown | null {
-    this.geojsonError.set(null);
-    const text = this.geojsonText.trim();
-    if (text === '') {
-      return null; // name-only is valid
-    }
-    let parsed: { type?: string; coordinates?: number[][][] };
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      this.geojsonError.set('GeoJSON inválido. Cole um Polygon com pares lng,lat.');
-      return undefined;
-    }
-    if (parsed.type !== 'Polygon' || !Array.isArray(parsed.coordinates)) {
-      this.geojsonError.set('GeoJSON inválido. Cole um Polygon com pares lng,lat.');
-      return undefined;
-    }
-    for (const ring of parsed.coordinates) {
-      for (const pair of ring) {
-        const [lng, lat] = pair;
-        if (lng < -180 || lng > 180) {
-          this.geojsonError.set('Coordenada fora de faixa. Use lng entre −180 e 180.');
-          return undefined;
-        }
-        if (lat < -90 || lat > 90) {
-          this.geojsonError.set('Coordenada fora de faixa. Use lat entre −90 e 90.');
-          return undefined;
-        }
-      }
-    }
-    return parsed;
+  protected applyFilter(): void {
+    const q = this.searchQuery.trim().toLowerCase();
+    const filtered = q
+      ? this.allRows.filter(n => n.name.toLowerCase().includes(q))
+      : this.allRows;
+    this.filteredRows.set(filtered);
+    this.currentPage.set(0);
   }
 
-  async add(): Promise<void> {
+  protected goPage(page: number): void {
+    this.currentPage.set(page);
+  }
+
+  protected showCreate(): void {
+    this.newName = '';
+    this.msg.set(null);
+    this.mode.set('create');
+  }
+
+  protected cancel(): void {
+    this.mode.set('list');
+    this.msg.set(null);
+  }
+
+  protected async save(): Promise<void> {
     const name = this.newName.trim();
-    if (name === '') {
-      return;
-    }
-    const polygon = this.validateGeojson();
-    if (polygon === undefined) {
-      return; // geojsonError already set
-    }
+    if (!name) return;
     this.adding.set(true);
     try {
-      await this.service.create({
-        name,
-        polygon_geojson: polygon ?? undefined,
-      });
-      this.newName = '';
-      this.geojsonText = '';
-      await this.reload();
-    } catch (err) {
-      if (err instanceof HttpErrorResponse && err.status === 422) {
-        this.geojsonError.set(
-          err.error?.error?.message ??
-            'GeoJSON inválido. Cole um Polygon com pares lng,lat.'
-        );
-      } else {
-        this.geojsonError.set('Não conseguimos adicionar o bairro. Tente de novo.');
-      }
+      await this.service.create({ name });
+      this.msg.set({ text: 'Bairro adicionado com sucesso.', tone: 'ok' });
+      this.mode.set('list');
+      await this.load();
+    } catch {
+      this.msg.set({ text: 'Não conseguimos adicionar o bairro. Tente de novo.', tone: 'err' });
     } finally {
       this.adding.set(false);
     }
   }
 
-  async remove(id: number): Promise<void> {
-    this.removeError.set(null);
+  protected confirmRemove(id: number): void {
+    this.confirmRemoveId.set(id);
+  }
+
+  protected cancelConfirmRemove(): void {
+    this.confirmRemoveId.set(null);
+  }
+
+  protected async doRemove(id: number): Promise<void> {
+    this.confirmRemoveId.set(null);
     try {
       await this.service.remove(id);
-      await this.reload();
+      this.msg.set({ text: 'Bairro removido.', tone: 'ok' });
+      await this.load();
     } catch (err) {
       if (err instanceof HttpErrorResponse && err.status === 409) {
-        this.removeError.set(
-          err.error?.error?.message ??
-            'Não é possível remover: há entregas ativas nesse bairro. Arquive primeiro.'
-        );
+        this.msg.set({
+          text:
+            err.error?.error?.message ??
+            'Não é possível remover: há entregas ativas nesse bairro.',
+          tone: 'err',
+        });
       } else {
-        this.removeError.set('Não conseguimos remover o bairro. Tente de novo.');
+        this.msg.set({ text: 'Não conseguimos remover o bairro. Tente de novo.', tone: 'err' });
       }
     }
   }

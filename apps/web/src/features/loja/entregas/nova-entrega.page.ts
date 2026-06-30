@@ -160,6 +160,9 @@ export class NovaEntregaPage {
   protected readonly proofMethod = signal<string>('photo');
   protected readonly receiptMethod = signal<string>('dinheiro');
   protected readonly deliveryRefused = signal(false);
+  protected readonly deliveryMode = signal<'immediate' | 'scheduled'>('immediate');
+  protected readonly scheduledAt = signal<string>('');
+  protected readonly scheduledAtError = signal<string | null>(null);
   private cardBlob: string | null = null;
 
   constructor() {
@@ -317,8 +320,30 @@ export class NovaEntregaPage {
     return null;
   }
 
+  /** Mínimo para datetime-local (1 min no futuro, em horário local). */
+  protected get scheduledAtMin(): string {
+    const d = new Date(Date.now() + 1 * 60 * 1000);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  protected setDeliveryMode(mode: 'immediate' | 'scheduled'): void {
+    this.deliveryMode.set(mode);
+    this.scheduledAtError.set(null);
+    if (mode === 'immediate') {
+      this.scheduledAt.set('');
+    }
+    this.submitLabel.set(mode === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
+  }
+
   protected canSubmit(): boolean {
-    return this.form.valid && !this.outOfArea() && !this.submitting() && this.selectedTeamIds().size > 0;
+    if (!this.form.valid || this.outOfArea() || this.submitting() || this.selectedTeamIds().size === 0) {
+      return false;
+    }
+    if (this.deliveryMode() === 'scheduled' && !this.scheduledAt()) {
+      return false;
+    }
+    return true;
   }
 
   protected async submit(): Promise<void> {
@@ -326,6 +351,21 @@ export class NovaEntregaPage {
       this.form.markAllAsTouched();
       return;
     }
+    // Validate scheduled date before submitting.
+    if (this.deliveryMode() === 'scheduled') {
+      const picked = this.scheduledAt();
+      if (!picked) {
+        this.scheduledAtError.set('Selecione a data e o horário de agendamento.');
+        return;
+      }
+      const pickedDate = new Date(picked);
+      if (pickedDate.getTime() <= Date.now() + 0 * 60 * 1000) {
+        this.scheduledAtError.set('O horário deve ser no futuro.');
+        return;
+      }
+      this.scheduledAtError.set(null);
+    }
+
     this.submitting.set(true);
     this.submitLabel.set('Salvando os dados...');
     this.submitError.set(null);
@@ -358,6 +398,9 @@ export class NovaEntregaPage {
       proof_method: this.proofMethod() as 'none' | 'photo' | 'photo_reference' | 'otp',
       payment_method: 'direct',
       receipt_method: this.receiptMethod(),
+      scheduled_at: this.deliveryMode() === 'scheduled' && this.scheduledAt()
+        ? new Date(this.scheduledAt()).toISOString()
+        : null,
     };
 
     const result = await this.service.create(req);
@@ -368,12 +411,12 @@ export class NovaEntregaPage {
         await this.uploadImage(result.data.delivery_id);
       }
       this.submitting.set(false);
-      this.submitLabel.set('Chamar entregador');
+      this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
       void this.router.navigate(['/loja/entregas', result.data.delivery_id]);
       return;
     }
     this.submitting.set(false);
-    this.submitLabel.set('Chamar entregador');
+    this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
 
     if (result.planLimit) {
       await this.openUpgrade();

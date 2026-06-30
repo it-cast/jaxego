@@ -51,6 +51,11 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
           <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
         </header>
 
+        @if (d.state === 'AGENDADA') {
+          <div class="jx-detail__scheduled" role="status">
+            ⏰ Entrega agendada para {{ fmtScheduled(d.scheduled_at) }}. O entregador será chamado automaticamente nesse horário.
+          </div>
+        }
         @if (trackingState(d) === 'CRIADA') {
           <div class="jx-detail__searching" role="status" aria-live="polite">
             <span class="jx-detail__spinner" aria-hidden="true"></span>
@@ -76,6 +81,10 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
               <dd>{{ d.recipient_name ?? '—' }}</dd>
               <dt>Telefone</dt>
               <dd class="jx-detail__mono">{{ d.recipient_phone_masked ?? '—' }}</dd>
+              @if (d.courier_id) {
+                <dt>Entregador</dt>
+                <dd>{{ d.courier_name ?? '—' }}</dd>
+              }
               <dt>Link de rastreio</dt>
               <dd>
                 <a class="jx-detail__link" [href]="'/r/' + d.public_token">/r/{{ d.public_token }}</a>
@@ -268,7 +277,8 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   }
 
   private async poll(): Promise<void> {
-    if (this.delivery()?.state !== 'CRIADA') {
+    const state = this.delivery()?.state;
+    if (state !== 'CRIADA' && state !== 'AGENDADA') {
       if (this.pollHandle) clearInterval(this.pollHandle);
       this.pollHandle = null;
       return;
@@ -277,6 +287,8 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   }
 
   protected trackingState(d: DeliveryListItem): TrackingState {
+    // AGENDADA não tem representação no tracking timeline — mostra como CRIADA
+    if (d.state === 'AGENDADA') return 'CRIADA';
     return d.state as TrackingState;
   }
 
@@ -290,14 +302,23 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   }
 
   protected canCancel(d: DeliveryListItem): boolean {
-    return ['CRIADA', 'ACEITA', 'COLETADA'].includes(d.state);
+    return ['AGENDADA', 'CRIADA', 'ACEITA', 'COLETADA'].includes(d.state);
   }
 
   /** RN-004 cost declared IN the label (br/ux-copywriting-ptbr). */
   protected cancelLabel(d: DeliveryListItem): string {
+    if (d.state === 'AGENDADA') return 'Cancelar (sem custo)';
     if (d.state === 'CRIADA') return 'Cancelar (sem custo)';
     if (d.state === 'ACEITA') return 'Cancelar (cobra 50%)';
     return 'Cancelar (cobra 100% + retorno)';
+  }
+
+  protected fmtScheduled(iso: string | null | undefined): string {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
   }
 
   protected async submitRating(d: DeliveryListItem): Promise<void> {

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, Input, computed, signal } from '@angular/core';
 
-/** The 7 canonical delivery states (RN-019 / D-03). */
+/** The 8 canonical delivery states (RN-019 / D-03). */
 export type DeliveryState =
+  | 'AGENDADA'
   | 'CRIADA'
   | 'ACEITA'
   | 'COLETADA'
@@ -72,6 +73,7 @@ export class StateBadgeComponent {
   }
 
   protected readonly META: Record<DeliveryState, StateMeta> = {
+    AGENDADA: { cssVar: '--state-agendada', icon: '⏰', list: 'Agendada', dashboard: 'Agendada' },
     CRIADA: { cssVar: '--state-criada', icon: '◷', list: 'Procurando', dashboard: 'Procurando' },
     ACEITA: { cssVar: '--state-aceita', icon: '✓', list: 'Aceita', dashboard: 'Indo coletar' },
     COLETADA: {

@@ -28,6 +28,7 @@ dependencies = [
     "pillow>=12.2,<13",
     "shapely>=2.1.2",
     "pywebpush>=2.3.0",
+    "inngest>=0.4,<1",
 ]
 
 [dependency-groups]

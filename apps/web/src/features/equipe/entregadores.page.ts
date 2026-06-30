@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { DataTableColumn, DataTableComponent, DataTableState } from '@jaxego/shared/components/data-table/data-table.component';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { EquipeKycService, CourierListItem } from './equipe-kyc.service';
 
 interface CourierRow extends CourierListItem { status_label: string; }
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 @Component({
   selector: 'jx-equipe-entregadores',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DataTableComponent],
+  imports: [DataTableComponent, FaIconComponent],
   template: `
     <section class="jx-couriers">
       <header class="jx-couriers__head">
@@ -37,7 +39,7 @@ const PAGE_SIZE = 10;
       >
         <ng-template #row let-c>
           <td>{{ c.full_name }}</td>
-          <td>{{ c.vehicle_type }}</td>
+          <td>{{ vehicleLabel(c.vehicle_type) }}</td>
           <td>{{ c.status_label }}</td>
           <td>{{ c.is_online ? 'Online' : 'Offline' }}</td>
           <td>
@@ -49,10 +51,14 @@ const PAGE_SIZE = 10;
       </jx-data-table>
 
       @if (totalPages() > 1) {
-        <nav class="jx-couriers__pager">
-          <button (click)="prevPage()" [disabled]="page() === 0">← Anterior</button>
-          <span>{{ page() + 1 }} de {{ totalPages() }}</span>
-          <button (click)="nextPage()" [disabled]="page() >= totalPages() - 1">Próxima →</button>
+        <nav class="jx-couriers__pager" aria-label="Paginação de entregadores">
+          <button class="jx-couriers__pager-btn" (click)="prevPage()" [disabled]="page() === 0" aria-label="Página anterior">
+            <fa-icon [icon]="iconPrev" aria-hidden="true" /> Anterior
+          </button>
+          <span class="jx-couriers__pager-info">Página {{ page() + 1 }} de {{ totalPages() }}</span>
+          <button class="jx-couriers__pager-btn" (click)="nextPage()" [disabled]="page() >= totalPages() - 1" aria-label="Próxima página">
+            Próxima <fa-icon [icon]="iconNext" aria-hidden="true" />
+          </button>
         </nav>
       }
     </section>
@@ -66,14 +72,20 @@ const PAGE_SIZE = 10;
     .jx-couriers__seg-btn--on { background: var(--surface); color: var(--text); }
     .jx-couriers__search { padding: var(--jx-space-2); border: 1px solid var(--border); border-radius: var(--jx-radius-md); background: var(--surface); color: var(--text); font-size: var(--jx-text-sm); min-width: 240px; }
     .jx-couriers__open { border: 1px solid var(--border); background: var(--surface); color: var(--brand); border-radius: var(--jx-radius-sm); padding: 4px 12px; font-weight: 600; cursor: pointer; }
-    .jx-couriers__pager { display: flex; align-items: center; justify-content: center; gap: var(--jx-space-3); font-size: var(--jx-text-sm); }
-    .jx-couriers__pager button { border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--jx-radius-sm); padding: 6px 12px; cursor: pointer; }
-    .jx-couriers__pager button:disabled { opacity: 0.5; cursor: default; }
+    .jx-couriers__pager { display: flex; align-items: center; justify-content: center; gap: var(--jx-space-3); padding: var(--jx-space-2) 0; }
+    .jx-couriers__pager-btn { display: inline-flex; align-items: center; gap: var(--jx-space-2); min-height: 36px; padding: 0 var(--jx-space-3); background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: var(--jx-radius-lg); color: var(--text); font-family: var(--jx-font-display); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-medium); cursor: pointer; transition: background 120ms ease; }
+    .jx-couriers__pager-btn:hover:not(:disabled) { background: var(--surface-sunken); }
+    .jx-couriers__pager-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .jx-couriers__pager-btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    .jx-couriers__pager-info { font-size: var(--jx-text-sm); color: var(--text-muted); min-width: 100px; text-align: center; }
   `],
 })
 export class EquipeEntregadoresPage implements OnInit {
   private readonly svc = inject(EquipeKycService);
   private readonly router = inject(Router);
+
+  protected readonly iconPrev = faChevronLeft;
+  protected readonly iconNext = faChevronRight;
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'full_name', label: 'Entregador', sortable: true },
@@ -124,6 +136,16 @@ export class EquipeEntregadoresPage implements OnInit {
   protected setFilter(v: 'pending' | 'all'): void { this.filter.set(v); void this.reload(); }
   protected prevPage(): void { this.page.update(p => Math.max(0, p - 1)); }
   protected nextPage(): void { this.page.update(p => Math.min(this.totalPages() - 1, p + 1)); }
+
+  protected vehicleLabel(v: string): string {
+    const map: Record<string, string> = {
+      moto: 'Moto',
+      bicicleta: 'Bicicleta',
+      carro: 'Carro',
+      a_pe: 'A pé',
+    };
+    return map[v] ?? v;
+  }
 
   protected open(c: CourierRow): void {
     void this.router.navigate(['/equipe/entregadores', c.id]);

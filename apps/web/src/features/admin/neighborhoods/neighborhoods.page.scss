@@ -1,118 +1,246 @@
-// Tela 21B — Catálogo de bairros (UI-SPEC §3.2). Only semantic vars; AA light+dark.
+// Bairros admin page — padrão equipes (header + form card + search + tabela + paginação)
 
 .jx-nbhd {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: var(--jx-space-6) var(--jx-space-5);
   display: flex;
   flex-direction: column;
-  gap: var(--jx-space-5);
+  gap: var(--jx-space-4);
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+.jx-nbhd__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .jx-nbhd__title {
+  margin: 0;
   font-family: var(--jx-font-display);
   font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
   color: var(--text);
 }
 
-.jx-nbhd__title em {
-  font-family: var(--jx-font-serif-accent);
-  font-style: italic;
-  color: var(--brand);
-}
+// ── Feedback message ──────────────────────────────────────────────────────────
 
-.jx-nbhd__add {
-  display: flex;
-  flex-direction: column;
-  gap: var(--jx-space-2);
-  padding: var(--jx-space-4);
-  border: 1px solid var(--border);
+.jx-nbhd__msg {
+  padding: var(--jx-space-3) var(--jx-space-4);
   border-radius: var(--jx-radius-lg);
-  background: var(--surface-elevated);
-}
-
-.jx-nbhd__add-title {
   font-size: var(--jx-text-sm);
   font-weight: var(--jx-weight-semibold);
-  color: var(--text);
 }
 
-.jx-nbhd__add-row {
+.jx-nbhd__msg--ok {
+  background: var(--success-wash, var(--brand-wash));
+  color: var(--success, var(--brand));
+}
+
+.jx-nbhd__msg--err {
+  background: var(--error-wash, hsl(0 70% 95%));
+  color: var(--error);
+}
+
+// ── CTA & secondary buttons ───────────────────────────────────────────────────
+
+.jx-nbhd__cta {
   display: flex;
-  gap: var(--jx-space-3);
+  align-items: center;
+  gap: var(--jx-space-1);
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 0;
+  border-radius: var(--jx-radius-lg);
+  background: var(--brand);
+  color: var(--brand-contrast, #fff);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
 }
 
-.jx-nbhd__add-name {
-  flex: 1;
+.jx-nbhd__cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.jx-nbhd__btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-1);
   min-height: 44px;
   padding: 0 var(--jx-space-3);
   border: 1px solid var(--border);
-  border-radius: var(--jx-radius-md);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--jx-text-base);
-}
-
-.jx-nbhd__add-name:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-// Sober neutral button (NOT persimmon — ui-ux-pro-max).
-.jx-nbhd__add-btn {
-  min-height: 44px;
-  padding: 0 var(--jx-space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--jx-radius-md);
-  background: var(--surface-sunken);
+  border-radius: var(--jx-radius-lg);
+  background: transparent;
   color: var(--text);
   font-size: var(--jx-text-sm);
   font-weight: var(--jx-weight-semibold);
   cursor: pointer;
 }
 
-.jx-nbhd__add-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+// ── Form card ─────────────────────────────────────────────────────────────────
+
+.jx-nbhd__form-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-xl);
+  padding: var(--jx-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
 }
 
-.jx-nbhd__add-btn:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+.jx-nbhd__form-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
 }
 
-.jx-nbhd__geojson-label {
+.jx-nbhd__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-nbhd__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-nbhd__label {
   font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.jx-nbhd__geojson {
-  font-family: var(--jx-font-mono);
+.jx-nbhd__input {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-base);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.jx-nbhd__input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+.jx-nbhd__form-err {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--error);
+  font-weight: var(--jx-weight-semibold);
+}
+
+.jx-nbhd__hint {
+  color: var(--text-subtle, var(--text-muted));
   font-size: var(--jx-text-xs);
-  min-height: 72px;
-  padding: var(--jx-space-2) var(--jx-space-3);
+}
+
+.jx-nbhd__form-actions {
+  display: flex;
+  gap: var(--jx-space-2);
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+
+.jx-nbhd__search {
+  margin-bottom: 0;
+}
+
+// ── Table row cells ───────────────────────────────────────────────────────────
+
+.jx-nbhd__row-name {
+  color: var(--text);
+  font-weight: var(--jx-weight-medium);
+}
+
+.jx-nbhd__row-informal {
+  color: var(--text-muted);
+  font-size: var(--jx-text-xs);
+  margin-left: var(--jx-space-1);
+}
+
+// ── Row actions ───────────────────────────────────────────────────────────────
+
+.jx-nbhd__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+}
+
+.jx-nbhd__action-btn {
+  min-width: 36px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.jx-nbhd__action-btn:hover {
+  background: var(--surface-elevated);
+  color: var(--text);
+}
+
+.jx-nbhd__action-btn--danger:hover {
+  color: var(--error);
+}
+
+.jx-nbhd__confirm-msg {
+  font-size: var(--jx-text-xs);
+  color: var(--error);
+  font-weight: var(--jx-weight-semibold);
+  margin-right: var(--jx-space-1);
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+
+.jx-nbhd__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-3) 0;
+}
+
+.jx-nbhd__page-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  min-height: 36px;
+  padding: 0 var(--jx-space-3);
   border: 1px solid var(--border);
   border-radius: var(--jx-radius-md);
   background: var(--surface);
   color: var(--text);
-  resize: vertical;
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
 }
 
-.jx-nbhd__geojson[aria-invalid='true'] {
-  border-color: var(--error);
+.jx-nbhd__page-btn:hover:not(:disabled) {
+  background: var(--surface-elevated);
 }
 
-.jx-nbhd__geojson:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+.jx-nbhd__page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.jx-nbhd__error {
-  color: var(--error);
-  font-size: var(--jx-text-xs);
-}
-
-.jx-nbhd__hint {
-  color: var(--text-subtle);
-  font-size: var(--jx-text-xs);
+.jx-nbhd__page-info {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  font-weight: var(--jx-weight-semibold);
 }

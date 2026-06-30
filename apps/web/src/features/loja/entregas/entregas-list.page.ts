@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -7,8 +7,12 @@ import {
   DataTableState,
 } from '@jaxego/shared/components/data-table/data-table.component';
 import { DeliveryRowComponent } from '@jaxego/shared/components/delivery-row/delivery-row.component';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { DeliveryService } from './delivery.service';
 import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
+
+const PAGE_SIZE = 20;
 
 /**
  * Tela 14 — store delivery list (F-03 / UI-SPEC §4.1). `jx-data-table` +
@@ -21,13 +25,16 @@ import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
   selector: 'jx-loja-entregas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, DataTableComponent, DeliveryRowComponent],
+  imports: [FormsModule, RouterLink, DataTableComponent, DeliveryRowComponent, FaIconComponent],
   templateUrl: './entregas-list.page.html',
   styleUrl: './entregas-list.page.scss',
 })
 export class EntregasListPage implements OnInit {
   private readonly service = inject(DeliveryService);
   private readonly router = inject(Router);
+
+  protected readonly iconPrev = faChevronLeft;
+  protected readonly iconNext = faChevronRight;
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'num', label: 'Nº' },
@@ -41,6 +48,8 @@ export class EntregasListPage implements OnInit {
   protected readonly rows = signal<DeliveryListItem[]>([]);
   protected readonly tableState = signal<DataTableState>('loading');
   protected readonly total = signal(0);
+  protected readonly currentPage = signal(0);
+  protected readonly totalPages = computed(() => Math.ceil(this.total() / PAGE_SIZE));
 
   protected stateFilter = '';
   protected paymentFilter = '';
@@ -57,6 +66,8 @@ export class EntregasListPage implements OnInit {
       const page = await this.service.list({
         state: this.stateFilter || undefined,
         paymentMethod: this.paymentFilter || undefined,
+        limit: PAGE_SIZE,
+        offset: this.currentPage() * PAGE_SIZE,
       });
       this.rows.set(page.items);
       this.total.set(page.total);
@@ -66,6 +77,16 @@ export class EntregasListPage implements OnInit {
     }
   }
 
+  protected filterAndLoad(): void {
+    this.currentPage.set(0);
+    void this.load();
+  }
+
+  protected goPage(page: number): void {
+    this.currentPage.set(page);
+    void this.load();
+  }
+
   protected hasFilters(): boolean {
     return !!this.stateFilter || !!this.paymentFilter;
   }
@@ -73,6 +94,7 @@ export class EntregasListPage implements OnInit {
   protected clearFilters(): void {
     this.stateFilter = '';
     this.paymentFilter = '';
+    this.currentPage.set(0);
     void this.load();
   }
 

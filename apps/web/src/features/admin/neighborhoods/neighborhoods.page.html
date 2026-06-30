@@ -1,69 +1,133 @@
 <main class="jx-nbhd">
-  <h1 class="jx-nbhd__title">Catálogo de <em>bairros</em></h1>
+  <header class="jx-nbhd__header">
+    <h1 class="jx-nbhd__title">Bairros</h1>
+    @if (mode() === 'list') {
+      <button type="button" class="jx-nbhd__cta" (click)="showCreate()">
+        <fa-icon [icon]="iconPlus" aria-hidden="true" /> Adicionar
+      </button>
+    }
+  </header>
 
-  @if (removeError()) {
-    <jx-error-state [message]="removeError()!" />
+  @if (msg(); as m) {
+    <div
+      class="jx-nbhd__msg"
+      [class.jx-nbhd__msg--ok]="m.tone === 'ok'"
+      [class.jx-nbhd__msg--err]="m.tone === 'err'"
+      role="status"
+    >
+      {{ m.text }}
+    </div>
   }
 
-  <!-- Add a neighborhood -->
-  <section class="jx-nbhd__add">
-    <h2 class="jx-nbhd__add-title">Adicionar bairro</h2>
-    <div class="jx-nbhd__add-row">
+  @if (mode() === 'create') {
+    <section class="jx-nbhd__form-card">
+      <h2 class="jx-nbhd__form-title">Novo bairro</h2>
+      <form class="jx-nbhd__form" (ngSubmit)="save()">
+        <label class="jx-nbhd__field">
+          <span class="jx-nbhd__label">Nome do bairro</span>
+          <input
+            class="jx-nbhd__input"
+            type="text"
+            [(ngModel)]="newName"
+            name="name"
+            required
+            maxlength="120"
+            placeholder="Ex: Centro"
+          />
+        </label>
+        <div class="jx-nbhd__form-actions">
+          <button type="submit" class="jx-nbhd__cta" [disabled]="adding() || !newName.trim()">
+            <fa-icon [icon]="iconSave" aria-hidden="true" />
+            {{ adding() ? 'Salvando...' : 'Salvar' }}
+          </button>
+          <button type="button" class="jx-nbhd__btn-secondary" (click)="cancel()">
+            <fa-icon [icon]="iconCancel" aria-hidden="true" /> Cancelar
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (mode() === 'list') {
+    <div class="jx-nbhd__search">
       <input
-        class="jx-nbhd__add-name"
-        type="text"
-        placeholder="Nome do bairro"
-        [(ngModel)]="newName"
-        aria-label="Nome do bairro"
+        class="jx-nbhd__input"
+        type="search"
+        placeholder="Buscar bairro..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="applyFilter()"
       />
-      <button
-        type="button"
-        class="jx-nbhd__add-btn"
-        [disabled]="adding() || newName.trim() === ''"
-        (click)="add()"
-      >
-        Adicionar
-      </button>
     </div>
 
-    <label class="jx-nbhd__geojson-label" for="geojson">
-      Polígono (GeoJSON ou coordenadas) — opcional
-    </label>
-    <textarea
-      id="geojson"
-      class="jx-nbhd__geojson"
-      rows="3"
-      placeholder='{"type":"Polygon","coordinates":[[[lng,lat],...]]}'
-      [(ngModel)]="geojsonText"
-      (blur)="validateGeojson()"
-      [attr.aria-invalid]="geojsonError() ? 'true' : null"
-      [attr.aria-describedby]="geojsonError() ? 'geojson-error' : null"
-    ></textarea>
-    @if (geojsonError(); as err) {
-      <p class="jx-nbhd__error" id="geojson-error" role="alert">{{ err }}</p>
-    }
-    <small class="jx-nbhd__hint">
-      Bairro sem polígono funciona por nome. Remover bairro com entregas ativas não
-      é permitido — arquive primeiro.
-    </small>
-  </section>
+    <jx-data-table
+      [columns]="columns"
+      [rows]="pagedRows"
+      [state]="tableState()"
+      [trackBy]="trackById"
+      caption="Bairros da área"
+      emptyIcon="◌"
+      emptyTitle="Nenhum bairro cadastrado"
+      emptyMessage="Crie o primeiro bairro clicando em '+ Adicionar'."
+      errorMessage="Não foi possível carregar os bairros."
+      (retry)="load()"
+    >
+      <ng-template #row let-item>
+        <td>
+          <span class="jx-nbhd__row-name">{{ item.name }}</span>
+          @if (item.is_informal) {
+            <span class="jx-nbhd__row-informal">· informal</span>
+          }
+        </td>
+        <td class="jx-nbhd__actions">
+          @if (confirmRemoveId() === item.id) {
+            <span class="jx-nbhd__confirm-msg">Remover?</span>
+            <button
+              type="button"
+              class="jx-nbhd__action-btn jx-nbhd__action-btn--danger"
+              (click)="doRemove(item.id)"
+            >
+              <fa-icon [icon]="iconSave" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-nbhd__action-btn"
+              (click)="cancelConfirmRemove()"
+            >
+              <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="jx-nbhd__action-btn jx-nbhd__action-btn--danger"
+              (click)="confirmRemove(item.id)"
+            >
+              <fa-icon [icon]="iconRemove" aria-hidden="true" />
+            </button>
+          }
+        </td>
+      </ng-template>
+    </jx-data-table>
 
-  <!-- Catalog table -->
-  <jx-data-table
-    [columns]="columns"
-    [rows]="rows()"
-    [state]="tableState()"
-    [hasActions]="true"
-    [trackBy]="trackById"
-    caption="Bairros da área"
-    emptyIcon="◌"
-    emptyTitle="Nenhum bairro cadastrado ainda."
-    emptyMessage="Adicione o primeiro bairro da área no campo acima."
-    errorMessage="Não conseguimos carregar os bairros. Tente de novo."
-    (retry)="ngOnInit()"
-  >
-    <ng-template #row let-item>
-      <jx-neighborhood-row [item]="item" (remove)="remove($event)" />
-    </ng-template>
-  </jx-data-table>
+    @if (totalPages > 1) {
+      <div class="jx-nbhd__pagination">
+        <button
+          class="jx-nbhd__page-btn"
+          [disabled]="currentPage() === 0"
+          (click)="goPage(currentPage() - 1)"
+          aria-label="Página anterior"
+        >
+          <fa-icon [icon]="iconPrev" aria-hidden="true" /> Anterior
+        </button>
+        <span class="jx-nbhd__page-info">Página {{ currentPage() + 1 }} de {{ totalPages }}</span>
+        <button
+          class="jx-nbhd__page-btn"
+          [disabled]="currentPage() >= totalPages - 1"
+          (click)="goPage(currentPage() + 1)"
+          aria-label="Próxima página"
+        >
+          Próxima <fa-icon [icon]="iconNext" aria-hidden="true" />
+        </button>
+      </div>
+    }
+  }
 </main>

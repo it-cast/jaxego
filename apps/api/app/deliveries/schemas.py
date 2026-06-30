@@ -12,9 +12,10 @@ README.md).
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 def mask_phone_display(phone: str) -> str:
@@ -94,6 +95,28 @@ class CreateDeliveryBody(BaseModel):
     payer_document: str | None = Field(default=None, max_length=14)
     payer_email: EmailStr | None = None
 
+    # --- Scheduled dispatch (Inngest). NULL = dispatch immediately (CRIADA). ---
+    # Must be at least 5 minutes in the future (prevents near-instant scheduling
+    # that would race with the immediate dispatch path).
+    scheduled_at: datetime | None = Field(default=None)
+
+    @field_validator("scheduled_at")
+    @classmethod
+    def scheduled_at_must_be_future(cls, v: datetime | None) -> datetime | None:
+        if v is None:
+            return v
+        from datetime import UTC
+
+        now = datetime.now(UTC)
+        # Normalise naive datetimes to UTC (assume the client sent UTC).
+        if v.tzinfo is None:
+            from datetime import timezone
+            v = v.replace(tzinfo=timezone.utc)
+        from datetime import timedelta
+        if v <= now + timedelta(minutes=1):
+            raise ValueError("scheduled_at deve ser pelo menos 1 minuto no futuro.")
+        return v
+
 
 class DeliveryOut(BaseModel):
     """Store-facing delivery view. Recipient phone is MASKED (TH-04).
@@ -132,7 +155,9 @@ class DeliveryOut(BaseModel):
     recipient_name: str | None = None
     recipient_phone_masked: str | None = None
     courier_id: int | None = None
+    courier_name: str | None = None
     created_at: str | None = None
+    scheduled_at: str | None = None
 
 
 class DeliveryListItem(BaseModel):
@@ -151,6 +176,7 @@ class DeliveryListItem(BaseModel):
     recipient_phone_masked: str | None
     courier_id: int | None
     created_at: str | None
+    scheduled_at: str | None = None
 
 
 class DeliveryListOut(BaseModel):
@@ -181,6 +207,8 @@ class CreateDeliveryResponse(BaseModel):
     has_image: bool = False
     # E2 (D-06): 0 eligible online couriers — non-blocking warning.
     no_couriers_warning: bool
+    # Populated when scheduled_at was provided (AGENDADA state).
+    scheduled_at: str | None = None
 
 
 class CourierDeliveryOut(BaseModel):

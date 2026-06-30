@@ -130,6 +130,61 @@
   color: var(--text-muted);
 }
 
+.jx-plat-people__stars {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-1);
+  color: var(--warning, #f59e0b);
+  font-weight: var(--jx-weight-semibold);
+}
+
+// --- Paginação -------------------------------------------------------------
+.jx-plat-people__pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-2) 0;
+}
+
+.jx-plat-people__pager-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  min-height: 36px;
+  padding: 0 var(--jx-space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  cursor: pointer;
+  transition: background 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-sunken);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-plat-people__pager-info {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  min-width: 80px;
+  text-align: center;
+}
+
 // --- Drawer / breakdown ----------------------------------------------------
 .jx-plat-people__drawer {
   position: fixed;

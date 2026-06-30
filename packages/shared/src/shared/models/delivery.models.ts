@@ -34,6 +34,8 @@ export interface CreateDeliveryRequest {
   card_blob?: string | null;
   payer_document?: string | null;
   payer_email?: string | null;
+  /** ISO-8601 UTC — quando o entregador deve ser chamado. Null = imediato. */
+  scheduled_at?: string | null;
 }
 
 export interface CreateDeliveryResponse {
@@ -43,6 +45,8 @@ export interface CreateDeliveryResponse {
   price_cents: number | null;
   fee_cents: number;
   no_couriers_warning: boolean;
+  /** ISO-8601 UTC do horário agendado; presente quando state === 'AGENDADA'. */
+  scheduled_at?: string | null;
 }
 
 export interface DeliveryListItem {
@@ -58,7 +62,9 @@ export interface DeliveryListItem {
   /** Already masked by the backend (TH-04) — never the raw phone. */
   recipient_phone_masked: string | null;
   courier_id: number | null;
+  courier_name: string | null;
   created_at: string | null;
+  scheduled_at?: string | null;
   /** Coordenadas do destino (detalhe) — usadas para o mapa. */
   dropoff_lat?: number | null;
   dropoff_lng?: number | null;

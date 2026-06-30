@@ -58,6 +58,7 @@
   // `color.delivery_state.*` primitives (--jx-delivery-*); used as VIVID text +
   // border over a NEUTRAL badge surface (--surface-sunken), the dark-mode pattern
   // — so the same 7 vars work in light AND dark with zero `_bg` tokens.
+  --state-agendada: var(--jx-delivery-aceita);
   --state-criada: var(--jx-delivery-criada);
   --state-aceita: var(--jx-delivery-aceita);
   --state-coletada: var(--jx-delivery-coletada);
@@ -126,6 +127,7 @@
   // surface unchanged; the two MUTED browns (criada/cancelada) are luminance-
   // lifted to lighter neutrals so the badge text stays AA in dark (the vivid
   // hues already pass — the badge surface is --surface-elevated in dark).
+  --state-agendada: var(--jx-delivery-aceita);
   --state-criada: var(--jx-neutral-300);
   --state-aceita: var(--jx-delivery-aceita);
   --state-coletada: var(--jx-delivery-coletada);

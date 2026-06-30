@@ -42,6 +42,11 @@ def create_app() -> FastAPI:
     from app.dev_upload import router as upload_router
     app.include_router(upload_router, prefix="/v1")
 
+    # Inngest function handler — mounts GET+POST at /api/inngest.
+    # URL registered in Inngest dashboard: https://<host>/api/inngest
+    from app.integrations.inngest_functions import register_inngest
+    register_inngest(app)
+
     return app
 
 

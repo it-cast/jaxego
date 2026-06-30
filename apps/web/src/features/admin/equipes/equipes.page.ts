@@ -22,6 +22,8 @@ import {
   faXmark,
   faEye,
   faEyeSlash,
+  faChevronLeft,
+  faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 
 interface Team {
@@ -171,9 +173,13 @@ type ViewMode = 'list' | 'create' | 'edit';
 
         @if (totalPages > 1) {
           <div class="jx-equipes__pagination">
-            <button class="jx-equipes__page-btn" [disabled]="currentPage() === 0" (click)="goPage(currentPage() - 1)">Anterior</button>
-            <span class="jx-equipes__page-info">{{ currentPage() + 1 }} de {{ totalPages }}</span>
-            <button class="jx-equipes__page-btn" [disabled]="currentPage() >= totalPages - 1" (click)="goPage(currentPage() + 1)">Próxima</button>
+            <button class="jx-equipes__page-btn" [disabled]="currentPage() === 0" (click)="goPage(currentPage() - 1)" aria-label="Página anterior">
+              <fa-icon [icon]="iconPrev" aria-hidden="true" /> Anterior
+            </button>
+            <span class="jx-equipes__page-info">Página {{ currentPage() + 1 }} de {{ totalPages }}</span>
+            <button class="jx-equipes__page-btn" [disabled]="currentPage() >= totalPages - 1" (click)="goPage(currentPage() + 1)" aria-label="Próxima página">
+              Próxima <fa-icon [icon]="iconNext" aria-hidden="true" />
+            </button>
           </div>
         }
       }
@@ -227,6 +233,8 @@ export class AdminEquipesPage implements OnInit {
   protected readonly iconCancel = faXmark;
   protected readonly iconEye = faEye;
   protected readonly iconEyeSlash = faEyeSlash;
+  protected readonly iconPrev = faChevronLeft;
+  protected readonly iconNext = faChevronRight;
   protected readonly showPwd = signal(false);
   protected readonly showPwdConfirm = signal(false);
 

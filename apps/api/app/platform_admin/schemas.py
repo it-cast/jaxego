@@ -19,14 +19,14 @@ class AreaOverviewRow(BaseModel):
 
 
 class CourierSearchRow(BaseModel):
-    """A courier search result with its latest score level (tela 24)."""
+    """A courier search result with avg rating (tela 24)."""
 
     courier_id: int
     area_id: int
+    area_name: str
     full_name: str
     status: str
-    score_total: float | None
-    score_level: str | None
+    avg_stars: float | None
 
 
 class MerchantSearchRow(BaseModel):
@@ -34,6 +34,7 @@ class MerchantSearchRow(BaseModel):
 
     merchant_id: int
     area_id: int
+    area_name: str
     name: str
     status: str
 

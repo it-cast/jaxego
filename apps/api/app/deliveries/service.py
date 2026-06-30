@@ -347,12 +347,17 @@ async def create_delivery(
 
     recipient = await upsert_recipient(session, area_id=area_id, body=body)
 
+    # Scheduled delivery: use AGENDADA as initial state; Inngest will transition
+    # to CRIADA at the scheduled time. Immediate delivery stays CRIADA (current path).
+    scheduled_at = getattr(body, "scheduled_at", None)
+    initial_state = "AGENDADA" if scheduled_at is not None else "CRIADA"
+
     delivery = Delivery(
         area_id=area_id,
         merchant_id=merchant_id,
         courier_id=None,
         recipient_id=recipient.id,
-        state="CRIADA",
+        state=initial_state,
         dispatch_mode="direct",
         payment_method=method,
         proof_method=body.proof_method.value,
@@ -377,6 +382,7 @@ async def create_delivery(
         team_ids=body.team_ids,
         public_token=_new_public_token(),
         origin="manual",
+        scheduled_at=scheduled_at,
     )
     session.add(delivery)
     await session.flush()
@@ -411,16 +417,26 @@ async def create_delivery(
         plan = await _active_plan(session, merchant_id=merchant_id, area_id=area_id)
         delivery.fee_cents = plan.fee_cents
 
-    # Initial transition None → CRIADA (the single writer of state).
+    # Initial transition None → CRIADA or AGENDADA (the single writer of state).
     await transition(
         session,
         delivery=delivery,
-        to_state="CRIADA",
+        to_state=initial_state,
         actor_id=actor_user_id,
-        reason=None,
+        reason="scheduled" if initial_state == "AGENDADA" else None,
         ip=ip,
         initial=True,
     )
+
+    # Scheduled: register with Inngest and store the event ID.
+    inngest_event_id: str | None = None
+    if initial_state == "AGENDADA" and scheduled_at is not None:
+        from app.integrations.inngest import get_inngest_client
+
+        inngest_event_id = await get_inngest_client().schedule(delivery.id, scheduled_at)
+        if inngest_event_id is not None:
+            delivery.inngest_event_id = inngest_event_id
+            await session.flush()
 
     logger.info(
         "delivery.created",
@@ -428,7 +444,9 @@ async def create_delivery(
         merchant_id=merchant_id,
         delivery_id=delivery.id,
         eligible_couriers=len(prices),
+        scheduled=initial_state == "AGENDADA",
     )
+    scheduled_at_iso = scheduled_at.isoformat() if scheduled_at is not None else None
     return CreateDeliveryResponse(
         delivery_id=delivery.id,
         public_token=delivery.public_token,
@@ -436,6 +454,7 @@ async def create_delivery(
         price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
         no_couriers_warning=no_couriers_warning,
+        scheduled_at=scheduled_at_iso,
     )
 
 
@@ -481,7 +500,7 @@ def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
     """
     base = delivery.price_cents or 0
     state = delivery.state
-    if state == "CRIADA":
+    if state in ("AGENDADA", "CRIADA"):
         return 0
     if state == "ACEITA":
         return base // 2
@@ -626,6 +645,42 @@ async def get_courier_active_delivery(
         else None
     )
     return delivery, recipient
+
+
+async def release_scheduled_delivery(
+    session: AsyncSession,
+    *,
+    delivery_id: int,
+) -> bool:
+    """Transition AGENDADA → CRIADA and kick off the dispatch cascade.
+
+    Called by the Inngest webhook at the scheduled time. Returns True if the
+    delivery was released, False if it was already in a different state (e.g.
+    the store cancelled it before Inngest fired — idempotent).
+    """
+    stmt = select(Delivery).where(Delivery.id == delivery_id)
+    delivery = (await session.execute(stmt)).scalar_one_or_none()
+    if delivery is None:
+        logger.warning("release_scheduled.not_found", delivery_id=delivery_id)
+        return False
+    if delivery.state != "AGENDADA":
+        logger.info(
+            "release_scheduled.skip",
+            delivery_id=delivery_id,
+            state=delivery.state,
+        )
+        return False  # already cancelled / released — idempotent
+
+    await transition(
+        session,
+        delivery=delivery,
+        to_state="CRIADA",
+        actor_id=None,
+        reason="inngest_scheduled_release",
+    )
+    await session.commit()
+    logger.info("release_scheduled.released", delivery_id=delivery_id)
+    return True
 
 
 async def list_courier_deliveries(

@@ -79,6 +79,16 @@
   }
 }
 
+.jx-detail__scheduled {
+  padding: var(--jx-space-3) var(--jx-space-4);
+  background: var(--brand-wash);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  margin-bottom: var(--jx-space-3);
+}
+
 .jx-detail__empty {
   font-family: var(--jx-font-body);
   color: var(--text-muted);
