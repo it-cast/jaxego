@@ -45,6 +45,12 @@ import { PoolService } from './pool.service';
       } @else {
         <jx-page-header title="Entregas sem resposta" backLink="/entregador/inicio" />
 
+        @if (lostMessage()) {
+          <div class="jx-pool__lost-banner" role="alert">
+            {{ lostMessage() }}
+          </div>
+        }
+
         <div class="jx-pool">
           @if (error()) {
             <jx-error-state
@@ -152,6 +158,16 @@ import { PoolService } from './pool.service';
     }
     .jx-pool__accept-btn:disabled { opacity: 0.6; cursor: default; }
     .jx-pool__lost { margin: 0; font-size: var(--jx-text-xs); color: hsl(0 60% 45%); }
+    .jx-pool__lost-banner {
+      margin: var(--jx-space-3) var(--jx-space-4) 0;
+      padding: var(--jx-space-3);
+      background: hsl(0 70% 96%);
+      border: 1px solid hsl(0 70% 80%);
+      border-radius: 12px;
+      font-size: var(--jx-text-sm);
+      font-weight: 600;
+      color: hsl(0 60% 40%);
+    }
   `],
 })
 export class EntregadorSemRespostaPage implements OnInit {
@@ -163,6 +179,9 @@ export class EntregadorSemRespostaPage implements OnInit {
   protected readonly error = signal(false);
   protected readonly processingId = signal<number | null>(null);
   protected readonly lostId = signal<number | null>(null);
+  protected readonly lostMessage = signal<string | null>(null);
+
+  private lostTimer: ReturnType<typeof setTimeout> | null = null;
 
   async ngOnInit(): Promise<void> {
     await this.reload();
@@ -191,6 +210,9 @@ export class EntregadorSemRespostaPage implements OnInit {
     }
     if (result === 'lost') {
       this.lostId.set(d.delivery_id);
+      this.lostMessage.set('Lamentamos, mas essa entrega já foi aceita por outro entregador.');
+      if (this.lostTimer) clearTimeout(this.lostTimer);
+      this.lostTimer = setTimeout(() => this.lostMessage.set(null), 6000);
     }
     // Either way the card is stale now — refresh the list.
     await this.reload();

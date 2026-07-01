@@ -359,8 +359,8 @@ export class NovaEntregaPage {
         return;
       }
       const pickedDate = new Date(picked);
-      if (pickedDate.getTime() <= Date.now() + 0 * 60 * 1000) {
-        this.scheduledAtError.set('O horário deve ser no futuro.');
+      if (pickedDate.getTime() < Date.now() + 1 * 60 * 1000) {
+        this.scheduledAtError.set('O horário deve ser pelo menos 1 minuto no futuro.');
         return;
       }
       this.scheduledAtError.set(null);

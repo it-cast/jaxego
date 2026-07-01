@@ -102,6 +102,14 @@ export class DeliveryService {
           message: 'Sem conexão com o servidor. Verifique sua internet e tente de novo.',
         };
       }
+      // FastAPI 422 Pydantic validation: { detail: [{msg, loc, ...}] }
+      if (err.status === 422) {
+        const detail = (err.error as { detail?: { msg?: string }[] } | undefined)?.detail;
+        const msg = Array.isArray(detail) && detail[0]?.msg
+          ? detail[0].msg.replace(/^Value error,\s*/i, '')
+          : 'Dados inválidos. Verifique os campos e tente de novo.';
+        return { ok: false, code: 'validation_error', message: msg };
+      }
       const envelope = err.error as ApiErrorEnvelope | undefined;
       const code = envelope?.error?.code;
       const message = envelope?.error?.message;

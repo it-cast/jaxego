@@ -348,7 +348,10 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     await this.auth.loadMe();
     const id = this.courierId;
-    if (!id) return;
+    if (!id) {
+      void this.router.navigate(['/entrar']);
+      return;
+    }
     const [balance, score, list, active, extract, profile, covCount] = await Promise.all([
       this.saldo.balance().catch(() => null),
       this.svc.score(id),
@@ -426,7 +429,7 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     setTimeout(() => {
       this.offer.set(null);
       this.offerResult.set(null);
-    }, 2000);
+    }, result === 'lost' ? 5000 : 2000);
   }
 
   protected async declineOffer(deliveryId: number): Promise<void> {

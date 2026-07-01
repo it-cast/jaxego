@@ -58,8 +58,8 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
         }
         @if (trackingState(d) === 'CRIADA') {
           <div class="jx-detail__searching" role="status" aria-live="polite">
-            <span class="jx-detail__spinner" aria-hidden="true"></span>
-            Procurando entregador… a oferta foi enviada aos entregadores online da área.
+            <img src="/searching.gif" alt="" aria-hidden="true" class="jx-detail__searching-gif" />
+            <span>Procurando entregador… a oferta foi enviada aos entregadores online da área.</span>
           </div>
         }
         @if (d.state === 'SEM_RESPOSTA') {
@@ -200,6 +200,7 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
       }
       .jx-detail__searching {
         display: flex;
+        flex-direction: column;
         align-items: center;
         gap: var(--jx-space-2);
         background: var(--jx-color-brand-50);
@@ -209,24 +210,12 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
         color: var(--jx-color-brand-700, var(--brand));
         font-size: var(--jx-text-sm);
         margin-bottom: var(--jx-space-3);
+        text-align: center;
       }
-      .jx-detail__spinner {
-        width: 16px;
-        height: 16px;
-        border: 2px solid var(--jx-color-brand-200);
-        border-top-color: var(--jx-color-brand-500);
-        border-radius: var(--jx-radius-full);
-        animation: jx-spin 0.9s linear infinite;
-      }
-      @keyframes jx-spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .jx-detail__spinner {
-          animation: none;
-        }
+      .jx-detail__searching-gif {
+        width: 20em;
+        height: auto;
+        border-radius: var(--jx-radius-sm);
       }
     `,
   ],

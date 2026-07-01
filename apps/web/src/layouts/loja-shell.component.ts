@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import {
   Router,
   RouterLink,
@@ -219,6 +219,14 @@ import { AuthService } from '@jaxego/core/auth/auth.service';
 export class LojaShellComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+
+  constructor() {
+    effect(() => {
+      if (!this.auth.isAuthenticated()) {
+        void this.router.navigate(['/entrar']);
+      }
+    });
+  }
 
   protected readonly iconLogout = faRightFromBracket;
   protected readonly iconBars = faBars;
