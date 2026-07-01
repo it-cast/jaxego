@@ -89,7 +89,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
                     <fa-icon [icon]="iconCircle" class="jx-entregas__tl-dot jx-entregas__tl-dot--pickup" aria-hidden="true" />
                     <div>
                       <strong class="jx-entregas__tl-label">{{ d.pickup_address || 'Coleta' }}</strong>
-                      <p class="jx-entregas__tl-sub"><jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" /></p>
+                      <p class="jx-entregas__tl-sub"><jx-money [cents]="d.price_cents ?? d.fee_cents" /></p>
                     </div>
                   </div>
                   <div class="jx-entregas__tl-line"></div>
@@ -167,7 +167,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
             <div class="jx-detail-modal__section">
               <span class="jx-detail-modal__label">Valor</span>
               <p class="jx-detail-modal__value jx-detail-modal__value--mono">
-                <jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" />
+                <jx-money [cents]="d.price_cents ?? d.fee_cents" />
               </p>
             </div>
             <div class="jx-detail-modal__section">

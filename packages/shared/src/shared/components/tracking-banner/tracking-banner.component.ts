@@ -41,6 +41,7 @@ export class TrackingBannerComponent {
   protected readonly headline = computed(() => {
     return {
       CRIADA: 'Procurando um entregador',
+      SEM_RESPOSTA: 'Ainda procurando — pode demorar um pouco mais',
       ACEITA: 'Entregador a caminho da coleta',
       COLETADA: 'A caminho de você',
       ENTREGUE: 'Pedido entregue',

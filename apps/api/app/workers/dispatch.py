@@ -66,9 +66,14 @@ async def _open_for_courier(
     )
     await enqueue_push(delivery_id=delivery_id, reason="offer", ctx=ctx)
     # Re-defer the cascade so the timeout advances even if no decline arrives.
+    # `expected_courier_id` lets the re-run tell a genuine timeout (this courier,
+    # offer gone) apart from a decline (a NEW offer is already live by then).
     if ctx is not None and "redis" in ctx:
         await ctx["redis"].enqueue_job(
-            "dispatch_offer_task", delivery_id, _defer_by=timeout_s + _DEFER_SLACK_S
+            "dispatch_offer_task",
+            delivery_id,
+            courier_id,
+            _defer_by=timeout_s + _DEFER_SLACK_S,
         )
 
 
@@ -93,8 +98,31 @@ async def advance_offer(
     cfg = await _area_config(session, area_id)
     courier_id = await offer_state.next_candidate(r, delivery_id)
     if courier_id is None:
-        # E1 — cascade exhausted; notify the store (3 options handled in the UI).
+        # E1 — this batch is exhausted. Check whether EVERY eligible courier has
+        # been excluded (decline OR 10x timeout) — if so this is not a transient
+        # "nobody online right now" gap, it is a dead end: move to the unanswered
+        # pool instead of letting the 5-min sweep retry the same excluded people
+        # forever.
         await offer_state.clear_candidates(r, delivery_id)
+        declined = await offer_state.get_declined(r, delivery_id)
+        raw_eligible = await cascade.build_candidates(
+            session,
+            area_id=area_id,
+            merchant_id=delivery.merchant_id,
+            pickup_nbhd_id=delivery.dropoff_neighborhood_id,
+            dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
+            distance_m=delivery.distance_m,
+            team_ids=delivery.team_ids,
+            excluded_ids=set(),
+        )
+        if raw_eligible and set(raw_eligible) <= declined:
+            from app.deliveries import service as delivery_service
+
+            await delivery_service.move_to_unanswered_pool(session, delivery_id=delivery_id)
+            await session.commit()
+            logger.info("dispatch.cascade.pooled", area_id=area_id, delivery_id=delivery_id)
+            return False
+
         logger.info("dispatch.cascade.exhausted", area_id=area_id, delivery_id=delivery_id)
         await enqueue_push(delivery_id=delivery_id, reason="exhausted", ctx=ctx)
         return False
@@ -110,12 +138,21 @@ async def advance_offer(
     return True
 
 
-async def dispatch_offer_task(ctx: dict[str, Any], delivery_id: int) -> str:
+async def dispatch_offer_task(
+    ctx: dict[str, Any], delivery_id: int, expected_courier_id: int | None = None
+) -> str:
     """arq entry point — start or advance the cascade for a delivery (LOW-1).
 
     First run: build the candidate queue and open the first offer. Subsequent runs
     (re-deferred by TTL+ε): if the current offer expired, advance to the next
     candidate. Serialized with declines by the `cascade:{id}` lock (Pitfall 3).
+
+    `expected_courier_id` is the courier this specific re-check was scheduled for
+    (set by `_open_for_courier`). If we land here with no live offer AND that
+    courier never declined, the offer genuinely TIMED OUT for them — bump their
+    per-delivery timeout counter and, after MAX_TIMEOUTS_PER_COURIER, exclude them
+    exactly like an active decline (the cascade must not keep re-offering to a
+    courier who never answers).
     """
     r = get_redis_client()
     session_factory = ctx["session_factory"]
@@ -132,6 +169,26 @@ async def dispatch_offer_task(ctx: dict[str, Any], delivery_id: int) -> str:
             current = await offer_state.current_offer(r, delivery_id)
             if current is not None:
                 return "offer-live"  # still within the window — nothing to do
+
+            if expected_courier_id is not None:
+                declined = await offer_state.get_declined(r, delivery_id)
+                if expected_courier_id not in declined:
+                    count = await offer_state.increment_timeout(
+                        r, delivery_id, expected_courier_id
+                    )
+                    logger.info(
+                        "dispatch.offer.timed_out",
+                        delivery_id=delivery_id,
+                        courier_id=expected_courier_id,
+                        count=count,
+                    )
+                    if count >= offer_state.MAX_TIMEOUTS_PER_COURIER:
+                        await offer_state.add_declined(r, delivery_id, expected_courier_id)
+                        logger.info(
+                            "dispatch.courier.timeout_limit_reached",
+                            delivery_id=delivery_id,
+                            courier_id=expected_courier_id,
+                        )
 
             # No live offer: either the very first run, or the TTL just expired.
             cfg = await _area_config(session, delivery.area_id)

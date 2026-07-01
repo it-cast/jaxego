@@ -9,12 +9,14 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import {
   MoneyComponent,
 } from '@jaxego/shared/components';
 import { DotsLoaderComponent } from '@jaxego/shared/components';
-import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
+import { WarnBannerComponent } from '@jaxego/shared/state';
 import { Balance, SaldoService } from './saldo/saldo.service';
 import { AvailabilityToggleComponent } from './disponibilidade/availability-toggle.component';
 import { OfferSheetComponent } from './oferta/offer-sheet.component';
@@ -44,12 +46,12 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     IonContent,
-    EmptyStateComponent,
     WarnBannerComponent,
     AvailabilityToggleComponent,
     OfferSheetComponent,
     MoneyComponent,
     DotsLoaderComponent,
+    FaIconComponent,
   ],
   template: `
     <ion-content>
@@ -115,7 +117,7 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
                 <span class="jx-home-earnings__balance">
                   Saldo: <jx-money [cents]="balance()?.balance_cents ?? 0" />
                 </span>
-                <button type="button" class="jx-home-link" (click)="goSaldo()">Ver extrato →</button>
+                <button type="button" class="jx-home-link" (click)="goSaldo()">Ver extrato <fa-icon [icon]="iconChevron" aria-hidden="true" /></button>
               </div>
             </article>
 
@@ -127,12 +129,16 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
               </article>
             }
 
+            <button type="button" class="jx-home-pool-btn" (click)="goSemResposta()">
+              <span class="jx-home-pool-btn__label">Ver entregas sem resposta</span>
+              <fa-icon [icon]="iconChevron" class="jx-home-pool-btn__arrow" aria-hidden="true" />
+            </button>
+
             <!-- Waiting pulse -->
             <div class="jx-home-waiting" role="status">
               <span class="jx-home-pulse" aria-hidden="true"></span>
               <span>Aguardando ofertas da sua área...</span>
             </div>
-
           }
           @case ('busy') {
             <article class="jx-home-busy-card">
@@ -222,6 +228,18 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
       .jx-home-pulse {
         width: 10px; height: 10px; border-radius: 50%;
         background: #e84e1ba3;
+      }
+      .jx-home-pool-btn {
+        display: flex; align-items: center; justify-content: space-between;
+        width: 100%; background: var(--brand, #e8722a);
+        border: none; border-radius: 12px;
+        padding: var(--jx-space-3); cursor: pointer;
+      }
+      .jx-home-pool-btn__label {
+        font-size: var(--jx-text-sm); font-weight: 600; color: #fff;
+      }
+      .jx-home-pool-btn__arrow {
+        font-size: var(--jx-text-sm); font-weight: 700; color: #fff;
       }
 
       /* Recent */
@@ -417,6 +435,7 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     this.offerResult.set(null);
   }
 
+  protected readonly iconChevron = faChevronRight;
   protected readonly stateLabel = deliveryStateLabel;
 
   protected paymentLabel(method: string): string {
@@ -445,6 +464,9 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   }
   protected goEntregas(): void {
     void this.router.navigate(['/entregador/entregas']);
+  }
+  protected goSemResposta(): void {
+    void this.router.navigate(['/entregador/sem-resposta']);
   }
   protected goAvaliacoes(): void {
     void this.router.navigate(['/entregador/perfil/avaliacoes'], { queryParams: { from: 'inicio' } });

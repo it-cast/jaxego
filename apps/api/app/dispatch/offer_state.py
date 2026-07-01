@@ -149,3 +149,29 @@ async def get_declined(r: aioredis.Redis, delivery_id: int) -> set[int]:
 async def clear_declined(r: aioredis.Redis, delivery_id: int) -> None:
     """Clear the declined set (delivery finished)."""
     await r.delete(_declined_key(delivery_id))
+
+
+# ---------------------------------------------------------------------------
+# Timeout counter — a courier who lets the offer expire (vs. actively declines)
+# gets up to MAX_TIMEOUTS_PER_COURIER chances before being excluded the same
+# way an active decline excludes them (merged into the declined set below).
+# ---------------------------------------------------------------------------
+MAX_TIMEOUTS_PER_COURIER = 2
+
+
+def _timeouts_key(delivery_id: int) -> str:
+    return f"dispatch:{delivery_id}:timeouts"
+
+
+async def increment_timeout(r: aioredis.Redis, delivery_id: int, courier_id: int) -> int:
+    """Bump this courier's timeout count for this delivery; returns the new count."""
+    key = _timeouts_key(delivery_id)
+    count = await r.hincrby(key, str(courier_id), 1)  # type: ignore[misc]
+    await r.expire(key, 86400)
+    return int(count)
+
+
+async def get_timeout_count(r: aioredis.Redis, delivery_id: int, courier_id: int) -> int:
+    """This courier's current timeout count for this delivery."""
+    raw = await r.hget(_timeouts_key(delivery_id), str(courier_id))  # type: ignore[misc]
+    return int(raw) if raw else 0

@@ -42,12 +42,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
 
-# The 8 canonical delivery states (RN-019 / D-03). Transitions live in
+# The 9 canonical delivery states (RN-019 / D-03). Transitions live in
 # `state_machine.py`. AGENDADA is the initial state for scheduled deliveries;
-# Inngest transitions it to CRIADA at the scheduled time.
+# Inngest transitions it to CRIADA at the scheduled time. SEM_RESPOSTA is
+# reached when the dispatch cascade exhausts every eligible courier.
 DELIVERY_STATES = (
     "AGENDADA",
     "CRIADA",
+    "SEM_RESPOSTA",
     "ACEITA",
     "COLETADA",
     "ENTREGUE",

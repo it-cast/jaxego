@@ -21,7 +21,7 @@ from app.deliveries.models import Delivery
 from app.dispatch import offer_state, service
 from app.dispatch.dependencies import CourierScopeDep
 from app.dispatch.exceptions import NotOfferTargetError
-from app.dispatch.schemas import AcceptResponse, DeclineResponse, OfferOut
+from app.dispatch.schemas import AcceptResponse, DeclineResponse, OfferOut, PoolItemOut
 
 router = APIRouter(prefix="/offers", tags=["dispatch"])
 
@@ -98,6 +98,47 @@ async def decline_offer(
         session, r, area_id=scope.area_id, delivery_id=delivery_id, declined_by=scope.courier_id
     )
     return DeclineResponse(delivery_id=delivery_id, declined=True)
+
+
+@router.get("/pool", response_model=list[PoolItemOut])
+async def list_pool(
+    scope: CourierScopeDep,
+    session: SessionDep,
+) -> list[PoolItemOut]:
+    """Deliveries this courier may self-assign from the unanswered pool.
+
+    SEM_RESPOSTA deliveries are those the dispatch cascade exhausted — every
+    eligible courier declined or hit the timeout cap. Filtered to the SAME
+    coverage + team eligibility the cascade itself applies.
+    """
+    return await service.list_unanswered_pool(
+        session, area_id=scope.area_id, courier_id=scope.courier_id
+    )
+
+
+@router.post("/pool/{delivery_id}/accept", response_model=AcceptResponse)
+async def accept_pool_delivery(
+    delivery_id: int,
+    request: Request,
+    scope: CourierScopeDep,
+    session: SessionDep,
+    r: RedisDep,
+) -> AcceptResponse:
+    """Self-assign a SEM_RESPOSTA delivery — single winner via Lock + FOR UPDATE."""
+    delivery = await service.self_assign_pool_delivery(
+        session,
+        r,
+        area_id=scope.area_id,
+        delivery_id=delivery_id,
+        courier_id=scope.courier_id,
+        actor_user_id=scope.user_id,
+        ip=_client_ip(request),
+    )
+    await session.commit()
+    from app.dispatch import cascade
+
+    await cascade.enqueue_accept_notifications(delivery_id=delivery.id)
+    return AcceptResponse(delivery_id=delivery.id, state=delivery.state)
 
 
 __all__ = ["router"]

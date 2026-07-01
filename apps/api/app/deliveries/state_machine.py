@@ -10,6 +10,9 @@ ADR (D-03).
 Transition set confirmed against fluxos.md F-03 (create) / F-05 (dispatch+accept) /
 F-06 (delivery+refusal):
   - CRIADA → ACEITA (Phase 8 accept) | CANCELADA (store cancels pre-acceptance, RN-004 zero cost)
+    | SEM_RESPOSTA (cascade exhausted — every eligible courier declined or hit the
+    timeout cap, `app/workers/dispatch.py`)
+  - SEM_RESPOSTA → ACEITA (a courier self-assigns from the unanswered pool) | CANCELADA
   - ACEITA → COLETADA (Phase 9 pickup) | CANCELADA (post-acceptance cancel, RN-004 50%)
   - COLETADA → ENTREGUE | RECUSADA_NO_DESTINO (F-06 refusal) | CANCELADA
   - ENTREGUE → FINALIZADA (Phase 9 settle job)
@@ -21,12 +24,16 @@ from __future__ import annotations
 
 from app.core.exceptions import AppError
 
-# The 8 canonical states (RN-019 / D-03).
+# The 9 canonical states (RN-019 / D-03).
 # AGENDADA is the initial state for scheduled deliveries; Inngest transitions
 # it to CRIADA at the scheduled time to kick off the dispatch cascade.
+# SEM_RESPOSTA is reached when the dispatch cascade exhausts every eligible
+# courier (decline or 10x timeout) — it sits outside the cascade until a
+# courier self-assigns it from the unanswered pool (D-03 ADR — see dispatch).
 DELIVERY_STATES = (
     "AGENDADA",
     "CRIADA",
+    "SEM_RESPOSTA",
     "ACEITA",
     "COLETADA",
     "ENTREGUE",
@@ -39,7 +46,8 @@ DELIVERY_STATES = (
 # exercised in Phase 7, the rest are covered by tests and enabled in Phases 8/9.
 DELIVERY_TRANSITIONS: dict[str, set[str]] = {
     "AGENDADA": {"CRIADA", "CANCELADA"},  # CRIADA = Inngest fires; CANCELADA = store cancels
-    "CRIADA": {"ACEITA", "CANCELADA"},
+    "CRIADA": {"ACEITA", "CANCELADA", "SEM_RESPOSTA"},
+    "SEM_RESPOSTA": {"ACEITA", "CANCELADA"},  # self-assign from the pool, or store cancels
     "ACEITA": {"COLETADA", "CANCELADA"},
     "COLETADA": {"ENTREGUE", "RECUSADA_NO_DESTINO", "CANCELADA"},
     "ENTREGUE": {"FINALIZADA"},

@@ -16,13 +16,15 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.couriers.coverage import is_eligible, list_coverage
+from app.couriers.models import Courier
 from app.db.mixins import ensure_aware_utc
 from app.deliveries.models import Delivery
 from app.deliveries.service import transition
 from app.deliveries.state_machine import InvalidTransitionError
 from app.dispatch import offer_state
 from app.dispatch.exceptions import NotOfferTargetError, OfferAlreadyTakenError
-from app.dispatch.schemas import OfferOut
+from app.dispatch.schemas import OfferOut, PoolItemOut
 from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
 
@@ -205,3 +207,187 @@ async def cancel_pending_offers(r: aioredis.Redis, *, delivery_id: int) -> None:
     await offer_state.close_offer(r, delivery_id)
     await offer_state.clear_candidates(r, delivery_id)
     logger.info("dispatch.offer.cancelled", delivery_id=delivery_id)
+
+
+# ---------------------------------------------------------------------------
+# Unanswered pool — deliveries that exhausted the cascade (every eligible
+# courier declined or hit the timeout cap, `app/workers/dispatch.py`). Any
+# courier who could have been offered it may browse + self-assign it.
+# ---------------------------------------------------------------------------
+async def list_unanswered_pool(
+    session: AsyncSession,
+    *,
+    area_id: int,
+    courier_id: int,
+) -> list[PoolItemOut]:
+    """SEM_RESPOSTA deliveries this courier could self-assign.
+
+    Filtered by the SAME eligibility the cascade applies (RN-003 coverage at both
+    points + team match, `cascade.build_candidates`) — a courier never sees a
+    delivery it could not have legitimately served. Oldest first (most overdue).
+    """
+    courier = await session.get(Courier, courier_id)
+    if courier is None or courier.area_id != area_id:
+        return []
+    coverage = await list_coverage(session, area_id=area_id, courier_id=courier_id)
+
+    deliveries = list(
+        (
+            await session.execute(
+                select(Delivery)
+                .where(Delivery.area_id == area_id, Delivery.state == "SEM_RESPOSTA")
+                .order_by(Delivery.created_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+    eligible = [
+        d
+        for d in deliveries
+        if (not d.team_ids or courier.team_id in d.team_ids)
+        and is_eligible(coverage, d.dropoff_neighborhood_id, d.dropoff_neighborhood_id)
+    ]
+    if not eligible:
+        return []
+
+    from app.couriers.models import CourierPricingTable
+    from app.deliveries.estimate import effective_price_cents
+
+    merchant_ids = {d.merchant_id for d in eligible}
+    nbhd_ids = {d.dropoff_neighborhood_id for d in eligible}
+    merchants = {
+        m.id: m
+        for m in (
+            await session.execute(select(Merchant).where(Merchant.id.in_(merchant_ids)))
+        ).scalars()
+    }
+    neighborhoods = {
+        n.id: n
+        for n in (
+            await session.execute(select(Neighborhood).where(Neighborhood.id.in_(nbhd_ids)))
+        ).scalars()
+    }
+    pricing_rows = list(
+        (
+            await session.execute(
+                select(CourierPricingTable).where(
+                    CourierPricingTable.courier_id == courier_id,
+                )
+            )
+        ).scalars()
+    )
+    return [
+        PoolItemOut(
+            delivery_id=d.id,
+            loja_nome=merchants[d.merchant_id].trade_name if d.merchant_id in merchants else "",
+            pickup_address=d.pickup_address,
+            pickup_neighborhood=d.pickup_neighborhood,
+            dropoff_address=d.dropoff_address or "",
+            dropoff_number=d.dropoff_number,
+            dropoff_neighborhood=(
+                neighborhoods[d.dropoff_neighborhood_id].name
+                if d.dropoff_neighborhood_id in neighborhoods
+                else ""
+            ),
+            distance_m=d.distance_m,
+            value_cents=effective_price_cents(
+                pricing_rows,
+                dropoff_nbhd_id=d.dropoff_neighborhood_id,
+                distance_m=d.distance_m,
+            ),
+            payment_method=d.payment_method,
+            receipt_method=d.receipt_method,
+            created_at=ensure_aware_utc(d.created_at).isoformat() if d.created_at else "",
+        )
+        for d in eligible
+    ]
+
+
+async def self_assign_pool_delivery(
+    session: AsyncSession,
+    r: aioredis.Redis,
+    *,
+    area_id: int,
+    delivery_id: int,
+    courier_id: int,
+    actor_user_id: int | None,
+    ip: str | None,
+) -> Delivery:
+    """A courier claims a SEM_RESPOSTA delivery from the pool (D-05 pattern).
+
+    Mirrors `accept_offer`'s race protection exactly (Lock + FOR UPDATE + state
+    machine), since the pool has the same "single winner" problem as an offer —
+    several couriers may tap the same card at once. Loser gets 409, zero penalty
+    (no offer was ever targeted at them, so F-05 E3 applies the same way).
+    """
+    lock = r.lock(
+        f"pool-accept:{delivery_id}",
+        timeout=LOCK_TIMEOUT_S,
+        blocking_timeout=LOCK_BLOCKING_S,
+    )
+    acquired = await lock.acquire()
+    if not acquired:
+        raise OfferAlreadyTakenError()
+    try:
+        locked = (
+            await session.execute(
+                select(Delivery)
+                .where(Delivery.id == delivery_id, Delivery.area_id == area_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
+        if locked is None:
+            raise NotOfferTargetError()
+        if locked.state != "SEM_RESPOSTA":
+            raise OfferAlreadyTakenError()
+        try:
+            locked.courier_id = courier_id
+            from app.couriers.models import CourierPricingTable
+            from app.deliveries.estimate import effective_price_cents
+
+            pricing_rows = list(
+                (
+                    await session.execute(
+                        select(CourierPricingTable).where(
+                            CourierPricingTable.courier_id == courier_id,
+                            CourierPricingTable.area_id == area_id,
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            real_price = effective_price_cents(
+                pricing_rows,
+                dropoff_nbhd_id=locked.dropoff_neighborhood_id,
+                distance_m=locked.distance_m,
+            )
+            locked.price_cents = real_price
+            await transition(
+                session,
+                delivery=locked,
+                to_state="ACEITA",
+                actor_id=actor_user_id,
+                ip=ip,
+            )
+        except InvalidTransitionError as exc:
+            raise OfferAlreadyTakenError() from exc
+
+        # Defensive cleanup — the pool delivery should have no live Redis state
+        # (the cascade clears it before pooling), but never leave a stray key.
+        await offer_state.close_offer(r, delivery_id)
+        await offer_state.clear_candidates(r, delivery_id)
+
+        logger.info(
+            "dispatch.pool.self_assigned",
+            area_id=area_id,
+            delivery_id=delivery_id,
+            courier_id=courier_id,
+        )
+        return locked
+    finally:
+        try:
+            await lock.release()
+        except Exception:  # noqa: BLE001 — lock may have expired; safe to ignore
+            pass

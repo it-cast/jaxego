@@ -59,7 +59,7 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
           <section class="jx-done__summary">
             <div class="jx-done__summary-row">
               <span>Valor da corrida</span>
-              <jx-money [cents]="d.estimate_min_cents ?? d.fee_cents" />
+              <jx-money [cents]="d.price_cents ?? d.fee_cents" />
             </div>
             @if (d.receipt_method) {
               <div class="jx-done__summary-row">

@@ -12,6 +12,7 @@ export function paymentMethodOf(method: string | null | undefined): PaymentMetho
 
 const STATE_LABELS: Record<string, string> = {
   CRIADA: 'Criada',
+  SEM_RESPOSTA: 'Sem resposta',
   ACEITA: 'Aceita',
   COLETADA: 'Coletada',
   ENTREGUE: 'Entregue',
@@ -20,7 +21,7 @@ const STATE_LABELS: Record<string, string> = {
   CANCELADA: 'Cancelada',
 };
 
-/** Rótulo pt-BR do estado da entrega (7 estados, RN-019). */
+/** Rótulo pt-BR do estado da entrega (8 estados, RN-019). */
 export function deliveryStateLabel(state: string | null | undefined): string {
   return (state && STATE_LABELS[state]) || state || '';
 }

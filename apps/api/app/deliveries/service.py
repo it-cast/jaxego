@@ -492,6 +492,7 @@ def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
     """RN-004 cost (cents) for cancelling NOW, by the delivery's current state.
 
     - CRIADA (pre-acceptance): 0 (the store may free-cancel before a courier accepts).
+    - SEM_RESPOSTA (cascade exhausted, no courier accepted yet): 0, same as CRIADA.
     - ACEITA (accepted, not collected): 50% of the estimate.
     - COLETADA (collected): 100% of the estimate + the area's return policy %.
 
@@ -500,7 +501,7 @@ def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
     """
     base = delivery.price_cents or 0
     state = delivery.state
-    if state in ("AGENDADA", "CRIADA"):
+    if state in ("AGENDADA", "CRIADA", "SEM_RESPOSTA"):
         return 0
     if state == "ACEITA":
         return base // 2
@@ -680,6 +681,37 @@ async def release_scheduled_delivery(
     )
     await session.commit()
     logger.info("release_scheduled.released", delivery_id=delivery_id)
+    return True
+
+
+async def move_to_unanswered_pool(
+    session: AsyncSession,
+    *,
+    delivery_id: int,
+) -> bool:
+    """Transition CRIADA → SEM_RESPOSTA: every eligible courier exhausted their
+    chances (declined OR hit the timeout cap — `app/workers/dispatch.py`). The
+    delivery leaves the cascade entirely and becomes browsable in the "Entregas
+    sem resposta" pool, where any courier may self-assign it. Idempotent — a
+    concurrent caller finding the delivery already moved on is a no-op.
+    """
+    stmt = select(Delivery).where(Delivery.id == delivery_id)
+    delivery = (await session.execute(stmt)).scalar_one_or_none()
+    if delivery is None:
+        logger.warning("move_to_pool.not_found", delivery_id=delivery_id)
+        return False
+    if delivery.state != "CRIADA":
+        logger.info("move_to_pool.skip", delivery_id=delivery_id, state=delivery.state)
+        return False  # already moved on (accepted/cancelled) — idempotent
+
+    await transition(
+        session,
+        delivery=delivery,
+        to_state="SEM_RESPOSTA",
+        actor_id=None,
+        reason="dispatch_cascade_exhausted",
+    )
+    logger.info("move_to_pool.moved", delivery_id=delivery_id)
     return True
 
 

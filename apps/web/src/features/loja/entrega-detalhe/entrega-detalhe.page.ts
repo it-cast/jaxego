@@ -62,6 +62,11 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
             Procurando entregador… a oferta foi enviada aos entregadores online da área.
           </div>
         }
+        @if (d.state === 'SEM_RESPOSTA') {
+          <div class="jx-detail__no-response" role="status">
+            ⏳ Ainda não encontramos um entregador disponível — pode demorar um pouco mais. Você pode cancelar a qualquer momento, sem custo.
+          </div>
+        }
 
         <div class="jx-detail__grid">
           <section class="jx-detail__main">
@@ -184,6 +189,15 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
   styleUrl: './entrega-detalhe.page.scss',
   styles: [
     `
+      .jx-detail__no-response {
+        background: var(--warning-bg);
+        border: 1px solid var(--warning);
+        border-radius: var(--jx-radius-md);
+        padding: var(--jx-space-3);
+        color: var(--text);
+        font-size: var(--jx-text-sm);
+        margin-bottom: var(--jx-space-3);
+      }
       .jx-detail__searching {
         display: flex;
         align-items: center;
@@ -278,7 +292,7 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   private async poll(): Promise<void> {
     const state = this.delivery()?.state;
-    if (state !== 'CRIADA' && state !== 'AGENDADA') {
+    if (state !== 'CRIADA' && state !== 'AGENDADA' && state !== 'SEM_RESPOSTA') {
       if (this.pollHandle) clearInterval(this.pollHandle);
       this.pollHandle = null;
       return;
@@ -302,13 +316,14 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   }
 
   protected canCancel(d: DeliveryListItem): boolean {
-    return ['AGENDADA', 'CRIADA', 'ACEITA', 'COLETADA'].includes(d.state);
+    return ['AGENDADA', 'CRIADA', 'SEM_RESPOSTA', 'ACEITA', 'COLETADA'].includes(d.state);
   }
 
   /** RN-004 cost declared IN the label (br/ux-copywriting-ptbr). */
   protected cancelLabel(d: DeliveryListItem): string {
     if (d.state === 'AGENDADA') return 'Cancelar (sem custo)';
     if (d.state === 'CRIADA') return 'Cancelar (sem custo)';
+    if (d.state === 'SEM_RESPOSTA') return 'Cancelar (sem custo)';
     if (d.state === 'ACEITA') return 'Cancelar (cobra 50%)';
     return 'Cancelar (cobra 100% + retorno)';
   }

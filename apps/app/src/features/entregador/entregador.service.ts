@@ -80,8 +80,7 @@ export interface CourierDelivery {
   dropoff_lng: number | null;
   recipient_name: string | null;
   recipient_phone_masked: string | null;
-  estimate_min_cents: number | null;
-  estimate_max_cents: number | null;
+  price_cents: number | null;
   fee_cents: number;
   reference_number: string | null;
   items_description: string | null;
@@ -103,8 +102,7 @@ export interface CourierDeliveryListItem {
   dropoff_number: string | null;
   dropoff_neighborhood_id: number;
   distance_m: number | null;
-  estimate_min_cents: number | null;
-  estimate_max_cents: number | null;
+  price_cents: number | null;
   fee_cents: number;
   created_at: string | null;
 }

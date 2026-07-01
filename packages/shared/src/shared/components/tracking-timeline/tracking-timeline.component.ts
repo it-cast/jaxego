@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, computed, signal } from '@an
 
 export type TrackingState =
   | 'CRIADA'
+  | 'SEM_RESPOSTA'
   | 'ACEITA'
   | 'COLETADA'
   | 'ENTREGUE'
@@ -27,6 +28,7 @@ const HAPPY_PATH: TrackingState[] = ['CRIADA', 'ACEITA', 'COLETADA', 'ENTREGUE',
 
 const LABELS: Record<TrackingState, string> = {
   CRIADA: 'Pedido recebido',
+  SEM_RESPOSTA: 'Ninguém aceitou ainda',
   ACEITA: 'Entregador a caminho da coleta',
   COLETADA: 'Pedido coletado, a caminho de você',
   ENTREGUE: 'Pedido entregue',
@@ -92,8 +94,10 @@ export class TrackingTimelineComponent {
     const current = this._state();
     const byState = new Map(this._entries().map((e) => [e.state, e.at]));
 
-    // Diverted terminal states (refused/cancelled) replace the tail.
-    if (current === 'CANCELADA' || current === 'RECUSADA_NO_DESTINO') {
+    // Diverted states (refused/cancelled/unanswered) replace the tail. SEM_RESPOSTA
+    // is recoverable (cascade self-assign → ACEITA), but until then it renders the
+    // same way: CRIADA done, this step current.
+    if (current === 'CANCELADA' || current === 'RECUSADA_NO_DESTINO' || current === 'SEM_RESPOSTA') {
       const reached = HAPPY_PATH.filter((s) => byState.has(s) && s !== 'ENTREGUE' && s !== 'FINALIZADA');
       return [
         ...reached.map((s) => this.step(s, 'done', byState.get(s) ?? null)),

@@ -60,3 +60,28 @@ class DeclineResponse(BaseModel):
 
     delivery_id: int
     declined: bool
+
+
+class PoolItemOut(BaseModel):
+    """A SEM_RESPOSTA delivery browsable in the unanswered pool.
+
+    Unlike the individual `OfferOut` (RN-013 — neighborhood only), the pool shows
+    the full dropoff address: the delivery was already refused/timed-out by all
+    eligible couriers, so exposing the destination helps couriers decide to
+    self-assign without wasting a trip.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    delivery_id: int
+    loja_nome: str
+    pickup_address: str
+    pickup_neighborhood: str | None
+    dropoff_address: str
+    dropoff_number: str | None = None
+    dropoff_neighborhood: str
+    distance_m: int | None
+    value_cents: int | None
+    payment_method: str
+    receipt_method: str | None = None
+    created_at: str

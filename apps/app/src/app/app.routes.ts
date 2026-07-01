@@ -42,6 +42,13 @@ const entregadorRoutes: Routes = [
           ),
       },
       {
+        path: 'sem-resposta',
+        loadComponent: () =>
+          import('../features/entregador/sem-resposta/sem-resposta.page').then(
+            (m) => m.EntregadorSemRespostaPage
+          ),
+      },
+      {
         path: 'perfil',
         loadComponent: () =>
           import('../features/entregador/perfil.page').then(
