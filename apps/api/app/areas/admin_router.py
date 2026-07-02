@@ -9,11 +9,13 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from fastapi import HTTPException
+
 from app.areas import service
-from app.areas.schemas import AreaRead, AreaUpdate
+from app.areas.schemas import AreaRead, AreaUpdate, ZonaCreate, ZonaRead, ZonaUpdate
 from app.audit.service import write_audit
 from app.auth.dependencies import AreaScopeDep, require_role
 from app.auth.models import User
@@ -35,6 +37,61 @@ async def get_my_area(
     assert scope is not None  # require_role('admin_area') guarantees a scope
     area = await service.get_area(session, scope)
     return AreaRead.model_validate(area)
+
+
+@router.get("/zonas", response_model=list[ZonaRead])
+async def list_zonas(
+    user: AreaAdminDep,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> list[ZonaRead]:
+    """List all zones in the admin's area."""
+    assert scope is not None
+    zonas = await service.list_zonas(session, scope)
+    return [ZonaRead.model_validate(z) for z in zonas]
+
+
+@router.post("/zonas", response_model=ZonaRead, status_code=201)
+async def create_zona(
+    body: ZonaCreate,
+    user: AreaAdminDep,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> ZonaRead:
+    """Create a new zone in the admin's area."""
+    assert scope is not None
+    zona = await service.create_zona(session, scope, body)
+    await session.commit()
+    return ZonaRead.model_validate(zona)
+
+
+@router.patch("/zonas/{zona_id}", response_model=ZonaRead)
+async def update_zona(
+    zona_id: int,
+    body: ZonaUpdate,
+    user: AreaAdminDep,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> ZonaRead:
+    """Update a zone's name or boundary."""
+    assert scope is not None
+    zona = await service.update_zona(session, zona_id, scope, body)
+    await session.commit()
+    return ZonaRead.model_validate(zona)
+
+
+@router.delete("/zonas/{zona_id}", status_code=204, response_class=Response)
+async def delete_zona(
+    zona_id: int,
+    user: AreaAdminDep,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> Response:
+    """Delete a zone."""
+    assert scope is not None
+    await service.delete_zona(session, zona_id, scope)
+    await session.commit()
+    return Response(status_code=204)
 
 
 @router.patch("/config", response_model=AreaRead)

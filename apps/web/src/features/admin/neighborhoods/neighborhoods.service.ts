@@ -26,6 +26,10 @@ export class AdminNeighborhoodsService {
     return firstValueFrom(this.http.post<Neighborhood>('/v1/neighborhoods', body));
   }
 
+  async update(id: number, body: Partial<NeighborhoodCreate>): Promise<Neighborhood> {
+    return firstValueFrom(this.http.patch<Neighborhood>(`/v1/neighborhoods/${id}`, body));
+  }
+
   async remove(id: number): Promise<void> {
     await firstValueFrom(this.http.delete<void>(`/v1/neighborhoods/${id}`));
   }

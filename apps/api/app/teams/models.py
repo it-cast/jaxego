@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -28,3 +28,28 @@ class Team(Base, AreaScopedMixin, TimestampMixin):
         nullable=True,
     )
     deleted_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+
+
+class TeamZona(Base, AreaScopedMixin, TimestampMixin):
+    """Preço mínimo de entrega de um time para uma zona específica."""
+
+    __tablename__ = "team_zonas"
+    __table_args__ = (
+        UniqueConstraint("team_id", "zona_id", name="uq_team_zonas_team_zona"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    team_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("teams.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    zona_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("zonas.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    preco_minimo_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

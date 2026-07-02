@@ -8,7 +8,7 @@ import {
 } from '@jaxego/shared/components/data-table/data-table.component';
 import { DeliveryRowComponent } from '@jaxego/shared/components/delivery-row/delivery-row.component';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { DeliveryService } from './delivery.service';
 import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 
@@ -35,6 +35,10 @@ export class EntregasListPage implements OnInit {
 
   protected readonly iconPrev = faChevronLeft;
   protected readonly iconNext = faChevronRight;
+  protected readonly iconWarn = faTriangleExclamation;
+
+  protected readonly cancelTarget = signal<DeliveryListItem | null>(null);
+  protected readonly cancelling = signal(false);
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'num', label: 'Nº' },
@@ -98,17 +102,26 @@ export class EntregasListPage implements OnInit {
     void this.load();
   }
 
-  protected async onCancel(item: DeliveryListItem): Promise<void> {
-    const ok = window.confirm(
-      `Cancelar a entrega ${item.public_token.slice(0, 6)}? ` +
-        'Como ninguém aceitou ainda, não há cobrança.',
-    );
-    if (!ok) {
-      return;
-    }
-    const done = await this.service.cancel(item.id, 'Cancelada pela loja antes do aceite');
-    if (done) {
-      void this.load();
+  protected onCancel(item: DeliveryListItem): void {
+    this.cancelTarget.set(item);
+  }
+
+  protected dismissCancel(): void {
+    this.cancelTarget.set(null);
+  }
+
+  protected async confirmCancel(): Promise<void> {
+    const item = this.cancelTarget();
+    if (!item) return;
+    this.cancelling.set(true);
+    try {
+      const done = await this.service.cancel(item.id, 'Cancelada pela loja antes do aceite');
+      if (done) {
+        this.cancelTarget.set(null);
+        void this.load();
+      }
+    } finally {
+      this.cancelling.set(false);
     }
   }
 

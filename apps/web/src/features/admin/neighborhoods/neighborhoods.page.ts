@@ -18,6 +18,7 @@ import {
   faCheck,
   faXmark,
   faTrashCan,
+  faPencil,
   faChevronLeft,
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
@@ -44,6 +45,7 @@ export class NeighborhoodsPage implements OnInit {
   protected readonly iconSave = faCheck;
   protected readonly iconCancel = faXmark;
   protected readonly iconRemove = faTrashCan;
+  protected readonly iconEdit = faPencil;
   protected readonly iconPrev = faChevronLeft;
   protected readonly iconNext = faChevronRight;
 
@@ -59,11 +61,13 @@ export class NeighborhoodsPage implements OnInit {
   protected readonly msg = signal<{ text: string; tone: 'ok' | 'err' } | null>(null);
   protected readonly adding = signal(false);
   protected readonly confirmRemoveId = signal<number | null>(null);
+  protected readonly editingId = signal<number | null>(null);
   protected readonly currentPage = signal(0);
   protected readonly PAGE_SIZE = 20;
 
   protected searchQuery = '';
   protected newName = '';
+  protected editName = '';
 
   protected get totalPages(): number {
     return Math.ceil(this.filteredRows().length / this.PAGE_SIZE);
@@ -129,6 +133,31 @@ export class NeighborhoodsPage implements OnInit {
       this.msg.set({ text: 'Não conseguimos adicionar o bairro. Tente de novo.', tone: 'err' });
     } finally {
       this.adding.set(false);
+    }
+  }
+
+  protected startEdit(item: Neighborhood): void {
+    this.editingId.set(item.id);
+    this.editName = item.name;
+    this.confirmRemoveId.set(null);
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+    this.editName = '';
+  }
+
+  protected async saveEdit(): Promise<void> {
+    const id = this.editingId();
+    const name = this.editName.trim();
+    if (!id || !name) return;
+    try {
+      await this.service.update(id, { name });
+      this.editingId.set(null);
+      this.editName = '';
+      await this.load();
+    } catch {
+      this.msg.set({ text: 'Não conseguimos atualizar o bairro. Tente de novo.', tone: 'err' });
     }
   }
 

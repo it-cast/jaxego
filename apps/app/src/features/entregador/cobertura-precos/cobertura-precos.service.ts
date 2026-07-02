@@ -33,6 +33,14 @@ export interface NeighborhoodCatalogItem {
   polygon_status: string;
 }
 
+export interface ZonaItem {
+  zona_id: number;
+  zona_nome: string;
+  boundary: object | null;
+  team_preco_cents: number | null;
+  courier_preco_cents: number | null;
+}
+
 /**
  * CoberturaPrecosService — the courier's own coverage + pricing (RN-003/RN-015).
  *
@@ -72,6 +80,18 @@ export class CoberturaPrecosService {
   async putPricing(courierId: number, body: PricingPayload): Promise<void> {
     await firstValueFrom(
       this.http.put<void>(`/v1/couriers/${courierId}/pricing`, body)
+    );
+  }
+
+  async listZonas(courierId: number): Promise<ZonaItem[]> {
+    return firstValueFrom(
+      this.http.get<ZonaItem[]>(`/v1/couriers/${courierId}/zonas`)
+    );
+  }
+
+  async setZonaPreco(courierId: number, zonaId: number, precoCents: number): Promise<void> {
+    await firstValueFrom(
+      this.http.put(`/v1/couriers/${courierId}/zonas/${zonaId}`, { preco_cents: precoCents })
     );
   }
 }

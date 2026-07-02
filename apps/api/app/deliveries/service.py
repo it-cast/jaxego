@@ -363,10 +363,14 @@ async def create_delivery(
         proof_method=body.proof_method.value,
         pickup_address=body.pickup_address,
         pickup_neighborhood=body.pickup_neighborhood,
+        pickup_lat=getattr(body, "pickup_lat", None),
+        pickup_lng=getattr(body, "pickup_lng", None),
         dropoff_address=body.dropoff_address,
         dropoff_number=body.dropoff_number,
         dropoff_complement=body.dropoff_complement,
         dropoff_neighborhood_id=body.dropoff_neighborhood_id,
+        dropoff_lat=getattr(body, "dropoff_lat", None),
+        dropoff_lng=getattr(body, "dropoff_lng", None),
         distance_m=body.distance_m,
         fee_cents=0,
         items_description=body.items_description,
@@ -386,6 +390,32 @@ async def create_delivery(
     )
     session.add(delivery)
     await session.flush()
+
+    # Find zone from dropoff coordinates (point-in-polygon).
+    # Prefer explicit lat/lng from body; fall back to geocoding the address.
+    dlat = getattr(body, "dropoff_lat", None)
+    dlng = getattr(body, "dropoff_lng", None)
+    if dlat is None or dlng is None:
+        from app.areas.models import Area
+        from app.integrations.factory import get_geocoding_adapter
+        from app.neighborhoods.models import Neighborhood as _Nbhd
+        area = await session.get(Area, area_id)
+        nbhd = await session.get(_Nbhd, body.dropoff_neighborhood_id)
+        address_parts = [
+            body.dropoff_address,
+            getattr(body, "dropoff_number", None),
+            nbhd.name if nbhd else None,
+            area.name if area else None,
+        ]
+        address_str = ", ".join(p for p in address_parts if p)
+        geo = await get_geocoding_adapter().geocode(address_str)
+        if geo is not None:
+            dlat, dlng = geo.lat, geo.lng
+            delivery.dropoff_lat = dlat
+            delivery.dropoff_lng = dlng
+    if dlat is not None and dlng is not None:
+        from app.areas.zona_finder import find_zona_id
+        delivery.zona_id = await find_zona_id(session, area_id=area_id, lat=dlat, lng=dlng)
 
     # Card/PIX (Phase 10): charge corrida+taxa with a split BEFORE finalising. A refusal/
     # outage raises PaymentGatewayError → the caller's transaction rolls back and the

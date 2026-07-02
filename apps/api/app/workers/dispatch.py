@@ -112,6 +112,7 @@ async def advance_offer(
             pickup_nbhd_id=delivery.dropoff_neighborhood_id,
             dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
             distance_m=delivery.distance_m,
+            zona_id=delivery.zona_id,
             team_ids=delivery.team_ids,
             excluded_ids=set(),
         )
@@ -203,6 +204,7 @@ async def dispatch_offer_task(
                     pickup_nbhd_id=pickup_id,
                     dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
                     distance_m=delivery.distance_m,
+                    zona_id=delivery.zona_id,
                     team_ids=delivery.team_ids,
                     excluded_ids=declined,
                 )

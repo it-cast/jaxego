@@ -174,7 +174,23 @@
 .jx-nbhd__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--jx-space-1);
+}
+
+.jx-nbhd__inline-input {
+  min-height: 36px;
+  padding: 0 var(--jx-space-2);
+  border: 1px solid var(--brand);
+  border-radius: var(--jx-radius-md);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  background: var(--surface);
+  width: 100%;
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .jx-nbhd__action-btn {

@@ -6,6 +6,7 @@ import {
   faGaugeHigh,
   faUsers,
   faBoxOpen,
+  faLayerGroup,
   faRightFromBracket,
   faXmark,
   type IconDefinition,
@@ -118,6 +119,7 @@ export class EquipeShellComponent {
     { path: 'painel', label: 'Painel', icon: faGaugeHigh },
     { path: 'entregadores', label: 'Entregadores', icon: faUsers },
     { path: 'entregas', label: 'Entregas', icon: faBoxOpen },
+    { path: 'zonas', label: 'Zonas', icon: faLayerGroup },
   ];
 
   protected async logout(): Promise<void> {

@@ -16,9 +16,9 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.couriers.coverage import is_eligible, list_coverage
-from app.couriers.models import Courier
+from app.couriers.models import Courier, CourierPricingTable, CourierZona
 from app.db.mixins import ensure_aware_utc
+from app.deliveries.estimate import effective_price_cents
 from app.deliveries.models import Delivery
 from app.deliveries.service import transition
 from app.deliveries.state_machine import InvalidTransitionError
@@ -27,14 +27,43 @@ from app.dispatch.exceptions import NotOfferTargetError, OfferAlreadyTakenError
 from app.dispatch.schemas import OfferOut, PoolItemOut
 from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
+from app.teams.models import TeamZona
 
 logger = structlog.get_logger("dispatch.service")
 
-# Accept lock window: the lock auto-expires after `LOCK_TIMEOUT_S` (so a crashed
-# holder cannot wedge the row forever); a contender waits at most
-# `LOCK_BLOCKING_S` to acquire before treating the offer as taken (TH-1).
 LOCK_TIMEOUT_S = 10
 LOCK_BLOCKING_S = 2
+
+
+async def _zone_price_cents(
+    session: AsyncSession,
+    *,
+    courier_id: int,
+    zona_id: int | None,
+) -> int | None:
+    """Courier price for a zone: courier override → team min → None (use fallback)."""
+    if zona_id is None:
+        return None
+    cz = (await session.execute(
+        select(CourierZona).where(
+            CourierZona.courier_id == courier_id,
+            CourierZona.zona_id == zona_id,
+        )
+    )).scalar_one_or_none()
+    if cz is not None:
+        return cz.preco_cents
+
+    courier = await session.get(Courier, courier_id)
+    if courier is not None and courier.team_id is not None:
+        tz = (await session.execute(
+            select(TeamZona).where(
+                TeamZona.team_id == courier.team_id,
+                TeamZona.zona_id == zona_id,
+            )
+        )).scalar_one_or_none()
+        if tz is not None:
+            return tz.preco_minimo_cents
+    return None
 
 
 async def build_offer_view(
@@ -55,27 +84,29 @@ async def build_offer_view(
     timeout_s = int(offer["timeout_s"]) if offer and "timeout_s" in offer else 0
     remaining = await offer_state.offer_ttl_remaining_s(r, delivery.id)
 
-    # Resolve the courier's own price for this trip (not the median estimate).
+    # Resolve the courier's own price for this trip (zone → pricing table).
     courier_price = delivery.price_cents
     if offer and "courier_id" in offer:
-        from app.deliveries.estimate import effective_price_cents
-        from app.couriers.models import CourierPricingTable
         courier_id = int(offer["courier_id"])
-        pricing_rows = list(
-            (await session.execute(
-                select(CourierPricingTable).where(
-                    CourierPricingTable.courier_id == courier_id,
-                    CourierPricingTable.area_id == delivery.area_id,
-                )
-            )).scalars().all()
-        )
-        price = effective_price_cents(
-            pricing_rows,
-            dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
-            distance_m=delivery.distance_m,
-        )
-        if price is not None:
-            courier_price = price
+        zone_price = await _zone_price_cents(session, courier_id=courier_id, zona_id=delivery.zona_id)
+        if zone_price is not None:
+            courier_price = zone_price
+        else:
+            pricing_rows = list(
+                (await session.execute(
+                    select(CourierPricingTable).where(
+                        CourierPricingTable.courier_id == courier_id,
+                        CourierPricingTable.area_id == delivery.area_id,
+                    )
+                )).scalars().all()
+            )
+            price = effective_price_cents(
+                pricing_rows,
+                dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
+                distance_m=delivery.distance_m,
+            )
+            if price is not None:
+                courier_price = price
 
     return OfferOut(
         delivery_id=delivery.id,
@@ -143,23 +174,24 @@ async def accept_offer(
             raise OfferAlreadyTakenError()
         try:
             locked.courier_id = courier_id
-            # Set price_cents to the courier's actual price for this trip.
-            from app.deliveries.estimate import effective_price_cents
-            from app.couriers.models import CourierPricingTable
-            pricing_rows = list(
-                (await session.execute(
-                    select(CourierPricingTable).where(
-                        CourierPricingTable.courier_id == courier_id,
-                        CourierPricingTable.area_id == area_id,
-                    )
-                )).scalars().all()
-            )
-            real_price = effective_price_cents(
-                pricing_rows,
-                dropoff_nbhd_id=locked.dropoff_neighborhood_id,
-                distance_m=locked.distance_m,
-            )
-            locked.price_cents = real_price
+            # Zone price takes priority; fall back to old pricing table.
+            zone_price = await _zone_price_cents(session, courier_id=courier_id, zona_id=locked.zona_id)
+            if zone_price is not None:
+                locked.price_cents = zone_price
+            else:
+                pricing_rows = list(
+                    (await session.execute(
+                        select(CourierPricingTable).where(
+                            CourierPricingTable.courier_id == courier_id,
+                            CourierPricingTable.area_id == area_id,
+                        )
+                    )).scalars().all()
+                )
+                locked.price_cents = effective_price_cents(
+                    pricing_rows,
+                    dropoff_nbhd_id=locked.dropoff_neighborhood_id,
+                    distance_m=locked.distance_m,
+                )
             await transition(
                 session,
                 delivery=locked,
@@ -229,7 +261,6 @@ async def list_unanswered_pool(
     courier = await session.get(Courier, courier_id)
     if courier is None or courier.area_id != area_id:
         return []
-    coverage = await list_coverage(session, area_id=area_id, courier_id=courier_id)
 
     deliveries = list(
         (
@@ -245,14 +276,10 @@ async def list_unanswered_pool(
     eligible = [
         d
         for d in deliveries
-        if (not d.team_ids or courier.team_id in d.team_ids)
-        and is_eligible(coverage, d.dropoff_neighborhood_id, d.dropoff_neighborhood_id)
+        if not d.team_ids or courier.team_id in d.team_ids
     ]
     if not eligible:
         return []
-
-    from app.couriers.models import CourierPricingTable
-    from app.deliveries.estimate import effective_price_cents
 
     merchant_ids = {d.merchant_id for d in eligible}
     nbhd_ids = {d.dropoff_neighborhood_id for d in eligible}
@@ -269,14 +296,38 @@ async def list_unanswered_pool(
         ).scalars()
     }
     pricing_rows = list(
-        (
-            await session.execute(
-                select(CourierPricingTable).where(
-                    CourierPricingTable.courier_id == courier_id,
-                )
-            )
-        ).scalars()
+        (await session.execute(
+            select(CourierPricingTable).where(CourierPricingTable.courier_id == courier_id)
+        )).scalars()
     )
+    # Pre-load zone price maps to avoid N+1 in the list comprehension below.
+    cz_map: dict[int, int] = {
+        cz.zona_id: cz.preco_cents
+        for cz in (await session.execute(
+            select(CourierZona).where(CourierZona.courier_id == courier_id)
+        )).scalars()
+    }
+    tz_map: dict[int, int] = {}
+    if courier is not None and courier.team_id is not None:
+        tz_map = {
+            tz.zona_id: tz.preco_minimo_cents
+            for tz in (await session.execute(
+                select(TeamZona).where(TeamZona.team_id == courier.team_id)
+            )).scalars()
+        }
+
+    def _price(d: Delivery) -> int | None:
+        if d.zona_id is not None:
+            if d.zona_id in cz_map:
+                return cz_map[d.zona_id]
+            if d.zona_id in tz_map:
+                return tz_map[d.zona_id]
+        return effective_price_cents(
+            pricing_rows,
+            dropoff_nbhd_id=d.dropoff_neighborhood_id,
+            distance_m=d.distance_m,
+        )
+
     return [
         PoolItemOut(
             delivery_id=d.id,
@@ -291,11 +342,7 @@ async def list_unanswered_pool(
                 else ""
             ),
             distance_m=d.distance_m,
-            value_cents=effective_price_cents(
-                pricing_rows,
-                dropoff_nbhd_id=d.dropoff_neighborhood_id,
-                distance_m=d.distance_m,
-            ),
+            value_cents=_price(d),
             payment_method=d.payment_method,
             receipt_method=d.receipt_method,
             created_at=ensure_aware_utc(d.created_at).isoformat() if d.created_at else "",
@@ -343,27 +390,23 @@ async def self_assign_pool_delivery(
             raise OfferAlreadyTakenError()
         try:
             locked.courier_id = courier_id
-            from app.couriers.models import CourierPricingTable
-            from app.deliveries.estimate import effective_price_cents
-
-            pricing_rows = list(
-                (
-                    await session.execute(
+            zone_price = await _zone_price_cents(session, courier_id=courier_id, zona_id=locked.zona_id)
+            if zone_price is not None:
+                locked.price_cents = zone_price
+            else:
+                pricing_rows = list(
+                    (await session.execute(
                         select(CourierPricingTable).where(
                             CourierPricingTable.courier_id == courier_id,
                             CourierPricingTable.area_id == area_id,
                         )
-                    )
+                    )).scalars().all()
                 )
-                .scalars()
-                .all()
-            )
-            real_price = effective_price_cents(
-                pricing_rows,
-                dropoff_nbhd_id=locked.dropoff_neighborhood_id,
-                distance_m=locked.distance_m,
-            )
-            locked.price_cents = real_price
+                locked.price_cents = effective_price_cents(
+                    pricing_rows,
+                    dropoff_nbhd_id=locked.dropoff_neighborhood_id,
+                    distance_m=locked.distance_m,
+                )
             await transition(
                 session,
                 delivery=locked,

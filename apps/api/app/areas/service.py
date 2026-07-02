@@ -21,8 +21,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas.config_schema import AreaConfig, diff_sensitive
-from app.areas.models import Area, AreaAdmin
-from app.areas.schemas import AreaCreate, AreaUpdate
+from app.areas.models import Area, AreaAdmin, Zona
+from app.areas.schemas import AreaCreate, AreaUpdate, ZonaCreate, ZonaUpdate
 from app.auth.models import User
 from app.core.exceptions import AppError, NotFoundError, ValidationAppError
 
@@ -84,7 +84,7 @@ async def create_area(session: AsyncSession, body: AreaCreate) -> Area:
     ).scalar_one_or_none()
     if existing is not None:
         raise DuplicateAreaError()
-    area = Area(codename=body.codename, name=body.name, config=body.config, boundary=body.boundary)
+    area = Area(codename=body.codename, name=body.name, config=body.config)
     session.add(area)
     await session.flush()
     return area
@@ -120,9 +120,6 @@ async def update_area(
     area = await get_area(session, area_id)
     if body.name is not None:
         area.name = body.name
-
-    if body.boundary is not None:
-        area.boundary = body.boundary
 
     diff: tuple[dict, dict] | None = None
     if body.config is not None:
@@ -264,4 +261,42 @@ async def remove_area_admin(session: AsyncSession, admin_id: int) -> None:
     if membership is None:
         raise NotFoundError("Admin de area nao encontrado.")
     await session.delete(membership)
+    await session.flush()
+
+
+# ---------------------------------------------------------------------------
+# Zona CRUD (admin_area scoped)
+# ---------------------------------------------------------------------------
+
+async def list_zonas(session: AsyncSession, area_id: int) -> list[Zona]:
+    stmt = select(Zona).where(Zona.area_id == area_id).order_by(Zona.id)
+    return list((await session.execute(stmt)).scalars().all())
+
+
+async def create_zona(session: AsyncSession, area_id: int, body: ZonaCreate) -> Zona:
+    zona = Zona(area_id=area_id, name=body.name, boundary=body.boundary)
+    session.add(zona)
+    await session.flush()
+    return zona
+
+
+async def update_zona(
+    session: AsyncSession, zona_id: int, area_id: int, body: ZonaUpdate
+) -> Zona:
+    zona = await session.get(Zona, zona_id)
+    if zona is None or zona.area_id != area_id:
+        raise NotFoundError("Zona não encontrada.")
+    if body.name is not None:
+        zona.name = body.name
+    if body.boundary is not None:
+        zona.boundary = body.boundary
+    await session.flush()
+    return zona
+
+
+async def delete_zona(session: AsyncSession, zona_id: int, area_id: int) -> None:
+    zona = await session.get(Zona, zona_id)
+    if zona is None or zona.area_id != area_id:
+        raise NotFoundError("Zona não encontrada.")
+    await session.delete(zona)
     await session.flush()

@@ -33,7 +33,7 @@ import {
       </a>
       <a routerLink="/entregador/cobertura" routerLinkActive="jx-tab--active" class="jx-tab">
         <fa-icon [icon]="iconBairros" aria-hidden="true" />
-        <span>Bairros</span>
+        <span>Zonas</span>
       </a>
       <a routerLink="/entregador/perfil" routerLinkActive="jx-tab--active" class="jx-tab">
         <fa-icon [icon]="iconPerfil" aria-hidden="true" />

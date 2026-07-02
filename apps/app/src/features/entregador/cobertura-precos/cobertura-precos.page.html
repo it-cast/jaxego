@@ -1,102 +1,126 @@
 <ion-content>
-  @if (initialLoading()) {
+  @if (loading()) {
     <jx-dots-loader />
   } @else {
-  <jx-page-header title="Bairros e preços" />
-  <div class="jx-cobertura">
+    <jx-page-header title="Zonas e preços" />
+    <div class="jx-zonas">
 
-    <!-- Seletor de modo -->
-    <label class="jx-cobertura__mode-label">
-      <span>Como você cobra</span>
-      <select
-        class="jx-cobertura__mode-select"
-        [value]="mode()"
-        (change)="setMode($any($event.target).value)"
-      >
-        <option value="neighborhood">Preço por bairro</option>
-        <option value="km">Preço por km</option>
-      </select>
-    </label>
+      @if (error()) {
+        <div class="jx-zonas__error">
+          Não foi possível carregar as zonas.
+        </div>
+      } @else if (zones().length === 0) {
+        <div class="jx-zonas__empty">
+          <span class="jx-zonas__empty-icon">🗺️</span>
+          <p class="jx-zonas__empty-text">Nenhuma zona cadastrada na sua área ainda.</p>
+        </div>
+      } @else {
+        <p class="jx-zonas__hint">
+          Preços padrão definidos pela sua equipe. Você pode personalizar o valor de cada zona.
+        </p>
 
-    @if (saveError()) {
-      <jx-error-state [message]="saveError()!" />
-    }
+        <ul class="jx-zonas__list" role="list">
+          @for (z of zones(); track z.zona_id) {
+            <li class="jx-zonas__item">
+              <div class="jx-zonas__item-header">
+                <span class="jx-zonas__item-name">{{ z.zona_nome }}</span>
+                <div class="jx-zonas__item-actions">
+                  @if (z.boundary) {
+                    <button
+                      type="button"
+                      class="jx-zonas__map-btn"
+                      (click)="openMap(z)"
+                      [attr.aria-label]="'Ver mapa de ' + z.zona_nome"
+                    >
+                      <fa-icon [icon]="iconInfo" aria-hidden="true" />
+                    </button>
+                  }
+                  @if (!z.editing) {
+                    <button
+                      type="button"
+                      class="jx-zonas__edit-btn"
+                      (click)="startEdit(z)"
+                      [attr.aria-label]="'Personalizar preço de ' + z.zona_nome"
+                    >
+                      Personalizar
+                    </button>
+                  }
+                </div>
+              </div>
 
-    <!-- Cobertura de bairros (sempre visível) -->
-    @if (items().length === 0) {
-      <jx-empty-state
-        icon="🗺️"
-        title="Você ainda não atende nenhum bairro."
-        message="Marque os bairros que quer atender abaixo."
-      />
-    } @else {
-      <jx-coverage-list
-        [items]="items()"
-        [showPrice]="mode() === 'neighborhood'"
-      />
-    }
+              <!-- Preços -->
+              <div class="jx-zonas__prices">
+                @if (z.courier_preco_cents !== null) {
+                  <span class="jx-zonas__price-value">{{ formatBrl(z.courier_preco_cents) }}</span>
+                  <span class="jx-zonas__badge jx-zonas__badge--custom">Customizado</span>
+                } @else if (z.team_preco_cents !== null) {
+                  <span class="jx-zonas__price-value">{{ formatBrl(z.team_preco_cents) }}</span>
+                  <span class="jx-zonas__badge jx-zonas__badge--fixed">Fixo</span>
+                } @else {
+                  <span class="jx-zonas__badge jx-zonas__badge--none">Sem preço</span>
+                }
 
-    <!-- Modo km: faixas -->
-    @if (mode() === 'km') {
-      <section class="jx-cobertura__km">
-        <h2 class="jx-cobertura__km-title">Faixas por km</h2>
-        @for (band of kmBands; track $index) {
-          <div class="jx-cobertura__band">
-            <input
-              class="jx-cobertura__band-km"
-              inputmode="numeric"
-              placeholder="até km"
-              [value]="band.upToKm"
-              [attr.aria-label]="'Até quantos km (faixa ' + ($index + 1) + ')'"
-              (input)="onBandKm(band, $event)"
-            />
-            <input
-              class="jx-cobertura__band-price"
-              inputmode="decimal"
-              placeholder="R$ 0,00"
-              [value]="band.price"
-              [attr.aria-label]="'Preço da faixa ' + ($index + 1)"
-              [attr.aria-invalid]="band.priceError ? 'true' : null"
-              (input)="onBandPrice(band, $event)"
-            />
-          </div>
-          @if (band.priceError) {
-            <p class="jx-cobertura__band-error" role="alert">{{ band.priceError }}</p>
+                @if (z.saveOk) {
+                  <span class="jx-zonas__saved" role="status">Salvo ✓</span>
+                }
+              </div>
+
+              <!-- Edição inline -->
+              @if (z.editing) {
+                <div class="jx-zonas__edit">
+                  <label class="jx-zonas__edit-label" [attr.for]="'zona-' + z.zona_id">
+                    Meu preço (R$)
+                  </label>
+                  <div class="jx-zonas__edit-row">
+                    <input
+                      class="jx-zonas__edit-input"
+                      [id]="'zona-' + z.zona_id"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputmode="decimal"
+                      placeholder="0,00"
+                      [ngModel]="z.editValue"
+                      (ngModelChange)="z.editValue = $event"
+                    />
+                    <button
+                      type="button"
+                      class="jx-zonas__save-btn"
+                      [disabled]="z.saving"
+                      (click)="save(z)"
+                    >
+                      {{ z.saving ? 'Salvando…' : 'Salvar' }}
+                    </button>
+                    <button
+                      type="button"
+                      class="jx-zonas__cancel-btn"
+                      (click)="cancelEdit(z)"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              }
+            </li>
           }
-        }
-        <button type="button" class="jx-cobertura__add-band" (click)="addBand()">
-          Adicionar faixa
+        </ul>
+      }
+
+    </div>
+  }
+
+  <!-- Overlay do mapa -->
+  @if (mapZona()) {
+    <div class="jx-map-overlay" role="dialog" [attr.aria-label]="'Mapa de ' + mapZona()!.zona_nome">
+      <div class="jx-map-overlay__header">
+        <span class="jx-map-overlay__title">{{ mapZona()!.zona_nome }}</span>
+        <button type="button" class="jx-map-overlay__close" (click)="closeMap()" aria-label="Fechar mapa">
+          <fa-icon [icon]="iconClose" aria-hidden="true" />
         </button>
-      </section>
-    }
-
-    <!-- Retorno -->
-    <label class="jx-cobertura__return">
-      <span class="jx-cobertura__return-label">
-        % sobre a corrida para voltar com o item
-      </span>
-      <input
-        class="jx-cobertura__return-input"
-        inputmode="numeric"
-        [value]="returnPct"
-        aria-label="Percentual de retorno"
-        (input)="onReturnInput($event)"
-      />
-    </label>
-
-    @if (saved()) {
-      <p class="jx-cobertura__saved" role="status">Bairros e preços salvos.</p>
-    }
-
-    <button
-      type="button"
-      class="jx-cobertura__save"
-      [disabled]="saving()"
-      [attr.aria-busy]="saving() ? 'true' : null"
-      (click)="save()"
-    >
-      {{ saving() ? 'Salvando…' : 'Salvar bairros e preços' }}
-    </button>
-  </div>
+      </div>
+      <div class="jx-map-overlay__body">
+        <jx-zona-map [boundary]="mapZona()!.boundary" />
+      </div>
+    </div>
   }
 </ion-content>

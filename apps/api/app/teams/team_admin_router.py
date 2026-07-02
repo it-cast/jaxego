@@ -11,12 +11,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pydantic import BaseModel
+
+from app.areas.models import Zona
 from app.auth.dependencies import CurrentUser
 from app.auth.models import User
 from app.couriers.models import Courier, CourierDocument
 from app.db.session import get_session
 from app.deliveries.models import Delivery
-from app.teams.models import Team
+from app.teams.models import Team, TeamZona
 
 router = APIRouter(prefix="/team-admin", tags=["team-admin"])
 
@@ -279,3 +282,64 @@ async def list_deliveries(
             "created_at": d.created_at.isoformat() if d.created_at else None,
         })
     return {"items": items, "total": total}
+
+
+# ---------------------------------------------------------------------------
+# Zonas e preços mínimos
+# ---------------------------------------------------------------------------
+
+class TeamZonaSetBody(BaseModel):
+    preco_minimo_cents: int
+
+
+@router.get("/zonas")
+async def list_team_zonas(user: CurrentUser, session: SessionDep) -> list[dict]:
+    """Retorna todas as zonas da área com o preço mínimo configurado pelo time."""
+    team = await _resolve_team(user, session)
+    zonas = list(
+        (await session.execute(
+            select(Zona).where(Zona.area_id == team.area_id).order_by(Zona.id)
+        )).scalars().all()
+    )
+    configs = {
+        tz.zona_id: tz
+        for tz in (await session.execute(
+            select(TeamZona).where(TeamZona.team_id == team.id)
+        )).scalars().all()
+    }
+    return [
+        {
+            "zona_id": z.id,
+            "zona_nome": z.name,
+            "preco_minimo_cents": configs[z.id].preco_minimo_cents if z.id in configs else None,
+        }
+        for z in zonas
+    ]
+
+
+@router.put("/zonas/{zona_id}")
+async def set_team_zona(
+    zona_id: int,
+    body: TeamZonaSetBody,
+    user: CurrentUser,
+    session: SessionDep,
+) -> dict:
+    """Define ou atualiza o preço mínimo do time para uma zona."""
+    team = await _resolve_team(user, session)
+    zona = await session.get(Zona, zona_id)
+    if zona is None or zona.area_id != team.area_id:
+        raise HTTPException(status_code=404, detail="Zona não encontrada.")
+    existing = (await session.execute(
+        select(TeamZona).where(TeamZona.team_id == team.id, TeamZona.zona_id == zona_id)
+    )).scalar_one_or_none()
+    if existing:
+        existing.preco_minimo_cents = body.preco_minimo_cents
+    else:
+        session.add(TeamZona(
+            team_id=team.id,
+            zona_id=zona_id,
+            area_id=team.area_id,
+            preco_minimo_cents=body.preco_minimo_cents,
+        ))
+    await session.commit()
+    return {"zona_id": zona_id, "preco_minimo_cents": body.preco_minimo_cents}

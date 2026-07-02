@@ -19,13 +19,13 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.couriers.coverage import is_eligible
-from app.couriers.models import Courier, CourierCoverageArea, CourierPricingTable
+from app.couriers.models import Courier, CourierPricingTable, CourierZona
 from app.deliveries.estimate import effective_price_cents
 from app.deliveries.models import Delivery
 from app.dispatch import offer_state
 from app.dispatch.ranking import rank_key
 from app.merchants.models import MerchantCourierBlock, MerchantCourierFavorite
+from app.teams.models import TeamZona
 
 logger = structlog.get_logger("dispatch.cascade")
 
@@ -60,15 +60,18 @@ async def build_candidates(
     pickup_nbhd_id: int,
     dropoff_nbhd_id: int,
     distance_m: int | None,
+    zona_id: int | None = None,
     team_ids: list[int] | None = None,
     excluded_ids: set[int] | None = None,
 ) -> list[int]:
     """Ordered candidate courier ids: favorites first, then ranking (RN-009).
 
-    Eligible = online + active + not deleted + covers BOTH points + load < max +
-    NOT blocked by the store + NOT in excluded_ids (declined). Bulk-loads coverage/pricing/favorites/blocks (no N+1).
+    Eligible = online + active + not deleted + in team (if specified) + load < max +
+    NOT blocked by the store + NOT in excluded_ids. Coverage by neighborhood is no
+    longer required — zone pricing determines eligibility. Bulk-loads all pricing
+    data (no N+1).
     """
-    # Blocked set — removed BEFORE favorites/ranking (TH-5). Set difference.
+    # Blocked set — removed BEFORE favorites/ranking (TH-5).
     blocked = {
         cid
         for (cid,) in (
@@ -101,73 +104,78 @@ async def build_candidates(
     if team_ids:
         courier_filter.append(Courier.team_id.in_(team_ids))
     couriers = list(
-        (
-            await session.execute(select(Courier).where(*courier_filter))
-        )
-        .scalars()
-        .all()
+        (await session.execute(select(Courier).where(*courier_filter))).scalars().all()
     )
     if not couriers:
         return []
 
     courier_ids = [c.id for c in couriers]
-    coverage_rows = list(
-        (
-            await session.execute(
-                select(CourierCoverageArea).where(
-                    CourierCoverageArea.area_id == area_id,
-                    CourierCoverageArea.courier_id.in_(courier_ids),
+    load_by = await _active_delivery_counts(session, area_id=area_id, courier_ids=courier_ids)
+
+    # Zone pricing maps (bulk, no N+1): courier override → team minimum.
+    cz_map: dict[int, int] = {}
+    tz_map: dict[int, int] = {}
+    if zona_id is not None:
+        cz_map = {
+            cz.courier_id: cz.preco_cents
+            for cz in (await session.execute(
+                select(CourierZona).where(
+                    CourierZona.zona_id == zona_id,
+                    CourierZona.courier_id.in_(courier_ids),
                 )
-            )
-        )
-        .scalars()
-        .all()
-    )
+            )).scalars()
+        }
+        team_ids_set = {c.team_id for c in couriers if c.team_id is not None}
+        if team_ids_set:
+            tz_map = {
+                tz.team_id: tz.preco_minimo_cents
+                for tz in (await session.execute(
+                    select(TeamZona).where(
+                        TeamZona.zona_id == zona_id,
+                        TeamZona.team_id.in_(team_ids_set),
+                    )
+                )).scalars()
+            }
+
+    # Old pricing table as final fallback (backward compat).
     pricing_rows = list(
-        (
-            await session.execute(
-                select(CourierPricingTable).where(
-                    CourierPricingTable.area_id == area_id,
-                    CourierPricingTable.courier_id.in_(courier_ids),
-                )
+        (await session.execute(
+            select(CourierPricingTable).where(
+                CourierPricingTable.area_id == area_id,
+                CourierPricingTable.courier_id.in_(courier_ids),
             )
-        )
-        .scalars()
-        .all()
+        )).scalars().all()
     )
-    coverage_by: dict[int, list[CourierCoverageArea]] = {}
-    for row in coverage_rows:
-        coverage_by.setdefault(row.courier_id, []).append(row)
     pricing_by: dict[int, list[CourierPricingTable]] = {}
     for row in pricing_rows:
         pricing_by.setdefault(row.courier_id, []).append(row)
-    load_by = await _active_delivery_counts(session, area_id=area_id, courier_ids=courier_ids)
 
     favorites: list[tuple[int, int]] = []  # (priority, courier_id)
-    ranked: list[tuple[tuple, int]] = []  # (rank_key, courier_id)
+    ranked: list[tuple[tuple, int]] = []   # (rank_key, courier_id)
     _excluded = excluded_ids or set()
     for courier in couriers:
         if courier.id in blocked or courier.id in _excluded:
             continue
-        coverage = coverage_by.get(courier.id, [])
-        if not is_eligible(coverage, pickup_nbhd_id, dropoff_nbhd_id):
-            continue
         load = load_by.get(courier.id, 0)
         if load >= courier.max_concurrent:
             continue  # at/over capacity
-        price = effective_price_cents(
-            pricing_by.get(courier.id, []),
-            dropoff_nbhd_id=dropoff_nbhd_id,
-            distance_m=distance_m,
-        )
-        if price is None:
-            continue  # no price for this trip → cannot offer
+        # Zone price first; fall back to old neighborhood/distance table.
+        if courier.id in cz_map:
+            price: int | None = cz_map[courier.id]
+        elif courier.team_id is not None and courier.team_id in tz_map:
+            price = tz_map[courier.team_id]
+        else:
+            price = effective_price_cents(
+                pricing_by.get(courier.id, []),
+                dropoff_nbhd_id=dropoff_nbhd_id,
+                distance_m=distance_m,
+            )
+        rank_price = price if price is not None else 0
         if courier.id in favorite_priority:
             favorites.append((favorite_priority[courier.id], courier.id))
         else:
-            # ETA placeholder = distance (OSRM enrichment is M-later); score 0 (ADR-013).
             eta_s = distance_m if distance_m is not None else 0
-            key = rank_key(eta_s=eta_s, load=load, price_cents=price, score=0.0)
+            key = rank_key(eta_s=eta_s, load=load, price_cents=rank_price, score=0.0)
             ranked.append((key, courier.id))
 
     favorites.sort(key=lambda t: (t[0], t[1]))
@@ -176,7 +184,7 @@ async def build_candidates(
     logger.info(
         "dispatch.candidates.built",
         area_id=area_id,
-        delivery_id=None,
+        zona_id=zona_id,
         favorites=len(favorites),
         ranked=len(ranked),
         blocked=len(blocked),

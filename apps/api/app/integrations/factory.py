@@ -23,6 +23,7 @@ from app.integrations.base import (
 from app.integrations.email import EmailSesAdapter
 from app.integrations.email_stub import EmailStubAdapter
 from app.integrations.geocoding import GeocodingHttpAdapter
+from app.integrations.geocoding_mapbox import MapboxGeocodingAdapter
 from app.integrations.geocoding_stub import GeocodingStubAdapter
 from app.integrations.push import PushVapidAdapter
 from app.integrations.push_stub import PushStubAdapter
@@ -81,6 +82,8 @@ def get_email_adapter() -> EmailPort:
 def get_geocoding_adapter() -> GeocodingPort:
     if _use_stub():
         return GeocodingStubAdapter(scenario="padua")
+    if settings.mapbox_token:
+        return MapboxGeocodingAdapter(token=settings.mapbox_token)
     return GeocodingHttpAdapter(
         base_url=settings.geocoding_base_url,
         allowlist=_hosts(settings.geocoding_allowlist_hosts),

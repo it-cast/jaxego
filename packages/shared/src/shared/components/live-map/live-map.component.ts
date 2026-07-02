@@ -1,6 +1,7 @@
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   Input,
@@ -9,33 +10,18 @@ import {
   ViewChild,
   inject,
 } from '@angular/core';
-import { ThemeService } from '../../../core/theme/theme.service';
-import { MAP_TILE_SOURCE } from '../../../core/map/map-tiles';
 
 /**
- * jx-live-map — MapLibre raster (OSM) map for the public tracker (tela 26).
- *
- * PERFORMANCE (performance-web-vitals): MapLibre is imported DYNAMICALLY only after
- * the element scrolls into view (IntersectionObserver) — so `maplibre-gl` lives in a
- * SEPARATE lazy chunk, never the main bundle, and the LCP (the timeline + ETA banner)
- * does not wait for it. A skeleton reserves the height (no CLS). The page is fully
- * usable without the map (it is decorative; the timeline is the textual alternative).
- *
- * ACCESSIBILITY: `role="img"` + `aria-label` (the courier's approximate position); the
- * textual alternative is the timeline. DARK MODE (DEC-001): a CSS filter inverts the
- * raster tiles in the dark theme (reacts to ThemeService without reload). Tokens only.
+ * jx-live-map — Leaflet + OSM para exibir o ponto de destino da entrega.
+ * Importado dinamicamente (lazy) para não impactar o bundle principal.
+ * Sem @types/leaflet — usa `any` para manter "types": [] no tsconfig.
  */
 @Component({
   selector: 'jx-live-map',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div
-      class="jx-live-map"
-      [class.jx-live-map--dark]="theme.theme() === 'dark'"
-      role="img"
-      [attr.aria-label]="ariaLabel"
-    >
+    <div class="jx-live-map" role="img" [attr.aria-label]="ariaLabel">
       <div #mapHost class="jx-live-map__host"></div>
       @if (!loaded) {
         <div class="jx-live-map__skeleton" aria-hidden="true"></div>
@@ -49,70 +35,59 @@ export class LiveMapComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   @Input() lat: number | null = null;
   @Input() lng: number | null = null;
-  @Input() ariaLabel = 'Posição aproximada do entregador no mapa';
+  @Input() ariaLabel = 'Posição no mapa';
 
-  protected readonly theme = inject(ThemeService);
+  private readonly cdr = inject(ChangeDetectorRef);
   protected loaded = false;
 
-  private observer: IntersectionObserver | null = null;
-  // The MapLibre instances are `unknown` until the lazy module loads.
-  private map: { setCenter: (c: [number, number]) => void; remove: () => void } | null = null;
-  private marker: { setLngLat: (c: [number, number]) => void } | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private map: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private marker: any = null;
 
   ngAfterViewInit(): void {
-    // Defer the heavy import until the map scrolls into view (after first paint).
-    if (typeof IntersectionObserver === 'undefined') {
-      void this.loadMap();
-      return;
-    }
-    this.observer = new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) {
-        this.observer?.disconnect();
-        void this.loadMap();
-      }
-    });
-    this.observer.observe(this.mapHost.nativeElement);
+    void this.loadMap();
   }
 
   ngOnChanges(): void {
-    if (this.map && this.lat != null && this.lng != null) {
-      this.map.setCenter([this.lng, this.lat]);
-      this.marker?.setLngLat([this.lng, this.lat]);
+    if (this.map && this.marker && this.lat != null && this.lng != null) {
+      this.map.setView([this.lat, this.lng], 15);
+      this.marker.setLatLng([this.lat, this.lng]);
     }
   }
 
   ngOnDestroy(): void {
-    this.observer?.disconnect();
     this.map?.remove();
   }
 
-  /** Dynamic import → MapLibre lives in a separate lazy chunk (out of main bundle). */
   private async loadMap(): Promise<void> {
     if (this.lat == null || this.lng == null) return;
-    const maplibre = (await import('maplibre-gl')).default;
-    const center: [number, number] = [this.lng, this.lat];
-    this.map = new maplibre.Map({
-      container: this.mapHost.nativeElement,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            // Tile source vem de um ponto único de config (TD-019) — trocar para
-            // Mapbox/MapTiler/self-host em core/map/map-tiles.ts, sem tocar aqui.
-            tiles: MAP_TILE_SOURCE.tiles,
-            tileSize: MAP_TILE_SOURCE.tileSize,
-            attribution: MAP_TILE_SOURCE.attribution,
-          },
-        },
-        layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-      },
-      center,
-      zoom: 14,
-    }) as unknown as { setCenter: (c: [number, number]) => void; remove: () => void };
-    this.marker = new maplibre.Marker().setLngLat(center).addTo(this.map as never) as unknown as {
-      setLngLat: (c: [number, number]) => void;
-    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // @ts-ignore — leaflet sem @types para manter "types":[] do tsconfig
+    const L: any = await import('leaflet');
+
+    const iconDefault = L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41],
+    });
+
+    const center = [this.lat, this.lng];
+    this.map = L.map(this.mapHost.nativeElement, { zoomControl: true }).setView(center, 15);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap',
+    }).addTo(this.map);
+
+    this.marker = L.marker(center, { icon: iconDefault }).addTo(this.map);
+
     this.loaded = true;
+    this.cdr.markForCheck();
   }
 }

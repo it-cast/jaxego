@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import AreaScopeDep, CurrentUser, ForbiddenError, require_role
 from app.db.session import get_session
 from app.neighborhoods import service
-from app.neighborhoods.schemas import NeighborhoodCreate, NeighborhoodRead
+from app.neighborhoods.schemas import NeighborhoodCreate, NeighborhoodRead, NeighborhoodUpdate
 
 router = APIRouter(prefix="/neighborhoods", tags=["neighborhoods"])
 
@@ -75,6 +75,20 @@ async def list_neighborhoods(
     area_id = _require_scope(scope)
     rows = await service.list_neighborhoods(session, area_id=area_id)
     return [_read(n) for n in rows]
+
+
+@router.patch("/{nbhd_id}", response_model=NeighborhoodRead)
+async def update_neighborhood(
+    nbhd_id: int,
+    body: NeighborhoodUpdate,
+    _admin: AdminArea,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> NeighborhoodRead:
+    area_id = _require_scope(scope)
+    nbhd = await service.update_neighborhood(session, area_id=area_id, nbhd_id=nbhd_id, body=body)
+    await session.commit()
+    return _read(nbhd)
 
 
 @router.post("/{nbhd_id}/archive", response_model=NeighborhoodRead)

@@ -246,3 +246,28 @@ class CourierPricingTable(Base, AreaScopedMixin, TimestampMixin):
     up_to_km: Mapped[Decimal | None] = mapped_column(Numeric(6, 2), nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     return_pct: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+
+
+class CourierZona(Base, AreaScopedMixin, TimestampMixin):
+    """Preço do entregador para uma zona específica (override do team_zona)."""
+
+    __tablename__ = "courier_zonas"
+    __table_args__ = (
+        UniqueConstraint("courier_id", "zona_id", name="uq_courier_zonas_courier_zona"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    courier_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("couriers.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    zona_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("zonas.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    preco_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

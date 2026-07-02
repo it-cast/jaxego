@@ -85,8 +85,8 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
       @if (noCoverage() && !kycPending()) {
         <div class="jx-home-warn-wrap">
           <div class="jx-home-kyc-card">
-            <span class="jx-home-kyc-msg">Cadastre pelo menos um bairro de entrega para ficar online.</span>
-            <button type="button" class="jx-home-kyc-btn" (click)="goCobertura()">Cadastrar bairros</button>
+            <span class="jx-home-kyc-msg">Configure suas zonas de entrega e preços para ficar online.</span>
+            <button type="button" class="jx-home-kyc-btn" (click)="goCobertura()">Ver zonas</button>
           </div>
         </div>
       }

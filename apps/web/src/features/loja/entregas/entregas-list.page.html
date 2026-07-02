@@ -75,3 +75,35 @@
     </button>
   </nav>
 }
+
+@if (cancelTarget(); as item) {
+  <div class="jx-modal-backdrop" (click)="dismissCancel()" aria-hidden="true"></div>
+  <div class="jx-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title">
+    <div class="jx-modal__icon">
+      <fa-icon [icon]="iconWarn" aria-hidden="true" />
+    </div>
+    <h2 id="cancel-modal-title" class="jx-modal__title">Cancelar entrega?</h2>
+    <p class="jx-modal__body">
+      Entrega <strong>#{{ item.public_token.slice(0, 6).toUpperCase() }}</strong> ainda não foi aceita.
+      O cancelamento é gratuito.
+    </p>
+    <div class="jx-modal__actions">
+      <button
+        type="button"
+        class="jx-modal__btn jx-modal__btn--secondary"
+        [disabled]="cancelling()"
+        (click)="dismissCancel()"
+      >
+        Voltar
+      </button>
+      <button
+        type="button"
+        class="jx-modal__btn jx-modal__btn--danger"
+        [disabled]="cancelling()"
+        (click)="confirmCancel()"
+      >
+        {{ cancelling() ? 'Cancelando…' : 'Sim, cancelar' }}
+      </button>
+    </div>
+  </div>
+}

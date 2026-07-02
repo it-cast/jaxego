@@ -120,3 +120,104 @@
   color: var(--text-muted);
   font-weight: var(--jx-weight-semibold);
 }
+
+// ── Modal de confirmação ────────────────────────────────────────────────────
+
+.jx-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.jx-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 201;
+  margin: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 2rem));
+  height: max-content;
+  margin: 0;
+  background: var(--surface-elevated, #fff);
+  border-radius: var(--jx-radius-xl);
+  padding: var(--jx-space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.jx-modal__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: hsl(38 100% 92%);
+  color: hsl(38 100% 38%);
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jx-modal__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+  text-align: center;
+}
+
+.jx-modal__body {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.jx-modal__actions {
+  display: flex;
+  gap: var(--jx-space-3);
+  margin-top: var(--jx-space-2);
+  width: 100%;
+}
+
+.jx-modal__btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+  border: none;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+
+  &--secondary {
+    background: var(--surface-sunken, #f0f0f0);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  &--danger {
+    background: hsl(0 72% 51%);
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: hsl(0 72% 44%);
+    }
+  }
+}

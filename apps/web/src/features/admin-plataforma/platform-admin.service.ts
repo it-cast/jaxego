@@ -66,12 +66,6 @@ export interface Area {
   codename: string;
   name: string;
   config: Record<string, unknown>;
-  boundary: GeoJSON | null;
-}
-
-export interface GeoJSON {
-  type: string;
-  coordinates: number[][][];
 }
 
 /** Snapshot de score com breakdown explicável (ADR-013). */
@@ -231,7 +225,6 @@ export class PlatformAdminService {
     codename: string;
     name: string;
     config?: Record<string, unknown>;
-    boundary?: any;
   }): Promise<Area> {
     return firstValueFrom(
       this.http.post<Area>('/v1/areas', { config: {}, ...body }),
@@ -241,7 +234,7 @@ export class PlatformAdminService {
   /** Edita nome/config de uma área. */
   async updateArea(
     areaId: number,
-    body: { name?: string; config?: Record<string, unknown>; boundary?: any },
+    body: { name?: string; config?: Record<string, unknown> },
   ): Promise<Area> {
     return firstValueFrom(this.http.patch<Area>(`/v1/areas/${areaId}`, body));
   }

@@ -71,6 +71,8 @@ class Settings(BaseSettings):
 
     geocoding_base_url: str = Field(default="https://nominatim.openstreetmap.org")
     geocoding_allowlist_hosts: str = Field(default="nominatim.openstreetmap.org")
+    # When set, Mapbox Geocoding is used instead of Nominatim (better BR coverage).
+    mapbox_token: str | None = Field(default=None)
 
     # --- Backblaze B2 storage (Phase 5) — KYC documents, PRIVATE bucket ---
     # B2 is S3-compatible; we drive it with boto3 (S3v4). The KEY/APP_KEY are

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
   FormsModule,
@@ -7,7 +8,7 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, interval } from 'rxjs';
 import { FieldComponent } from '@jaxego/shared/components/field/field.component';
 import { UpgradeModalComponent } from '@jaxego/shared/components/upgrade-modal/upgrade-modal.component';
 import { ErrorStateComponent } from '@jaxego/shared/state';
@@ -166,8 +167,10 @@ export class NovaEntregaPage {
   private cardBlob: string | null = null;
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
     void this.loadNeighborhoods();
     void this.loadTeamsOnline();
+    interval(60_000).pipe(takeUntilDestroyed(destroyRef)).subscribe(() => void this.loadTeamsOnline());
     const me = this.auth.me();
     const parts = [me?.address, me?.address_number, me?.address_neighborhood].filter(Boolean);
     const pickup = parts.length ? parts.join(', ') : me?.trade_name;
@@ -196,9 +199,6 @@ export class NovaEntregaPage {
       if (masked !== v) {
         this.form.controls.declared_value.setValue(masked, { emitEvent: false });
       }
-    });
-    this.form.controls.dropoff_neighborhood_id.valueChanges.subscribe((v) => {
-      void this.loadTeamsOnline(v ?? undefined);
     });
     this.form.controls.payment_method.valueChanges.subscribe((v) => {
       this.paymentMethod.set((v as 'direct' | 'pix' | 'card') ?? 'direct');
@@ -268,12 +268,10 @@ export class NovaEntregaPage {
     } catch { /* non-blocking */ }
   }
 
-  private async loadTeamsOnline(neighborhoodId?: number): Promise<void> {
+  private async loadTeamsOnline(): Promise<void> {
     try {
-      const params: Record<string, any> = {};
-      if (neighborhoodId) params['dropoff_neighborhood_id'] = neighborhoodId;
       const res = await firstValueFrom(
-        this.http.get<TeamOnline[]>('/v1/deliveries/teams-online', { params })
+        this.http.get<TeamOnline[]>('/v1/deliveries/teams-online')
       );
       this.teamsOnline.set(res);
     } catch {

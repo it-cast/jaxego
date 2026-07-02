@@ -257,6 +257,96 @@ async def get_pricing(
     return [PricingRowRead.model_validate(r) for r in rows]
 
 
+# ---------------------------------------------------------------------------
+# Zonas e preços — entregador define preço por zona (override do team_zona).
+# ---------------------------------------------------------------------------
+
+@router.get("/{courier_id}/zonas")
+async def list_courier_zonas(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> list[dict]:
+    """Retorna zonas da área com preço padrão da equipe e override do entregador."""
+    from app.areas.models import Zona
+    from app.couriers.models import CourierZona
+    from app.teams.models import Team, TeamZona
+    from pydantic import BaseModel as _BM  # noqa
+
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    zonas = list(
+        (await session.execute(
+            select(Zona).where(Zona.area_id == courier.area_id).order_by(Zona.id)
+        )).scalars().all()
+    )
+    # Team default prices
+    team = (await session.execute(
+        select(Team).where(Team.id == courier.team_id)
+    )).scalar_one_or_none() if courier.team_id else None
+    team_prices: dict[int, int] = {}
+    if team:
+        for tz in (await session.execute(
+            select(TeamZona).where(TeamZona.team_id == team.id)
+        )).scalars().all():
+            team_prices[tz.zona_id] = tz.preco_minimo_cents
+    # Courier overrides
+    courier_prices: dict[int, int] = {}
+    for cz in (await session.execute(
+        select(CourierZona).where(CourierZona.courier_id == courier.id)
+    )).scalars().all():
+        courier_prices[cz.zona_id] = cz.preco_cents
+
+    return [
+        {
+            "zona_id": z.id,
+            "zona_nome": z.name,
+            "boundary": z.boundary,
+            "team_preco_cents": team_prices.get(z.id),
+            "courier_preco_cents": courier_prices.get(z.id),
+        }
+        for z in zonas
+    ]
+
+
+@router.put("/{courier_id}/zonas/{zona_id}")
+async def set_courier_zona(
+    courier_id: int,
+    zona_id: int,
+    body: dict,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Define ou atualiza o preço do entregador para uma zona."""
+    from app.areas.models import Zona
+    from app.couriers.models import CourierZona
+    from fastapi import HTTPException
+
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    zona = await session.get(Zona, zona_id)
+    if zona is None or zona.area_id != courier.area_id:
+        raise HTTPException(status_code=404, detail="Zona não encontrada.")
+    preco_cents: int = int(body.get("preco_cents", 0))
+    existing = (await session.execute(
+        select(CourierZona).where(
+            CourierZona.courier_id == courier.id,
+            CourierZona.zona_id == zona_id,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        existing.preco_cents = preco_cents
+    else:
+        session.add(CourierZona(
+            courier_id=courier.id,
+            zona_id=zona_id,
+            area_id=courier.area_id,
+            preco_cents=preco_cents,
+        ))
+    await session.commit()
+    return {"zona_id": zona_id, "preco_cents": preco_cents}
+
+
 @router.patch("/{courier_id}/availability", response_model=AvailabilityResponse)
 async def set_availability(
     courier_id: int,

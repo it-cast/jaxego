@@ -73,13 +73,42 @@
     >
       <ng-template #row let-item>
         <td>
-          <span class="jx-nbhd__row-name">{{ item.name }}</span>
-          @if (item.is_informal) {
-            <span class="jx-nbhd__row-informal">· informal</span>
+          @if (editingId() === item.id) {
+            <input
+              class="jx-nbhd__inline-input"
+              type="text"
+              [(ngModel)]="editName"
+              name="editName"
+              maxlength="120"
+              (keydown.enter)="saveEdit()"
+              (keydown.escape)="cancelEdit()"
+            />
+          } @else {
+            <span class="jx-nbhd__row-name">{{ item.name }}</span>
+            @if (item.is_informal) {
+              <span class="jx-nbhd__row-informal">· informal</span>
+            }
           }
         </td>
         <td class="jx-nbhd__actions">
-          @if (confirmRemoveId() === item.id) {
+          @if (editingId() === item.id) {
+            <button
+              type="button"
+              class="jx-nbhd__action-btn"
+              (click)="saveEdit()"
+              aria-label="Salvar edição"
+            >
+              <fa-icon [icon]="iconSave" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="jx-nbhd__action-btn"
+              (click)="cancelEdit()"
+              aria-label="Cancelar edição"
+            >
+              <fa-icon [icon]="iconCancel" aria-hidden="true" />
+            </button>
+          } @else if (confirmRemoveId() === item.id) {
             <span class="jx-nbhd__confirm-msg">Remover?</span>
             <button
               type="button"
@@ -98,8 +127,17 @@
           } @else {
             <button
               type="button"
+              class="jx-nbhd__action-btn"
+              (click)="startEdit(item)"
+              aria-label="Editar bairro"
+            >
+              <fa-icon [icon]="iconEdit" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               class="jx-nbhd__action-btn jx-nbhd__action-btn--danger"
               (click)="confirmRemove(item.id)"
+              aria-label="Remover bairro"
             >
               <fa-icon [icon]="iconRemove" aria-hidden="true" />
             </button>

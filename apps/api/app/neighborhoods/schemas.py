@@ -14,6 +14,15 @@ class NeighborhoodCreate(BaseModel):
     is_informal: bool = False
 
 
+class NeighborhoodUpdate(BaseModel):
+    """Partial update for a neighborhood."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    is_informal: bool | None = None
+
+
 class NeighborhoodRead(BaseModel):
     """Neighborhood projection returned by the API."""
 

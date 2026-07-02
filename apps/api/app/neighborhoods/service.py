@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AppError, NotFoundError
 from app.neighborhoods.models import Neighborhood
-from app.neighborhoods.schemas import NeighborhoodCreate
+from app.neighborhoods.schemas import NeighborhoodCreate, NeighborhoodUpdate
 
 logger = structlog.get_logger("neighborhoods")
 
@@ -73,6 +73,21 @@ async def list_neighborhoods(
         .order_by(Neighborhood.name)
     )
     return list((await session.execute(stmt)).scalars().all())
+
+
+async def update_neighborhood(
+    session: AsyncSession, *, area_id: int, nbhd_id: int, body: NeighborhoodUpdate
+) -> Neighborhood:
+    """Partial update of a neighborhood's name or informal flag."""
+    nbhd = await _get_scoped(session, area_id=area_id, nbhd_id=nbhd_id)
+    if body.name is not None:
+        nbhd.name = body.name
+    if body.is_informal is not None:
+        nbhd.is_informal = body.is_informal
+    nbhd.updated_at = datetime.now(UTC)
+    await session.flush()
+    logger.info("neighborhood.update", area_id=area_id, nbhd_id=nbhd_id)
+    return nbhd
 
 
 async def archive_neighborhood(

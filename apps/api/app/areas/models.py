@@ -27,10 +27,23 @@ class Area(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     # Local, configurable business rules (REQ-002) — JSON keeps it flexible.
     config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
-    # GeoJSON polygon boundary for the area (drawn on a map by the admin).
-    boundary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # Soft-archive (DRV-002): not deletable with dependents -> archive instead.
     deleted_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+
+
+class Zona(Base, AreaScopedMixin, TimestampMixin):
+    """Sub-division of an Area with a GeoJSON polygon boundary.
+
+    Zones replace per-area polygon: the admin_area draws zones instead of a
+    single area boundary. Each team will set a minimum price per zone (future).
+    """
+
+    __tablename__ = "zonas"
+    __table_args__ = Base.__table_args__
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    boundary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 # AreaAdmin role values (subset of the 6-role taxonomy relevant to this phase).

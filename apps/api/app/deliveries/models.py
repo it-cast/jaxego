@@ -189,6 +189,15 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     scheduled_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
     inngest_event_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
+    # Zone that contains the dropoff point (populated on delivery creation when
+    # the area uses zones; NULL for areas without zone config or unknown point).
+    zona_id: Mapped[int | None] = mapped_column(
+        BIG_ID,
+        ForeignKey("zonas.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
     # LGPD retention (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
 

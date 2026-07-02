@@ -70,10 +70,10 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
 
         <div class="jx-detail__grid">
           <section class="jx-detail__main">
+            <jx-tracking-timeline [state]="trackingState(d)" [entries]="[]" />
             @if (coords(d); as c) {
               <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
             }
-            <jx-tracking-timeline [state]="trackingState(d)" [entries]="[]" />
           </section>
 
           <aside class="jx-detail__aside">

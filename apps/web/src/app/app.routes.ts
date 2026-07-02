@@ -122,6 +122,13 @@ export const adminRoutes: Routes = [
           ),
       },
       {
+        path: 'zonas',
+        loadComponent: () =>
+          import('../features/admin/zonas/zonas.page').then(
+            (m) => m.ZonasPage
+          ),
+      },
+      {
         path: 'bairros',
         loadComponent: () =>
           import('../features/admin/neighborhoods/neighborhoods.page').then(
@@ -269,6 +276,11 @@ export const equipeRoutes: Routes = [
         path: 'entregas',
         loadComponent: () =>
           import('../features/equipe/entregas.page').then((m) => m.EquipeEntregasPage),
+      },
+      {
+        path: 'zonas',
+        loadComponent: () =>
+          import('../features/equipe/zonas.page').then((m) => m.EquipeZonasPage),
       },
     ],
   },

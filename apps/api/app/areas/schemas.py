@@ -16,7 +16,6 @@ class AreaCreate(BaseModel):
     codename: str = Field(min_length=2, max_length=64)
     name: str = Field(min_length=2, max_length=160)
     config: dict = Field(default_factory=dict)
-    boundary: dict | None = None
 
 
 class AreaUpdate(BaseModel):
@@ -26,7 +25,6 @@ class AreaUpdate(BaseModel):
 
     name: str | None = Field(default=None, min_length=2, max_length=160)
     config: dict | None = None
-    boundary: dict | None = None
 
 
 class AreaRead(BaseModel):
@@ -38,8 +36,37 @@ class AreaRead(BaseModel):
     codename: str
     name: str
     config: dict
-    boundary: dict | None = None
     deleted_at: datetime | None
+    created_at: datetime
+
+
+class ZonaCreate(BaseModel):
+    """Create a zone inside the admin's area."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=160)
+    boundary: dict | None = None
+
+
+class ZonaUpdate(BaseModel):
+    """Patch a zone's mutable fields."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=160)
+    boundary: dict | None = None
+
+
+class ZonaRead(BaseModel):
+    """Zone projection returned by the API."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    id: int
+    area_id: int
+    name: str
+    boundary: dict | None
     created_at: datetime
 
 
