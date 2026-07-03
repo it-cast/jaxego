@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
@@ -8,12 +14,20 @@ import {
   faBoxOpen,
   faUser,
 } from '@fortawesome/free-solid-svg-icons';
+import { OfferMonitorService } from '../features/entregador/oferta/offer-monitor.service';
+import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.component';
 
+/**
+ * Shell do entregador — layout persistente com tab bar.
+ * Aqui fica o monitor global de ofertas: o poll começa quando o shell é
+ * montado (entregador autenticado) e o modal aparece em cima de qualquer
+ * tela, não apenas na tela de início.
+ */
 @Component({
   selector: 'jx-entregador-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FaIconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FaIconComponent, OfferSheetComponent],
   template: `
     <main class="jx-shell__content">
       <router-outlet />
@@ -40,6 +54,16 @@ import {
         <span>Perfil</span>
       </a>
     </nav>
+
+    <!-- Modal global de oferta — sobrepõe qualquer tela do app -->
+    <jx-offer-sheet
+      class="jx-shell__offer-overlay"
+      [offer]="monitor.offer()"
+      [result]="monitor.offerResult()"
+      [processing]="monitor.processing()"
+      (accept)="monitor.accept($event)"
+      (decline)="monitor.decline($event)"
+    />
   `,
   styles: [
     `
@@ -87,13 +111,28 @@ import {
       .jx-tab--active {
         color: var(--brand, #e8722a);
       }
+
+      /* O jx-offer-sheet já é position:fixed — este host apenas o instancia. */
+      .jx-shell__offer-overlay {
+        display: contents;
+      }
     `,
   ],
 })
-export class EntregadorShellComponent {
+export class EntregadorShellComponent implements OnInit, OnDestroy {
+  protected readonly monitor = inject(OfferMonitorService);
+
   protected readonly iconInicio = faHouse;
   protected readonly iconGanhos = faMoneyBill;
   protected readonly iconEntregas = faBoxOpen;
   protected readonly iconBairros = faMap;
   protected readonly iconPerfil = faUser;
+
+  ngOnInit(): void {
+    this.monitor.startMonitoring();
+  }
+
+  ngOnDestroy(): void {
+    this.monitor.stopMonitoring();
+  }
 }

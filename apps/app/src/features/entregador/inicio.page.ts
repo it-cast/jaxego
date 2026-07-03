@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  OnDestroy,
   OnInit,
   computed,
   inject,
@@ -19,9 +18,7 @@ import { DotsLoaderComponent } from '@jaxego/shared/components';
 import { WarnBannerComponent } from '@jaxego/shared/state';
 import { Balance, SaldoService } from './saldo/saldo.service';
 import { AvailabilityToggleComponent } from './disponibilidade/availability-toggle.component';
-import { OfferSheetComponent } from './oferta/offer-sheet.component';
-import { OfferService } from './oferta/offer.service';
-import type { OfferOut, OfferResult } from './oferta/offer.models';
+import { OfferMonitorService } from './oferta/offer-monitor.service';
 import {
   CourierDelivery,
   CourierDeliveryListItem,
@@ -48,7 +45,6 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
     IonContent,
     WarnBannerComponent,
     AvailabilityToggleComponent,
-    OfferSheetComponent,
     MoneyComponent,
     DotsLoaderComponent,
     FaIconComponent,
@@ -173,13 +169,6 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         }
       </div>
 
-      <jx-offer-sheet
-        [offer]="offer()"
-        [result]="offerResult()"
-        [processing]="processing()"
-        (accept)="acceptOffer($event)"
-        (decline)="declineOffer($event)"
-      />
       }
     </ion-content>
   `,
@@ -322,11 +311,11 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
     `,
   ],
 })
-export class EntregadorInicioPage implements OnInit, OnDestroy {
+export class EntregadorInicioPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly svc = inject(EntregadorService);
   private readonly saldo = inject(SaldoService);
-  private readonly offers = inject(OfferService);
+  private readonly monitor = inject(OfferMonitorService);
   private readonly router = inject(Router);
 
   protected readonly initialLoading = signal(true);
@@ -337,11 +326,6 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
   protected readonly score = signal<CourierScore | null>(null);
   protected readonly recent = signal<CourierDeliveryListItem[]>([]);
   protected readonly active = signal<CourierDelivery | null>(null);
-  protected readonly offer = signal<OfferOut | null>(null);
-  protected readonly offerResult = signal<OfferResult | null>(null);
-  protected readonly processing = signal(false);
-
-  private pollHandle: ReturnType<typeof setInterval> | null = null;
 
   protected readonly noCoverage = signal(false);
   protected readonly kycPending = computed(() => {
@@ -355,10 +339,11 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     () => this.kycPending() || this.noCoverage()
   );
 
+  // "offer" vem do monitor global — exibido pelo shell, não mais pelo início.
   protected readonly state = computed<HomeState>(() => {
     if (this.active()) return 'busy';
     if (!this.online()) return 'offline';
-    return this.offer() ? 'offer' : 'waiting';
+    return this.monitor.offer() ? 'offer' : 'waiting';
   });
 
   private get courierId(): number | null {
@@ -387,7 +372,6 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
       this.firstName.set(profile.full_name?.split(' ')[0] ?? '');
     }
     this.balance.set(balance);
-    // "Liberado hoje" = soma dos créditos liberados com data de hoje (sem endpoint novo).
     const today = new Date().toDateString();
     this.todayCents.set(
       extract
@@ -398,29 +382,6 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     this.recent.set((list?.items ?? []).slice(0, 3));
     this.active.set(active);
     this.initialLoading.set(false);
-    this.pollHandle = setInterval(() => void this.pollOffer(), 4000);
-  }
-
-  ngOnDestroy(): void {
-    if (this.pollHandle) clearInterval(this.pollHandle);
-  }
-
-  private notificationSound = new Audio('notificacao.mp3');
-
-  private async pollOffer(): Promise<void> {
-    if (!this.online() || this.active() || this.processing()) return;
-    try {
-      const offer = await this.offers.active();
-      if (offer && !this.offer()) {
-        this.notificationSound.play().catch(() => {});
-      }
-      if (!offer && this.offer()) {
-        this.offerResult.set(null);
-      }
-      this.offer.set(offer);
-    } catch {
-      // 401 re-thrown by OfferService — interceptor handles refresh
-    }
   }
 
   protected async setOnline(value: boolean): Promise<void> {
@@ -433,29 +394,6 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
       // 409 = not active; the toggle's own banner explains it. Stay offline.
       this.online.set(false);
     }
-  }
-
-  protected async acceptOffer(deliveryId: number): Promise<void> {
-    this.processing.set(true);
-    const result = await this.offers.accept(deliveryId);
-    this.processing.set(false);
-    if (result === 'won') {
-      this.offer.set(null);
-      this.offerResult.set(null);
-      void this.router.navigate(['/entregador/entrega-ativa']);
-      return;
-    }
-    this.offerResult.set(result); // 'lost' | 'expired' | 'error' → sheet shows outcome
-    setTimeout(() => {
-      this.offer.set(null);
-      this.offerResult.set(null);
-    }, result === 'lost' ? 5000 : 2000);
-  }
-
-  protected async declineOffer(deliveryId: number): Promise<void> {
-    await this.offers.decline(deliveryId);
-    this.offer.set(null);
-    this.offerResult.set(null);
   }
 
   protected fmtPhone(e164: string | null | undefined): string {

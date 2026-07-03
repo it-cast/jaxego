@@ -39,7 +39,7 @@
       <jx-field label="Número" formControlName="dropoff_number" inputmode="numeric" [mono]="true" />
       <jx-field label="Complemento (opcional)" formControlName="dropoff_complement" placeholder="Apto 201, Bloco B, Fundos..." />
       <jx-field label="Referência (opcional)" formControlName="dropoff_reference" placeholder="Próximo ao mercado, casa amarela..." />
-      <jx-field label="CEP" formControlName="cep" inputmode="numeric" [mono]="true" placeholder="00000-000" />
+      <jx-field label="CEP" formControlName="cep" inputmode="numeric" [mono]="true" placeholder="00000-000" [maxlength]="9" />
       <label class="jx-nova__select">
         <span>Bairro de entrega</span>
         <select formControlName="dropoff_neighborhood_id">
@@ -62,6 +62,7 @@
         [mono]="true"
         placeholder="(DD) 9XXXX-XXXX"
         formControlName="recipient_phone"
+        [maxlength]="15"
         [error]="phoneError()"
       />
     </fieldset>

@@ -32,6 +32,7 @@ import type { OfferOut, OfferResult } from './offer.models';
   imports: [OfferTimerComponent, WarnBannerComponent, ErrorStateComponent, FaIconComponent],
   template: `
     @if (offerData(); as o) {
+    <div class="jx-offer-overlay" role="presentation">
     <div
       class="jx-offer-sheet"
       role="dialog"
@@ -120,6 +121,7 @@ import type { OfferOut, OfferResult } from './offer.models';
             (retry)="onAccept()"
           />
         }
+    </div>
     </div>
     }
   `,

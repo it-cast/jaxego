@@ -2,6 +2,27 @@
 // (Gate 2). Persimmon is the ONLY action color (Accept). Anti AI-slop: no
 // gradient/glow; the value is the most prominent number after the timer.
 
+// Backdrop overlay — cobre tela inteira incluindo tab bar (z-index 9999).
+.jx-offer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  animation: jx-backdrop-in var(--jx-motion-normal) var(--jx-motion-easing-out);
+}
+
+@keyframes jx-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-offer-overlay { animation: none; }
+}
+
 .jx-offer-sheet {
   width: 100%;
   max-width: 420px;
