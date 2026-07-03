@@ -249,7 +249,12 @@ class CourierPricingTable(Base, AreaScopedMixin, TimestampMixin):
 
 
 class CourierZona(Base, AreaScopedMixin, TimestampMixin):
-    """Preço do entregador para uma zona específica (override do team_zona)."""
+    """Cobertura e preço do entregador por zona (override do team_zona).
+
+    `ativo=True` significa que o entregador atende esta zona. Ao cadastrar um
+    entregador, todas as zonas da área são criadas com `ativo=True`. Ao criar
+    uma zona nova, todos os entregadores existentes recebem `ativo=False`.
+    """
 
     __tablename__ = "courier_zonas"
     __table_args__ = (
@@ -270,4 +275,5 @@ class CourierZona(Base, AreaScopedMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     preco_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

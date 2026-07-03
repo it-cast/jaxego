@@ -2,7 +2,7 @@
   @if (loading()) {
     <jx-dots-loader />
   } @else {
-    <jx-page-header title="Zonas e preços" />
+    <jx-page-header title="Minhas zonas" />
     <div class="jx-zonas">
 
       @if (error()) {
@@ -16,15 +16,16 @@
         </div>
       } @else {
         <p class="jx-zonas__hint">
-          Preços padrão definidos pela sua equipe. Você pode personalizar o valor de cada zona.
+          Ative as zonas que você atende. Zonas inativas não recebem ofertas.
         </p>
 
         <ul class="jx-zonas__list" role="list">
           @for (z of zones(); track z.zona_id) {
-            <li class="jx-zonas__item">
+            <li class="jx-zonas__item" [class.jx-zonas__item--inactive]="!z.ativo">
+
+              <!-- Header: nome + toggle -->
               <div class="jx-zonas__item-header">
-                <span class="jx-zonas__item-name">{{ z.zona_nome }}</span>
-                <div class="jx-zonas__item-actions">
+                <div class="jx-zonas__item-left">
                   @if (z.boundary) {
                     <button
                       type="button"
@@ -35,6 +36,41 @@
                       <fa-icon [icon]="iconInfo" aria-hidden="true" />
                     </button>
                   }
+                  <span class="jx-zonas__item-name">{{ z.zona_nome }}</span>
+                </div>
+
+                <!-- Toggle ativo/inativo -->
+                <label class="jx-toggle" [attr.aria-label]="'Atender ' + z.zona_nome">
+                  <input
+                    type="checkbox"
+                    class="jx-toggle__input"
+                    [checked]="z.ativo"
+                    [disabled]="z.toggling"
+                    (change)="toggleAtivo(z)"
+                  />
+                  <span class="jx-toggle__track">
+                    <span class="jx-toggle__thumb"></span>
+                  </span>
+                </label>
+              </div>
+
+              <!-- Preços (apenas quando ativo) -->
+              @if (z.ativo) {
+                <div class="jx-zonas__prices">
+                  @if (z.courier_preco_cents !== null) {
+                    <span class="jx-zonas__price-value">{{ formatBrl(z.courier_preco_cents) }}</span>
+                    <span class="jx-zonas__badge jx-zonas__badge--custom">Customizado</span>
+                  } @else if (z.team_preco_cents !== null) {
+                    <span class="jx-zonas__price-value">{{ formatBrl(z.team_preco_cents) }}</span>
+                    <span class="jx-zonas__badge jx-zonas__badge--fixed">Padrão equipe</span>
+                  } @else {
+                    <span class="jx-zonas__badge jx-zonas__badge--none">Sem preço definido</span>
+                  }
+
+                  @if (z.saveOk) {
+                    <span class="jx-zonas__saved" role="status">Salvo ✓</span>
+                  }
+
                   @if (!z.editing) {
                     <button
                       type="button"
@@ -46,61 +82,47 @@
                     </button>
                   }
                 </div>
-              </div>
 
-              <!-- Preços -->
-              <div class="jx-zonas__prices">
-                @if (z.courier_preco_cents !== null) {
-                  <span class="jx-zonas__price-value">{{ formatBrl(z.courier_preco_cents) }}</span>
-                  <span class="jx-zonas__badge jx-zonas__badge--custom">Customizado</span>
-                } @else if (z.team_preco_cents !== null) {
-                  <span class="jx-zonas__price-value">{{ formatBrl(z.team_preco_cents) }}</span>
-                  <span class="jx-zonas__badge jx-zonas__badge--fixed">Fixo</span>
-                } @else {
-                  <span class="jx-zonas__badge jx-zonas__badge--none">Sem preço</span>
-                }
-
-                @if (z.saveOk) {
-                  <span class="jx-zonas__saved" role="status">Salvo ✓</span>
-                }
-              </div>
-
-              <!-- Edição inline -->
-              @if (z.editing) {
-                <div class="jx-zonas__edit">
-                  <label class="jx-zonas__edit-label" [attr.for]="'zona-' + z.zona_id">
-                    Meu preço (R$)
-                  </label>
-                  <div class="jx-zonas__edit-row">
-                    <input
-                      class="jx-zonas__edit-input"
-                      [id]="'zona-' + z.zona_id"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      inputmode="decimal"
-                      placeholder="0,00"
-                      [ngModel]="z.editValue"
-                      (ngModelChange)="z.editValue = $event"
-                    />
-                    <button
-                      type="button"
-                      class="jx-zonas__save-btn"
-                      [disabled]="z.saving"
-                      (click)="save(z)"
-                    >
-                      {{ z.saving ? 'Salvando…' : 'Salvar' }}
-                    </button>
-                    <button
-                      type="button"
-                      class="jx-zonas__cancel-btn"
-                      (click)="cancelEdit(z)"
-                    >
-                      Cancelar
-                    </button>
+                <!-- Edição inline -->
+                @if (z.editing) {
+                  <div class="jx-zonas__edit">
+                    <label class="jx-zonas__edit-label" [attr.for]="'zona-' + z.zona_id">
+                      Meu preço (R$)
+                    </label>
+                    <div class="jx-zonas__edit-row">
+                      <input
+                        class="jx-zonas__edit-input"
+                        [id]="'zona-' + z.zona_id"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputmode="decimal"
+                        placeholder="0,00"
+                        [ngModel]="z.editValue"
+                        (ngModelChange)="z.editValue = $event"
+                      />
+                      <button
+                        type="button"
+                        class="jx-zonas__save-btn"
+                        [disabled]="z.saving"
+                        (click)="save(z)"
+                      >
+                        {{ z.saving ? 'Salvando…' : 'Salvar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="jx-zonas__cancel-btn"
+                        (click)="cancelEdit(z)"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
                   </div>
-                </div>
+                }
+              } @else {
+                <p class="jx-zonas__inactive-label">Inativa — você não recebe ofertas desta zona</p>
               }
+
             </li>
           }
         </ul>

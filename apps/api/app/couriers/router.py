@@ -58,6 +58,7 @@ from app.couriers.view import view_document_url
 from app.db.session import get_session
 from app.deliveries import service as delivery_service
 from app.merchants.models import Merchant
+from app.neighborhoods.models import Neighborhood
 from app.deliveries.schemas import (
     CourierDeliveryListItem,
     CourierDeliveryListOut,
@@ -268,11 +269,10 @@ async def list_courier_zonas(
     scope: AreaScopeDep,
     session: SessionDep,
 ) -> list[dict]:
-    """Retorna zonas da área com preço padrão da equipe e override do entregador."""
+    """Zonas da área com cobertura (ativo), preço da equipe e override do entregador."""
     from app.areas.models import Zona
     from app.couriers.models import CourierZona
-    from app.teams.models import Team, TeamZona
-    from pydantic import BaseModel as _BM  # noqa
+    from app.teams.models import TeamZona
 
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     zonas = list(
@@ -281,36 +281,34 @@ async def list_courier_zonas(
         )).scalars().all()
     )
     # Team default prices
-    team = (await session.execute(
-        select(Team).where(Team.id == courier.team_id)
-    )).scalar_one_or_none() if courier.team_id else None
     team_prices: dict[int, int] = {}
-    if team:
+    if courier.team_id:
         for tz in (await session.execute(
-            select(TeamZona).where(TeamZona.team_id == team.id)
+            select(TeamZona).where(TeamZona.team_id == courier.team_id)
         )).scalars().all():
             team_prices[tz.zona_id] = tz.preco_minimo_cents
-    # Courier overrides
-    courier_prices: dict[int, int] = {}
+    # Courier zona rows (coverage + price override)
+    courier_zonas: dict[int, CourierZona] = {}
     for cz in (await session.execute(
         select(CourierZona).where(CourierZona.courier_id == courier.id)
     )).scalars().all():
-        courier_prices[cz.zona_id] = cz.preco_cents
+        courier_zonas[cz.zona_id] = cz
 
     return [
         {
             "zona_id": z.id,
             "zona_nome": z.name,
             "boundary": z.boundary,
+            "ativo": courier_zonas[z.id].ativo if z.id in courier_zonas else True,
             "team_preco_cents": team_prices.get(z.id),
-            "courier_preco_cents": courier_prices.get(z.id),
+            "courier_preco_cents": courier_zonas[z.id].preco_cents if z.id in courier_zonas else None,
         }
         for z in zonas
     ]
 
 
-@router.put("/{courier_id}/zonas/{zona_id}")
-async def set_courier_zona(
+@router.patch("/{courier_id}/zonas/{zona_id}")
+async def patch_courier_zona(
     courier_id: int,
     zona_id: int,
     body: dict,
@@ -318,7 +316,7 @@ async def set_courier_zona(
     scope: AreaScopeDep,
     session: SessionDep,
 ) -> dict:
-    """Define ou atualiza o preço do entregador para uma zona."""
+    """Atualiza cobertura (ativo) e/ou preço do entregador para uma zona."""
     from app.areas.models import Zona
     from app.couriers.models import CourierZona
     from fastapi import HTTPException
@@ -327,24 +325,28 @@ async def set_courier_zona(
     zona = await session.get(Zona, zona_id)
     if zona is None or zona.area_id != courier.area_id:
         raise HTTPException(status_code=404, detail="Zona não encontrada.")
-    preco_cents: int = int(body.get("preco_cents", 0))
     existing = (await session.execute(
         select(CourierZona).where(
             CourierZona.courier_id == courier.id,
             CourierZona.zona_id == zona_id,
         )
     )).scalar_one_or_none()
-    if existing:
-        existing.preco_cents = preco_cents
-    else:
-        session.add(CourierZona(
+    if existing is None:
+        existing = CourierZona(
             courier_id=courier.id,
             zona_id=zona_id,
             area_id=courier.area_id,
-            preco_cents=preco_cents,
-        ))
+            ativo=True,
+            preco_cents=0,
+        )
+        session.add(existing)
+        await session.flush()
+    if "ativo" in body:
+        existing.ativo = bool(body["ativo"])
+    if "preco_cents" in body:
+        existing.preco_cents = int(body["preco_cents"])
     await session.commit()
-    return {"zona_id": zona_id, "preco_cents": preco_cents}
+    return {"zona_id": zona_id, "ativo": existing.ativo, "preco_cents": existing.preco_cents}
 
 
 @router.patch("/{courier_id}/availability", response_model=AvailabilityResponse)
@@ -374,7 +376,7 @@ async def set_availability(
 _COURIER_DROPOFF_REVEALED = frozenset({"COLETADA", "ENTREGUE", "RECUSADA_NO_DESTINO", "FINALIZADA"})
 
 
-def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | None = None) -> CourierDeliveryOut:
+def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | None = None, dropoff_neighborhood_name: str | None = None) -> CourierDeliveryOut:
     """Serialize a delivery for the assigned courier, hiding destination PII
     until pickup (RN-013). The recipient phone is masked even when revealed."""
     return CourierDeliveryOut(
@@ -389,14 +391,17 @@ def _courier_delivery_out(delivery, recipient, *, merchant_trade_name: str | Non
         pickup_lat=delivery.pickup_lat,
         pickup_lng=delivery.pickup_lng,
         dropoff_neighborhood_id=delivery.dropoff_neighborhood_id,
+        dropoff_neighborhood_name=dropoff_neighborhood_name,
         distance_m=delivery.distance_m,
         dropoff_address=delivery.dropoff_address,
         dropoff_number=delivery.dropoff_number,
         dropoff_complement=delivery.dropoff_complement,
+        dropoff_reference=delivery.dropoff_reference,
         dropoff_lat=delivery.dropoff_lat,
         dropoff_lng=delivery.dropoff_lng,
         recipient_name=recipient.name if recipient else None,
         recipient_phone_masked=mask_phone_display(recipient.phone_e164) if recipient else None,
+        recipient_phone=recipient.phone_e164 if recipient else None,
         price_cents=delivery.price_cents,
         fee_cents=delivery.fee_cents,
         has_image=delivery.image_key is not None,
@@ -428,7 +433,8 @@ async def get_active_delivery(
         return None
     delivery, recipient = result
     merchant = await session.get(Merchant, delivery.merchant_id)
-    return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None)
+    nbhd = await session.get(Neighborhood, delivery.dropoff_neighborhood_id)
+    return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None, dropoff_neighborhood_name=nbhd.name if nbhd else None)
 
 
 @router.get("/{courier_id}/deliveries", response_model=CourierDeliveryListOut)
@@ -482,7 +488,8 @@ async def get_courier_delivery(
         session, courier_id=courier.id, delivery_id=delivery_id
     )
     merchant = await session.get(Merchant, delivery.merchant_id)
-    return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None)
+    nbhd = await session.get(Neighborhood, delivery.dropoff_neighborhood_id)
+    return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None, dropoff_neighborhood_name=nbhd.name if nbhd else None)
 
 
 @router.get("/{courier_id}/deliveries/{delivery_id}/image")

@@ -52,13 +52,28 @@
   display: flex;
   flex-direction: column;
   gap: var(--jx-space-2);
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.jx-zonas__item--inactive {
+  opacity: 0.55;
+  border-color: var(--border, #e5e5e5);
+  background: var(--surface-sunken, #f8f8f8);
 }
 
 .jx-zonas__item-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--jx-space-3);
+}
+
+.jx-zonas__item-left {
+  display: flex;
+  align-items: center;
   gap: var(--jx-space-2);
+  flex: 1;
+  min-width: 0;
 }
 
 .jx-zonas__item-name {
@@ -67,13 +82,9 @@
   color: var(--text);
   flex: 1;
   min-width: 0;
-}
-
-.jx-zonas__item-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--jx-space-2);
-  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .jx-zonas__map-btn {
@@ -88,6 +99,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .jx-zonas__map-btn:focus-visible {
@@ -95,23 +107,70 @@
   outline-offset: 2px;
 }
 
-.jx-zonas__edit-btn {
-  min-height: 36px;
-  padding: 0 var(--jx-space-3);
-  border: 1px solid var(--brand, #e8722a);
-  border-radius: var(--jx-radius-md);
-  background: transparent;
-  color: var(--brand, #e8722a);
-  font-size: var(--jx-text-sm);
-  font-weight: var(--jx-weight-semibold);
+// ── Toggle ativo/inativo ───────────────────────────────────────────────────
+
+$toggle-width: 48px;
+$toggle-height: 28px;
+$thumb-size: 22px;
+$thumb-offset: ($toggle-height - $thumb-size) * 0.5;
+
+.jx-toggle {
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.jx-zonas__edit-btn:focus-visible {
+.jx-toggle__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.jx-toggle__track {
+  position: relative;
+  display: inline-block;
+  width: $toggle-width;
+  height: $toggle-height;
+  border-radius: $toggle-height * 0.5;
+  background: var(--border, #ccc);
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.jx-toggle__thumb {
+  position: absolute;
+  top: $thumb-offset;
+  left: $thumb-offset;
+  width: $thumb-size;
+  height: $thumb-size;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.jx-toggle__input:checked ~ .jx-toggle__track {
+  background: var(--brand, #e8722a);
+}
+
+.jx-toggle__input:checked ~ .jx-toggle__track .jx-toggle__thumb {
+  transform: translateX($toggle-width - $thumb-size - $thumb-offset * 2);
+}
+
+.jx-toggle__input:disabled ~ .jx-toggle__track {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jx-toggle:focus-within .jx-toggle__track {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+// ── Preços ─────────────────────────────────────────────────────────────────
 
 .jx-zonas__prices {
   display: flex;
@@ -154,6 +213,32 @@
   font-size: var(--jx-text-xs);
   color: var(--success, hsl(140 60% 30%));
   font-weight: var(--jx-weight-semibold);
+}
+
+.jx-zonas__inactive-label {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.jx-zonas__edit-btn {
+  min-height: 36px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--brand, #e8722a);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--brand, #e8722a);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.jx-zonas__edit-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 // ── Edição inline ──────────────────────────────────────────────────────────

@@ -40,7 +40,13 @@ def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 
 
-def _delivery_out(delivery, recipient, courier_name: str | None = None) -> DeliveryOut:
+def _delivery_out(
+    delivery,
+    recipient,
+    courier_name: str | None = None,
+    neighborhood_name: str | None = None,
+    team_names: list[str] | None = None,
+) -> DeliveryOut:
     """Serialize a delivery for the store; recipient phone is MASKED (TH-04)."""
     created = delivery.created_at.isoformat() if delivery.created_at else None
     scheduled = delivery.scheduled_at.isoformat() if delivery.scheduled_at else None
@@ -53,7 +59,9 @@ def _delivery_out(delivery, recipient, courier_name: str | None = None) -> Deliv
         dropoff_address=delivery.dropoff_address,
         dropoff_number=delivery.dropoff_number,
         dropoff_complement=delivery.dropoff_complement,
+        dropoff_reference=delivery.dropoff_reference,
         dropoff_neighborhood_id=delivery.dropoff_neighborhood_id,
+        dropoff_neighborhood_name=neighborhood_name,
         distance_m=delivery.distance_m,
         dropoff_lat=delivery.dropoff_lat,
         dropoff_lng=delivery.dropoff_lng,
@@ -67,8 +75,15 @@ def _delivery_out(delivery, recipient, courier_name: str | None = None) -> Deliv
         reference_number=delivery.reference_number,
         recipient_name=recipient.name if recipient else None,
         recipient_phone_masked=(mask_phone_display(recipient.phone_e164) if recipient else None),
+        recipient_phone=(recipient.phone_e164 if recipient else None),
         courier_id=delivery.courier_id,
         courier_name=courier_name,
+        items_description=delivery.items_description,
+        items_quantity=delivery.items_quantity,
+        notes=delivery.notes,
+        pickup_address=delivery.pickup_address,
+        pickup_neighborhood=delivery.pickup_neighborhood,
+        team_names=team_names or [],
         created_at=created,
         scheduled_at=scheduled,
     )
@@ -266,6 +281,153 @@ async def teams_with_online_couriers(
     return result
 
 
+@router.post("/teams-for-address")
+async def teams_for_address(
+    body: dict,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Geocode address → resolve zone → return eligible teams (couriers with ativo=True).
+
+    Falls back to all teams when geocoding fails or address has no zone match.
+    Couriers with no courier_zonas row are treated as active (backward compat).
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import func as sa_func, select
+
+    from app.areas.models import Area, Zona
+    from app.areas.zona_finder import find_zona_id
+    from app.couriers.models import Courier, CourierPricingTable, CourierZona
+    from app.neighborhoods.models import Neighborhood
+    from app.ratings.models import CourierRating
+    from app.teams.models import Team, TeamZona
+
+    dropoff_address: str = body.get("dropoff_address", "")
+    dropoff_number: str | None = body.get("dropoff_number")
+    dropoff_neighborhood_id: int | None = body.get("dropoff_neighborhood_id")
+
+    # Geocode to find zone.
+    zona_id: int | None = None
+    zona_name: str | None = None
+    if dropoff_address and dropoff_neighborhood_id is not None:
+        try:
+            from app.integrations.factory import get_geocoding_adapter
+
+            area = await session.get(Area, scope.area_id)
+            nbhd = await session.get(Neighborhood, dropoff_neighborhood_id)
+            parts = [dropoff_address, dropoff_number, nbhd.name if nbhd else None, area.name if area else None]
+            address_str = ", ".join(p for p in parts if p)
+            geo = await get_geocoding_adapter().geocode(address_str)
+            if geo is not None:
+                zona_id = await find_zona_id(session, area_id=scope.area_id, lat=geo.lat, lng=geo.lng)
+                if zona_id is not None:
+                    zona = await session.get(Zona, zona_id)
+                    zona_name = zona.name if zona else None
+        except Exception:
+            pass  # geocoding unavailable — fallback to all teams
+
+    # Online active couriers.
+    couriers = list(
+        (await session.execute(
+            select(Courier).where(
+                Courier.area_id == scope.area_id,
+                Courier.is_online.is_(True),
+                Courier.status == "active",
+                Courier.deleted_at.is_(None),
+            )
+        )).scalars().all()
+    )
+
+    # Filter by zone ativo (couriers with no row are treated as active).
+    if zona_id is not None and couriers:
+        courier_ids = [c.id for c in couriers]
+        zona_inactive_ids: set[int] = {
+            cz.courier_id
+            for cz in (await session.execute(
+                select(CourierZona).where(
+                    CourierZona.zona_id == zona_id,
+                    CourierZona.courier_id.in_(courier_ids),
+                    CourierZona.ativo.is_(False),
+                )
+            )).scalars()
+        }
+        couriers = [c for c in couriers if c.id not in zona_inactive_ids]
+
+    courier_ids = [c.id for c in couriers]
+
+    # Ratings (90-day avg).
+    ratings: dict[int, float] = {}
+    if courier_ids:
+        cutoff = datetime.now(UTC) - timedelta(days=90)
+        rows = (await session.execute(
+            select(CourierRating.courier_id, sa_func.avg(CourierRating.stars).label("avg"))
+            .where(CourierRating.courier_id.in_(courier_ids), CourierRating.created_at >= cutoff)
+            .group_by(CourierRating.courier_id)
+        )).all()
+        ratings = {int(r.courier_id): round(float(r.avg), 1) for r in rows}
+
+    # Pricing: zone prices first, then old pricing table as fallback.
+    pricing: dict[int, int | None] = {}
+    if courier_ids and zona_id is not None:
+        cz_prices: dict[int, int] = {
+            cz.courier_id: cz.preco_cents
+            for cz in (await session.execute(
+                select(CourierZona).where(
+                    CourierZona.zona_id == zona_id,
+                    CourierZona.courier_id.in_(courier_ids),
+                    CourierZona.ativo.is_(True),
+                )
+            )).scalars()
+        }
+        team_ids_set = {c.team_id for c in couriers if c.team_id is not None}
+        tz_map: dict[int, int] = {}
+        if team_ids_set:
+            tz_map = {
+                tz.team_id: tz.preco_minimo_cents
+                for tz in (await session.execute(
+                    select(TeamZona).where(TeamZona.zona_id == zona_id, TeamZona.team_id.in_(team_ids_set))
+                )).scalars()
+            }
+        for c in couriers:
+            if c.id in cz_prices:
+                pricing[c.id] = cz_prices[c.id]
+            elif c.team_id is not None and c.team_id in tz_map:
+                pricing[c.id] = tz_map[c.team_id]
+    if courier_ids and not pricing:
+        for pr in (await session.execute(
+            select(CourierPricingTable).where(
+                CourierPricingTable.courier_id.in_(courier_ids),
+                CourierPricingTable.area_id == scope.area_id,
+            )
+        )).scalars():
+            if pr.courier_id not in pricing and pr.price is not None:
+                pricing[pr.courier_id] = int(pr.price * 100)
+
+    teams = list(
+        (await session.execute(
+            select(Team).where(Team.area_id == scope.area_id, Team.deleted_at.is_(None)).order_by(Team.id)
+        )).scalars().all()
+    )
+    result_teams = [
+        {
+            "id": team.id,
+            "name": team.name,
+            "couriers": [
+                {
+                    "id": c.id,
+                    "full_name": c.full_name,
+                    "avg_stars": ratings.get(c.id, 0.0),
+                    "price_cents": pricing.get(c.id),
+                }
+                for c in couriers if c.team_id == team.id
+            ],
+        }
+        for team in teams
+    ]
+    return {"zona_id": zona_id, "zona_name": zona_name, "teams": result_teams}
+
+
 @router.get("/estimate")
 async def estimate_delivery(
     dropoff_neighborhood_id: int,
@@ -400,7 +562,27 @@ async def get_delivery(
         courier = await session.get(Courier, delivery.courier_id)
         if courier is not None:
             courier_name = courier.full_name
-    return _delivery_out(delivery, recipient, courier_name=courier_name)
+    # Fetch neighborhood name for display.
+    neighborhood_name: str | None = None
+    from app.neighborhoods.models import Neighborhood
+    nbhd = await session.get(Neighborhood, delivery.dropoff_neighborhood_id)
+    if nbhd is not None:
+        neighborhood_name = nbhd.name
+    # Fetch team names from the delivery's team_ids JSON array.
+    team_names: list[str] = []
+    if delivery.team_ids:
+        from app.teams.models import Team
+        from sqlalchemy import select
+        rows = (await session.execute(
+            select(Team.name).where(Team.id.in_(delivery.team_ids))
+        )).scalars().all()
+        team_names = list(rows)
+    return _delivery_out(
+        delivery, recipient,
+        courier_name=courier_name,
+        neighborhood_name=neighborhood_name,
+        team_names=team_names,
+    )
 
 
 @router.post("/{delivery_id}/cancel", response_model=DeliveryOut)

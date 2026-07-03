@@ -25,7 +25,7 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.areas.models import Area
+from app.areas.models import Area, Zona
 from app.audit.service import write_audit
 from app.auth.models import User
 from app.core.exceptions import AppError
@@ -33,7 +33,7 @@ from app.core.logging import mask_email, mask_phone
 from app.core.security import hash_password, verify_dummy
 from app.couriers import documents as docs_mod
 from app.couriers import kyc
-from app.couriers.models import Courier, CourierDocument
+from app.couriers.models import Courier, CourierDocument, CourierZona
 from app.couriers.schemas import CourierSignupBody, validate_cpf
 from app.couriers.state_machine import assert_courier_transition, assert_document_transition
 from app.integrations.base import PresignResult, ReceitaPort, StoragePort
@@ -199,6 +199,21 @@ async def signup(
     )
     session.add(courier)
     await session.flush()
+
+    # Link courier to all existing zones of the area (ativo=True by default).
+    zonas = list(
+        (await session.execute(select(Zona).where(Zona.area_id == area.id))).scalars().all()
+    )
+    for z in zonas:
+        session.add(CourierZona(
+            area_id=area.id,
+            courier_id=courier.id,
+            zona_id=z.id,
+            ativo=True,
+            preco_cents=0,
+        ))
+    if zonas:
+        await session.flush()
 
     await write_audit(
         session,

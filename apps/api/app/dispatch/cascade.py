@@ -113,18 +113,22 @@ async def build_candidates(
     load_by = await _active_delivery_counts(session, area_id=area_id, courier_ids=courier_ids)
 
     # Zone pricing maps (bulk, no N+1): courier override → team minimum.
+    # `zona_inactive` holds couriers who explicitly opted out of this zone (ativo=False).
+    # Couriers with NO row are treated as active (backward compat with pre-migration data).
     cz_map: dict[int, int] = {}
+    zona_inactive: set[int] = set()
     tz_map: dict[int, int] = {}
     if zona_id is not None:
-        cz_map = {
-            cz.courier_id: cz.preco_cents
-            for cz in (await session.execute(
-                select(CourierZona).where(
-                    CourierZona.zona_id == zona_id,
-                    CourierZona.courier_id.in_(courier_ids),
-                )
-            )).scalars()
-        }
+        for cz in (await session.execute(
+            select(CourierZona).where(
+                CourierZona.zona_id == zona_id,
+                CourierZona.courier_id.in_(courier_ids),
+            )
+        )).scalars():
+            if not cz.ativo:
+                zona_inactive.add(cz.courier_id)
+            else:
+                cz_map[cz.courier_id] = cz.preco_cents
         team_ids_set = {c.team_id for c in couriers if c.team_id is not None}
         if team_ids_set:
             tz_map = {
@@ -156,6 +160,8 @@ async def build_candidates(
     for courier in couriers:
         if courier.id in blocked or courier.id in _excluded:
             continue
+        if courier.id in zona_inactive:
+            continue  # courier opted out of this zone
         load = load_by.get(courier.id, 0)
         if load >= courier.max_concurrent:
             continue  # at/over capacity

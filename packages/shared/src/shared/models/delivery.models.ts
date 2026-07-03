@@ -12,6 +12,7 @@ export interface CreateDeliveryRequest {
   dropoff_address: string;
   dropoff_number?: string | null;
   dropoff_complement?: string | null;
+  dropoff_reference?: string | null;
   distance_m?: number | null;
   recipient_name: string;
   recipient_phone_e164: string;
@@ -73,6 +74,22 @@ export interface DeliveryListItem {
   length_cm?: number | null;
   width_cm?: number | null;
   height_cm?: number | null;
+  /** Telefone completo (E.164) — disponível apenas no GET /{id}, nunca na lista. */
+  recipient_phone?: string | null;
+  /** Campos completos — disponíveis apenas no GET /{id} (DeliveryOut), não na lista. */
+  dropoff_address?: string | null;
+  dropoff_number?: string | null;
+  dropoff_complement?: string | null;
+  dropoff_reference?: string | null;
+  dropoff_neighborhood_name?: string | null;
+  pickup_address?: string | null;
+  pickup_neighborhood?: string | null;
+  items_description?: string | null;
+  items_quantity?: number;
+  notes?: string | null;
+  team_names?: string[];
+  has_image?: boolean;
+  proof_method?: string;
 }
 
 export interface DeliveryListResponse {

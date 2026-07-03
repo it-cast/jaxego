@@ -76,10 +76,13 @@ export interface CourierDelivery {
   dropoff_address: string | null;
   dropoff_number: string | null;
   dropoff_complement: string | null;
+  dropoff_reference: string | null;
+  dropoff_neighborhood_name: string | null;
   dropoff_lat: number | null;
   dropoff_lng: number | null;
   recipient_name: string | null;
   recipient_phone_masked: string | null;
+  recipient_phone: string | null;
   price_cents: number | null;
   fee_cents: number;
   reference_number: string | null;

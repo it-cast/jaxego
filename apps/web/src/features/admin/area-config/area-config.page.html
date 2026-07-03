@@ -24,69 +24,6 @@
       </label>
     </fieldset>
 
-    <!-- Preços e geofence -->
-    <fieldset class="jx-area-config__fieldset jx-area-config__fieldset--2col">
-      <legend>Preços e geofence</legend>
-
-      <label class="jx-area-config__field">
-        <span class="jx-area-config__label">Piso por entrega</span>
-        <input
-          class="jx-area-config__input jx-area-config__input--mono"
-          inputmode="decimal"
-          placeholder="R$ 0,00"
-          formControlName="piso_entrega"
-          (input)="onMoneyInput('piso_entrega', $event)"
-        />
-      </label>
-
-      <label class="jx-area-config__field">
-        <span class="jx-area-config__label">Piso por km</span>
-        <input
-          class="jx-area-config__input jx-area-config__input--mono"
-          inputmode="decimal"
-          placeholder="R$ 0,00"
-          formControlName="piso_km"
-          (input)="onMoneyInput('piso_km', $event)"
-        />
-      </label>
-
-      <label class="jx-area-config__field">
-        <span class="jx-area-config__label">Raio de geofence (m)</span>
-        <input
-          class="jx-area-config__input jx-area-config__input--mono"
-          inputmode="numeric"
-          type="number"
-          min="30"
-          max="300"
-          formControlName="geofence_m"
-          [attr.aria-invalid]="rangeError('geofence_m') ? 'true' : null"
-          [attr.aria-describedby]="rangeError('geofence_m') ? 'geofence-error' : null"
-        />
-        @if (rangeError('geofence_m'); as err) {
-          <p class="jx-area-config__error" id="geofence-error">{{ err }}</p>
-        }
-      </label>
-
-      <label class="jx-area-config__field">
-        <span class="jx-area-config__label">Retorno (%)</span>
-        <input
-          class="jx-area-config__input jx-area-config__input--mono"
-          inputmode="numeric"
-          type="number"
-          min="0"
-          max="100"
-          formControlName="politica_retorno_pct"
-          [attr.aria-invalid]="rangeError('politica_retorno_pct') ? 'true' : null"
-          [attr.aria-describedby]="
-            rangeError('politica_retorno_pct') ? 'retorno-error' : null
-          "
-        />
-        @if (rangeError('politica_retorno_pct'); as err) {
-          <p class="jx-area-config__error" id="retorno-error">{{ err }}</p>
-        }
-      </label>
-    </fieldset>
-
     <!-- Despacho -->
     <fieldset class="jx-area-config__fieldset jx-area-config__fieldset--2col">
       <legend>Despacho</legend>

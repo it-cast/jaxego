@@ -4,6 +4,158 @@
   display: block;
 }
 
+// ── Step progress ─────────────────────────────────────────────────────────────
+
+.jx-nova__steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: var(--jx-space-5);
+}
+
+.jx-nova__step {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+}
+
+.jx-nova__step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text-muted);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-bold);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+
+  .jx-nova__step--active & {
+    background: var(--brand);
+    color: var(--brand-contrast);
+  }
+
+  .jx-nova__step--done & {
+    background: var(--success, hsl(140 60% 40%));
+    color: #fff;
+  }
+}
+
+.jx-nova__step-label {
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text-muted);
+  white-space: nowrap;
+
+  .jx-nova__step--active & { color: var(--text); }
+  .jx-nova__step--done & { color: var(--success, hsl(140 60% 40%)); }
+}
+
+.jx-nova__step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  margin: 0 var(--jx-space-2);
+  transition: background 0.2s;
+
+  &--done { background: var(--success, hsl(140 60% 40%)); }
+}
+
+// ── Step 1: form full-width ───────────────────────────────────────────────────
+
+.jx-nova__form--solo {
+  max-width: 640px;
+}
+
+// ── Step 2: summary + teams ───────────────────────────────────────────────────
+
+.jx-nova__step2 {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-nova__summary {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  padding: var(--jx-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+}
+
+.jx-nova__summary-row {
+  display: flex;
+  gap: var(--jx-space-3);
+  font-size: var(--jx-text-sm);
+  align-items: baseline;
+}
+
+.jx-nova__summary-label {
+  flex-shrink: 0;
+  min-width: 120px;
+  color: var(--text-muted);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.jx-nova__summary-value {
+  color: var(--text);
+  font-weight: var(--jx-weight-semibold);
+  flex: 1;
+
+  &--zona {
+    color: var(--brand);
+  }
+
+  &--muted {
+    color: var(--text-muted);
+    font-weight: var(--jx-weight-normal);
+    font-style: italic;
+    font-size: var(--jx-text-xs);
+  }
+}
+
+.jx-nova__teams-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-nova__step2-actions {
+  display: flex;
+  gap: var(--jx-space-3);
+  align-items: center;
+}
+
+.jx-nova__back-btn {
+  min-height: 48px;
+  padding: 0 var(--jx-space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-lg);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  &:hover { background: var(--bg-hover, #f5f5f5); }
+}
+
+.jx-nova__cta--flex {
+  width: auto;
+  flex: 1;
+}
+
 .jx-nova__back {
   display: inline-block;
   margin-bottom: var(--jx-space-2);

@@ -277,6 +277,31 @@ async def create_zona(session: AsyncSession, area_id: int, body: ZonaCreate) -> 
     zona = Zona(area_id=area_id, name=body.name, boundary=body.boundary)
     session.add(zona)
     await session.flush()
+
+    # Link all existing active couriers in the area to this new zone (ativo=False).
+    from app.couriers.models import Courier, CourierZona
+
+    couriers = list(
+        (
+            await session.execute(
+                select(Courier).where(
+                    Courier.area_id == area_id,
+                    Courier.deleted_at.is_(None),
+                )
+            )
+        ).scalars().all()
+    )
+    for c in couriers:
+        session.add(CourierZona(
+            area_id=area_id,
+            courier_id=c.id,
+            zona_id=zona.id,
+            ativo=False,
+            preco_cents=0,
+        ))
+    if couriers:
+        await session.flush()
+
     return zona
 
 

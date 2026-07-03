@@ -59,6 +59,7 @@ class CreateDeliveryBody(BaseModel):
     dropoff_address: str = Field(min_length=3, max_length=255)
     dropoff_number: str | None = Field(default=None, max_length=20)
     dropoff_complement: str | None = Field(default=None, max_length=120)
+    dropoff_reference: str | None = Field(default=None, max_length=255)
     # Trip distance in metres (the UI may estimate it; server uses it for km bands).
     distance_m: int | None = Field(default=None, ge=0)
 
@@ -136,6 +137,7 @@ class DeliveryOut(BaseModel):
     dropoff_address: str
     dropoff_number: str | None
     dropoff_complement: str | None
+    dropoff_reference: str | None
     dropoff_neighborhood_id: int
     distance_m: int | None
     # Dropoff coords — store owns the address it typed; used to render the map.
@@ -151,11 +153,21 @@ class DeliveryOut(BaseModel):
     length_cm: int | None = None
     width_cm: int | None = None
     height_cm: int | None = None
-    # Recipient — name + MASKED phone only (TH-04 / LGPD).
+    # Recipient — name + phone (store owns the data it typed; masking applies to
+    # couriers and public surfaces only — RN-022 / TH-04).
     recipient_name: str | None = None
     recipient_phone_masked: str | None = None
+    recipient_phone: str | None = None
     courier_id: int | None = None
     courier_name: str | None = None
+    # Extra detail fields (only populated in GET /{id}, not in list).
+    items_description: str | None = None
+    items_quantity: int = 1
+    notes: str | None = None
+    pickup_address: str | None = None
+    pickup_neighborhood: str | None = None
+    dropoff_neighborhood_name: str | None = None
+    team_names: list[str] = []
     created_at: str | None = None
     scheduled_at: str | None = None
 
@@ -236,15 +248,18 @@ class CourierDeliveryOut(BaseModel):
     pickup_lng: float | None
     # Dropoff — neighborhood/distance always; full address only after pickup.
     dropoff_neighborhood_id: int
+    dropoff_neighborhood_name: str | None = None
     distance_m: int | None
     dropoff_address: str | None
     dropoff_number: str | None
     dropoff_complement: str | None
+    dropoff_reference: str | None
     dropoff_lat: float | None
     dropoff_lng: float | None
-    # Recipient — only after pickup (masked phone, never raw — TH-04).
+    # Recipient — only after pickup.
     recipient_name: str | None
     recipient_phone_masked: str | None
+    recipient_phone: str | None = None
     # Money (centavos) + order metadata.
     price_cents: int | None = None
     fee_cents: int
@@ -260,6 +275,12 @@ class CourierDeliveryOut(BaseModel):
     courier_collection_method: str | None = None
     receipt_method: str | None = None
     notes: str | None = None
+    items_description: str | None = None
+    items_quantity: int = 1
+    pickup_address: str | None = None
+    pickup_neighborhood: str | None = None
+    dropoff_neighborhood_name: str | None = None
+    team_names: list[str] = []
     created_at: str | None
 
 

@@ -15,7 +15,6 @@ import {
 } from '@jaxego/shared/util/delivery-format';
 import {
   TrackingState,
-  TrackingTimelineComponent,
 } from '@jaxego/shared/components/tracking-timeline/tracking-timeline.component';
 import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 import { DeliveryService } from '../entregas/delivery.service';
@@ -37,7 +36,6 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
   standalone: true,
   imports: [
     FormsModule,
-    TrackingTimelineComponent,
     StateBadgeComponent,
     LiveMapComponent,
     FaIconComponent,
@@ -46,62 +44,143 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
   template: `
     <main class="jx-detail">
       @if (delivery(); as d) {
+        <!-- Header: ID + badge -->
         <header class="jx-detail__header">
           <h1 class="jx-detail__title">Entrega #{{ d.id }}</h1>
           <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
         </header>
 
+        <!-- Banners contextuais -->
         @if (d.state === 'AGENDADA') {
-          <div class="jx-detail__scheduled" role="status">
-            ⏰ Entrega agendada para {{ fmtScheduled(d.scheduled_at) }}. O entregador será chamado automaticamente nesse horário.
+          <div class="jx-detail__banner jx-detail__banner--info" role="status">
+            ⏰ Agendada para {{ fmtScheduled(d.scheduled_at) }}. O entregador será chamado automaticamente.
           </div>
         }
+        <!-- Timeline horizontal -->
+        <div class="jx-detail__htl" aria-label="Progresso da entrega">
+          @for (step of hSteps(d); track step.key; let last = $last) {
+            <div class="jx-detail__htl-step" [class.jx-detail__htl-step--done]="step.done" [class.jx-detail__htl-step--current]="step.current">
+              <div class="jx-detail__htl-dot">{{ step.done ? '●' : step.current ? '◉' : '○' }}</div>
+              <div class="jx-detail__htl-label">{{ step.label }}</div>
+            </div>
+            @if (!last) {
+              <div class="jx-detail__htl-line" [class.jx-detail__htl-line--done]="step.done"></div>
+            }
+          }
+        </div>
+
+        <!-- GIF de busca (abaixo da timeline) -->
         @if (trackingState(d) === 'CRIADA') {
           <div class="jx-detail__searching" role="status" aria-live="polite">
             <img src="/searching.gif" alt="" aria-hidden="true" class="jx-detail__searching-gif" />
             <span>Procurando entregador… a oferta foi enviada aos entregadores online da área.</span>
           </div>
         }
-        @if (d.state === 'SEM_RESPOSTA') {
-          <div class="jx-detail__no-response" role="status">
-            ⏳ Ainda não encontramos um entregador disponível — pode demorar um pouco mais. Você pode cancelar a qualquer momento, sem custo.
-          </div>
-        }
 
+        <!-- Grid principal -->
         <div class="jx-detail__grid">
+
+          <!-- Coluna esquerda: conteúdo -->
           <section class="jx-detail__main">
-            <jx-tracking-timeline [state]="trackingState(d)" [entries]="[]" />
+
+            <!-- Card: Endereço de entrega -->
+            <div class="jx-detail__card">
+              <h2 class="jx-detail__card-title">Endereço de entrega</h2>
+              <dl class="jx-detail__dl">
+                @if (d.dropoff_address) {
+                  <dt>Rua / Logradouro</dt>
+                  <dd>{{ d.dropoff_address }}@if (d.dropoff_number) {, {{ d.dropoff_number }}}</dd>
+                }
+                @if (d.dropoff_neighborhood_name) {
+                  <dt>Bairro</dt>
+                  <dd>{{ d.dropoff_neighborhood_name }}</dd>
+                }
+                @if (d.dropoff_complement) {
+                  <dt>Complemento</dt>
+                  <dd>{{ d.dropoff_complement }}</dd>
+                }
+                @if (d.dropoff_reference) {
+                  <dt>Referência</dt>
+                  <dd class="jx-detail__italic">{{ d.dropoff_reference }}</dd>
+                }
+                @if (d.pickup_address) {
+                  <dt>Coleta (loja)</dt>
+                  <dd>{{ d.pickup_address }}@if (d.pickup_neighborhood) { — {{ d.pickup_neighborhood }}}</dd>
+                }
+              </dl>
+            </div>
+
+            <!-- Card: Itens / Observações -->
+            @if (d.items_description || (d.items_quantity && d.items_quantity > 1) || d.notes || packageLabel(d)) {
+              <div class="jx-detail__card">
+                <h2 class="jx-detail__card-title">Itens e observações</h2>
+                <dl class="jx-detail__dl">
+                  @if (d.items_description) {
+                    <dt>Descrição</dt>
+                    <dd>{{ d.items_description }}</dd>
+                  }
+                  @if (d.items_quantity && d.items_quantity > 1) {
+                    <dt>Quantidade</dt>
+                    <dd>{{ d.items_quantity }} itens</dd>
+                  }
+                  @if (packageLabel(d)) {
+                    <dt>Pacote</dt>
+                    <dd>{{ packageLabel(d) }}</dd>
+                  }
+                  @if (d.notes) {
+                    <dt>Observações</dt>
+                    <dd class="jx-detail__italic">{{ d.notes }}</dd>
+                  }
+                </dl>
+              </div>
+            }
+
+            <!-- Mapa quadrado -->
             @if (coords(d); as c) {
-              <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
+              <div class="jx-detail__map-wrap">
+                <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
+              </div>
             }
           </section>
 
+          <!-- Coluna direita: meta + ações -->
           <aside class="jx-detail__aside">
-            <dl class="jx-detail__meta">
-              @if (packageLabel(d)) {
-                <dt>Pacote</dt>
-                <dd>{{ packageLabel(d) }}</dd>
-              }
-              <dt>Destinatário</dt>
-              <dd>{{ d.recipient_name ?? '—' }}</dd>
-              <dt>Telefone</dt>
-              <dd class="jx-detail__mono">{{ d.recipient_phone_masked ?? '—' }}</dd>
-              @if (d.courier_id) {
-                <dt>Entregador</dt>
-                <dd>{{ d.courier_name ?? '—' }}</dd>
-              }
-              <dt>Link de rastreio</dt>
-              <dd>
-                <a class="jx-detail__link" [href]="'/r/' + d.public_token">/r/{{ d.public_token }}</a>
-              </dd>
-            </dl>
 
+            <!-- Card: Destinatário + info -->
+            <div class="jx-detail__card">
+              <h2 class="jx-detail__card-title">Destinatário</h2>
+              <dl class="jx-detail__dl">
+                <dt>Nome</dt>
+                <dd>{{ d.recipient_name ?? '—' }}</dd>
+                <dt>Telefone</dt>
+                <dd class="jx-detail__mono">{{ fmtPhone(d.recipient_phone) }}</dd>
+                @if (d.courier_id) {
+                  <dt>Entregador</dt>
+                  <dd>{{ d.courier_name ?? '—' }}</dd>
+                }
+                @if (d.team_names && d.team_names.length) {
+                  <dt>Equipes acionadas</dt>
+                  <dd>{{ d.team_names.join(', ') }}</dd>
+                }
+                @if (d.price_cents != null) {
+                  <dt>Valor</dt>
+                  <dd class="jx-detail__price">{{ fmtCents(d.price_cents) }}</dd>
+                }
+                <dt>Link de rastreio</dt>
+                <dd>
+                  <a class="jx-detail__link" [href]="'/r/' + d.public_token">/r/{{ d.public_token }}</a>
+                </dd>
+              </dl>
+            </div>
+
+            <!-- Ação: Cancelar -->
             @if (canCancel(d)) {
               <button type="button" class="jx-detail__cancel" (click)="cancel(d)">
                 {{ cancelLabel(d) }}
               </button>
             }
 
+            <!-- Ações: Favoritar / Bloquear entregador -->
             @if (d.state === 'FINALIZADA' && d.courier_id) {
               <div class="jx-detail__courier-actions">
                 <button
@@ -127,6 +206,7 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
               </div>
             }
 
+            <!-- Avaliação -->
             @if (d.state === 'FINALIZADA' && !rated()) {
               <section class="jx-detail__rating">
                 <h3 class="jx-detail__rating-title">Avaliar entregador</h3>
@@ -138,15 +218,13 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
                       [class.jx-detail__star--on]="s <= selectedStars()"
                       (click)="selectedStars.set(s)"
                       [attr.aria-label]="s + ' estrela' + (s > 1 ? 's' : '')"
-                    >
-                      ★
-                    </button>
+                    >★</button>
                   }
                 </div>
                 <textarea
                   class="jx-detail__comment"
                   [(ngModel)]="ratingComment"
-                  placeholder="Comentario (opcional)"
+                  placeholder="Comentário (opcional)"
                   maxlength="500"
                   rows="2"
                 ></textarea>
@@ -155,15 +233,13 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
                   class="jx-detail__rate-btn"
                   [disabled]="selectedStars() === 0 || ratingSubmitting()"
                   (click)="submitRating(d)"
-                >
-                  {{ ratingSubmitting() ? 'Enviando...' : 'Enviar avaliacao' }}
-                </button>
+                >{{ ratingSubmitting() ? 'Enviando...' : 'Enviar avaliação' }}</button>
               </section>
             }
 
             @if (rated()) {
               <section class="jx-detail__rating-done">
-                <h3 class="jx-detail__rating-title">Sua avaliacao</h3>
+                <h3 class="jx-detail__rating-title">Sua avaliação</h3>
                 <div class="jx-detail__stars-display">
                   @for (s of [1, 2, 3, 4, 5]; track s) {
                     <span class="jx-detail__star-fixed" [class.jx-detail__star-fixed--on]="s <= selectedStars()">★</span>
@@ -173,12 +249,13 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
                   <p class="jx-detail__rating-comment">"{{ ratingComment }}"</p>
                 }
                 @if (justRated()) {
-                  <p class="jx-detail__rated-msg">Avaliacao enviada. Obrigado!</p>
+                  <p class="jx-detail__rated-msg">Avaliação enviada. Obrigado!</p>
                 }
               </section>
             }
           </aside>
         </div>
+
       } @else if (notFound()) {
         <p class="jx-detail__empty" role="status">Entrega não encontrada.</p>
       } @else {
@@ -189,15 +266,24 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
   styleUrl: './entrega-detalhe.page.scss',
   styles: [
     `
-      .jx-detail__no-response {
+      /* Banners */
+      .jx-detail__banner {
+        padding: var(--jx-space-3) var(--jx-space-4);
+        border-radius: var(--jx-radius-md);
+        font-size: var(--jx-text-sm);
+        margin-bottom: var(--jx-space-2);
+      }
+      .jx-detail__banner--info {
+        background: var(--brand-wash);
+        border-left: 3px solid var(--brand);
+        color: var(--text);
+      }
+      .jx-detail__banner--warn {
         background: var(--warning-bg);
         border: 1px solid var(--warning);
-        border-radius: var(--jx-radius-md);
-        padding: var(--jx-space-3);
         color: var(--text);
-        font-size: var(--jx-text-sm);
-        margin-bottom: var(--jx-space-3);
       }
+      /* Searching GIF */
       .jx-detail__searching {
         display: flex;
         flex-direction: column;
@@ -213,9 +299,95 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
         text-align: center;
       }
       .jx-detail__searching-gif {
-        width: 20em;
+        width: min(20em, 100%);
         height: auto;
         border-radius: var(--jx-radius-sm);
+      }
+      /* Timeline horizontal */
+      .jx-detail__htl {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        overflow-x: auto;
+        padding: var(--jx-space-3) 0;
+        scrollbar-width: none;
+      }
+      .jx-detail__htl::-webkit-scrollbar { display: none; }
+      .jx-detail__htl-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 72px;
+        color: var(--text-muted);
+        font-size: var(--jx-text-xs);
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .jx-detail__htl-step--done {
+        color: var(--text);
+        .jx-detail__htl-dot { color: var(--success, #16a34a); }
+      }
+      .jx-detail__htl-step--current {
+        color: var(--text);
+        .jx-detail__htl-dot { color: var(--brand); font-size: 1.1em; }
+        .jx-detail__htl-label { font-weight: 600; color: var(--brand); }
+      }
+      .jx-detail__htl-dot { font-size: 1em; line-height: 1; }
+      .jx-detail__htl-label { line-height: 1.2; }
+      .jx-detail__htl-line {
+        flex: 1;
+        min-width: 16px;
+        height: 1px;
+        background: var(--border-strong);
+        align-self: flex-start;
+        margin-top: 0.5em;
+        flex-shrink: 0;
+      }
+      .jx-detail__htl-line--done { background: var(--success, #16a34a); }
+      /* Cards */
+      .jx-detail__card {
+        background: var(--surface-elevated, var(--surface));
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-lg);
+        padding: var(--jx-space-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--jx-space-3);
+      }
+      .jx-detail__card-title {
+        margin: 0;
+        font-size: var(--jx-text-sm);
+        font-weight: var(--jx-weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+      }
+      /* DL grid */
+      .jx-detail__dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: var(--jx-space-1) var(--jx-space-3);
+        margin: 0;
+        font-size: var(--jx-text-sm);
+        dt { color: var(--text-muted); white-space: nowrap; }
+        dd { margin: 0; color: var(--text); word-break: break-word; }
+      }
+      .jx-detail__italic { font-style: italic; }
+      .jx-detail__price { font-weight: var(--jx-weight-semibold); color: var(--brand); }
+      /* Map — square */
+      .jx-detail__map-wrap {
+        width: 20vw;
+        aspect-ratio: 1 / 1;
+        border-radius: var(--jx-radius-lg);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        --jx-map-height: 100%;
+      }
+      .jx-detail__map-wrap jx-live-map {
+        display: block;
+        width: 100%;
+        height: 100%;
       }
     `,
   ],
@@ -290,8 +462,9 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   }
 
   protected trackingState(d: DeliveryListItem): TrackingState {
-    // AGENDADA não tem representação no tracking timeline — mostra como CRIADA
-    if (d.state === 'AGENDADA') return 'CRIADA';
+    // SEM_RESPOSTA e AGENDADA aparecem como CRIADA para a loja — o estado interno é
+    // usado apenas pelo app do entregador e pelo dispatch.
+    if (d.state === 'AGENDADA' || d.state === 'SEM_RESPOSTA') return 'CRIADA';
     return d.state as TrackingState;
   }
 
@@ -370,5 +543,41 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
     if (ok) {
       this.delivery.set({ ...d, state: 'CANCELADA' });
     }
+  }
+
+  protected fmtPhone(e164: string | null | undefined): string {
+    if (!e164) return '—';
+    // +5522988882922 → (22) 98888-2922
+    const digits = e164.replace(/^\+55/, '');
+    if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return e164;
+  }
+
+  protected fmtCents(cents: number | null | undefined): string {
+    if (cents == null) return '—';
+    return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  protected hSteps(d: DeliveryListItem): { key: string; label: string; done: boolean; current: boolean }[] {
+    const state = this.trackingState(d);
+    const HAPPY: TrackingState[] = ['CRIADA', 'ACEITA', 'COLETADA', 'ENTREGUE', 'FINALIZADA'];
+    const LABELS: Record<string, string> = {
+      CRIADA: 'Criada', ACEITA: 'Aceita', COLETADA: 'Coletada', ENTREGUE: 'Entregue', FINALIZADA: 'Concluída',
+      CANCELADA: 'Cancelada', RECUSADA_NO_DESTINO: 'Recusada', SEM_RESPOSTA: 'Sem resposta',
+    };
+    if (state === 'CANCELADA' || state === 'RECUSADA_NO_DESTINO') {
+      return [
+        { key: 'CRIADA', label: 'Criada', done: true, current: false },
+        { key: state, label: LABELS[state], done: false, current: true },
+      ];
+    }
+    const idx = HAPPY.indexOf(state);
+    return HAPPY.map((s, i) => ({
+      key: s,
+      label: LABELS[s],
+      done: i < idx,
+      current: i === idx,
+    }));
   }
 }

@@ -368,6 +368,7 @@ async def create_delivery(
         dropoff_address=body.dropoff_address,
         dropoff_number=body.dropoff_number,
         dropoff_complement=body.dropoff_complement,
+        dropoff_reference=body.dropoff_reference,
         dropoff_neighborhood_id=body.dropoff_neighborhood_id,
         dropoff_lat=getattr(body, "dropoff_lat", None),
         dropoff_lng=getattr(body, "dropoff_lng", None),
@@ -555,17 +556,7 @@ async def cancel_delivery(
     delivery = await get_delivery(
         session, area_id=area_id, merchant_id=merchant_id, delivery_id=delivery_id
     )
-    # Compute the cost BEFORE the transition flips the state to CANCELADA.
-    from app.areas.config_schema import AreaConfig
-    from app.areas.models import Area
-
-    area = await session.get(Area, area_id)
-    raw = dict(area.config) if area and area.config else {}
-    try:
-        cfg = AreaConfig(**raw)
-    except Exception:  # noqa: BLE001 — defaults rather than block a cancel
-        cfg = AreaConfig()
-    cost = cancellation_cost_cents(delivery, return_pct=cfg.politica_retorno_pct)
+    cost = cancellation_cost_cents(delivery, return_pct=0)
 
     await transition(
         session,

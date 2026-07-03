@@ -143,7 +143,23 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
           @case ('busy') {
             <article class="jx-home-busy-card">
               <span class="jx-home-busy-card__label">Entrega em andamento</span>
-              <strong class="jx-home-busy-card__addr">{{ active()?.pickup_address }}</strong>
+              @if (active()!.recipient_name) {
+                <strong class="jx-home-busy-card__name">{{ active()!.recipient_name }}</strong>
+              }
+              @if (active()!.recipient_phone) {
+                <span class="jx-home-busy-card__phone">{{ fmtPhone(active()!.recipient_phone) }}</span>
+              }
+              @if (active()!.dropoff_address) {
+                <span class="jx-home-busy-card__addr">
+                  {{ active()!.dropoff_address }}@if (active()!.dropoff_number) {, {{ active()!.dropoff_number }}}@if (active()!.dropoff_neighborhood_name) {, {{ active()!.dropoff_neighborhood_name }}}
+                </span>
+              }
+              @if (active()!.dropoff_complement) {
+                <span class="jx-home-busy-card__detail">{{ active()!.dropoff_complement }}</span>
+              }
+              @if (active()!.dropoff_reference) {
+                <span class="jx-home-busy-card__detail jx-home-busy-card__detail--ref">{{ active()!.dropoff_reference }}</span>
+              }
               <button type="button" class="jx-home-busy-card__btn" (click)="goActive()">
                 Abrir entrega
               </button>
@@ -273,7 +289,11 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         font-size: var(--jx-text-xs); text-transform: uppercase;
         letter-spacing: 0.06em; color: var(--brand, #e8722a); font-weight: 600;
       }
+      .jx-home-busy-card__name { font-size: var(--jx-text-md); font-weight: 700; color: var(--text); }
+      .jx-home-busy-card__phone { font-size: var(--jx-text-sm); color: var(--text); }
       .jx-home-busy-card__addr { font-size: var(--jx-text-sm); color: var(--text); }
+      .jx-home-busy-card__detail { font-size: var(--jx-text-sm); color: var(--text-muted, #888); }
+      .jx-home-busy-card__detail--ref { font-style: italic; }
       .jx-home-busy-card__btn {
         min-height: 48px; border: 0; border-radius: 999px;
         background: var(--brand, #e8722a); color: #fff;
@@ -436,6 +456,14 @@ export class EntregadorInicioPage implements OnInit, OnDestroy {
     await this.offers.decline(deliveryId);
     this.offer.set(null);
     this.offerResult.set(null);
+  }
+
+  protected fmtPhone(e164: string | null | undefined): string {
+    if (!e164) return '';
+    const digits = e164.replace(/^\+55/, '');
+    if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return e164;
   }
 
   protected readonly iconChevron = faChevronRight;

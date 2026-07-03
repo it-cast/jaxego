@@ -5,12 +5,8 @@ import { firstValueFrom } from 'rxjs';
 /** The typed area config (mirrors the backend AreaConfig — Plan 01). */
 export interface AreaConfig {
   kyc_level: 'simples' | 'completa';
-  piso_entrega: string; // Decimal as string ("8.00")
-  piso_km: string;
-  geofence_m: number;
   timeout_oferta_s: number;
   timeout_favoritos_s: number;
-  politica_retorno_pct: number;
 }
 
 export interface AreaRead {

@@ -48,11 +48,14 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   private async loadLeaflet(): Promise<void> {
-    if ((window as any).L) return;
-    await this.loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-    await this.loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
-    await this.loadCss('https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css');
-    await this.loadScript('https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js');
+    if (!(window as any).L) {
+      await this.loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+      await this.loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+    }
+    if (!(window as any).L?.Control?.Draw) {
+      await this.loadCss('https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css');
+      await this.loadScript('https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js');
+    }
   }
 
   private initMap(): void {

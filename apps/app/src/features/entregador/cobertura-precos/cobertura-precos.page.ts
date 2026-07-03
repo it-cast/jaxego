@@ -13,6 +13,7 @@ interface ZonaRow extends ZonaItem {
   editValue: number | string;
   saving: boolean;
   saveOk: boolean;
+  toggling: boolean;
 }
 
 @Component({
@@ -57,6 +58,7 @@ export class CoberturaPrecosPage implements OnInit {
             : (z.team_preco_cents !== null ? z.team_preco_cents / 100 : 0),
           saving: false,
           saveOk: false,
+          toggling: false,
         }))
       );
     } catch {
@@ -72,6 +74,25 @@ export class CoberturaPrecosPage implements OnInit {
 
   protected closeMap(): void {
     this.mapZona.set(null);
+  }
+
+  protected async toggleAtivo(z: ZonaRow): Promise<void> {
+    const next = !z.ativo;
+    // Optimistic update
+    this.zones.update(rows =>
+      rows.map(r => r.zona_id === z.zona_id ? { ...r, ativo: next, toggling: true } : r)
+    );
+    try {
+      await this.svc.patchZona(this.courierId, z.zona_id, { ativo: next });
+      this.zones.update(rows =>
+        rows.map(r => r.zona_id === z.zona_id ? { ...r, toggling: false } : r)
+      );
+    } catch {
+      // Rollback on error
+      this.zones.update(rows =>
+        rows.map(r => r.zona_id === z.zona_id ? { ...r, ativo: !next, toggling: false } : r)
+      );
+    }
   }
 
   protected startEdit(z: ZonaRow): void {
@@ -102,7 +123,7 @@ export class CoberturaPrecosPage implements OnInit {
       rows.map(r => r.zona_id === z.zona_id ? { ...r, saving: true } : r)
     );
     try {
-      await this.svc.setZonaPreco(this.courierId, z.zona_id, cents);
+      await this.svc.patchZona(this.courierId, z.zona_id, { preco_cents: cents });
       this.zones.update(rows =>
         rows.map(r =>
           r.zona_id === z.zona_id

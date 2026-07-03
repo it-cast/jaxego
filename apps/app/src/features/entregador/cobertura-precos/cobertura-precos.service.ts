@@ -37,6 +37,7 @@ export interface ZonaItem {
   zona_id: number;
   zona_nome: string;
   boundary: object | null;
+  ativo: boolean;
   team_preco_cents: number | null;
   courier_preco_cents: number | null;
 }
@@ -89,9 +90,9 @@ export class CoberturaPrecosService {
     );
   }
 
-  async setZonaPreco(courierId: number, zonaId: number, precoCents: number): Promise<void> {
+  async patchZona(courierId: number, zonaId: number, patch: { ativo?: boolean; preco_cents?: number }): Promise<void> {
     await firstValueFrom(
-      this.http.put(`/v1/couriers/${courierId}/zonas/${zonaId}`, { preco_cents: precoCents })
+      this.http.patch(`/v1/couriers/${courierId}/zonas/${zonaId}`, patch)
     );
   }
 }

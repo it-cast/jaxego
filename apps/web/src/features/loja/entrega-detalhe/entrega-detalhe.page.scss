@@ -33,6 +33,13 @@
   }
 }
 
+.jx-detail__main,
+.jx-detail__aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
 .jx-detail__meta {
   display: grid;
   grid-template-columns: auto 1fr;

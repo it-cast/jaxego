@@ -1,8 +1,22 @@
 <h1 class="jx-nova__title">Nova entrega</h1>
 
-<div class="jx-nova__layout">
-  <!-- LEFT: Form -->
-  <form class="jx-nova__form" [formGroup]="form" (submit)="$event.preventDefault(); submit()">
+<!-- Progress indicator -->
+<div class="jx-nova__steps" aria-label="Progresso">
+  <div class="jx-nova__step" [class.jx-nova__step--active]="step() === 1" [class.jx-nova__step--done]="step() === 2">
+    <span class="jx-nova__step-num">1</span>
+    <span class="jx-nova__step-label">Dados da entrega</span>
+  </div>
+  <div class="jx-nova__step-line" [class.jx-nova__step-line--done]="step() === 2"></div>
+  <div class="jx-nova__step" [class.jx-nova__step--active]="step() === 2">
+    <span class="jx-nova__step-num">2</span>
+    <span class="jx-nova__step-label">Equipe</span>
+  </div>
+</div>
+
+<!-- ══ PASSO 1: Formulário ══ -->
+@if (step() === 1) {
+  <form class="jx-nova__form jx-nova__form--solo" [formGroup]="form" (submit)="$event.preventDefault()">
+
     <!-- Coleta -->
     <fieldset class="jx-nova__section">
       <legend>Coleta</legend>
@@ -22,19 +36,10 @@
         formControlName="dropoff_address"
         placeholder="Rua, Av., ..."
       />
-      <jx-field
-        label="Número"
-        formControlName="dropoff_number"
-        inputmode="numeric"
-        [mono]="true"
-      />
-      <jx-field
-        label="CEP"
-        formControlName="cep"
-        inputmode="numeric"
-        [mono]="true"
-        placeholder="00000-000"
-      />
+      <jx-field label="Número" formControlName="dropoff_number" inputmode="numeric" [mono]="true" />
+      <jx-field label="Complemento (opcional)" formControlName="dropoff_complement" placeholder="Apto 201, Bloco B, Fundos..." />
+      <jx-field label="Referência (opcional)" formControlName="dropoff_reference" placeholder="Próximo ao mercado, casa amarela..." />
+      <jx-field label="CEP" formControlName="cep" inputmode="numeric" [mono]="true" placeholder="00000-000" />
       <label class="jx-nova__select">
         <span>Bairro de entrega</span>
         <select formControlName="dropoff_neighborhood_id">
@@ -44,13 +49,6 @@
           }
         </select>
       </label>
-
-      @if (outOfArea()) {
-        <div role="alert" class="jx-nova__e1">
-          Endereço fora da nossa área de cobertura. Confira o bairro.
-          <a class="jx-nova__interest" href="#">Avisar quando atendermos esse bairro</a>
-        </div>
-      }
     </fieldset>
 
     <!-- Destinatário -->
@@ -71,24 +69,9 @@
     <!-- Itens -->
     <fieldset class="jx-nova__section">
       <legend>Itens</legend>
-      <jx-field
-        label="O que vai ser entregue"
-        formControlName="items_description"
-        placeholder="1 pizza grande, 1 refrigerante 2L"
-      />
-      <jx-field
-        label="Quantidade"
-        formControlName="items_quantity"
-        inputmode="numeric"
-        [mono]="true"
-      />
-      <jx-field
-        label="Valor declarado (opcional)"
-        inputmode="decimal"
-        [mono]="true"
-        placeholder="R$ 0,00"
-        formControlName="declared_value"
-      />
+      <jx-field label="O que vai ser entregue" formControlName="items_description" placeholder="1 pizza grande, 1 refrigerante 2L" />
+      <jx-field label="Quantidade" formControlName="items_quantity" inputmode="numeric" [mono]="true" />
+      <jx-field label="Valor declarado (opcional)" inputmode="decimal" [mono]="true" placeholder="R$ 0,00" formControlName="declared_value" />
       <div class="jx-nova__packages">
         <span class="jx-nova__packages-label">Tamanho do pacote</span>
         <div class="jx-nova__packages-grid">
@@ -102,9 +85,7 @@
               <span class="jx-nova__pkg-icon"><fa-icon [icon]="iconBox" aria-hidden="true" /></span>
               <strong class="jx-nova__pkg-name">{{ pkg.nome }}</strong>
               <span class="jx-nova__pkg-desc">{{ pkg.descricao }}</span>
-              <span class="jx-nova__pkg-dims">
-                {{ pkg.comprimentoCm }}×{{ pkg.larguraCm }}×{{ pkg.alturaCm }}cm · até {{ pkg.pesoMaximoKg }}kg
-              </span>
+              <span class="jx-nova__pkg-dims">{{ pkg.comprimentoCm }}×{{ pkg.larguraCm }}×{{ pkg.alturaCm }}cm · até {{ pkg.pesoMaximoKg }}kg</span>
             </button>
           }
         </div>
@@ -123,24 +104,17 @@
         } @else {
           <div class="jx-nova__image-options">
             <label class="jx-nova__image-upload">
-              <fa-icon [icon]="iconBox" aria-hidden="true" />
-              <span>Selecionar da galeria</span>
+              <fa-icon [icon]="iconBox" aria-hidden="true" /><span>Selecionar da galeria</span>
               <input type="file" accept="image/*" (change)="onImageSelect($event)" hidden />
             </label>
             <label class="jx-nova__image-upload">
-              <fa-icon [icon]="iconCamera" aria-hidden="true" />
-              <span>Tirar foto</span>
+              <fa-icon [icon]="iconCamera" aria-hidden="true" /><span>Tirar foto</span>
               <input type="file" accept="image/*" capture="environment" (change)="onImageSelect($event)" hidden />
             </label>
           </div>
         }
       </div>
-
-      <jx-field
-        label="Observações para o entregador (opcional)"
-        formControlName="notes"
-        placeholder="Cuidado, não virar a caixa"
-      />
+      <jx-field label="Observações para o entregador (opcional)" formControlName="notes" placeholder="Cuidado, não virar a caixa" />
     </fieldset>
 
     <!-- Comprovação -->
@@ -155,12 +129,7 @@
         </select>
       </label>
       @if (proofMethod() === 'photo_reference') {
-        <jx-field
-          label="Nº do pedido"
-          formControlName="reference_number"
-          [mono]="true"
-          placeholder="2851"
-        />
+        <jx-field label="Nº do pedido" formControlName="reference_number" [mono]="true" placeholder="2851" />
       }
     </fieldset>
 
@@ -183,43 +152,18 @@
       <legend>Quando</legend>
       <div class="jx-nova__radios jx-nova__radios--2col">
         <label class="jx-nova__radio" [class.jx-nova__radio--sel]="deliveryMode() === 'immediate'">
-          <input
-            type="radio"
-            name="delivery_mode"
-            value="immediate"
-            [checked]="deliveryMode() === 'immediate'"
-            (change)="setDeliveryMode('immediate')"
-          />
-          <span>
-            <strong>Imediata</strong>
-            <small>Chamar entregador agora</small>
-          </span>
+          <input type="radio" name="delivery_mode" value="immediate" [checked]="deliveryMode() === 'immediate'" (change)="setDeliveryMode('immediate')" />
+          <span><strong>Imediata</strong><small>Chamar entregador agora</small></span>
         </label>
         <label class="jx-nova__radio" [class.jx-nova__radio--sel]="deliveryMode() === 'scheduled'">
-          <input
-            type="radio"
-            name="delivery_mode"
-            value="scheduled"
-            [checked]="deliveryMode() === 'scheduled'"
-            (change)="setDeliveryMode('scheduled')"
-          />
-          <span>
-            <strong>Agendada</strong>
-            <small>Escolher data e hora</small>
-          </span>
+          <input type="radio" name="delivery_mode" value="scheduled" [checked]="deliveryMode() === 'scheduled'" (change)="setDeliveryMode('scheduled')" />
+          <span><strong>Agendada</strong><small>Escolher data e hora</small></span>
         </label>
       </div>
-
       @if (deliveryMode() === 'scheduled') {
         <label class="jx-nova__select">
           <span>Data e hora do despacho</span>
-          <input
-            class="jx-nova__datetime"
-            type="datetime-local"
-            [min]="scheduledAtMin"
-            [value]="scheduledAt()"
-            (change)="scheduledAt.set($any($event.target).value); scheduledAtError.set(null)"
-          />
+          <input class="jx-nova__datetime" type="datetime-local" [min]="scheduledAtMin" [value]="scheduledAt()" (change)="scheduledAt.set($any($event.target).value); scheduledAtError.set(null)" />
         </label>
         @if (scheduledAtError()) {
           <p class="jx-nova__sched-err" role="alert">{{ scheduledAtError() }}</p>
@@ -227,64 +171,137 @@
       }
     </fieldset>
 
+    @if (resolveError()) {
+      <jx-error-state [message]="resolveError()!" retryLabel="Tentar de novo" (retry)="advanceToStep2()" />
+    }
+
+    <button
+      type="button"
+      class="jx-nova__cta"
+      [disabled]="resolving()"
+      [attr.aria-busy]="resolving() ? 'true' : null"
+      (click)="advanceToStep2()"
+    >
+      {{ resolving() ? 'Verificando cobertura...' : 'Avançar — escolher equipe' }}
+    </button>
+  </form>
+}
+
+<!-- ══ PASSO 2: Equipe ══ -->
+@if (step() === 2) {
+  <div class="jx-nova__step2">
+
+    <!-- Resumo da entrega -->
+    <div class="jx-nova__summary">
+      <div class="jx-nova__summary-row">
+        <span class="jx-nova__summary-label">Endereço</span>
+        <span class="jx-nova__summary-value">
+          {{ form.controls.dropoff_address.value }}{{ form.controls.dropoff_number.value ? ', ' + form.controls.dropoff_number.value : '' }}
+        </span>
+      </div>
+      <div class="jx-nova__summary-row">
+        <span class="jx-nova__summary-label">Bairro</span>
+        <span class="jx-nova__summary-value">{{ selectedNeighborhoodName }}</span>
+      </div>
+      <div class="jx-nova__summary-row">
+        <span class="jx-nova__summary-label">Destinatário</span>
+        <span class="jx-nova__summary-value">{{ form.controls.recipient_name.value }}</span>
+      </div>
+      @if (zonaNome()) {
+        <div class="jx-nova__summary-row">
+          <span class="jx-nova__summary-label">Zona identificada</span>
+          <span class="jx-nova__summary-value jx-nova__summary-value--zona">{{ zonaNome() }}</span>
+        </div>
+      } @else {
+        <div class="jx-nova__summary-row">
+          <span class="jx-nova__summary-label">Zona</span>
+          <span class="jx-nova__summary-value jx-nova__summary-value--muted">Não identificada — exibindo todas as equipes</span>
+        </div>
+      }
+    </div>
+
+    <!-- Seleção de equipes -->
+    <div class="jx-nova__teams-wrap">
+      <h2 class="jx-nova__teams-title">Selecione a equipe</h2>
+      <p class="jx-nova__teams-hint">
+        @if (zonaNome()) {
+          Equipes com entregadores ativos na zona <strong>{{ zonaNome() }}</strong>. Selecione ao menos uma.
+        } @else {
+          Selecione ao menos uma equipe para enviar a entrega.
+        }
+      </p>
+
+      @if (teamsOnline().length === 0) {
+        <p class="jx-nova__teams-empty">
+          @if (zonaNome()) {
+            Nenhuma equipe com entregadores disponíveis para a zona <strong>{{ zonaNome() }}</strong> no momento.
+          } @else {
+            Nenhuma equipe com entregadores online no momento.
+          }
+        </p>
+      }
+
+      @for (team of teamsOnline(); track team.id) {
+        <div class="jx-nova__team-card" [class.jx-nova__team-card--open]="openTeamId() === team.id" [class.jx-nova__team-card--selected]="isTeamSelected(team.id)">
+          <button type="button" class="jx-nova__team-header" (click)="toggleTeam(team.id)">
+            <label class="jx-nova__team-check" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="isTeamSelected(team.id)" (change)="toggleTeamSelection(team.id)" />
+            </label>
+            <span class="jx-nova__team-name">{{ team.name }}</span>
+            <span class="jx-nova__team-count">{{ team.couriers.length }} online</span>
+            <span class="jx-nova__team-chevron">{{ openTeamId() === team.id ? '▾' : '›' }}</span>
+          </button>
+          @if (openTeamId() === team.id) {
+            <div class="jx-nova__team-body">
+              @if (team.couriers.length === 0) {
+                <p class="jx-nova__team-none">Nenhum entregador online nesta equipe.</p>
+              }
+              @for (c of team.couriers; track c.id) {
+                <div class="jx-nova__courier-row">
+                  <div class="jx-nova__courier-avatar">{{ c.full_name.charAt(0) }}</div>
+                  <div class="jx-nova__courier-info">
+                    <span class="jx-nova__courier-name">{{ c.full_name }}</span>
+                    <span class="jx-nova__courier-meta">
+                      {{ c.avg_stars > 0 ? c.avg_stars + ' ★' : 'Sem avaliação' }}
+                      @if (c.price_cents != null) {
+                        · R$ {{ (c.price_cents / 100).toFixed(2).replace('.', ',') }}
+                      }
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (outOfArea()) {
+      <div role="alert" class="jx-nova__e1">
+        Endereço fora da nossa área de cobertura. Confira o bairro.
+      </div>
+    }
+
     @if (submitError()) {
       <jx-error-state [message]="submitError()!" retryLabel="Tentar de novo" (retry)="submit()" />
     }
 
-    <button type="submit" class="jx-nova__cta" [disabled]="!canSubmit()" [attr.aria-busy]="submitting() ? 'true' : null">
-      {{ submitLabel() }}
-    </button>
-  </form>
-
-  <!-- RIGHT: Teams accordion -->
-  <aside class="jx-nova__teams">
-    <h2 class="jx-nova__teams-title">Equipes disponíveis</h2>
-    <p class="jx-nova__teams-hint">Selecione ao menos uma equipe para enviar a entrega.</p>
-
-    @if (teamsOnline().length === 0) {
-      <p class="jx-nova__teams-empty">Nenhuma equipe com entregadores online no momento.</p>
-    }
-
-    @for (team of teamsOnline(); track team.id) {
-      <div class="jx-nova__team-card" [class.jx-nova__team-card--open]="openTeamId() === team.id" [class.jx-nova__team-card--selected]="isTeamSelected(team.id)">
-        <button type="button" class="jx-nova__team-header" (click)="toggleTeam(team.id)">
-          <label class="jx-nova__team-check" (click)="$event.stopPropagation()">
-            <input
-              type="checkbox"
-              [checked]="isTeamSelected(team.id)"
-              (change)="toggleTeamSelection(team.id)"
-            />
-          </label>
-          <span class="jx-nova__team-name">{{ team.name }}</span>
-          <span class="jx-nova__team-count">{{ team.couriers.length }} online</span>
-          <span class="jx-nova__team-chevron">{{ openTeamId() === team.id ? '▾' : '›' }}</span>
-        </button>
-
-        @if (openTeamId() === team.id) {
-          <div class="jx-nova__team-body">
-            @if (team.couriers.length === 0) {
-              <p class="jx-nova__team-none">Nenhum entregador online nesta equipe.</p>
-            }
-            @for (c of team.couriers; track c.id) {
-              <div class="jx-nova__courier-row">
-                <div class="jx-nova__courier-avatar">{{ c.full_name.charAt(0) }}</div>
-                <div class="jx-nova__courier-info">
-                  <span class="jx-nova__courier-name">{{ c.full_name }}</span>
-                  <span class="jx-nova__courier-meta">
-                    {{ c.avg_stars > 0 ? c.avg_stars + ' ★' : 'Sem avaliação' }}
-                    @if (c.price_cents != null) {
-                      · R$ {{ (c.price_cents / 100).toFixed(2).replace('.', ',') }}
-                    }
-                  </span>
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
-    }
-  </aside>
-</div>
+    <div class="jx-nova__step2-actions">
+      <button type="button" class="jx-nova__back-btn" (click)="backToStep1()">
+        ← Voltar
+      </button>
+      <button
+        type="button"
+        class="jx-nova__cta jx-nova__cta--flex"
+        [disabled]="!canSubmit()"
+        [attr.aria-busy]="submitting() ? 'true' : null"
+        (click)="submit()"
+      >
+        {{ submitLabel() }}
+      </button>
+    </div>
+  </div>
+}
 
 @if (lightboxUrl()) {
   <div class="jx-nova__lightbox" (click)="lightboxUrl.set(null)">

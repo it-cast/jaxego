@@ -2,14 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
-import { LiveMapComponent } from '@jaxego/shared/components/live-map/live-map.component';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen, faMapLocationDot } from '@fortawesome/free-solid-svg-icons';
 import { PageHeaderComponent, PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
@@ -43,7 +41,6 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingSkeletonComponent,
-    LiveMapComponent,
     PaymentBadgeComponent,
     FaIconComponent,
     PageHeaderComponent,
@@ -66,14 +63,6 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
       } @else {
         <jx-page-header title="Entrega ativa" backLink="/entregador/inicio" />
         <div class="jx-active">
-          @if (mapLat() !== null && mapLng() !== null) {
-            <jx-live-map
-              [lat]="mapLat()"
-              [lng]="mapLng()"
-              [ariaLabel]="mapAria()"
-            />
-          }
-
           <section class="jx-active__card">
             <div class="jx-active__card-row">
               <fa-icon [icon]="iconStore" class="jx-active__card-icon" aria-hidden="true" />
@@ -112,11 +101,20 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
               <span class="jx-active__eyebrow">Entrega</span>
             </div>
             @if (delivery()!.dropoff_address) {
-              <strong>
-                {{ delivery()!.dropoff_address }}@if (delivery()!.dropoff_number) {, {{ delivery()!.dropoff_number }}}
-              </strong>
               @if (delivery()!.recipient_name) {
-                <p class="jx-active__muted">{{ delivery()!.recipient_name }}</p>
+                <strong class="jx-active__store-name">{{ delivery()!.recipient_name }}</strong>
+              }
+              @if (delivery()!.recipient_phone) {
+                <p class="jx-active__muted">{{ fmtPhone(delivery()!.recipient_phone) }}</p>
+              }
+              <p class="jx-active__muted">
+                {{ delivery()!.dropoff_address }}@if (delivery()!.dropoff_number) {, {{ delivery()!.dropoff_number }}}@if (delivery()!.dropoff_neighborhood_name) {, {{ delivery()!.dropoff_neighborhood_name }}}
+              </p>
+              @if (delivery()!.dropoff_complement) {
+                <p class="jx-active__muted">{{ delivery()!.dropoff_complement }}</p>
+              }
+              @if (delivery()!.dropoff_reference) {
+                <p class="jx-active__muted jx-active__reference">{{ delivery()!.dropoff_reference }}</p>
               }
             } @else {
               <strong>Bairro de destino</strong>
@@ -276,6 +274,9 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         margin: 0;
         font-size: var(--jx-text-sm);
         color: var(--jx-color-neutral-500);
+      }
+      .jx-active__reference {
+        font-style: italic;
       }
       .jx-active__notes {
         margin: 0;
@@ -480,17 +481,13 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly productImageUrl = signal<string | null>(null);
   protected readonly showLightbox = signal(false);
 
-  /** Map focuses the destination after pickup (COLETADA), else the pickup point. */
-  protected readonly mapLat = computed<number | null>(() => {
-    const d = this.delivery();
-    if (!d) return null;
-    return d.state === 'COLETADA' && d.dropoff_lat != null ? d.dropoff_lat : d.pickup_lat;
-  });
-  protected readonly mapLng = computed<number | null>(() => {
-    const d = this.delivery();
-    if (!d) return null;
-    return d.state === 'COLETADA' && d.dropoff_lng != null ? d.dropoff_lng : d.pickup_lng;
-  });
+  protected fmtPhone(e164: string | null): string {
+    if (!e164) return '';
+    const digits = e164.replace(/^\+55/, '');
+    if (digits.length === 11) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return e164;
+  }
 
   protected packageLabel(): string {
     return fmtPackage(this.delivery() ?? {});
@@ -498,12 +495,6 @@ export class EntregadorEntregaAtivaPage implements OnInit {
 
   protected payMethod(): PaymentMethod {
     return paymentMethodOf(this.delivery()?.payment_method);
-  }
-
-  protected mapAria(): string {
-    return this.delivery()?.state === 'COLETADA'
-      ? 'Mapa do destino da entrega'
-      : 'Mapa do ponto de coleta';
   }
 
   async ngOnInit(): Promise<void> {

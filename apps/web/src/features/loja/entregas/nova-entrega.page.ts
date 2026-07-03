@@ -46,12 +46,18 @@ interface TeamOnline {
   couriers: CourierOnline[];
 }
 
+interface TeamsForAddressResponse {
+  zona_id: number | null;
+  zona_name: string | null;
+  teams: TeamOnline[];
+}
+
 /**
- * Tela 12 — new delivery form (F-03 / UI-SPEC §2). Reactive form, sections by
- * fieldset, BR masks (phone→E.164, CEP, BRL), inline validation, estimate before
- * confirm (RN-030), E1 (out of area, blocks), E2 (0 couriers, non-blocking),
- * E4 (plan limit → upgrade modal). Only `direct` payment is enabled; card/PIX and
- * the OTP proof are selectable-disabled "em breve". Tokens only — no hex.
+ * Tela 12 — new delivery form (F-03 / UI-SPEC §2). 2-step wizard:
+ * Step 1: fill all delivery data (address, recipient, items, options).
+ * Step 2: select team(s) filtered to the zone resolved from the address.
+ * Zone resolution geocodes the dropoff address and does point-in-polygon
+ * matching — couriers with ativo=False for that zone are excluded.
  */
 @Component({
   selector: 'jx-nova-entrega',
@@ -81,6 +87,8 @@ export class NovaEntregaPage {
     pickup_address: ['', [Validators.required, Validators.minLength(3)]],
     dropoff_address: ['', [Validators.required, Validators.minLength(3)]],
     dropoff_number: [''],
+    dropoff_complement: [''],
+    dropoff_reference: [''],
     cep: [''],
     dropoff_neighborhood_id: [null as number | null, [Validators.required]],
     recipient_name: ['', [Validators.required, Validators.minLength(2)]],
@@ -88,7 +96,6 @@ export class NovaEntregaPage {
     items_description: ['', [Validators.required]],
     items_quantity: ['1'],
     declared_value: [''],
-    // Pacote (MG-1): peso em kg + dimensões em cm (opcionais).
     weight_kg: [''],
     length_cm: [''],
     width_cm: [''],
@@ -138,7 +145,14 @@ export class NovaEntregaPage {
   protected readonly submitting = signal(false);
   protected readonly submitError = signal<string | null>(null);
 
-  // Teams accordion
+  // ── Wizard state ──────────────────────────────────────────────────────────
+  protected readonly step = signal<1 | 2>(1);
+  protected readonly resolving = signal(false);
+  protected readonly resolveError = signal<string | null>(null);
+  protected readonly zonaId = signal<number | null>(null);
+  protected readonly zonaNome = signal<string | null>(null);
+
+  // Teams shown in step 2 (filtered by zone).
   protected readonly teamsOnline = signal<TeamOnline[]>([]);
   protected readonly openTeamId = signal<number | null>(null);
   protected readonly selectedTeamIds = signal<Set<number>>(new Set());
@@ -148,8 +162,6 @@ export class NovaEntregaPage {
   protected readonly showUpgrade = signal(false);
   protected readonly upgradePlans = signal<Plan[]>([]);
 
-  // Phase 10 — online payment (card/pix). F-03 E3: a refusal does NOT create the
-  // delivery; the store gets retry or switch-to-direct (no form data lost).
   protected readonly paymentMethod = signal<'direct' | 'pix' | 'card'>('direct');
   protected readonly iconBox = faBoxOpen;
   protected readonly iconCamera = faCamera;
@@ -169,8 +181,10 @@ export class NovaEntregaPage {
   constructor() {
     const destroyRef = inject(DestroyRef);
     void this.loadNeighborhoods();
-    void this.loadTeamsOnline();
-    interval(60_000).pipe(takeUntilDestroyed(destroyRef)).subscribe(() => void this.loadTeamsOnline());
+    // Refresh team list every minute while on step 2.
+    interval(60_000).pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      if (this.step() === 2) void this.refreshTeams();
+    });
     const me = this.auth.me();
     const parts = [me?.address, me?.address_number, me?.address_neighborhood].filter(Boolean);
     const pickup = parts.length ? parts.join(', ') : me?.trade_name;
@@ -178,27 +192,18 @@ export class NovaEntregaPage {
       this.form.controls.pickup_address.setValue(pickup);
     }
     this.selectPackage(this.packageSizes[0]);
-    // Apply BR masks reactively (no raw type="number"; mask on every keystroke).
     this.form.controls.cep.valueChanges.subscribe((v) => {
       const masked = maskCep(v ?? '');
-      if (masked !== v) {
-        this.form.controls.cep.setValue(masked, { emitEvent: false });
-      }
-      if (isCepComplete(masked)) {
-        this.outOfArea.set(false);
-      }
+      if (masked !== v) this.form.controls.cep.setValue(masked, { emitEvent: false });
+      if (isCepComplete(masked)) this.outOfArea.set(false);
     });
     this.form.controls.recipient_phone.valueChanges.subscribe((v) => {
       const masked = maskPhone(v ?? '');
-      if (masked !== v) {
-        this.form.controls.recipient_phone.setValue(masked, { emitEvent: false });
-      }
+      if (masked !== v) this.form.controls.recipient_phone.setValue(masked, { emitEvent: false });
     });
     this.form.controls.declared_value.valueChanges.subscribe((v) => {
       const masked = maskBrl(v ?? '');
-      if (masked !== v) {
-        this.form.controls.declared_value.setValue(masked, { emitEvent: false });
-      }
+      if (masked !== v) this.form.controls.declared_value.setValue(masked, { emitEvent: false });
     });
     this.form.controls.payment_method.valueChanges.subscribe((v) => {
       this.paymentMethod.set((v as 'direct' | 'pix' | 'card') ?? 'direct');
@@ -220,17 +225,105 @@ export class NovaEntregaPage {
     });
   }
 
-  /** The card is RSA-encrypted by jx-card-form; only the opaque blob arrives here. */
+  // ── Step 1 validation ─────────────────────────────────────────────────────
+
+  protected step1Valid(): boolean {
+    const c = this.form.controls;
+    if (c.pickup_address.invalid) return false;
+    if (c.dropoff_address.invalid) return false;
+    if (!c.dropoff_neighborhood_id.value) return false;
+    if (c.recipient_name.invalid) return false;
+    if (!c.recipient_phone.value || !isPhoneComplete(c.recipient_phone.value)) return false;
+    if (c.items_description.invalid) return false;
+    return true;
+  }
+
+  protected async advanceToStep2(): Promise<void> {
+    if (!this.step1Valid()) {
+      this.form.controls.pickup_address.markAsTouched();
+      this.form.controls.dropoff_address.markAsTouched();
+      this.form.controls.dropoff_neighborhood_id.markAsTouched();
+      this.form.controls.recipient_name.markAsTouched();
+      this.form.controls.recipient_phone.markAsTouched();
+      this.form.controls.items_description.markAsTouched();
+      return;
+    }
+
+    this.resolving.set(true);
+    this.resolveError.set(null);
+    this.selectedTeamIds.set(new Set());
+
+    const v = this.form.getRawValue();
+    try {
+      const res = await firstValueFrom(
+        this.http.post<TeamsForAddressResponse>('/v1/deliveries/teams-for-address', {
+          dropoff_address: v.dropoff_address,
+          dropoff_number: v.dropoff_number || null,
+          dropoff_neighborhood_id: v.dropoff_neighborhood_id,
+          cep: v.cep || null,
+        })
+      );
+      this.zonaId.set(res.zona_id);
+      this.zonaNome.set(res.zona_name);
+      this.teamsOnline.set(res.teams);
+      this.step.set(2);
+    } catch {
+      this.resolveError.set('Não foi possível verificar a cobertura do endereço. Tente de novo.');
+    } finally {
+      this.resolving.set(false);
+    }
+  }
+
+  private async refreshTeams(): Promise<void> {
+    const v = this.form.getRawValue();
+    try {
+      const res = await firstValueFrom(
+        this.http.post<TeamsForAddressResponse>('/v1/deliveries/teams-for-address', {
+          dropoff_address: v.dropoff_address,
+          dropoff_number: v.dropoff_number || null,
+          dropoff_neighborhood_id: v.dropoff_neighborhood_id,
+          cep: v.cep || null,
+        })
+      );
+      this.teamsOnline.set(res.teams);
+    } catch { /* keep current list */ }
+  }
+
+  protected backToStep1(): void {
+    this.step.set(1);
+    this.resolveError.set(null);
+  }
+
+  // ── Teams ─────────────────────────────────────────────────────────────────
+
+  protected toggleTeam(teamId: number | null): void {
+    this.openTeamId.set(this.openTeamId() === teamId ? null : teamId);
+  }
+
+  protected toggleTeamSelection(teamId: number): void {
+    const current = new Set(this.selectedTeamIds());
+    if (current.has(teamId)) current.delete(teamId); else current.add(teamId);
+    this.selectedTeamIds.set(current);
+  }
+
+  protected isTeamSelected(teamId: number): boolean {
+    return this.selectedTeamIds().has(teamId);
+  }
+
+  protected get selectedNeighborhoodName(): string {
+    const id = this.form.controls.dropoff_neighborhood_id.value;
+    return this.neighborhoods().find(n => n.id === id)?.name ?? '';
+  }
+
+  // ── Image ─────────────────────────────────────────────────────────────────
+
   protected onDeliveryCardEncrypted(blob: string): void {
     this.cardBlob = blob;
     void this.submit();
   }
 
-  protected retryPayment(): void {
-    this.deliveryRefused.set(false);
-  }
+  protected retryPayment(): void { this.deliveryRefused.set(false); }
 
-  /** F-03 E3 exit: switch to direct WITHOUT losing the filled form. */
   protected switchToDirect(): void {
     this.deliveryRefused.set(false);
     this.cardBlob = null;
@@ -260,55 +353,22 @@ export class NovaEntregaPage {
           { content_type: this.imageFile.type || 'image/jpeg' }
         )
       );
-      await fetch(presign.presigned_url, {
-        method: presign.method,
-        headers: presign.headers,
-        body: this.imageFile,
-      });
+      await fetch(presign.presigned_url, { method: presign.method, headers: presign.headers, body: this.imageFile });
     } catch { /* non-blocking */ }
   }
 
-  private async loadTeamsOnline(): Promise<void> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get<TeamOnline[]>('/v1/deliveries/teams-online')
-      );
-      this.teamsOnline.set(res);
-    } catch {
-      this.teamsOnline.set([]);
-    }
-  }
-
-  protected toggleTeam(teamId: number | null): void {
-    this.openTeamId.set(this.openTeamId() === teamId ? null : teamId);
-  }
-
-  protected toggleTeamSelection(teamId: number): void {
-    const current = new Set(this.selectedTeamIds());
-    if (current.has(teamId)) {
-      current.delete(teamId);
-    } else {
-      current.add(teamId);
-    }
-    this.selectedTeamIds.set(current);
-  }
-
-  protected isTeamSelected(teamId: number): boolean {
-    return this.selectedTeamIds().has(teamId);
-  }
+  // ── Neighborhoods ─────────────────────────────────────────────────────────
 
   private async loadNeighborhoods(): Promise<void> {
-    // Best-effort catalog read; on failure the store types nothing and the
-    // backend enforces E1 on submit (graceful degradation).
     try {
-      const res = await firstValueFrom(
-        this.http.get<NeighborhoodOption[]>('/v1/neighborhoods/catalog'),
-      );
+      const res = await firstValueFrom(this.http.get<NeighborhoodOption[]>('/v1/neighborhoods/catalog'));
       this.neighborhoods.set(res as NeighborhoodOption[]);
     } catch {
       this.neighborhoods.set([]);
     }
   }
+
+  // ── Validation helpers ────────────────────────────────────────────────────
 
   protected phoneError(): string | null {
     const c = this.form.controls.recipient_phone;
@@ -318,7 +378,6 @@ export class NovaEntregaPage {
     return null;
   }
 
-  /** Mínimo para datetime-local (1 min no futuro, em horário local). */
   protected get scheduledAtMin(): string {
     const d = new Date(Date.now() + 1 * 60 * 1000);
     const pad = (n: number) => String(n).padStart(2, '0');
@@ -328,38 +387,29 @@ export class NovaEntregaPage {
   protected setDeliveryMode(mode: 'immediate' | 'scheduled'): void {
     this.deliveryMode.set(mode);
     this.scheduledAtError.set(null);
-    if (mode === 'immediate') {
-      this.scheduledAt.set('');
-    }
+    if (mode === 'immediate') this.scheduledAt.set('');
     this.submitLabel.set(mode === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
   }
 
   protected canSubmit(): boolean {
-    if (!this.form.valid || this.outOfArea() || this.submitting() || this.selectedTeamIds().size === 0) {
-      return false;
-    }
-    if (this.deliveryMode() === 'scheduled' && !this.scheduledAt()) {
-      return false;
-    }
+    if (this.step() !== 2) return false;
+    if (!this.form.valid || this.outOfArea() || this.submitting() || this.selectedTeamIds().size === 0) return false;
+    if (this.deliveryMode() === 'scheduled' && !this.scheduledAt()) return false;
     return true;
   }
+
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   protected async submit(): Promise<void> {
     if (!this.canSubmit()) {
       this.form.markAllAsTouched();
       return;
     }
-    // Validate scheduled date before submitting.
     if (this.deliveryMode() === 'scheduled') {
       const picked = this.scheduledAt();
-      if (!picked) {
-        this.scheduledAtError.set('Selecione a data e o horário de agendamento.');
-        return;
-      }
-      const pickedDate = new Date(picked);
-      if (pickedDate.getTime() < Date.now() + 1 * 60 * 1000) {
-        this.scheduledAtError.set('O horário deve ser pelo menos 1 minuto no futuro.');
-        return;
+      if (!picked) { this.scheduledAtError.set('Selecione a data e o horário de agendamento.'); return; }
+      if (new Date(picked).getTime() < Date.now() + 60_000) {
+        this.scheduledAtError.set('O horário deve ser pelo menos 1 minuto no futuro.'); return;
       }
       this.scheduledAtError.set(null);
     }
@@ -381,6 +431,8 @@ export class NovaEntregaPage {
       dropoff_neighborhood_id: v.dropoff_neighborhood_id!,
       dropoff_address: v.dropoff_address!,
       dropoff_number: v.dropoff_number || null,
+      dropoff_complement: v.dropoff_complement || null,
+      dropoff_reference: v.dropoff_reference || null,
       recipient_name: v.recipient_name!,
       recipient_phone_e164: phoneToE164(v.recipient_phone!),
       items_description: v.items_description || null,
@@ -416,35 +468,19 @@ export class NovaEntregaPage {
     this.submitting.set(false);
     this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
 
-    if (result.planLimit) {
-      await this.openUpgrade();
-      return;
-    }
-    if (result.code === 'dropoff_out_of_area') {
-      this.outOfArea.set(true);
-      return;
-    }
-    this.submitError.set(
-      result.message ?? 'Não foi possível criar a entrega. Tente de novo.',
-    );
+    if (result.planLimit) { await this.openUpgrade(); return; }
+    if (result.code === 'dropoff_out_of_area') { this.outOfArea.set(true); return; }
+    this.submitError.set(result.message ?? 'Não foi possível criar a entrega. Tente de novo.');
   }
 
   private async openUpgrade(): Promise<void> {
     try {
       const plans = await firstValueFrom(this.http.get<Plan[]>('/v1/plans'));
       this.upgradePlans.set(plans);
-    } catch {
-      this.upgradePlans.set([]);
-    }
+    } catch { this.upgradePlans.set([]); }
     this.showUpgrade.set(true);
   }
 
-  protected onUpgradeDismiss(): void {
-    // Lossless: the form keeps what was filled (E4, anti-dark-pattern).
-    this.showUpgrade.set(false);
-  }
-
-  protected onChoosePlan(): void {
-    void this.router.navigate(['/loja/plano']);
-  }
+  protected onUpgradeDismiss(): void { this.showUpgrade.set(false); }
+  protected onChoosePlan(): void { void this.router.navigate(['/loja/plano']); }
 }

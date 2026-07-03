@@ -273,10 +273,20 @@ async def list_unanswered_pool(
         .scalars()
         .all()
     )
+    # Pre-load courier zone rows once — used for both eligibility and pricing.
+    cz_rows = list(
+        (await session.execute(
+            select(CourierZona).where(CourierZona.courier_id == courier_id)
+        )).scalars()
+    )
+    zona_inactive_ids: set[int] = {cz.zona_id for cz in cz_rows if not cz.ativo}
+    cz_map: dict[int, int] = {cz.zona_id: cz.preco_cents for cz in cz_rows if cz.ativo}
+
     eligible = [
         d
         for d in deliveries
-        if not d.team_ids or courier.team_id in d.team_ids
+        if (not d.team_ids or courier.team_id in d.team_ids)
+        and (d.zona_id is None or d.zona_id not in zona_inactive_ids)
     ]
     if not eligible:
         return []
@@ -300,13 +310,6 @@ async def list_unanswered_pool(
             select(CourierPricingTable).where(CourierPricingTable.courier_id == courier_id)
         )).scalars()
     )
-    # Pre-load zone price maps to avoid N+1 in the list comprehension below.
-    cz_map: dict[int, int] = {
-        cz.zona_id: cz.preco_cents
-        for cz in (await session.execute(
-            select(CourierZona).where(CourierZona.courier_id == courier_id)
-        )).scalars()
-    }
     tz_map: dict[int, int] = {}
     if courier is not None and courier.team_id is not None:
         tz_map = {

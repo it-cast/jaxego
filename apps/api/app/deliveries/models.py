@@ -127,6 +127,7 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     dropoff_address: Mapped[str] = mapped_column(String(255), nullable=False)
     dropoff_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     dropoff_complement: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    dropoff_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # Revealed BEFORE pickup (the offer, Phase 8): neighborhood + distance only.
     dropoff_neighborhood_id: Mapped[int] = mapped_column(
         BIG_ID,
