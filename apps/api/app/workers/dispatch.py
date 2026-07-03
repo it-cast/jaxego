@@ -85,10 +85,16 @@ async def advance_offer(
     delivery_id: int,
     ctx: dict[str, Any] | None = None,
 ) -> bool:
-    """Open the next candidate; return False when the queue is exhausted (E1).
+    """Open the next candidate; return False when no eligible courier remains.
 
-    Caller holds the `cascade:{id}` lock (decline) OR runs in the deferred job
-    (timeout). Only acts while the delivery is still CRIADA.
+    On queue exhaustion, rebuilds the candidate list excluding only confirmed
+    declines (explicit reject + MAX_TIMEOUTS reached). This naturally picks up:
+      - couriers who came online after the initial queue was built
+      - couriers who timed out once but haven't hit the exclusion limit yet
+
+    Only moves to the unanswered pool when EVERY eligible courier (with no
+    exclusions) is already in the declined set — meaning there is genuinely
+    nobody left to offer the delivery to.
     """
     delivery = await session.get(Delivery, delivery_id)
     if delivery is None or delivery.state != "CRIADA":
@@ -97,15 +103,14 @@ async def advance_offer(
 
     cfg = await _area_config(session, area_id)
     courier_id = await offer_state.next_candidate(r, delivery_id)
+
     if courier_id is None:
-        # E1 — this batch is exhausted. Check whether EVERY eligible courier has
-        # been excluded (decline OR 10x timeout) — if so this is not a transient
-        # "nobody online right now" gap, it is a dead end: move to the unanswered
-        # pool instead of letting the 5-min sweep retry the same excluded people
-        # forever.
         await offer_state.clear_candidates(r, delivery_id)
         declined = await offer_state.get_declined(r, delivery_id)
-        raw_eligible = await cascade.build_candidates(
+
+        # Rebuild excluding only confirmed declines — picks up couriers who came
+        # online mid-cascade or who timed out below MAX_TIMEOUTS (still eligible).
+        fresh = await cascade.build_candidates(
             session,
             area_id=area_id,
             merchant_id=delivery.merchant_id,
@@ -114,19 +119,46 @@ async def advance_offer(
             distance_m=delivery.distance_m,
             zona_id=delivery.zona_id,
             team_ids=delivery.team_ids,
-            excluded_ids=set(),
+            excluded_ids=declined,
         )
-        if raw_eligible and set(raw_eligible) <= declined:
-            from app.deliveries import service as delivery_service
+        if fresh:
+            ttl = cfg.timeout_oferta_s * (len(fresh) + 1)
+            await offer_state.set_candidates(
+                r, delivery_id=delivery_id, courier_ids=fresh, ttl_s=ttl
+            )
+            courier_id = await offer_state.next_candidate(r, delivery_id)
+            logger.info(
+                "dispatch.cascade.refreshed",
+                area_id=area_id,
+                delivery_id=delivery_id,
+                new_count=len(fresh),
+            )
 
-            await delivery_service.move_to_unanswered_pool(session, delivery_id=delivery_id)
-            await session.commit()
-            logger.info("dispatch.cascade.pooled", area_id=area_id, delivery_id=delivery_id)
+        if courier_id is None:
+            # Truly exhausted — all eligible either declined or are offline.
+            # Check if EVERY eligible courier (no exclusions) is in the declined
+            # set. If so, pool it; otherwise the 5-min sweep will retry.
+            raw_eligible = await cascade.build_candidates(
+                session,
+                area_id=area_id,
+                merchant_id=delivery.merchant_id,
+                pickup_nbhd_id=delivery.dropoff_neighborhood_id,
+                dropoff_nbhd_id=delivery.dropoff_neighborhood_id,
+                distance_m=delivery.distance_m,
+                zona_id=delivery.zona_id,
+                team_ids=delivery.team_ids,
+                excluded_ids=set(),
+            )
+            if raw_eligible and set(raw_eligible) <= declined:
+                from app.deliveries import service as delivery_service
+
+                await delivery_service.move_to_unanswered_pool(session, delivery_id=delivery_id)
+                await session.commit()
+                logger.info("dispatch.cascade.pooled", area_id=area_id, delivery_id=delivery_id)
+            else:
+                logger.info("dispatch.cascade.exhausted", area_id=area_id, delivery_id=delivery_id)
+                await enqueue_push(delivery_id=delivery_id, reason="exhausted", ctx=ctx)
             return False
-
-        logger.info("dispatch.cascade.exhausted", area_id=area_id, delivery_id=delivery_id)
-        await enqueue_push(delivery_id=delivery_id, reason="exhausted", ctx=ctx)
-        return False
 
     await _open_for_courier(
         session,
