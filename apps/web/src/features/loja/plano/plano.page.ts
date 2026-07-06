@@ -1,6 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ViewChild,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -20,15 +22,7 @@ import {
 } from './components/jx-checkout-method-toggle.component';
 import { CardFormComponent } from './components/jx-card-form.component';
 import { PixQrComponent } from './components/jx-pix-qr.component';
-import { PlanCompareComponent } from './components/jx-plan-compare.component';
 
-/**
- * Seleção de plano (tela 16, UI-SPEC §6) — plan management + subscription status +
- * charge history. Cards are data-driven by GET /v1/plans (SEED values — DRV-009,
- * zero hardcode). The subscription banner + history are Phase 10. The "Faturas de
- * taxas" wireframe section is OUT (Phase 11) — rendered as a disabled placeholder,
- * never fake data.
- */
 @Component({
   selector: 'jx-plano',
   standalone: true,
@@ -41,7 +35,6 @@ import { PlanCompareComponent } from './components/jx-plan-compare.component';
     CheckoutMethodToggleComponent,
     CardFormComponent,
     PixQrComponent,
-    PlanCompareComponent,
   ],
   template: `
     <main class="jx-plano">
@@ -52,52 +45,21 @@ import { PlanCompareComponent } from './components/jx-plan-compare.component';
 
       @if (subscription(); as sub) {
         <jx-subscription-status
+          class="jx-plano__status"
           [status]="sub.billing_status"
           [amountCents]="sub.amount_cents"
           [nextDueAt]="sub.next_due_at"
+          [planName]="currentPlanName()"
         />
       }
 
       @if (plans().length === 0) {
-        <jx-loading-skeleton variant="block" height="160px" />
-      } @else if (subscription()?.billing_status === 'active') {
-        <section class="jx-plano__compare" aria-label="Mudar de plano">
-          <jx-plan-compare
-            [planList]="plans()"
-            [current]="current()"
-            [currentPrice]="subscription()?.amount_cents ?? 0"
-            (upgrade)="onPlanChange($event.codename)"
-            (downgrade)="onPlanChange($event.codename)"
-          />
-        </section>
+        <jx-loading-skeleton variant="block" height="56px" />
       } @else {
-        <section class="jx-plano__grid" aria-label="Planos disponíveis">
-          @for (plan of plans(); track plan.codename) {
-            <jx-plan-card [plan]="plan" [selected]="plan.codename === current()" />
-          }
-        </section>
+        <button type="button" class="jx-plano__change-btn" (click)="openPlanModal()">
+          Alterar plano
+        </button>
       }
-
-      <section class="jx-plano__checkout" aria-label="Pagamento da assinatura">
-        <h2 class="jx-h2">Pagamento</h2>
-        <jx-checkout-method-toggle
-          [method]="method()"
-          (methodChange)="onMethodChange($event)"
-        />
-        @if (method() === 'card') {
-          <jx-card-form ctaLabel="Confirmar pagamento" (cardEncrypted)="onCardEncrypted($event)" />
-        } @else {
-          @if (subscription()?.qr_code; as qr) {
-            <jx-pix-qr
-              [copyPaste]="qr"
-              [image]="subscription()?.qr_code_base64 ?? null"
-              pixState="aguardando"
-            />
-          } @else {
-            <p class="jx-plano__pix-hint">Gere o PIX ao confirmar para ativar por aprovação automática.</p>
-          }
-        }
-      </section>
 
       <section class="jx-plano__history" aria-label="Histórico de cobranças">
         <h2 class="jx-h2">Cobranças</h2>
@@ -109,6 +71,71 @@ import { PlanCompareComponent } from './components/jx-plan-compare.component';
         <p class="jx-plano__placeholder">Disponível em breve.</p>
       </section>
     </main>
+
+    <!-- Modal: seleção de plano -->
+    @if (showPlanModal()) {
+      <div class="jx-modal-overlay" (click)="closePlanModal()" role="dialog" aria-modal="true" aria-label="Alterar plano">
+        <div class="jx-modal" (click)="$event.stopPropagation()">
+          <div class="jx-modal__header">
+            <h2 class="jx-modal__title">Alterar plano</h2>
+            <button type="button" class="jx-modal__close" aria-label="Fechar" (click)="closePlanModal()">×</button>
+          </div>
+          <div class="jx-modal__body jx-plano__plan-grid">
+            @for (plan of plans(); track plan.codename) {
+              <jx-plan-card
+                [plan]="plan"
+                [selected]="plan.codename === current()"
+                (choose)="onPlanSelected($event)"
+              />
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Modal: pagamento -->
+    @if (showPaymentModal()) {
+      <div class="jx-modal-overlay" role="dialog" aria-modal="true" aria-label="Pagamento">
+        <div class="jx-modal jx-modal--narrow" (click)="$event.stopPropagation()">
+          <div class="jx-modal__header">
+            <h2 class="jx-modal__title">Pagamento</h2>
+            <button type="button" class="jx-modal__close" aria-label="Fechar" (click)="closePaymentModal()">×</button>
+          </div>
+          <div class="jx-modal__body">
+            <jx-checkout-method-toggle
+              [method]="method()"
+              (methodChange)="onMethodChange($event)"
+            />
+            @if (method() === 'card') {
+              <jx-card-form ctaLabel="Confirmar pagamento" (cardEncrypted)="onCardEncrypted($event)" />
+            } @else {
+              @if (isPixAutoPending()) {
+                <jx-pix-qr
+                  [copyPaste]="subscription()!.qr_code!"
+                  [image]="subscription()?.qr_code_base64 ?? null"
+                  pixState="aguardando"
+                />
+                <p class="jx-plano__pix-hint">
+                  Abra seu app bancário e aprove a autorização de débito automático PIX.
+                </p>
+              } @else {
+                <p class="jx-plano__pix-hint">
+                  Ao confirmar, você autoriza o débito automático mensal via PIX.
+                </p>
+                <button
+                  type="button"
+                  class="jx-plano__pix-btn"
+                  [disabled]="pixLoading()"
+                  (click)="onPixSubmit()"
+                >
+                  {{ pixLoading() ? 'Aguarde...' : 'Autorizar PIX Recorrente' }}
+                </button>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
   `,
   styleUrl: './plano.page.scss',
 })
@@ -121,62 +148,128 @@ export class PlanoPage {
   protected readonly subscription = signal<SubscriptionView | null>(null);
   protected readonly charges = signal<ChargeHistoryItem[]>([]);
   protected readonly method = signal<CheckoutMethod>('card');
+  protected readonly showPlanModal = signal(false);
+  protected readonly showPaymentModal = signal(false);
+  protected readonly pixLoading = signal(false);
+  protected readonly currentPlanName = computed(() => {
+    const plan = this.plans().find((p) => p.codename === this.current());
+    return plan?.nome ?? null;
+  });
+  protected readonly isPixAutoPending = computed(() => {
+    const sub = this.subscription();
+    return (
+      sub?.payment_method === 'pix' &&
+      sub?.pix_autorizacao_status === 'CRIADA' &&
+      !!sub?.qr_code
+    );
+  });
+
+  @ViewChild(CardFormComponent) private cardForm?: CardFormComponent;
+
+  private pendingPlanId: number | null = null;
 
   constructor() {
     void this.load();
+  }
+
+  protected openPlanModal(): void {
+    this.showPlanModal.set(true);
+  }
+
+  protected closePlanModal(): void {
+    this.showPlanModal.set(false);
+  }
+
+  protected closePaymentModal(): void {
+    this.showPaymentModal.set(false);
+    this.pendingPlanId = null;
+    this.pixLoading.set(false);
   }
 
   protected onMethodChange(m: CheckoutMethod): void {
     this.method.set(m);
   }
 
-  /** Upgrade (pro-rata now) or downgrade (scheduled) — RN-029. */
-  protected async onPlanChange(codename: string): Promise<void> {
-    const plan = this.plans().find((p) => p.codename === codename);
-    if (!plan) return;
-    // The plan id is the SubscriptionPlan id; the page maps codename→id via the catalog.
-    const planId = (plan as unknown as { id?: number }).id;
-    if (planId == null) return;
+  protected async onPixSubmit(): Promise<void> {
+    const sub = this.subscription();
+    if (!sub || this.pixLoading()) return;
+    this.pixLoading.set(true);
     try {
-      await this.billing.changePlan(planId);
-      this.subscription.set(await this.billing.subscription());
+      const updated = await this.billing.subscribe({
+        plan_id: this.pendingPlanId ?? sub.plan_id,
+        cycle: 'mensal',
+        method: 'pix',
+        pix_recorrente: true,
+      });
+      this.subscription.set(updated);
+      this.updateCurrent(updated.plan_id);
       this.charges.set(await this.billing.charges());
     } catch {
-      // The backend rejects an invalid change; the page state is unchanged.
+      // backend error — modal stays open so user can retry
+    } finally {
+      this.pixLoading.set(false);
     }
   }
 
-  /**
-   * The card is already RSA-OAEP-encrypted by jx-card-form — only the opaque blob
-   * arrives here. We forward it to the backend; the plaintext card never touched this
-   * page (TH-A). The customer document/email come from the merchant profile.
-   */
+  protected onPlanSelected(plan: Plan): void {
+    this.closePlanModal();
+    const planId = (plan as unknown as { id?: number }).id;
+    if (plan.is_free) {
+      void this.applyPlanChange(planId ?? null);
+    } else {
+      this.pendingPlanId = planId ?? null;
+      this.showPaymentModal.set(true);
+    }
+  }
+
   protected async onCardEncrypted(blob: string): Promise<void> {
     const sub = this.subscription();
     if (!sub) return;
     try {
       const updated = await this.billing.subscribe({
-        plan_id: sub.plan_id,
+        plan_id: this.pendingPlanId ?? sub.plan_id,
         cycle: 'mensal',
         method: 'card',
         card_blob: blob,
-        customer_document: '',
-        customer_email: '',
       });
       this.subscription.set(updated);
+      this.updateCurrent(updated.plan_id);
       this.charges.set(await this.billing.charges());
+      this.closePaymentModal();
     } catch {
-      // The jx-card-form surfaces the refusal; the page state is unchanged.
+      this.cardForm?.setState('recusado');
     }
   }
 
-  private async load(): Promise<void> {
-    this.plans.set(await this.merchants.listPlans());
+  private async applyPlanChange(planId: number | null): Promise<void> {
+    if (planId == null) return;
     try {
-      this.subscription.set(await this.billing.subscription());
+      await this.billing.changePlan(planId);
+      const sub = await this.billing.subscription();
+      this.subscription.set(sub);
+      this.updateCurrent(sub.plan_id);
       this.charges.set(await this.billing.charges());
     } catch {
-      // No subscription yet (trial pending) — the banner simply does not render.
+      // backend rejects invalid change; state unchanged
+    }
+  }
+
+  private updateCurrent(planId: number): void {
+    const match = this.plans().find((p) => (p as unknown as { id?: number }).id === planId);
+    if (match) this.current.set(match.codename);
+  }
+
+  private async load(): Promise<void> {
+    const plans = await this.merchants.listPlans();
+    this.plans.set(plans);
+    try {
+      const sub = await this.billing.subscription();
+      this.subscription.set(sub);
+      const match = plans.find((p) => (p as unknown as { id?: number }).id === sub.plan_id);
+      this.current.set(match?.codename ?? 'free');
+      this.charges.set(await this.billing.charges());
+    } catch {
+      // no subscription yet
     }
   }
 }

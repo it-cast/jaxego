@@ -51,6 +51,8 @@ class MerchantSignupBody(BaseModel):
     address: str | None = Field(default=None, max_length=255)
     address_number: str | None = Field(default=None, max_length=20)
     address_neighborhood: str | None = Field(default=None, max_length=120)
+    address_zip: str | None = Field(default=None, max_length=10)
+    address_state: str | None = Field(default=None, max_length=2)
     # Optional chosen plan; defaults to Free. A paid plan -> pending_payment (E3).
     plan_code: str | None = Field(default=None, max_length=32)
 
@@ -144,6 +146,7 @@ class PlanRead(BaseModel):
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
+    id: int
     codename: str
     nome: str
     preco_cents: int

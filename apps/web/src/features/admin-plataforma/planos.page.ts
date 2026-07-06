@@ -135,9 +135,9 @@ export class PlataformaPlanosPage implements OnInit {
     this.form = {
       code: plan.code,
       name: plan.name,
-      price_cents: plan.price_cents,
+      price_cents: plan.price_cents / 100,
       deliveries_per_month: plan.deliveries_per_month,
-      fee_cents: plan.fee_cents,
+      fee_cents: plan.fee_cents / 100,
       is_unlimited: plan.is_unlimited,
       sort_order: plan.sort_order,
     };
@@ -159,9 +159,9 @@ export class PlataformaPlanosPage implements OnInit {
         await this.service.createPlan({
           code: this.form.code,
           name: this.form.name,
-          price_cents: this.form.price_cents,
+          price_cents: Math.round(this.form.price_cents * 100),
           deliveries_per_month: this.form.deliveries_per_month,
-          fee_cents: this.form.fee_cents,
+          fee_cents: Math.round(this.form.fee_cents * 100),
           is_unlimited: this.form.is_unlimited,
           sort_order: this.form.sort_order,
         });
@@ -169,9 +169,9 @@ export class PlataformaPlanosPage implements OnInit {
       } else if (this.editingPlan) {
         await this.service.updatePlan(this.editingPlan.id, {
           name: this.form.name,
-          price_cents: this.form.price_cents,
+          price_cents: Math.round(this.form.price_cents * 100),
           deliveries_per_month: this.form.deliveries_per_month,
-          fee_cents: this.form.fee_cents,
+          fee_cents: Math.round(this.form.fee_cents * 100),
           is_unlimited: this.form.is_unlimited,
           sort_order: this.form.sort_order,
         });

@@ -8,6 +8,9 @@ import {
   SignupRequest,
   SignupResponse,
   SignupResult,
+  SubscribeRequest,
+  SubscribeResponse,
+  SubscribeResult,
   ViaCepResult,
 } from './merchant.models';
 
@@ -84,6 +87,40 @@ export class MerchantService {
       return res.erro ? null : res;
     } catch {
       return null;
+    }
+  }
+
+  /** GET /v1/payments/chave-publica — RSA public key PEM (public endpoint). */
+  async getPublicKey(): Promise<string | null> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ public_key: string }>('/v1/payments/chave-publica')
+      );
+      return res.public_key;
+    } catch {
+      return null;
+    }
+  }
+
+  /** POST /v1/payments/assinar — activate card or PIX subscription (auth required). */
+  async subscribe(req: SubscribeRequest): Promise<SubscribeResult> {
+    try {
+      const data = await firstValueFrom(
+        this.http.post<SubscribeResponse>('/v1/payments/assinar', req)
+      );
+      return { ok: true, data };
+    } catch (err) {
+      if (err instanceof HttpErrorResponse) {
+        const envelope = err.error as ApiErrorEnvelope | undefined;
+        return {
+          ok: false,
+          code: envelope?.error?.code,
+          message:
+            envelope?.error?.message ??
+            'Não foi possível processar o pagamento. Tente de novo.',
+        };
+      }
+      return { ok: false, message: 'Erro ao processar o pagamento.' };
     }
   }
 

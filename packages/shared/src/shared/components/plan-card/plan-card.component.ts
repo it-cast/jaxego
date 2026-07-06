@@ -8,6 +8,7 @@ import {
 
 /** Plan shape from GET /v1/plans (values from the SEED — DRV-009). */
 export interface Plan {
+  id: number;
   codename: string;
   nome: string;
   preco_cents: number;

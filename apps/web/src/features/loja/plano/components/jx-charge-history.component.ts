@@ -87,8 +87,9 @@ export class ChargeHistoryComponent {
   protected readonly rows = computed<ChargeRow[]>(() =>
     this._charges().map((c) => {
       const meta = STATUS_META[c.status] ?? { label: c.status, cssVar: '--text-muted' };
+      const displayDate = c.due_at ?? c.created_at;
       return {
-        date: c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : '—',
+        date: displayDate ? new Date(displayDate).toLocaleDateString('pt-BR') : '—',
         description: c.kind === 'subscription' ? 'Assinatura' : 'Entrega',
         amount: formatCents(c.amount_cents),
         status: meta.label,

@@ -56,6 +56,7 @@ def _subscription_out(sub: MerchantSubscription) -> SubscriptionOut:
         next_due_at=sub.due_at.isoformat() if sub.due_at else None,
         qr_code=sub.pix_qr_code,
         qr_code_base64=sub.pix_qr_code_base64,
+        pix_autorizacao_status=sub.pix_autorizacao_status,
     )
 
 
@@ -77,8 +78,28 @@ async def subscribe(
     body: SubscribeBody, scope: MerchantScopeDep, session: SessionDep
 ) -> SubscriptionOut:
     """Activate a plan by card (RSA blob → token) or PIX automático."""
+    from app.areas.models import Area
+    from app.merchants.models import Merchant
+
     sub = await _resolve_subscription(session, merchant_id=scope.merchant_id, area_id=scope.area_id)
+    merchant = await session.get(Merchant, scope.merchant_id)
+    if merchant is None:
+        raise ValidationAppError("Loja não encontrada.")
+    area = await session.get(Area, merchant.area_id)
+
+    # Identity always resolved from the authenticated merchant record — never trusted from body.
+    customer_document = merchant.document
+    customer_email = merchant.email
+    customer_phone = merchant.phone_e164
+    customer_city = area.name if area else ""
+
     payment = get_payment_adapter()
+    logger.info(
+        "subscribe_attempt",
+        method=body.method,
+        pix_recorrente=body.pix_recorrente,
+        plan_id=body.plan_id,
+    )
 
     if body.method == "card":
         if not body.card_blob:
@@ -86,42 +107,45 @@ async def subscribe(
         # Decrypt in memory ONLY — the card JSON is NEVER logged/persisted (A09).
         card_json = crypto.rsa_decrypt_card(body.card_blob)
         card = json.loads(card_json)
-        # The adapter tokenises (prod) / charges raw (sandbox); we pass the raw token
-        # placeholder — the Stub/adapter abstracts the sandbox difference (Pitfall 5).
         from app.payments.port import CardData
 
-        tokenised = await payment.tokenize_card(
-            CardData(
-                holder=card["nomeTitular"],
-                number=card["numeroCartao"],
-                expiration=card["validade"],
-                cvv=card["cvv"],
-            )
+        card_data_obj = CardData(
+            holder=card["nomeTitular"],
+            number=card["numeroCartao"],
+            expiration=card["validade"],
+            cvv=card["cvv"],
         )
+        tokenised = await payment.tokenize_card(card_data_obj)
         result = await subscriptions.activate_card(
             session,
             subscription_id=sub.id,
             plan_id=body.plan_id,
             cycle=body.cycle,
-            raw_card_token=tokenised or "raw_sandbox",
+            raw_card_token=tokenised or "sandbox_charge",
             customer_name=card.get("nomeTitular", ""),
-            customer_document=body.customer_document,
-            customer_email=str(body.customer_email),
+            customer_document=customer_document,
+            customer_email=customer_email,
             payment=payment,
+            card_data=card_data_obj if not tokenised else None,
         )
     else:
-        from app.merchants.models import Merchant
-
-        merchant = await session.get(Merchant, scope.merchant_id)
         result = await subscriptions.activate_pix(
             session,
             subscription_id=sub.id,
             plan_id=body.plan_id,
             cycle=body.cycle,
-            customer_name=merchant.trade_name if merchant else "Loja",
-            customer_document=body.customer_document,
-            customer_email=str(body.customer_email),
+            customer_name=merchant.trade_name,
+            customer_document=customer_document,
+            customer_email=customer_email,
+            customer_phone=customer_phone,
+            customer_zip=merchant.address_zip,
+            customer_street=merchant.address,
+            customer_number=merchant.address_number,
+            customer_neighborhood=merchant.address_neighborhood,
+            customer_city=customer_city,
+            customer_state=merchant.address_state,
             payment=payment,
+            recorrente=body.pix_recorrente,
         )
     await session.commit()
     return _subscription_out(result)
@@ -172,6 +196,7 @@ async def charge_history(scope: MerchantScopeDep, session: SessionDep) -> list[C
             status=c.status,
             transaction_id=c.transaction_id,
             created_at=c.created_at.isoformat() if c.created_at else None,
+            due_at=c.due_at.isoformat() if c.due_at else None,
         )
         for c in rows
     ]

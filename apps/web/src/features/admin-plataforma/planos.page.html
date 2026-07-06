@@ -59,7 +59,7 @@
             />
           </label>
           <label class="jx-planos__field">
-            <span class="jx-planos__label">Preco (centavos)</span>
+            <span class="jx-planos__label">Preco (R$)</span>
             <input
               class="jx-planos__input jx-planos__input--num"
               type="number"
@@ -67,6 +67,8 @@
               name="price_cents"
               required
               min="0"
+              step="0.01"
+              placeholder="0,00"
             />
           </label>
           <label class="jx-planos__field">
@@ -81,7 +83,7 @@
             />
           </label>
           <label class="jx-planos__field">
-            <span class="jx-planos__label">Taxa por entrega (centavos)</span>
+            <span class="jx-planos__label">Taxa por entrega (R$)</span>
             <input
               class="jx-planos__input jx-planos__input--num"
               type="number"
@@ -89,6 +91,8 @@
               name="fee_cents"
               required
               min="0"
+              step="0.01"
+              placeholder="0,00"
             />
           </label>
           <label class="jx-planos__field">

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class _Strict(BaseModel):
@@ -30,8 +30,9 @@ class SubscribeBody(_Strict):
     method: Literal["card", "pix"]
     # Opaque RSA-OAEP ciphertext of {nomeTitular,numeroCartao,validade,cvv}. card only.
     card_blob: str | None = Field(default=None, max_length=4096)
-    customer_document: str = Field(min_length=11, max_length=14)
-    customer_email: EmailStr
+    # PIX only: enables PIX Automático BACEN (recurring debit authorization).
+    # False = one-time QR code; True = recurring authorization via /v3/pix/automatic.
+    pix_recorrente: bool = False
 
 
 class SubscriptionOut(_Strict):
@@ -45,6 +46,7 @@ class SubscriptionOut(_Strict):
     next_due_at: str | None
     qr_code: str | None = None
     qr_code_base64: str | None = None
+    pix_autorizacao_status: str | None = None  # CRIADA | APROVADA | EXPIRADA | CANCELADA
 
 
 class ChargeHistoryItem(_Strict):
@@ -57,6 +59,7 @@ class ChargeHistoryItem(_Strict):
     status: str
     transaction_id: str | None
     created_at: str | None
+    due_at: str | None = None
 
 
 class PlanChangeBody(_Strict):

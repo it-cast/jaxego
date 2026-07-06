@@ -243,6 +243,8 @@ async def signup(
         address=body.address,
         address_number=body.address_number,
         address_neighborhood=body.address_neighborhood,
+        address_zip=body.address_zip,
+        address_state=body.address_state,
         status=status,
         lat=None,
         lng=None,

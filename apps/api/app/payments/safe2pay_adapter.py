@@ -16,6 +16,7 @@ adapter — they use `PaymentStubAdapter` (D-09).
 
 from __future__ import annotations
 
+import unicodedata
 from datetime import datetime
 
 import httpx
@@ -36,6 +37,29 @@ logger = structlog.get_logger("payments.safe2pay")
 
 # Safe2Pay approved statuses (SAAS-BILLING §5.2).
 _APPROVED = {"3", "4"}
+
+
+def _ascii(s: str) -> str:
+    """Remove accents — Safe2Pay rejects non-ASCII in address fields."""
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn"
+    )
+
+
+def _s2p_phone(phone: str) -> str:
+    """Strip country code +55 — Safe2Pay expects 10–11 digits with DDD only."""
+    digits = "".join(c for c in phone if c.isdigit())
+    if len(digits) == 13 and digits.startswith("55"):
+        digits = digits[2:]
+    return digits
+
+
+def _normalize_expiry(expiry: str) -> str:
+    """Normalize MM/YY → MM/YYYY. Safe2Pay requires 4-digit year."""
+    parts = expiry.split("/")
+    if len(parts) == 2 and len(parts[1]) == 2:
+        return f"{parts[0]}/20{parts[1]}"
+    return expiry
 
 
 class Safe2PayHttpAdapter:
@@ -70,10 +94,29 @@ class Safe2PayHttpAdapter:
         try:
             async with build_client(timeout=httpx.Timeout(30.0)) as client:
                 resp = await client.post(url, json=payload, headers=self._headers())
+                # Read body BEFORE raise_for_status so it's available inside the context.
+                if resp.status_code >= 400:
+                    raw = resp.content.decode("utf-8", errors="replace")
+                    try:
+                        err_body = resp.json()
+                        err_msg = (
+                            err_body.get("Error")
+                            or err_body.get("Message")
+                            or raw[:500]
+                        )
+                        err_code = str(err_body.get("ErrorCode", ""))
+                    except Exception:
+                        err_msg, err_code = raw[:500], ""
+                    logger.error(
+                        "safe2pay_http_error",
+                        status=resp.status_code,
+                        s2p_error=err_msg,
+                        s2p_code=err_code,
+                    )
+                    raise PaymentGatewayError(f"Safe2Pay HTTP {resp.status_code}")
                 resp.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            logger.error("safe2pay_http_error", status=exc.response.status_code)  # no payload
-            raise PaymentGatewayError(f"Safe2Pay HTTP {exc.response.status_code}") from exc
+        except PaymentGatewayError:
+            raise
         except httpx.RequestError as exc:
             logger.error("safe2pay_network_error")  # no payload/PII
             raise PaymentGatewayError("Safe2Pay inacessível") from exc
@@ -81,9 +124,45 @@ class Safe2PayHttpAdapter:
         data = resp.json()
         if data.get("HasError"):  # ⚠ ignores HTTP status
             code = str(data.get("ErrorCode", "unknown"))
-            logger.error("safe2pay_business_error", error_code=code)  # no card payload
+            msg = str(data.get("Error") or data.get("Message") or "")  # no PII in these fields
+            logger.error("safe2pay_business_error", error_code=code, s2p_message=msg)
             raise PaymentGatewayError(f"Safe2Pay erro {code}", code=code)
         return data.get("ResponseDetail", data)
+
+    async def _post_v3(self, url: str, payload: dict) -> dict:
+        """POST to a Safe2Pay v3 endpoint (REST conventions — no HasError wrapper)."""
+        assert_safe_url(url, allowlist=self._allowlist)
+        try:
+            async with build_client(timeout=httpx.Timeout(30.0)) as client:
+                resp = await client.post(url, json=payload, headers=self._headers())
+                if resp.status_code >= 400:
+                    raw = resp.content.decode("utf-8", errors="replace")
+                    try:
+                        err_body = resp.json()
+                        err_msg = (
+                            err_body.get("Error")
+                            or err_body.get("Message")
+                            or err_body.get("detail")
+                            or raw[:500]
+                        )
+                        err_code = str(err_body.get("ErrorCode") or err_body.get("code", ""))
+                    except Exception:
+                        err_msg, err_code = raw[:500], ""
+                    logger.error(
+                        "safe2pay_v3_http_error",
+                        status=resp.status_code,
+                        s2p_error=err_msg,
+                        s2p_code=err_code,
+                        url=url,
+                    )
+                    raise PaymentGatewayError(f"Safe2Pay HTTP {resp.status_code}")
+                resp.raise_for_status()
+        except PaymentGatewayError:
+            raise
+        except httpx.RequestError as exc:
+            logger.error("safe2pay_v3_network_error")
+            raise PaymentGatewayError("Safe2Pay inacessível") from exc
+        return resp.json()
 
     # --- PaymentPort impl ([ASSUMIDO] shapes — DEC-003) ---
     async def tokenize_card(self, card: CardData) -> str | None:
@@ -102,15 +181,47 @@ class Safe2PayHttpAdapter:
         return data.get("Token")
 
     async def charge_with_token(
-        self, *, token: str, amount_cents: int, reference: str, customer: Customer
+        self,
+        *,
+        token: str,
+        amount_cents: int,
+        reference: str,
+        customer: Customer,
+        card_data: CardData | None = None,
     ) -> ChargeResult:
+        # Sandbox: token-based flow doesn't work (Pitfall 5). Use direct card data instead.
+        if self._sandbox and card_data is not None:
+            payment_object = {
+                "CardNumber": card_data.number,
+                "Holder": card_data.holder,
+                "ExpirationDate": _normalize_expiry(card_data.expiration),
+                "SecurityCode": card_data.cvv,
+                "InstallmentQuantity": 1,
+            }
+            is_sandbox = True
+            result_token = None  # sandbox never returns a storable token (A09)
+        else:
+            payment_object = {"Token": token, "InstallmentQuantity": 1}
+            is_sandbox = False  # recurring token only works in production (Pitfall 5)
+            result_token = token
+
+        amount = amount_cents / 100
+        logger.info(
+            "safe2pay_charge_attempt",
+            is_sandbox=is_sandbox,
+            amount=amount,
+            payment_method=2,
+            token_present=bool(payment_object.get("Token")),
+            token_prefix=str(payment_object.get("Token", ""))[:8] if payment_object.get("Token") else None,
+        )
         data = await self._call_safe2pay(
             f"{self._payment_url}/v2/payment",
             {
-                "IsSandbox": False,  # recurring token only works in production (Pitfall 5)
+                "IsSandbox": is_sandbox,
                 "Reference": reference,
-                "PaymentMethod": "2",
-                "PaymentObject": {"Token": token, "InstallmentQuantity": 1},
+                "Amount": amount,
+                "PaymentMethod": 2,
+                "PaymentObject": payment_object,
                 "Customer": {
                     "Name": customer.name,
                     "Identity": customer.document,
@@ -120,7 +231,7 @@ class Safe2PayHttpAdapter:
                     {
                         "Code": "ASSINATURA",
                         "Description": "Assinatura",
-                        "UnitPrice": amount_cents / 100,
+                        "UnitPrice": amount,
                         "Quantity": 1,
                     }
                 ],
@@ -130,7 +241,7 @@ class Safe2PayHttpAdapter:
         return ChargeResult(
             transaction_id=str(data.get("IdTransaction", "")),
             status="paid" if status in _APPROVED else "refused",
-            token=token,
+            token=result_token,
         )
 
     async def charge_with_split(
@@ -169,29 +280,145 @@ class Safe2PayHttpAdapter:
         )
 
     async def create_pix_authorization(
+        self,
+        *,
+        amount_cents: int,
+        customer: Customer,
+        reference: str,
+        recorrente: bool = False,
+    ) -> ChargeResult:
+        if recorrente:
+            return await self._create_pix_automatic(
+                amount_cents=amount_cents, customer=customer, reference=reference
+            )
+        return await self._create_pix_qr(
+            amount_cents=amount_cents, customer=customer, reference=reference
+        )
+
+    async def _create_pix_qr(
         self, *, amount_cents: int, customer: Customer, reference: str
     ) -> ChargeResult:
-        # [ASSUMIDO] v3 PIX automático (SAAS-BILLING §5.5) — confirm at T-13.
+        # PIX simples (avulso) via /v2/payment (PaymentMethod 10) — gera QR Code único.
+        amount = amount_cents / 100
+        logger.info(
+            "safe2pay_pix_qr_attempt",
+            is_sandbox=self._sandbox,
+            amount=amount,
+            payment_method=10,
+        )
         data = await self._call_safe2pay(
-            f"{self._payment_url}/v3/pix/automatic/authorizations",
+            f"{self._payment_url}/v2/payment",
             {
-                "Contract": {
-                    "Description": reference,
-                    "Customer": {"Identity": customer.document, "Name": customer.name},
+                "IsSandbox": self._sandbox,
+                "Reference": reference,
+                "Amount": amount,
+                "PaymentMethod": "10",
+                "Customer": {
+                    "Name": customer.name,
+                    "Identity": customer.document,
+                    "Email": customer.email,
                 },
-                "Calendar": {"Periodicity": "MENSAL", "RetryPolicy": "PERMITE_3R_7D"},
-                "Amount": {"Fixed": amount_cents / 100},
-                "ImmediatePayment": {"Amount": amount_cents / 100, "Reference": reference},
+                "PaymentObject": {},
             },
         )
-        obj = data.get("data", data)
-        qr = obj.get("qrData", {})
+        pix_obj = data.get("PaymentObject") or {}
         return ChargeResult(
-            transaction_id=str((obj.get("immediatePayment") or {}).get("idTransaction", "")),
+            transaction_id=str(data.get("IdTransaction", "")),
             status="pending",
-            qr_code=qr.get("pixCopyAndPaste"),
-            qr_code_base64=qr.get("qrCode"),
-            authorization_id=str(obj.get("id", "")),
+            qr_code=pix_obj.get("Key"),
+            qr_code_base64=pix_obj.get("QrCode"),
+            authorization_id="",
+        )
+
+    async def _create_pix_automatic(
+        self, *, amount_cents: int, customer: Customer, reference: str
+    ) -> ChargeResult:
+        # PIX Automático BACEN — POST /v3/pix/automatic/authorizations.
+        # Sandbox NOT available (Safe2Pay docs). Always uses production endpoint.
+        # Payload validated against official OpenAPI spec (July 2026).
+        amount = amount_cents / 100
+        today = datetime.now().date().isoformat()
+        logger.info(
+            "safe2pay_pix_automatic_attempt",
+            is_sandbox=self._sandbox,
+            amount=amount,
+        )
+        payload: dict = {
+            "Application": "Jaxegô",
+            "Contract": {
+                "Description": "Assinatura mensal Jaxegô",
+                "Name": "Assinatura Jaxegô",
+                "Customer": {
+                    "Identity": customer.document,
+                    "Name": customer.name,
+                    "Email": customer.email,
+                    "Phone": _s2p_phone(customer.phone or ""),
+                    "Address": {
+                        "ZipCode": (customer.zip_code or "").replace("-", ""),
+                        "Street": _ascii(customer.street or ""),
+                        "Number": customer.street_number or "S/N",
+                        "Complement": "",
+                        "District": _ascii(customer.neighborhood or ""),
+                        "StateInitials": customer.state or "",
+                        "CityName": _ascii(customer.city or ""),
+                        "CountryName": "Brasil",
+                    },
+                },
+            },
+            "Calendar": {
+                "StartDate": today,
+                "Periodicity": "MENSAL",
+                "RetryPolicy": "PERMITE_3R_7D",
+            },
+            "Amount": {"Fixed": amount},
+            "ImmediatePayment": {
+                "Amount": amount,
+                "Reference": reference,
+            },
+        }
+        raw = await self._post_v3(
+            f"{self._payment_url}/v3/pix/automatic/authorizations",
+            payload,
+        )
+        # v3 response: {"traceId": "...", "data": {"Id": ..., "QrData": {...}, ...}}
+        data = raw.get("data", raw)
+        auth_id = str(data.get("Id", ""))
+        qr_data = data.get("QrData") or {}
+        immediate = data.get("ImmediatePayment") or {}
+        return ChargeResult(
+            transaction_id=str(immediate.get("IdTransaction") or auth_id),
+            status="pending",
+            qr_code=qr_data.get("PixCopyAndPaste"),
+            qr_code_base64=qr_data.get("QrCode"),  # URL da imagem, não base64
+            authorization_id=auth_id,
+        )
+
+    async def create_pix_charge_schedule(
+        self,
+        *,
+        authorization_id: str,
+        amount_cents: int,
+        reference: str,
+        due_date: str,
+        description: str,
+    ) -> "PixScheduleResult":
+        # [ASSUMIDO DEC-PIX-02] POST /v3/.../chargeSchedules per Safe2Pay docs (July 2026).
+        # Calendar.DueDate format: YYYY-MM-DD.
+        from app.payments.port import PixScheduleResult
+
+        data = await self._post_v3(
+            f"{self._payment_url}/v3/pix/automatic/authorizations/{authorization_id}/chargeSchedules",
+            {
+                "Application": "Jaxegô",
+                "Reference": reference,
+                "Calendar": {"DueDate": due_date},
+                "Amount": amount_cents / 100,
+                "AdditionalInformation": description,
+            },
+        )
+        return PixScheduleResult(
+            schedule_id=str(data.get("Id", "")),
+            status=str(data.get("Status", "CRIADA")),
         )
 
     async def refund(self, *, transaction_id: str, amount_cents: int, method: str) -> None:

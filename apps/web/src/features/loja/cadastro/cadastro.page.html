@@ -3,7 +3,9 @@
     <h1 class="jx-h1">Cadastre sua loja. É <em>rapidinho.</em></h1>
   </header>
 
-  <jx-wizard-stepper [steps]="steps" [current]="current()" (goTo)="goToStep($event)" />
+  @if (!showPayment()) {
+    <jx-wizard-stepper [steps]="steps" [current]="current()" (goTo)="goToStep($event)" />
+  }
 
   @if (stepError()) {
     <div class="jx-cadastro__alert" tabindex="-1">
@@ -11,42 +13,20 @@
     </div>
   }
 
+  @if (!showPayment()) {
   <form class="jx-cadastro__form" [formGroup]="form" (ngSubmit)="next()" novalidate>
     <!-- Passo 1 — Identificação -->
     @if (current() === 0) {
       <fieldset class="jx-cadastro__step">
         <legend class="jx-sr-only">Identificação</legend>
-        <div class="jx-cadastro__toggle" role="radiogroup" aria-label="Tipo de conta">
-          <button
-            type="button"
-            class="jx-toggle"
-            [class.jx-toggle--on]="form.controls.account_type.value === 'cnpj'"
-            [attr.aria-pressed]="form.controls.account_type.value === 'cnpj'"
-            (click)="toggleAccountType('cnpj')"
-          >
-            Tenho CNPJ
-          </button>
-          <button
-            type="button"
-            class="jx-toggle"
-            [class.jx-toggle--on]="form.controls.account_type.value === 'cpf'"
-            [attr.aria-pressed]="form.controls.account_type.value === 'cpf'"
-            (click)="toggleAccountType('cpf')"
-          >
-            Sou autônomo (CPF)
-          </button>
-        </div>
-
         <div class="jx-field">
-          <label class="jx-label" for="document">
-            {{ form.controls.account_type.value === 'cnpj' ? 'CNPJ' : 'CPF' }}
-          </label>
+          <label class="jx-label" for="document">CPF/CNPJ</label>
           <input
             id="document"
             class="jx-input jx-mono"
             inputmode="numeric"
             autocomplete="off"
-            [attr.maxlength]="form.controls.account_type.value === 'cnpj' ? 18 : 14"
+            maxlength="18"
             [placeholder]="form.controls.account_type.value === 'cnpj' ? '00.000.000/0001-00' : '000.000.000-00'"
             [attr.aria-describedby]="docError() ? 'doc-error' : null"
             [attr.aria-invalid]="docError() ? 'true' : null"
@@ -56,10 +36,7 @@
           @if (docError()) {
             <p class="jx-field__error" id="doc-error">{{ docError() }}</p>
           }
-          <p class="jx-field__hint">
-            Pedimos o {{ form.controls.account_type.value === 'cnpj' ? 'CNPJ' : 'CPF' }}
-            para validar sua loja e emitir nota.
-          </p>
+          <p class="jx-field__hint">Pedimos o CPF ou CNPJ para validar sua loja e emitir nota.</p>
         </div>
 
         <div class="jx-field">
@@ -136,7 +113,7 @@
               [type]="showPassword() ? 'text' : 'password'"
               autocomplete="new-password"
               formControlName="password"
-              minlength="10"
+              minlength="6"
               [attr.aria-describedby]="passwordError() ? 'pwd-error' : null"
             />
             <button
@@ -254,6 +231,18 @@
               />
             </div>
           </div>
+          <div class="jx-field">
+            <label class="jx-label" for="uf">Estado (UF)</label>
+            <input
+              id="uf"
+              class="jx-input jx-mono"
+              autocomplete="address-level1"
+              maxlength="2"
+              placeholder="Ex: RJ"
+              [value]="form.controls.uf.value"
+              (input)="onUfInput($any($event.target).value)"
+            />
+          </div>
         } @else {
           <jx-sem-area
             [cidade]="''"
@@ -286,6 +275,11 @@
             <a href="/termos" class="jx-link">Termos</a> e a
             <a href="/privacidade" class="jx-link">Política de Privacidade</a>.
           </label>
+          @if (form.controls.consent.touched && !form.controls.consent.value) {
+            <p class="jx-cadastro__consent-error" role="alert">
+              Aceite os Termos e a Política de Privacidade para continuar.
+            </p>
+          }
         </div>
       </fieldset>
     }
@@ -303,6 +297,103 @@
       </div>
     }
   </form>
+  } <!-- /showPayment guard -->
+
+  <!-- Pagamento (plano pago, pós-signup + auto-login) -->
+  @if (showPayment()) {
+    <section class="jx-cadastro__payment" aria-label="Pagamento do plano">
+      <h2 class="jx-cadastro__payment-title">Ativar plano</h2>
+      <p class="jx-cadastro__payment-sub">Sua loja já está criada. Conclua o pagamento para ativar o plano.</p>
+
+      <div class="jx-cadastro__pay-methods" role="radiogroup" aria-label="Forma de pagamento">
+        <button
+          type="button"
+          class="jx-toggle"
+          [class.jx-toggle--on]="payMethod() === 'card'"
+          [attr.aria-pressed]="payMethod() === 'card'"
+          (click)="setPayMethod('card')"
+        >Cartão</button>
+        <button
+          type="button"
+          class="jx-toggle"
+          [class.jx-toggle--on]="payMethod() === 'pix'"
+          [attr.aria-pressed]="payMethod() === 'pix'"
+          (click)="setPayMethod('pix')"
+        >PIX</button>
+      </div>
+
+      @if (payMethod() === 'card') {
+        <div class="jx-cadastro__card-form">
+          <div class="jx-field">
+            <label class="jx-label" for="card-holder">Nome no cartão</label>
+            <input id="card-holder" class="jx-input" autocomplete="cc-name"
+              [value]="cardHolder()" (input)="cardHolder.set($any($event.target).value.toUpperCase())"
+              placeholder="JOAO SILVA" maxlength="60" />
+          </div>
+          <div class="jx-field">
+            <label class="jx-label" for="card-number">Número do cartão</label>
+            <input id="card-number" class="jx-input jx-mono" autocomplete="cc-number"
+              inputmode="numeric" maxlength="19"
+              [value]="cardNumber()" (input)="onCardNumberInput($any($event.target).value)"
+              placeholder="0000 0000 0000 0000" />
+          </div>
+          <div class="jx-cadastro__row">
+            <div class="jx-field">
+              <label class="jx-label" for="card-expiry">Validade</label>
+              <input id="card-expiry" class="jx-input jx-mono" autocomplete="cc-exp"
+                inputmode="numeric" maxlength="5"
+                [value]="cardExpiry()" (input)="onCardExpiryInput($any($event.target).value)"
+                placeholder="MM/AA" />
+            </div>
+            <div class="jx-field">
+              <label class="jx-label" for="card-cvv">CVV</label>
+              <input id="card-cvv" class="jx-input jx-mono" autocomplete="cc-csc"
+                inputmode="numeric" maxlength="4"
+                [value]="cardCvv()" (input)="cardCvv.set($any($event.target).value)"
+                placeholder="123" />
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (payMethod() === 'pix' && !pixPending()) {
+        <p class="jx-cadastro__pix-hint">Um QR Code PIX será gerado. Pague pelo seu banco e a assinatura será ativada automaticamente.</p>
+      }
+
+      @if (pixPending()) {
+        <div class="jx-cadastro__pix-result">
+          @if (pixQrB64()) {
+            <img [src]="pixQrB64()" alt="QR Code PIX" class="jx-cadastro__pix-qr" />
+          }
+          @if (pixQrCode()) {
+            <p class="jx-cadastro__pix-code">{{ pixQrCode() }}</p>
+          }
+          <p class="jx-cadastro__pix-note" role="status">PIX gerado! Pague pelo seu banco. A assinatura ativa automaticamente após a confirmação.</p>
+          <button type="button" class="jx-cadastro__submit" (click)="goToLoja()">Ir para a loja</button>
+        </div>
+      }
+
+      @if (paymentError()) {
+        <p class="jx-field__error" role="alert">
+          {{ paymentError() }}
+          @if (paymentErrorCode()) {
+            <span class="jx-cadastro__error-code">(código: {{ paymentErrorCode() }})</span>
+          }
+        </p>
+      }
+
+      @if (!pixPending()) {
+        <button
+          type="button"
+          class="jx-cadastro__submit"
+          [disabled]="paymentLoading()"
+          (click)="submitPayment()"
+        >
+          {{ paymentLoading() ? 'Processando...' : payMethod() === 'pix' ? 'Gerar PIX' : 'Pagar e ativar' }}
+        </button>
+      }
+    </section>
+  }
 
   <footer class="jx-cadastro__footer">jaxego.com.br · Grupo Itcast</footer>
 </main>

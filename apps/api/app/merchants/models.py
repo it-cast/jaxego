@@ -69,6 +69,8 @@ class Merchant(Base, AreaScopedMixin, TimestampMixin):
     address: Mapped[str | None] = mapped_column(String(255), nullable=True)
     address_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     address_neighborhood: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    address_zip: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    address_state: Mapped[str | None] = mapped_column(String(2), nullable=True)
 
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending_validation")
 

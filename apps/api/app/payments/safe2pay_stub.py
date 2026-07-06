@@ -54,7 +54,13 @@ class PaymentStubAdapter:
         return "stub_token"
 
     async def charge_with_token(
-        self, *, token: str, amount_cents: int, reference: str, customer: Customer
+        self,
+        *,
+        token: str,
+        amount_cents: int,
+        reference: str,
+        customer: Customer,
+        card_data: CardData | None = None,
     ) -> ChargeResult:
         self._guard()
         return ChargeResult(transaction_id=self._tx(), status="paid", token=token)
@@ -75,17 +81,45 @@ class PaymentStubAdapter:
         return ChargeResult(transaction_id=self._tx(), status="paid")
 
     async def create_pix_authorization(
-        self, *, amount_cents: int, customer: Customer, reference: str
+        self,
+        *,
+        amount_cents: int,
+        customer: Customer,
+        reference: str,
+        recorrente: bool = False,
     ) -> ChargeResult:
         self._guard()
         tx = self._tx()
+        if recorrente:
+            # Stub: simulates PIX Automático authorization (payer approves in banking app).
+            return ChargeResult(
+                transaction_id=tx,
+                status="pending",
+                qr_code=f"stub_pix_auto_link_{tx}",
+                qr_code_base64=None,
+                authorization_id=f"stub_auth_{tx}",
+            )
         return ChargeResult(
             transaction_id=tx,
             status="pending",
             qr_code="00020101stub-pix-copy-paste",
             qr_code_base64="c3R1Yi1xci1iYXNlNjQ=",
-            authorization_id=f"stub_auth_{tx}",
+            authorization_id="",
         )
+
+    async def create_pix_charge_schedule(
+        self,
+        *,
+        authorization_id: str,
+        amount_cents: int,
+        reference: str,
+        due_date: str,
+        description: str,
+    ) -> "PixScheduleResult":
+        self._guard()
+        from app.payments.port import PixScheduleResult
+
+        return PixScheduleResult(schedule_id=f"stub_sched_{next(self._seq)}", status="CRIADA")
 
     async def refund(self, *, transaction_id: str, amount_cents: int, method: str) -> None:
         self._guard()

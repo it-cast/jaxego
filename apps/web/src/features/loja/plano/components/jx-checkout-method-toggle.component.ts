@@ -24,10 +24,6 @@ export type CheckoutMethod = 'card' | 'pix';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="jx-method">
-      <p class="jx-method__security">
-        <span class="jx-method__lock" aria-hidden="true">🔒</span>
-        Pagamento criptografado · Safe2Pay
-      </p>
       <div class="jx-method__options" role="radiogroup" aria-label="Forma de pagamento">
         <button
           type="button"

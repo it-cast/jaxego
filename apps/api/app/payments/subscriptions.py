@@ -30,7 +30,7 @@ from app.db.mixins import ensure_aware_utc
 from app.merchants.models import MerchantSubscription
 from app.payments import repo
 from app.payments.crypto import encrypt_token
-from app.payments.port import Customer, PaymentPort
+from app.payments.port import CardData, Customer, PaymentPort
 from app.plans.models import SubscriptionPlan
 
 logger = structlog.get_logger("payments.subscriptions")
@@ -104,6 +104,7 @@ async def activate_card(
     customer_document: str,
     customer_email: str,
     payment: PaymentPort,
+    card_data: CardData | None = None,
 ) -> MerchantSubscription:
     """Activate a card subscription: charge, store the AES token, set active."""
     sub = await session.get(MerchantSubscription, subscription_id)
@@ -118,7 +119,11 @@ async def activate_card(
     now = datetime.now(UTC)
     reference = f"sub_{sub.id}_{int(now.timestamp())}"
     result = await payment.charge_with_token(
-        token=raw_card_token, amount_cents=amount, reference=reference, customer=customer
+        token=raw_card_token,
+        amount_cents=amount,
+        reference=reference,
+        customer=customer,
+        card_data=card_data,
     )
 
     sub.plan_id = plan.id
@@ -126,7 +131,8 @@ async def activate_card(
     sub.payment_method = "card"
     sub.cycle = cycle
     sub.amount_cents = amount
-    sub.safe2pay_token = encrypt_token(result.token or raw_card_token)
+    # result.token is None in sandbox (Pitfall 5) — never persist raw card data (A09).
+    sub.safe2pay_token = encrypt_token(result.token or "sandbox_payment")
     next_due = _next_due(now, cycle)
     sub.due_at = next_due
 
@@ -169,9 +175,17 @@ async def activate_pix(
     customer_name: str,
     customer_document: str,
     customer_email: str,
+    customer_phone: str | None = None,
+    customer_zip: str | None = None,
+    customer_street: str | None = None,
+    customer_number: str | None = None,
+    customer_neighborhood: str | None = None,
+    customer_city: str | None = None,
+    customer_state: str | None = None,
     payment: PaymentPort,
+    recorrente: bool = False,
 ) -> MerchantSubscription:
-    """Create the PIX autorização; subscription stays PENDING until webhook APROVADA."""
+    """Create PIX Automático authorization; stays PENDING until payer approves."""
     sub = await session.get(MerchantSubscription, subscription_id)
     if sub is None:
         raise NotFoundError("Assinatura não encontrada.")
@@ -179,19 +193,31 @@ async def activate_pix(
     if plan is None:
         raise NotFoundError("Plano não encontrado.")
     amount = _plan_amount_cents(plan, cycle)
-    customer = Customer(name=customer_name, document=customer_document, email=customer_email)
+    customer = Customer(
+        name=customer_name,
+        document=customer_document,
+        email=customer_email,
+        phone=customer_phone,
+        zip_code=customer_zip,
+        street=customer_street,
+        street_number=customer_number,
+        neighborhood=customer_neighborhood,
+        city=customer_city,
+        state=customer_state,
+    )
 
     now = datetime.now(UTC)
     reference = f"sub_{sub.id}_pix_{int(now.timestamp())}"
     result = await payment.create_pix_authorization(
-        amount_cents=amount, customer=customer, reference=reference
+        amount_cents=amount, customer=customer, reference=reference, recorrente=recorrente
     )
 
-    # Do NOT activate yet — store the pending PIX state (SAAS-BILLING §6.2).
+    # Store plan_id immediately so the webhook handler can activate the correct plan.
+    sub.plan_id = plan_id
     sub.payment_method = "pix"
     sub.cycle = cycle
     sub.amount_cents = amount
-    sub.pix_autorizacao_id = result.authorization_id
+    sub.pix_autorizacao_id = result.authorization_id or None
     sub.pix_autorizacao_status = "CRIADA"
     sub.pix_qr_code = result.qr_code
     sub.pix_qr_code_base64 = result.qr_code_base64
@@ -209,8 +235,71 @@ async def activate_pix(
         due_at=now,
     )
     await session.flush()
-    logger.info("subscription.pix_pending", subscription_id=sub.id)
+    logger.info("subscription.pix_pending", subscription_id=sub.id, recorrente=recorrente)
     return sub
+
+
+async def activate_pix_on_charge_paid(
+    session: AsyncSession, *, subscription_id: int
+) -> bool:
+    """Activate a PIX one-time subscription after its charge is confirmed paid.
+
+    Called from the webhook processor when a PIX charge (subscription, non-recorrente) is
+    marked paid. No-op if already active (idempotent). Returns True if activated.
+    """
+    sub = await session.get(MerchantSubscription, subscription_id)
+    if sub is None or sub.payment_method != "pix":
+        return False
+    if sub.billing_status == "active":
+        return True  # idempotent
+    if sub.pix_autorizacao_id:
+        return False  # PIX Automático — activate via activate_approved_pix instead
+    now = datetime.now(UTC)
+    sub.billing_status = "active"
+    sub.due_at = _next_due(now, sub.cycle)
+    await session.flush()
+    logger.info("subscription.pix_qr_activated", subscription_id=sub.id)
+    return True
+
+
+async def activate_approved_pix(
+    session: AsyncSession, *, pix_autorizacao_id: str
+) -> bool:
+    """Activate a PIX Automático subscription after the authorization is APROVADA.
+
+    Called from the webhook processor when Safe2Pay sends APROVADA for an authorization.
+    Idempotent: no-op if already active. Returns True if a matching subscription was found.
+    """
+    from sqlalchemy import select
+
+    stmt = select(MerchantSubscription).where(
+        MerchantSubscription.pix_autorizacao_id == pix_autorizacao_id
+    )
+    sub = (await session.execute(stmt)).scalars().first()
+    if sub is None:
+        return False
+    if sub.billing_status == "active":
+        return True  # idempotent
+    now = datetime.now(UTC)
+    sub.billing_status = "active"
+    sub.pix_autorizacao_status = "APROVADA"
+    sub.due_at = _next_due(now, sub.cycle)
+    # Open charge record for the first billing cycle.
+    await repo.record_charge(
+        session,
+        area_id=sub.area_id,
+        idempotency_key=f"pix_auto_first_{sub.id}_{pix_autorizacao_id}",
+        transaction_id=None,
+        amount_cents=sub.amount_cents,
+        method="pix",
+        kind="subscription",
+        status="open",
+        subscription_id=sub.id,
+        due_at=sub.due_at,
+    )
+    await session.flush()
+    logger.info("subscription.pix_auto_activated", subscription_id=sub.id)
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -266,6 +355,68 @@ async def charge_due_subscriptions(
         await session.commit()
     logger.info("subscription.charge_due", charged=charged)
     return charged
+
+
+# ---------------------------------------------------------------------------
+# Cron: schedule PIX Automático charges for approved recurring subscriptions.
+# ---------------------------------------------------------------------------
+async def charge_due_pix_subscriptions(
+    session_factory: async_sessionmaker[AsyncSession], payment: PaymentPort
+) -> int:
+    """Create chargeSchedules for active PIX Automático subscriptions whose due_at passed.
+
+    Idempotent: `record_charge` uses `idempotency_key` (TH-D); a re-run the same day finds
+    the charge already recorded and advances nothing.
+    """
+    now = datetime.now(UTC)
+    # Safe2Pay requires chargeSchedule to be created between 2 and 10 days before DueDate.
+    # We schedule 3 days before so there's room for retries if the cron misses a day.
+    schedule_window = now + timedelta(days=3)
+    scheduled = 0
+    async with session_factory() as session:
+        stmt = select(MerchantSubscription).where(
+            MerchantSubscription.billing_status == "active",
+            MerchantSubscription.payment_method == "pix",
+            MerchantSubscription.pix_autorizacao_status == "APROVADA",
+            MerchantSubscription.pix_autorizacao_id.is_not(None),
+            MerchantSubscription.due_at.is_not(None),
+        )
+        subs = (await session.execute(stmt)).scalars().all()
+        for sub in subs:
+            if sub.due_at is None or ensure_aware_utc(sub.due_at) > schedule_window:
+                continue
+            due_dt = ensure_aware_utc(sub.due_at)
+            due_date = due_dt.date().isoformat()
+            reference = f"sub_{sub.id}_pix_{int(due_dt.timestamp())}"
+            try:
+                month_label = due_dt.strftime("%m/%Y")
+                await payment.create_pix_charge_schedule(
+                    authorization_id=sub.pix_autorizacao_id,  # type: ignore[arg-type]
+                    amount_cents=sub.amount_cents,
+                    reference=reference,
+                    due_date=due_date,
+                    description=f"Assinatura Jaxegô - {month_label}",
+                )
+            except Exception:  # noqa: BLE001
+                logger.warning("subscription.pix_schedule_failed", subscription_id=sub.id)
+                continue
+            await repo.record_charge(
+                session,
+                area_id=sub.area_id,
+                idempotency_key=reference,
+                transaction_id=None,
+                amount_cents=sub.amount_cents,
+                method="pix",
+                kind="subscription",
+                status="open",
+                subscription_id=sub.id,
+                due_at=due_dt,
+            )
+            sub.due_at = _next_due(due_dt, sub.cycle)
+            scheduled += 1
+        await session.commit()
+    logger.info("subscription.pix_schedule_due", scheduled=scheduled)
+    return scheduled
 
 
 # ---------------------------------------------------------------------------

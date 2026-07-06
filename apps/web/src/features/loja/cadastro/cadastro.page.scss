@@ -129,6 +129,13 @@
   margin: 0;
   font-size: var(--jx-text-xs);
   color: var(--error);
+
+  .jx-cadastro__error-code {
+    margin-left: 4px;
+    opacity: 0.6;
+    font-family: var(--jx-font-mono, monospace);
+    font-size: 0.85em;
+  }
 }
 
 .jx-field__hint {
@@ -160,6 +167,13 @@
   min-width: 18px;
   min-height: 18px;
   accent-color: var(--brand);
+}
+
+.jx-cadastro__consent-error {
+  margin: var(--jx-space-1) 0 0;
+  font-size: var(--jx-text-xs);
+  color: var(--error, #d32f2f);
+  font-weight: 500;
 }
 
 .jx-link {
@@ -262,4 +276,76 @@
   font-size: var(--jx-text-xs);
   color: var(--text-subtle);
   margin-top: var(--jx-space-6);
+}
+
+.jx-cadastro__payment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  margin-top: var(--jx-space-6);
+}
+
+.jx-cadastro__payment-title {
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-semibold);
+  margin: 0;
+}
+
+.jx-cadastro__payment-sub {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-cadastro__pay-methods {
+  display: flex;
+  gap: var(--jx-space-2);
+}
+
+.jx-cadastro__card-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+}
+
+.jx-cadastro__pix-hint {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  padding: var(--jx-space-3);
+  background: var(--surface-elevated);
+  border-radius: var(--jx-radius-md);
+  border: 1px solid var(--border);
+}
+
+.jx-cadastro__pix-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-3);
+}
+
+.jx-cadastro__pix-qr {
+  width: 200px;
+  height: 200px;
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-cadastro__pix-code {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  word-break: break-all;
+  background: var(--surface-sunken);
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-radius: var(--jx-radius-sm);
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.jx-cadastro__pix-note {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  text-align: center;
 }

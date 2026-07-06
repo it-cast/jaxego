@@ -30,6 +30,13 @@ class Customer:
     name: str
     document: str
     email: str
+    phone: str | None = None
+    zip_code: str | None = None
+    street: str | None = None
+    street_number: str | None = None
+    neighborhood: str | None = None
+    city: str | None = None
+    state: str | None = None
 
 
 @dataclass(frozen=True)
@@ -63,6 +70,14 @@ class ChargeResult:
 
 
 @dataclass(frozen=True)
+class PixScheduleResult:
+    """Outcome of creating a PIX Automático charge schedule (SAAS-BILLING §5.5)."""
+
+    schedule_id: str
+    status: str  # CRIADA | ATIVA
+
+
+@dataclass(frozen=True)
 class StatementEntry:
     """One Safe2Pay statement line for reconciliation (cents, exact — TH-I)."""
 
@@ -84,7 +99,13 @@ class PaymentPort(Protocol):
     async def tokenize_card(self, card: CardData) -> str | None: ...
 
     async def charge_with_token(
-        self, *, token: str, amount_cents: int, reference: str, customer: Customer
+        self,
+        *,
+        token: str,
+        amount_cents: int,
+        reference: str,
+        customer: Customer,
+        card_data: "CardData | None" = None,
     ) -> ChargeResult: ...
 
     async def charge_with_split(
@@ -98,8 +119,23 @@ class PaymentPort(Protocol):
     ) -> ChargeResult: ...
 
     async def create_pix_authorization(
-        self, *, amount_cents: int, customer: Customer, reference: str
+        self,
+        *,
+        amount_cents: int,
+        customer: Customer,
+        reference: str,
+        recorrente: bool = False,
     ) -> ChargeResult: ...
+
+    async def create_pix_charge_schedule(
+        self,
+        *,
+        authorization_id: str,
+        amount_cents: int,
+        reference: str,
+        due_date: str,
+        description: str,
+    ) -> "PixScheduleResult": ...
 
     async def refund(self, *, transaction_id: str, amount_cents: int, method: str) -> None: ...
 

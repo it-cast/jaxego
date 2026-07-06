@@ -36,6 +36,7 @@ from app.workers.lifecycle import (
 )
 from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import (
+    charge_pix_subscriptions_daily,
     charge_subscriptions_daily,
     close_platform_invoices,
     expire_dispute_blocks,
@@ -77,6 +78,7 @@ class WorkerSettings:
         notify_task,
         # Phase 10: recurring billing + escrow + reconciliation crons (idempotent).
         charge_subscriptions_daily,
+        charge_pix_subscriptions_daily,
         sync_delinquency,
         release_escrow,
         reconcile_safe2pay,
@@ -105,6 +107,8 @@ class WorkerSettings:
         # Phase 10 — recurring billing crons (aware-UTC, idempotent).
         # Charge due card subscriptions daily at 06:00 UTC (SAAS-BILLING §7).
         cron(charge_subscriptions_daily, hour={6}, minute={0}),
+        # Schedule PIX Automático chargeSchedules daily at 06:05 UTC (SAAS-BILLING §7.2).
+        cron(charge_pix_subscriptions_daily, hour={6}, minute={5}),
         # Sync delinquency (10/20d) daily at 06:10 UTC.
         cron(sync_delinquency, hour={6}, minute={10}),
         # Release escrow FINALIZADA+24h without dispute — every 10 min (RN-006).

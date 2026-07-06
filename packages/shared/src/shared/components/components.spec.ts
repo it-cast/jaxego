@@ -82,6 +82,7 @@ describe('FieldComponent', () => {
 describe('PlanCardComponent', () => {
   let fixture: ComponentFixture<PlanCardComponent>;
   const freePlan: Plan = {
+    id: 1,
     codename: 'free',
     nome: 'Free',
     preco_cents: 0,

@@ -50,7 +50,7 @@ export class SubscriptionStatusComponent {
   private readonly _status = signal<BillingStatus>('trial');
   private readonly _amountCents = signal(0);
   private readonly _nextDue = signal<string | null>(null);
-  private readonly _trialDays = signal<number | null>(null);
+  private readonly _planName = signal<string | null>(null);
 
   @Input({ required: true })
   set status(v: BillingStatus) {
@@ -65,8 +65,8 @@ export class SubscriptionStatusComponent {
     this._nextDue.set(v);
   }
   @Input()
-  set trialDays(v: number | null) {
-    this._trialDays.set(v);
+  set planName(v: string | null) {
+    this._planName.set(v);
   }
 
   protected readonly statusValue = this._status;
@@ -75,11 +75,9 @@ export class SubscriptionStatusComponent {
   protected readonly label = computed(() => {
     switch (this._status()) {
       case 'trial':
-        return this._trialDays() != null
-          ? `Teste — ${this._trialDays()} dias restantes`
-          : 'Período de teste';
+        return this._planName() ?? 'Plano gratuito';
       case 'active':
-        return 'Assinatura ativa';
+        return this._planName() ?? 'Assinatura ativa';
       case 'blocked':
         return 'Assinatura bloqueada';
       case 'cancelado':
@@ -92,7 +90,7 @@ export class SubscriptionStatusComponent {
     const dueFmt = due ? new Date(due).toLocaleDateString('pt-BR') : null;
     switch (this._status()) {
       case 'trial':
-        return 'Escolha um plano para continuar sem interrupção.';
+        return null;
       case 'active':
         return dueFmt
           ? `Renova em ${dueFmt} por ${formatCents(this._amountCents())}`

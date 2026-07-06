@@ -31,6 +31,16 @@ async def charge_subscriptions_daily(ctx: dict[str, Any]) -> int:
     )
 
 
+async def charge_pix_subscriptions_daily(ctx: dict[str, Any]) -> int:
+    """Schedule PIX Automático chargeSchedules for approved subscriptions due today."""
+    from app.payments import subscriptions
+    from app.payments.factory import get_payment_adapter
+
+    return await subscriptions.charge_due_pix_subscriptions(
+        ctx["session_factory"], get_payment_adapter()
+    )
+
+
 async def sync_delinquency(ctx: dict[str, Any]) -> int:
     """Transition subscriptions by overdue days (>10d blocked, >20d cancelado)."""
     from app.payments import subscriptions
@@ -109,23 +119,42 @@ async def process_safe2pay_event(
 ) -> str:
     """Process a deduped Safe2Pay webhook event (heavy work off the request path).
 
-    NEVER releases money on the webhook alone (TH-E): for an approved status it marks the
-    matching charge paid (the escrow release stays with the 24h cron). A business error is
-    swallowed (logged) — the event was already deduped, and re-processing must not loop.
-    A real impl confirms via `GET Transaction/{id}` before any financial effect; with the
-    Stub there is no network, so we trust the deduped status.
+    Handles two event families:
+    1. PIX Automático authorization APROVADA — activates the subscription.
+    2. Charge paid (card or PIX QR) — marks the charge paid; activates PIX one-time subs.
+
+    NEVER releases money on the webhook alone (TH-E). Business errors are swallowed
+    (logged) — the event was already deduped, and re-processing must not loop.
     """
     import structlog
 
-    from app.payments import repo
+    from app.payments import repo, subscriptions
 
     logger = structlog.get_logger("workers.payments")
     session_factory = ctx["session_factory"]
     approved = event_status in {"3", "4", "APROVADA", "ATIVA", "CONCLUIDA", "PAGO"}
+
     async with session_factory() as session:
+        # 1. PIX Automático authorization APROVADA: look up by authorization id.
+        if event_status == "APROVADA":
+            found = await subscriptions.activate_approved_pix(
+                session, pix_autorizacao_id=transaction_id
+            )
+            if found:
+                await session.commit()
+                logger.info("payments.pix_auto_approved", authorization_id=transaction_id)
+                return "ok"
+
+        # 2. Standard charge event (card or PIX QR).
         charge = await repo.get_charge_by_transaction(session, transaction_id=transaction_id)
         if charge is not None and approved and charge.status == "open":
             charge.status = "paid"
+            # PIX one-time subscription: activate on first charge confirmed paid.
+            if charge.subscription_id is not None and charge.method == "pix":
+                await subscriptions.activate_pix_on_charge_paid(
+                    session, subscription_id=charge.subscription_id
+                )
         await session.commit()
+
     logger.info("payments.process_event", transaction_id=transaction_id, approved=approved)
     return "ok"

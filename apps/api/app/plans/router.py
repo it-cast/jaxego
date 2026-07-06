@@ -26,6 +26,7 @@ async def list_plans(session: SessionDep) -> list[PlanRead]:
     plans = await service.list_active_plans(session)
     return [
         PlanRead(
+            id=p.id,
             codename=p.code,
             nome=p.name,
             preco_cents=p.price_cents,

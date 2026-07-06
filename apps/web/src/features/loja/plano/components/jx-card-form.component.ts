@@ -33,7 +33,9 @@ export type CardFormState = 'idle' | 'cifrando' | 'aprovado' | 'recusado';
       <jx-field
         label="Nome no cartão"
         autocomplete="cc-name"
-        [(ngModel)]="holder"
+        [maxlength]="26"
+        [ngModel]="holder"
+        (ngModelChange)="onHolderChange($event)"
         name="holder"
         [error]="errors().holder"
       />
@@ -42,18 +44,24 @@ export type CardFormState = 'idle' | 'cifrando' | 'aprovado' | 'recusado';
         inputmode="numeric"
         autocomplete="cc-number"
         [mono]="true"
-        [(ngModel)]="number"
+        [maxlength]="19"
+        placeholder="0000 0000 0000 0000"
+        [ngModel]="number"
+        (ngModelChange)="onNumberChange($event)"
         name="number"
         (blurred)="validateNumber()"
         [error]="errors().number"
       />
       <div class="jx-card-form__row">
         <jx-field
-          label="Validade (MM/AAAA)"
+          label="Validade"
           inputmode="numeric"
           autocomplete="cc-exp"
           [mono]="true"
-          [(ngModel)]="expiry"
+          [maxlength]="5"
+          placeholder="MM/AA"
+          [ngModel]="expiry"
+          (ngModelChange)="onExpiryChange($event)"
           name="expiry"
           (blurred)="validateExpiry()"
           [error]="errors().expiry"
@@ -64,7 +72,9 @@ export type CardFormState = 'idle' | 'cifrando' | 'aprovado' | 'recusado';
           autocomplete="cc-csc"
           [mono]="true"
           [maxlength]="4"
-          [(ngModel)]="cvv"
+          placeholder="000"
+          [ngModel]="cvv"
+          (ngModelChange)="onCvvChange($event)"
           name="cvv"
           (blurred)="validateCvv()"
           [error]="errors().cvv"
@@ -121,6 +131,24 @@ export class CardFormComponent {
     this.state.set(s);
   }
 
+  protected onHolderChange(v: string): void {
+    this.holder = v.toUpperCase();
+  }
+
+  protected onNumberChange(v: string): void {
+    const digits = v.replace(/\D/g, '').slice(0, 16);
+    this.number = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+  }
+
+  protected onExpiryChange(v: string): void {
+    const digits = v.replace(/\D/g, '').slice(0, 4);
+    this.expiry = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+  }
+
+  protected onCvvChange(v: string): void {
+    this.cvv = v.replace(/\D/g, '').slice(0, 4);
+  }
+
   protected validateNumber(): void {
     const digits = this.number.replace(/\D/g, '');
     const ok = digits.length >= 13 && digits.length <= 19 && luhn(digits);
@@ -128,11 +156,11 @@ export class CardFormComponent {
   }
 
   protected validateExpiry(): void {
-    const m = /^(\d{2})\/(\d{4})$/.exec(this.expiry.trim());
-    let err: string | undefined = 'Use MM/AAAA.';
+    const m = /^(\d{2})\/(\d{2})$/.exec(this.expiry.trim());
+    let err: string | undefined = 'Use MM/AA.';
     if (m) {
       const month = Number(m[1]);
-      const year = Number(m[2]);
+      const year = 2000 + Number(m[2]);
       const now = new Date();
       const notExpired =
         month >= 1 &&

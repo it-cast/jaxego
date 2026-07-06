@@ -16,6 +16,7 @@ export interface SubscriptionView {
   next_due_at: string | null;
   qr_code: string | null;
   qr_code_base64: string | null;
+  pix_autorizacao_status: string | null;
 }
 
 export interface ChargeHistoryItem {
@@ -26,6 +27,7 @@ export interface ChargeHistoryItem {
   status: string;
   transaction_id: string | null;
   created_at: string | null;
+  due_at: string | null;
 }
 
 export interface SubscribeRequest {
@@ -33,8 +35,7 @@ export interface SubscribeRequest {
   cycle: 'mensal' | 'anual';
   method: 'card' | 'pix';
   card_blob?: string;
-  customer_document: string;
-  customer_email: string;
+  pix_recorrente?: boolean;
 }
 
 export interface PlanChangeResult {

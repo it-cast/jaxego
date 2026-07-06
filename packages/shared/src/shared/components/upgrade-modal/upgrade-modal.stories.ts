@@ -7,6 +7,7 @@ import type { Plan } from '../plan-card/plan-card.component';
 
 export const UPGRADE_PLANS: Plan[] = [
   {
+    id: 1,
     codename: 'free',
     nome: 'Free',
     preco_cents: 0,
@@ -16,6 +17,7 @@ export const UPGRADE_PLANS: Plan[] = [
     is_unlimited: false,
   },
   {
+    id: 2,
     codename: 'inicio',
     nome: 'Início',
     preco_cents: 4990,
@@ -25,6 +27,7 @@ export const UPGRADE_PLANS: Plan[] = [
     is_unlimited: false,
   },
   {
+    id: 3,
     codename: 'profissional',
     nome: 'Profissional',
     preco_cents: 9990,
