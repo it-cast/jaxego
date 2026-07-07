@@ -15,7 +15,6 @@ import { ErrorStateComponent } from '@jaxego/shared/state';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faBoxOpen, faCamera, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { CardFormComponent } from '../plano/components/jx-card-form.component';
-import { Plan } from '@jaxego/shared/components/plan-card/plan-card.component';
 import {
   isCepComplete,
   isPhoneComplete,
@@ -160,7 +159,9 @@ export class NovaEntregaPage {
   // E1 (out of area) and E4 (plan limit) state.
   protected readonly outOfArea = signal(false);
   protected readonly showUpgrade = signal(false);
-  protected readonly upgradePlans = signal<Plan[]>([]);
+  protected readonly upgradePlanName = signal<string>('');
+  protected readonly upgradePlanLimit = signal<number>(0);
+  protected readonly upgradePlanUsed = signal<number>(0);
 
   protected readonly paymentMethod = signal<'direct' | 'pix' | 'card'>('direct');
   protected readonly iconBox = faBoxOpen;
@@ -433,6 +434,7 @@ export class NovaEntregaPage {
       dropoff_number: v.dropoff_number || null,
       dropoff_complement: v.dropoff_complement || null,
       dropoff_reference: v.dropoff_reference || null,
+      cep: v.cep || null,
       recipient_name: v.recipient_name!,
       recipient_phone_e164: phoneToE164(v.recipient_phone!),
       items_description: v.items_description || null,
@@ -468,19 +470,17 @@ export class NovaEntregaPage {
     this.submitting.set(false);
     this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
 
-    if (result.planLimit) { await this.openUpgrade(); return; }
+    if (result.planLimit) { this.openUpgrade(result); return; }
     if (result.code === 'dropoff_out_of_area') { this.outOfArea.set(true); return; }
     this.submitError.set(result.message ?? 'Não foi possível criar a entrega. Tente de novo.');
   }
 
-  private async openUpgrade(): Promise<void> {
-    try {
-      const plans = await firstValueFrom(this.http.get<Plan[]>('/v1/plans'));
-      this.upgradePlans.set(plans);
-    } catch { this.upgradePlans.set([]); }
+  private openUpgrade(result: { planName?: string; planLimitCount?: number; planUsed?: number }): void {
+    this.upgradePlanName.set(result.planName ?? '');
+    this.upgradePlanLimit.set(result.planLimitCount ?? 0);
+    this.upgradePlanUsed.set(result.planUsed ?? 0);
     this.showUpgrade.set(true);
   }
 
   protected onUpgradeDismiss(): void { this.showUpgrade.set(false); }
-  protected onChoosePlan(): void { void this.router.navigate(['/loja/plano']); }
 }

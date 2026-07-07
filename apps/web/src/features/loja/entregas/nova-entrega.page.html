@@ -313,10 +313,9 @@
 
 @if (showUpgrade()) {
   <jx-upgrade-modal
-    [plans]="upgradePlans()"
-    currentPlanName="Free"
-    [limit]="2"
-    (choose)="onChoosePlan()"
+    [planName]="upgradePlanName()"
+    [limit]="upgradePlanLimit()"
+    [used]="upgradePlanUsed()"
     (dismiss)="onUpgradeDismiss()"
   />
 }

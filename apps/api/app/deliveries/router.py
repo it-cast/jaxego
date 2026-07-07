@@ -306,6 +306,7 @@ async def teams_for_address(
     dropoff_address: str = body.get("dropoff_address", "")
     dropoff_number: str | None = body.get("dropoff_number")
     dropoff_neighborhood_id: int | None = body.get("dropoff_neighborhood_id")
+    cep: str | None = body.get("cep") or None
 
     # Geocode to find zone.
     zona_id: int | None = None
@@ -316,7 +317,7 @@ async def teams_for_address(
 
             area = await session.get(Area, scope.area_id)
             nbhd = await session.get(Neighborhood, dropoff_neighborhood_id)
-            parts = [dropoff_address, dropoff_number, nbhd.name if nbhd else None, area.name if area else None]
+            parts = [dropoff_address, dropoff_number, nbhd.name if nbhd else None, cep, area.name if area else None]
             address_str = ", ".join(p for p in parts if p)
             geo = await get_geocoding_adapter().geocode(address_str)
             if geo is not None:

@@ -67,15 +67,16 @@ class DropoffOutOfAreaError(AppError):
 
 
 class PlanLimitReachedError(AppError):
-    """The Free plan monthly delivery limit was reached (RN-028 / D-07)."""
+    """The plan monthly delivery limit was reached (RN-028 / D-07)."""
 
     status_code = 402
     code = "plan_limit_reached"
 
-    def __init__(self, *, plan_code: str, limit: int, used: int) -> None:
+    def __init__(self, *, plan_name: str, plan_code: str, limit: int, used: int) -> None:
         self.plan_code = plan_code
         self.limit = limit
         self.used = used
+        self.extra: dict[str, object] = {"plan_name": plan_name, "limit": limit, "used": used}
         super().__init__(
             "Você atingiu o limite de entregas do seu plano neste mês. O contador zera no dia 1º."
         )
@@ -238,7 +239,7 @@ async def _assert_within_plan_limit(
         return
     used = await deliveries_this_month(session, merchant_id=merchant_id, area_id=area_id)
     if used >= plan.deliveries_per_month:
-        raise PlanLimitReachedError(plan_code=plan.code, limit=plan.deliveries_per_month, used=used)
+        raise PlanLimitReachedError(plan_name=plan.name, plan_code=plan.code, limit=plan.deliveries_per_month, used=used)
 
 
 # ---------------------------------------------------------------------------
@@ -406,6 +407,7 @@ async def create_delivery(
             body.dropoff_address,
             getattr(body, "dropoff_number", None),
             nbhd.name if nbhd else None,
+            getattr(body, "cep", None),
             area.name if area else None,
         ]
         address_str = ", ".join(p for p in address_parts if p)

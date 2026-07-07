@@ -217,6 +217,7 @@ async def activate_pix(
     sub.payment_method = "pix"
     sub.cycle = cycle
     sub.amount_cents = amount
+    sub.billing_status = "pending"
     sub.pix_autorizacao_id = result.authorization_id or None
     sub.pix_autorizacao_status = "CRIADA"
     sub.pix_qr_code = result.qr_code

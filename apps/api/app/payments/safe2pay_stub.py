@@ -121,6 +121,9 @@ class PaymentStubAdapter:
 
         return PixScheduleResult(schedule_id=f"stub_sched_{next(self._seq)}", status="CRIADA")
 
+    async def get_pix_authorization_status(self, *, authorization_id: str) -> str:
+        return "APROVADA"
+
     async def refund(self, *, transaction_id: str, amount_cents: int, method: str) -> None:
         self._guard()
         # Distinct route per method (A9): Pix vs Card use different endpoints.

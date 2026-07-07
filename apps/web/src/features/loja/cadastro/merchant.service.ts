@@ -102,6 +102,17 @@ export class MerchantService {
     }
   }
 
+  /** GET /v1/payments/assinatura — fetch current subscription status (auth required). */
+  async getSubscription(): Promise<SubscribeResponse | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<SubscribeResponse>('/v1/payments/assinatura')
+      );
+    } catch {
+      return null;
+    }
+  }
+
   /** POST /v1/payments/assinar — activate card or PIX subscription (auth required). */
   async subscribe(req: SubscribeRequest): Promise<SubscribeResult> {
     try {

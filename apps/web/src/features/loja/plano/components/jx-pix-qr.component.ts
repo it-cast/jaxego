@@ -37,7 +37,7 @@ export type PixState = 'aguardando' | 'aprovado' | 'expirado';
         @if (qrBase64()) {
           <img
             class="jx-pix__img"
-            [src]="'data:image/png;base64,' + qrBase64()"
+            [src]="qrBase64()"
             alt="QR Code PIX para pagamento da assinatura"
             width="200"
             height="200"

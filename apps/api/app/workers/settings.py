@@ -42,6 +42,7 @@ from app.workers.tasks import (
     expire_dispute_blocks,
     healthcheck,
     mark_invoices_overdue,
+    poll_pix_pending_authorizations,
     process_safe2pay_event,
     reconcile_finance_daily,
     reconcile_safe2pay,
@@ -76,6 +77,8 @@ class WorkerSettings:
         send_push_task,
         # Phase 9: multichannel recipient notifications (RN-018 / RN-031).
         notify_task,
+        # PIX Automático authorization polling (every 2 min, until webhook is configured).
+        poll_pix_pending_authorizations,
         # Phase 10: recurring billing + escrow + reconciliation crons (idempotent).
         charge_subscriptions_daily,
         charge_pix_subscriptions_daily,
@@ -104,6 +107,8 @@ class WorkerSettings:
         cron(purge_locations, minute={7}),
         # "ausente" >10min → enable return (D-07 E2) — every minute.
         cron(absent_timeout, minute=set(range(0, 60))),
+        # Fallback: poll pending PIX authorizations hourly (primary path is on login/page load).
+        cron(poll_pix_pending_authorizations, minute={30}),
         # Phase 10 — recurring billing crons (aware-UTC, idempotent).
         # Charge due card subscriptions daily at 06:00 UTC (SAAS-BILLING §7).
         cron(charge_subscriptions_daily, hour={6}, minute={0}),

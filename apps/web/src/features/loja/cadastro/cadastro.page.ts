@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   computed,
   inject,
   signal,
@@ -70,7 +71,7 @@ const DRAFT_KEY = 'jx-merchant-onboarding';
   templateUrl: './cadastro.page.html',
   styleUrl: './cadastro.page.scss',
 })
-export class CadastroLojaPage {
+export class CadastroLojaPage implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly merchants = inject(MerchantService);
   private readonly router = inject(Router);
@@ -95,7 +96,7 @@ export class CadastroLojaPage {
 
   // Payment step state (shown after signup with paid plan)
   protected readonly showPayment = signal(false);
-  protected readonly payMethod = signal<'card' | 'pix'>('card');
+  protected readonly payMethod = signal<'card' | 'pix' | null>(null);
   protected readonly cardHolder = signal('');
   protected readonly cardNumber = signal('');
   protected readonly cardExpiry = signal('');
@@ -106,6 +107,7 @@ export class CadastroLojaPage {
   protected readonly paymentErrorCode = signal<string | null>(null);
   protected readonly paymentLoading = signal(false);
   protected readonly pixPending = signal(false);
+  private pixPollTimer: ReturnType<typeof setInterval> | null = null;
 
   private static readonly S2P_MESSAGES: Record<string, string> = {
     '001': 'Transação recusada pelo emissor. Entre em contato com seu banco.',
@@ -465,6 +467,36 @@ export class CadastroLojaPage {
     void this.router.navigate(['/loja']);
   }
 
+  protected copyPixCode(): void {
+    const code = this.pixQrCode();
+    if (code) void navigator.clipboard.writeText(code);
+  }
+
+  ngOnDestroy(): void {
+    this.stopPixPolling();
+  }
+
+  private startPixPolling(): void {
+    this.pixPollTimer = setInterval(() => {
+      void this.checkPixStatus();
+    }, 5000);
+  }
+
+  private stopPixPolling(): void {
+    if (this.pixPollTimer !== null) {
+      clearInterval(this.pixPollTimer);
+      this.pixPollTimer = null;
+    }
+  }
+
+  private async checkPixStatus(): Promise<void> {
+    const sub = await this.merchants.getSubscription();
+    if (sub?.billing_status === 'active') {
+      this.stopPixPolling();
+      void this.router.navigate(['/loja/cadastro/sucesso']);
+    }
+  }
+
   protected setPayMethod(m: 'card' | 'pix'): void {
     this.payMethod.set(m);
     this.paymentError.set(null);
@@ -536,9 +568,7 @@ export class CadastroLojaPage {
           pix_recorrente: true,
         });
         if (res.ok && res.data) {
-          this.pixQrCode.set(res.data.qr_code);
-          this.pixQrB64.set(res.data.qr_code_base64);
-          this.pixPending.set(true);
+          void this.router.navigate(['/loja/aguardando-pagamento']);
           return;
         }
         this.paymentErrorCode.set(res.code ?? null);

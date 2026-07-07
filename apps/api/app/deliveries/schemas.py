@@ -60,6 +60,8 @@ class CreateDeliveryBody(BaseModel):
     dropoff_number: str | None = Field(default=None, max_length=20)
     dropoff_complement: str | None = Field(default=None, max_length=120)
     dropoff_reference: str | None = Field(default=None, max_length=255)
+    # CEP do endereço de entrega — usado como âncora geográfica no geocoding.
+    cep: str | None = Field(default=None, max_length=9)
     # Trip distance in metres (the UI may estimate it; server uses it for km bands).
     distance_m: int | None = Field(default=None, ge=0)
 

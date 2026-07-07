@@ -115,6 +115,10 @@ export class LoginPage implements AfterViewInit {
         queueMicrotask(() => this.errorRef()?.nativeElement.focus());
         return;
       }
+      if (me.surface === 'loja' && me.status === 'pending_payment') {
+        void this.router.navigate(['/loja/aguardando-pagamento']);
+        return;
+      }
       void this.router.navigate([this.auth.surfaceHome(me.surface)]);
       return;
     }

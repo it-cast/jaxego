@@ -382,14 +382,14 @@ class Safe2PayHttpAdapter:
         )
         # v3 response: {"traceId": "...", "data": {"Id": ..., "QrData": {...}, ...}}
         data = raw.get("data", raw)
-        auth_id = str(data.get("Id", ""))
-        qr_data = data.get("QrData") or {}
-        immediate = data.get("ImmediatePayment") or {}
+        auth_id = str(data.get("id") or data.get("Id") or "")
+        qr_data = data.get("qrData") or data.get("QrData") or {}
+        immediate = data.get("immediatePayment") or data.get("ImmediatePayment") or {}
         return ChargeResult(
-            transaction_id=str(immediate.get("IdTransaction") or auth_id),
+            transaction_id=str(immediate.get("idTransaction") or immediate.get("IdTransaction") or auth_id),
             status="pending",
-            qr_code=qr_data.get("PixCopyAndPaste"),
-            qr_code_base64=qr_data.get("QrCode"),  # URL da imagem, não base64
+            qr_code=qr_data.get("pixCopyAndPaste") or qr_data.get("PixCopyAndPaste"),
+            qr_code_base64=qr_data.get("qrCode") or qr_data.get("QrCode"),
             authorization_id=auth_id,
         )
 
@@ -420,6 +420,21 @@ class Safe2PayHttpAdapter:
             schedule_id=str(data.get("Id", "")),
             status=str(data.get("Status", "CRIADA")),
         )
+
+    async def get_pix_authorization_status(self, *, authorization_id: str) -> str:
+        """GET /v3/pix/automatic/authorizations/{id} — retorna status atual da autorização."""
+        url = f"{self._payment_url}/v3/pix/automatic/authorizations/{authorization_id}"
+        assert_safe_url(url, allowlist=self._allowlist)
+        try:
+            async with build_client(timeout=httpx.Timeout(10.0)) as client:
+                resp = await client.get(url, headers=self._headers())
+                if resp.status_code >= 400:
+                    return "ERRO"
+                data = resp.json()
+                detail = data.get("data", data)
+                return str(detail.get("status") or "DESCONHECIDO").upper()
+        except Exception:
+            return "ERRO"
 
     async def refund(self, *, transaction_id: str, amount_cents: int, method: str) -> None:
         # [ASSUMIDO A9] distinct route Pix vs Card — confirm at T-13.

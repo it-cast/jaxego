@@ -13,6 +13,7 @@ export interface CreateDeliveryRequest {
   dropoff_number?: string | null;
   dropoff_complement?: string | null;
   dropoff_reference?: string | null;
+  cep?: string | null;
   distance_m?: number | null;
   recipient_name: string;
   recipient_phone_e164: string;

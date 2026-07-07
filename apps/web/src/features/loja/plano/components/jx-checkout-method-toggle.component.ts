@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 
-export type CheckoutMethod = 'card' | 'pix';
+export type CheckoutMethod = 'card' | 'pix' | null;
 
 /**
  * jx-checkout-method-toggle — choose card | PIX (UI-SPEC §6.1).
@@ -55,7 +55,7 @@ export type CheckoutMethod = 'card' | 'pix';
   styleUrl: './jx-checkout-method-toggle.component.scss',
 })
 export class CheckoutMethodToggleComponent {
-  protected readonly value = signal<CheckoutMethod>('card');
+  protected readonly value = signal<CheckoutMethod>(null);
   @Input() disabled = false;
 
   @Input()
@@ -65,7 +65,7 @@ export class CheckoutMethodToggleComponent {
 
   @Output() methodChange = new EventEmitter<CheckoutMethod>();
 
-  protected select(m: CheckoutMethod): void {
+  protected select(m: 'card' | 'pix'): void {
     if (this.disabled) return;
     this.value.set(m);
     this.methodChange.emit(m);

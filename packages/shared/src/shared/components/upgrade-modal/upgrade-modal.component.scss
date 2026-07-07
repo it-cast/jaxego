@@ -57,21 +57,39 @@
 }
 
 .jx-upgrade__subtext {
-  margin: 0 0 var(--jx-space-4);
+  margin: 0 0 var(--jx-space-5);
   font-size: var(--jx-text-sm);
   color: var(--text-muted);
 }
 
-.jx-upgrade__plans {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--jx-space-3);
-  margin-bottom: var(--jx-space-4);
-}
-
 .jx-upgrade__actions {
   display: flex;
+  gap: var(--jx-space-3);
+  align-items: center;
   justify-content: flex-end;
+}
+
+.jx-upgrade__cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--jx-space-5);
+  background: var(--brand, #2563eb);
+  color: #fff;
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-base);
+  font-weight: var(--jx-weight-semibold);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.88;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
 }
 
 // "Agora não" — EQUAL visual weight: legible text button, ≥44px, never faded.

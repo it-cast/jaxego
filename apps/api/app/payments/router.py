@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import ValidationAppError
 from app.db.session import get_session
 from app.deliveries.dependencies import MerchantScopeDep
-from app.merchants.models import MerchantSubscription
+from app.merchants.models import Merchant, MerchantSubscription
 from app.payments import crypto, subscriptions
 from app.payments.factory import get_payment_adapter
 from app.payments.models import PlatformCharge
@@ -154,6 +154,32 @@ async def subscribe(
 @router.get("/assinatura", response_model=SubscriptionOut)
 async def get_subscription(scope: MerchantScopeDep, session: SessionDep) -> SubscriptionOut:
     sub = await _resolve_subscription(session, merchant_id=scope.merchant_id, area_id=scope.area_id)
+    # Se PIX pendente, consulta Safe2Pay diretamente e atualiza status (sem webhook)
+    if sub.billing_status == "pending" and sub.pix_autorizacao_id and sub.payment_method == "pix":
+        payment = get_payment_adapter()
+        s2p_status = await payment.get_pix_authorization_status(authorization_id=sub.pix_autorizacao_id)
+        if s2p_status in {"APROVADA", "ATIVA"}:
+            sub.billing_status = "active"
+            sub.pix_autorizacao_status = s2p_status
+            # Marca a cobrança pendente como paga
+            charge_stmt = (
+                select(PlatformCharge)
+                .where(
+                    PlatformCharge.subscription_id == sub.id,
+                    PlatformCharge.status.in_(["open", "pending"]),
+                )
+                .order_by(PlatformCharge.created_at.desc())
+                .limit(1)
+            )
+            charge = (await session.execute(charge_stmt)).scalars().first()
+            if charge:
+                charge.status = "paid"
+            # Transition merchant.status pending_payment → active
+            merchant = await session.get(Merchant, sub.merchant_id)
+            if merchant and merchant.status == "pending_payment":
+                merchant.status = "active"
+            await session.commit()
+            logger.info("pix_authorization_approved_via_poll", subscription_id=sub.id, s2p_status=s2p_status)
     return _subscription_out(sub)
 
 
@@ -179,10 +205,11 @@ async def change_plan(
 
 @router.get("/cobrancas", response_model=list[ChargeHistoryItem])
 async def charge_history(scope: MerchantScopeDep, session: SessionDep) -> list[ChargeHistoryItem]:
-    """The store's charge history (area-scoped, single query — no N+1)."""
+    """The store's charge history (scoped by merchant subscription — no N+1)."""
     stmt = (
         select(PlatformCharge)
-        .where(PlatformCharge.area_id == scope.area_id)
+        .join(MerchantSubscription, MerchantSubscription.id == PlatformCharge.subscription_id)
+        .where(MerchantSubscription.merchant_id == scope.merchant_id)
         .order_by(PlatformCharge.created_at.desc())
         .limit(100)
     )

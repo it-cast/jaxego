@@ -114,6 +114,78 @@ async def reconcile_finance_daily(ctx: dict[str, Any]) -> int:
     return len(divergences)
 
 
+async def poll_pix_pending_authorizations(ctx: dict[str, Any]) -> int:
+    """Cron: poll Safe2Pay for pending PIX Automático authorizations and activate them.
+
+    Runs every 2 minutes. Finds subscriptions with billing_status='pending' and a
+    pix_autorizacao_id, queries Safe2Pay for each, and if APROVADA/ATIVA:
+      - sets billing_status='active'
+      - marks the existing open charge as 'paid'
+
+    Idempotent: no-op if already active.
+    """
+    import structlog
+    from sqlalchemy import select
+
+    from app.merchants.models import Merchant, MerchantSubscription
+    from app.payments.factory import get_payment_adapter
+    from app.payments.models import PlatformCharge
+
+    logger = structlog.get_logger("workers.pix_poll")
+    session_factory = ctx["session_factory"]
+    payment = get_payment_adapter()
+    activated = 0
+
+    async with session_factory() as session:
+        stmt = select(MerchantSubscription).where(
+            MerchantSubscription.billing_status == "pending",
+            MerchantSubscription.payment_method == "pix",
+            MerchantSubscription.pix_autorizacao_id.isnot(None),
+        )
+        subs = (await session.execute(stmt)).scalars().all()
+
+        for sub in subs:
+            try:
+                s2p_status = await payment.get_pix_authorization_status(
+                    authorization_id=sub.pix_autorizacao_id
+                )
+            except Exception as exc:
+                logger.warning("pix_poll.status_error", subscription_id=sub.id, error=str(exc))
+                continue
+
+            if s2p_status not in {"APROVADA", "ATIVA"}:
+                continue
+
+            sub.billing_status = "active"
+            sub.pix_autorizacao_status = s2p_status
+
+            charge_stmt = (
+                select(PlatformCharge)
+                .where(
+                    PlatformCharge.subscription_id == sub.id,
+                    PlatformCharge.status.in_(["open", "pending"]),
+                )
+                .order_by(PlatformCharge.created_at.desc())
+                .limit(1)
+            )
+            charge = (await session.execute(charge_stmt)).scalars().first()
+            if charge:
+                charge.status = "paid"
+
+            # Transition merchant.status pending_payment → active
+            merchant = await session.get(Merchant, sub.merchant_id)
+            if merchant and merchant.status == "pending_payment":
+                merchant.status = "active"
+
+            activated += 1
+            logger.info("pix_poll.activated", subscription_id=sub.id, s2p_status=s2p_status)
+
+        if activated:
+            await session.commit()
+
+    return activated
+
+
 async def process_safe2pay_event(
     ctx: dict[str, Any], transaction_id: str, event_status: str
 ) -> str:

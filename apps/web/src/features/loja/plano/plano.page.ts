@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   ViewChild,
   computed,
   inject,
@@ -21,7 +22,6 @@ import {
   type CheckoutMethod,
 } from './components/jx-checkout-method-toggle.component';
 import { CardFormComponent } from './components/jx-card-form.component';
-import { PixQrComponent } from './components/jx-pix-qr.component';
 
 @Component({
   selector: 'jx-plano',
@@ -34,7 +34,6 @@ import { PixQrComponent } from './components/jx-pix-qr.component';
     ChargeHistoryComponent,
     CheckoutMethodToggleComponent,
     CardFormComponent,
-    PixQrComponent,
   ],
   template: `
     <main class="jx-plano">
@@ -98,27 +97,49 @@ import { PixQrComponent } from './components/jx-pix-qr.component';
       <div class="jx-modal-overlay" role="dialog" aria-modal="true" aria-label="Pagamento">
         <div class="jx-modal jx-modal--narrow" (click)="$event.stopPropagation()">
           <div class="jx-modal__header">
-            <h2 class="jx-modal__title">Pagamento</h2>
+            <h2 class="jx-modal__title">
+              @if (pixConfirmed()) { Assinatura ativada! } @else { Pagamento }
+            </h2>
             <button type="button" class="jx-modal__close" aria-label="Fechar" (click)="closePaymentModal()">×</button>
           </div>
           <div class="jx-modal__body">
-            <jx-checkout-method-toggle
-              [method]="method()"
-              (methodChange)="onMethodChange($event)"
-            />
-            @if (method() === 'card') {
-              <jx-card-form ctaLabel="Confirmar pagamento" (cardEncrypted)="onCardEncrypted($event)" />
-            } @else {
-              @if (isPixAutoPending()) {
-                <jx-pix-qr
-                  [copyPaste]="subscription()!.qr_code!"
-                  [image]="subscription()?.qr_code_base64 ?? null"
-                  pixState="aguardando"
-                />
-                <p class="jx-plano__pix-hint">
-                  Abra seu app bancário e aprove a autorização de débito automático PIX.
+
+            @if (pixConfirmed()) {
+              <!-- Tela de sucesso PIX dentro do modal -->
+              <div class="jx-plano__pix-success">
+                <div class="jx-plano__pix-success-icon" aria-hidden="true">✓</div>
+                <p class="jx-plano__pix-success-msg">PIX confirmado. Seu plano foi ativado.</p>
+                <button type="button" class="jx-plano__pix-btn" (click)="closePaymentModal()">
+                  Continuar
+                </button>
+              </div>
+
+            } @else if (pixPending()) {
+              <!-- QR exibido aguardando pagamento -->
+              <div class="jx-plano__pix-result" role="status" aria-live="polite">
+                @if (pixQrImage()) {
+                  <img [src]="pixQrImage()!" alt="QR Code PIX" class="jx-plano__pix-qr" />
+                }
+                @if (pixQrCode()) {
+                  <p class="jx-plano__pix-code">{{ pixQrCode() }}</p>
+                  <button type="button" class="jx-plano__pix-copy" (click)="copyPixCode()">
+                    {{ pixCopied() ? 'Copiado!' : 'Copiar código PIX' }}
+                  </button>
+                }
+                <p class="jx-plano__pix-note">
+                  Aguardando confirmação do pagamento…
                 </p>
-              } @else {
+              </div>
+
+            } @else {
+              <!-- Seleção de método + formulários -->
+              <jx-checkout-method-toggle
+                [method]="method()"
+                (methodChange)="onMethodChange($event)"
+              />
+              @if (method() === 'card') {
+                <jx-card-form ctaLabel="Confirmar pagamento" (cardEncrypted)="onCardEncrypted($event)" />
+              } @else if (method() === 'pix') {
                 <p class="jx-plano__pix-hint">
                   Ao confirmar, você autoriza o débito automático mensal via PIX.
                 </p>
@@ -132,6 +153,7 @@ import { PixQrComponent } from './components/jx-pix-qr.component';
                 </button>
               }
             }
+
           </div>
         </div>
       </div>
@@ -139,37 +161,39 @@ import { PixQrComponent } from './components/jx-pix-qr.component';
   `,
   styleUrl: './plano.page.scss',
 })
-export class PlanoPage {
+export class PlanoPage implements OnDestroy {
   private readonly merchants = inject(MerchantService);
   private readonly billing = inject(BillingService);
+
 
   protected readonly plans = signal<Plan[]>([]);
   protected readonly current = signal<string>('free');
   protected readonly subscription = signal<SubscriptionView | null>(null);
   protected readonly charges = signal<ChargeHistoryItem[]>([]);
-  protected readonly method = signal<CheckoutMethod>('card');
+  protected readonly method = signal<CheckoutMethod>(null);
   protected readonly showPlanModal = signal(false);
   protected readonly showPaymentModal = signal(false);
   protected readonly pixLoading = signal(false);
+  protected readonly pixPending = signal(false);
+  protected readonly pixConfirmed = signal(false);
+  protected readonly pixQrImage = signal<string | null>(null);
+  protected readonly pixQrCode = signal<string | null>(null);
+  protected readonly pixCopied = signal(false);
   protected readonly currentPlanName = computed(() => {
     const plan = this.plans().find((p) => p.codename === this.current());
     return plan?.nome ?? null;
   });
-  protected readonly isPixAutoPending = computed(() => {
-    const sub = this.subscription();
-    return (
-      sub?.payment_method === 'pix' &&
-      sub?.pix_autorizacao_status === 'CRIADA' &&
-      !!sub?.qr_code
-    );
-  });
-
   @ViewChild(CardFormComponent) private cardForm?: CardFormComponent;
 
   private pendingPlanId: number | null = null;
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     void this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.stopPolling();
   }
 
   protected openPlanModal(): void {
@@ -181,9 +205,15 @@ export class PlanoPage {
   }
 
   protected closePaymentModal(): void {
+    this.stopPolling();
     this.showPaymentModal.set(false);
     this.pendingPlanId = null;
     this.pixLoading.set(false);
+    this.pixPending.set(false);
+    this.pixConfirmed.set(false);
+    this.pixQrImage.set(null);
+    this.pixQrCode.set(null);
+    this.method.set(null);
   }
 
   protected onMethodChange(m: CheckoutMethod): void {
@@ -195,19 +225,32 @@ export class PlanoPage {
     if (!sub || this.pixLoading()) return;
     this.pixLoading.set(true);
     try {
-      const updated = await this.billing.subscribe({
+      const result = await this.billing.subscribe({
         plan_id: this.pendingPlanId ?? sub.plan_id,
         cycle: 'mensal',
         method: 'pix',
         pix_recorrente: true,
       });
-      this.subscription.set(updated);
-      this.updateCurrent(updated.plan_id);
-      this.charges.set(await this.billing.charges());
+      this.pixQrImage.set(result.qr_code_base64 ?? null);
+      this.pixQrCode.set(result.qr_code ?? null);
+      this.pixPending.set(true);
+      this.startPolling();
     } catch {
       // backend error — modal stays open so user can retry
     } finally {
       this.pixLoading.set(false);
+    }
+  }
+
+  protected async copyPixCode(): Promise<void> {
+    const code = this.pixQrCode();
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      this.pixCopied.set(true);
+      setTimeout(() => this.pixCopied.set(false), 2000);
+    } catch {
+      // clipboard blocked — code visible for manual copy
     }
   }
 
@@ -238,6 +281,32 @@ export class PlanoPage {
       this.closePaymentModal();
     } catch {
       this.cardForm?.setState('recusado');
+    }
+  }
+
+  private startPolling(): void {
+    this.pollTimer = setInterval(() => void this.checkPixStatus(), 5000);
+  }
+
+  private stopPolling(): void {
+    if (this.pollTimer !== null) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  private async checkPixStatus(): Promise<void> {
+    try {
+      const sub = await this.billing.subscription();
+      if (sub.billing_status === 'active') {
+        this.stopPolling();
+        this.subscription.set(sub);
+        this.updateCurrent(sub.plan_id);
+        this.charges.set(await this.billing.charges());
+        this.pixConfirmed.set(true);
+      }
+    } catch {
+      // silently retry on next tick
     }
   }
 

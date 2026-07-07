@@ -305,6 +305,7 @@
       <h2 class="jx-cadastro__payment-title">Ativar plano</h2>
       <p class="jx-cadastro__payment-sub">Sua loja já está criada. Conclua o pagamento para ativar o plano.</p>
 
+      <p class="jx-cadastro__pay-label">Como deseja pagar?</p>
       <div class="jx-cadastro__pay-methods" role="radiogroup" aria-label="Forma de pagamento">
         <button
           type="button"
@@ -312,14 +313,14 @@
           [class.jx-toggle--on]="payMethod() === 'card'"
           [attr.aria-pressed]="payMethod() === 'card'"
           (click)="setPayMethod('card')"
-        >Cartão</button>
+        >Cartão de crédito</button>
         <button
           type="button"
           class="jx-toggle"
           [class.jx-toggle--on]="payMethod() === 'pix'"
           [attr.aria-pressed]="payMethod() === 'pix'"
           (click)="setPayMethod('pix')"
-        >PIX</button>
+        >Pix recorrente</button>
       </div>
 
       @if (payMethod() === 'card') {
@@ -367,9 +368,9 @@
           }
           @if (pixQrCode()) {
             <p class="jx-cadastro__pix-code">{{ pixQrCode() }}</p>
+            <button type="button" class="jx-cadastro__back" (click)="copyPixCode()">Copiar código PIX</button>
           }
-          <p class="jx-cadastro__pix-note" role="status">PIX gerado! Pague pelo seu banco. A assinatura ativa automaticamente após a confirmação.</p>
-          <button type="button" class="jx-cadastro__submit" (click)="goToLoja()">Ir para a loja</button>
+          <p class="jx-cadastro__pix-note" role="status">Pague pelo seu banco. A assinatura ativa automaticamente após a confirmação.</p>
         </div>
       }
 
@@ -382,7 +383,7 @@
         </p>
       }
 
-      @if (!pixPending()) {
+      @if (!pixPending() && payMethod() !== null) {
         <button
           type="button"
           class="jx-cadastro__submit"

@@ -43,8 +43,16 @@ class ServiceUnavailableError(AppError):
     code = "service_unavailable"
 
 
-def _error_payload(code: str, message: str, request_id: str | None) -> dict[str, object]:
-    return {"error": {"code": code, "message": message, "request_id": request_id}}
+def _error_payload(
+    code: str,
+    message: str,
+    request_id: str | None,
+    extra: dict[str, object] | None = None,
+) -> dict[str, object]:
+    payload: dict[str, object] = {"code": code, "message": message, "request_id": request_id}
+    if extra:
+        payload.update(extra)
+    return {"error": payload}
 
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
@@ -52,9 +60,10 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     request_id = structlog.contextvars.get_contextvars().get("request_id")
     log = logger.warning if exc.status_code < 500 else logger.error
     log("app_error", code=exc.code, status_code=exc.status_code, message=exc.message)
+    extra: dict[str, object] | None = getattr(exc, "extra", None)
     return JSONResponse(
         status_code=exc.status_code,
-        content=_error_payload(exc.code, exc.message, request_id),
+        content=_error_payload(exc.code, exc.message, request_id, extra),
         headers=getattr(exc, "headers", None) or None,
     )
 

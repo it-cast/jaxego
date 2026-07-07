@@ -11,7 +11,7 @@ import {
 
 export type CreateDeliveryResult =
   | { ok: true; data: CreateDeliveryResponse }
-  | { ok: false; code?: string; message?: string; planLimit?: boolean };
+  | { ok: false; code?: string; message?: string; planLimit?: boolean; planName?: string; planLimitCount?: number; planUsed?: number };
 
 /**
  * DeliveryService — F-03 API client (Phase 7). NEVER logs recipient PII (only the
@@ -119,7 +119,16 @@ export class DeliveryService {
         console.warn('[delivery] create failed', { code, request_id: requestId });
       }
       if (err.status === 402 || code === 'plan_limit_reached') {
-        return { ok: false, code, message, planLimit: true };
+        const errBody = envelope?.error as Record<string, unknown> | undefined;
+        return {
+          ok: false,
+          code,
+          message,
+          planLimit: true,
+          planName: errBody?.['plan_name'] as string | undefined,
+          planLimitCount: errBody?.['limit'] as number | undefined,
+          planUsed: errBody?.['used'] as number | undefined,
+        };
       }
       // F-03 E3 (Phase 10): a card/pix refusal/outage is a 502 with this code; surface it
       // so the form offers retry / switch-to-direct (the delivery was NOT created).

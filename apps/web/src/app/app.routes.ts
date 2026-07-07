@@ -18,6 +18,13 @@ export const authRoutes: Routes = [
 /** Loja (web) surface + public store onboarding. */
 export const lojaRoutes: Routes = [
   {
+    path: 'loja/aguardando-pagamento',
+    loadComponent: () =>
+      import('../features/loja/cadastro/aguardando-pagamento.page').then(
+        (m) => m.AguardandoPagamentoPage
+      ),
+  },
+  {
     path: 'loja/cadastro/sucesso',
     loadComponent: () =>
       import('../features/loja/cadastro/cadastro-sucesso.page').then(
