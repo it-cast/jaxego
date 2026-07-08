@@ -7,8 +7,8 @@ export interface PlanCompareStory {
 }
 
 const plans: Plan[] = [
-  { codename: 'free', nome: 'Free', preco_cents: 0, entregas_mes: 30, taxa_entrega_cents: 200, is_free: true, is_unlimited: false },
-  { codename: 'pro', nome: 'Profissional', preco_cents: 9990, entregas_mes: 300, taxa_entrega_cents: 150, is_free: false, is_unlimited: false },
+  { id: 1, codename: 'free', nome: 'Free', preco_mensal_cents: 0, preco_anual_cents: 0, entregas_mes: 30, taxa_entrega_cents: 200, is_free: true, is_unlimited: false },
+  { id: 3, codename: 'pro', nome: 'Profissional', preco_mensal_cents: 9990, preco_anual_cents: 99900, entregas_mes: 300, taxa_entrega_cents: 150, is_free: false, is_unlimited: false },
 ];
 
 export const planCompareStories: PlanCompareStory[] = [

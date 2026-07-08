@@ -24,7 +24,8 @@ from app.deliveries.estimate import effective_price_cents
 from app.deliveries.models import Delivery
 from app.dispatch import offer_state
 from app.dispatch.ranking import rank_key
-from app.merchants.models import MerchantCourierBlock, MerchantCourierFavorite
+from app.integrations.routing_stub import haversine_m
+from app.merchants.models import Merchant, MerchantCourierBlock, MerchantCourierFavorite
 from app.teams.models import TeamZona
 
 logger = structlog.get_logger("dispatch.cascade")
@@ -63,6 +64,8 @@ async def build_candidates(
     zona_id: int | None = None,
     team_ids: list[int] | None = None,
     excluded_ids: set[int] | None = None,
+    merchant_lat: float | None = None,
+    merchant_lng: float | None = None,
 ) -> list[int]:
     """Ordered candidate courier ids: favorites first, then ranking (RN-009).
 
@@ -180,7 +183,19 @@ async def build_candidates(
         if courier.id in favorite_priority:
             favorites.append((favorite_priority[courier.id], courier.id))
         else:
-            eta_s = distance_m if distance_m is not None else 0
+            # Use real courier→merchant haversine when both positions are known.
+            if (
+                merchant_lat is not None
+                and merchant_lng is not None
+                and courier.lat is not None
+                and courier.lng is not None
+            ):
+                eta_s = haversine_m(
+                    (float(courier.lat), float(courier.lng)),
+                    (merchant_lat, merchant_lng),
+                )
+            else:
+                eta_s = distance_m if distance_m is not None else 0
             key = rank_key(eta_s=eta_s, load=load, price_cents=rank_price, score=0.0)
             ranked.append((key, courier.id))
 

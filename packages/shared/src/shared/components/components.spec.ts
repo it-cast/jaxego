@@ -85,7 +85,8 @@ describe('PlanCardComponent', () => {
     id: 1,
     codename: 'free',
     nome: 'Free',
-    preco_cents: 0,
+    preco_mensal_cents: 0,
+    preco_anual_cents: 0,
     entregas_mes: 2,
     taxa_entrega_cents: 200,
     is_free: true,
@@ -119,7 +120,8 @@ describe('PlanCardComponent', () => {
       nome: 'Sem Limite',
       is_free: false,
       is_unlimited: true,
-      preco_cents: 29900,
+      preco_mensal_cents: 29900,
+      preco_anual_cents: 299000,
     };
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('ilimitado');

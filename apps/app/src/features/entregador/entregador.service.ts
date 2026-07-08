@@ -29,6 +29,7 @@ export interface RatingItem {
 export interface AvailabilityResult {
   is_online: boolean;
   busy: boolean;
+  online_until: string | null;
 }
 
 export interface CourierDocumentItem {
@@ -40,6 +41,7 @@ export interface CourierDocumentItem {
 }
 
 export interface CourierProfile {
+  online_until: string | null;
   id: number;
   full_name: string;
   cpf_masked: string;
@@ -121,11 +123,11 @@ export interface CourierDeliveryList {
 export class EntregadorService {
   private readonly http = inject(HttpClient);
 
-  async setAvailability(courierId: number, online: boolean): Promise<AvailabilityResult> {
+  async setAvailability(courierId: number, online: boolean, onlineUntil?: string): Promise<AvailabilityResult> {
     return firstValueFrom(
       this.http.patch<AvailabilityResult>(
         `/v1/couriers/${courierId}/availability`,
-        { online }
+        { online, online_until: onlineUntil ?? null }
       )
     );
   }

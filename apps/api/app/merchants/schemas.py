@@ -55,6 +55,9 @@ class MerchantSignupBody(BaseModel):
     address_state: str | None = Field(default=None, max_length=2)
     # Optional chosen plan; defaults to Free. A paid plan -> pending_payment (E3).
     plan_code: str | None = Field(default=None, max_length=32)
+    # GPS coordinates captured in the browser — stored as-is, no server-side geocoding.
+    lat: float | None = Field(default=None, ge=-90.0, le=90.0)
+    lng: float | None = Field(default=None, ge=-180.0, le=180.0)
 
     @field_validator("document")
     @classmethod
@@ -149,7 +152,8 @@ class PlanRead(BaseModel):
     id: int
     codename: str
     nome: str
-    preco_cents: int
+    preco_mensal_cents: int
+    preco_anual_cents: int
     entregas_mes: int
     taxa_entrega_cents: int
     is_free: bool

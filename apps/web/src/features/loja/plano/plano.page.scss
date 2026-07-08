@@ -112,6 +112,13 @@
   gap: var(--jx-space-4);
 }
 
+// Toggle mensal/anual centralizado acima da grade
+.jx-plano__cycle-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--jx-space-4);
+}
+
 // Plan grid inside plan modal
 .jx-plano__plan-grid {
   display: grid;

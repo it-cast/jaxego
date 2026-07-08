@@ -5,7 +5,7 @@
   text-align: center;
   gap: var(--jx-space-2);
   padding: var(--jx-space-6);
-  background: var(--surface);
+  background: transparent;
   color: var(--text);
 }
 
@@ -15,17 +15,21 @@
   line-height: 1;
 }
 
+.jx-empty__img {
+  width: 220px;
+  height: auto;
+}
+
 .jx-empty__title {
-  font-family: var(--jx-font-display);
   font-size: var(--jx-text-lg);
-  font-weight: var(--jx-weight-medium);
+  font-weight: 700;
   color: var(--text);
   margin: 0;
 }
 
 .jx-empty__message {
-  font-size: var(--jx-text-base);
-  color: var(--text-muted);
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted, #888);
   margin: 0;
   max-width: 40ch;
 }

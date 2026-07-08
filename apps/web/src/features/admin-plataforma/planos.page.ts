@@ -73,7 +73,8 @@ export class PlataformaPlanosPage implements OnInit {
   protected readonly columns: DataTableColumn[] = [
     { key: 'name', label: 'Nome' },
     { key: 'code', label: 'Codigo' },
-    { key: 'price_cents', label: 'Preco (R$)', numeric: true },
+    { key: 'price_monthly_cents', label: 'Mensal (R$)', numeric: true },
+    { key: 'price_annual_cents', label: 'Anual (R$)', numeric: true },
     { key: 'deliveries_per_month', label: 'Entregas/mes', numeric: true },
     { key: 'fee_cents', label: 'Taxa (R$)', numeric: true },
     { key: 'is_active', label: 'Status' },
@@ -135,7 +136,8 @@ export class PlataformaPlanosPage implements OnInit {
     this.form = {
       code: plan.code,
       name: plan.name,
-      price_cents: plan.price_cents / 100,
+      price_monthly_cents: plan.price_monthly_cents / 100,
+      price_annual_cents: plan.price_annual_cents / 100,
       deliveries_per_month: plan.deliveries_per_month,
       fee_cents: plan.fee_cents / 100,
       is_unlimited: plan.is_unlimited,
@@ -159,7 +161,8 @@ export class PlataformaPlanosPage implements OnInit {
         await this.service.createPlan({
           code: this.form.code,
           name: this.form.name,
-          price_cents: Math.round(this.form.price_cents * 100),
+          price_monthly_cents: Math.round(this.form.price_monthly_cents * 100),
+          price_annual_cents: Math.round(this.form.price_annual_cents * 100),
           deliveries_per_month: this.form.deliveries_per_month,
           fee_cents: Math.round(this.form.fee_cents * 100),
           is_unlimited: this.form.is_unlimited,
@@ -169,7 +172,8 @@ export class PlataformaPlanosPage implements OnInit {
       } else if (this.editingPlan) {
         await this.service.updatePlan(this.editingPlan.id, {
           name: this.form.name,
-          price_cents: Math.round(this.form.price_cents * 100),
+          price_monthly_cents: Math.round(this.form.price_monthly_cents * 100),
+          price_annual_cents: Math.round(this.form.price_annual_cents * 100),
           deliveries_per_month: this.form.deliveries_per_month,
           fee_cents: Math.round(this.form.fee_cents * 100),
           is_unlimited: this.form.is_unlimited,
@@ -220,7 +224,8 @@ export class PlataformaPlanosPage implements OnInit {
     return {
       code: '',
       name: '',
-      price_cents: 0,
+      price_monthly_cents: 0,
+      price_annual_cents: 0,
       deliveries_per_month: 0,
       fee_cents: 0,
       is_unlimited: false,

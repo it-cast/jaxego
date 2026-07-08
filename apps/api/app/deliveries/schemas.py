@@ -162,6 +162,16 @@ class DeliveryOut(BaseModel):
     recipient_phone: str | None = None
     courier_id: int | None = None
     courier_name: str | None = None
+    # Courier detail (only populated in GET /{id}, not in list). The store may see
+    # the assigned courier's full phone (same trust level as recipient_phone — the
+    # store legitimately needs to call the person carrying its delivery).
+    courier_phone: str | None = None
+    courier_vehicle_type: str | None = None
+    courier_vehicle_plate: str | None = None
+    courier_rating: float | None = None
+    courier_rating_count: int = 0
+    courier_total_deliveries: int = 0
+    courier_since: str | None = None
     # Extra detail fields (only populated in GET /{id}, not in list).
     items_description: str | None = None
     items_quantity: int = 1

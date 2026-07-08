@@ -4,7 +4,7 @@ Plans are catalog data, not area-scoped: a plan is offered platform-wide, a
 *subscription* (merchant_subscriptions) is what carries area_id. Values
 (price, monthly deliveries, per-delivery fee) live in the SEED (`tools/seed.py`),
 NEVER hardcoded in code or UI (DRV-009). `is_free` marks the immutable Free plan.
-Money is stored as integer cents (no float) — `price_cents`, `fee_cents`.
+Money is stored as integer cents (no float) — `price_monthly_cents`, `price_annual_cents`, `fee_cents`.
 """
 
 from __future__ import annotations
@@ -26,7 +26,8 @@ class SubscriptionPlan(Base, TimestampMixin):
     code: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     # Monetary values as integer cents (DRV-009 — seed-editable, never hardcoded).
-    price_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    price_monthly_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    price_annual_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     deliveries_per_month: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Per-delivery fee in cents (-1 sentinel reserved for "unlimited" tiers if needed).
     fee_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

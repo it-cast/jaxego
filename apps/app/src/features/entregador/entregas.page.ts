@@ -49,7 +49,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
           />
         } @else if (!items().length) {
           <jx-empty-state
-            icon="📦"
+            imgSrc="heavy-box-amico.svg"
             title="Nenhuma corrida ainda"
             message="Quando voce aceitar uma corrida, ela aparece aqui."
           />
@@ -234,9 +234,8 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
     }
     .jx-entregas__card-icon {
       width: 40px; height: 40px; border-radius: 50%;
-      background: var(--brand-wash, hsl(24 80% 95%));
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: var(--brand, #e8722a); flex-shrink: 0;
+      font-size: 16px; color: var(--text-muted, #888); flex-shrink: 0;
     }
     .jx-entregas__card-title {
       flex: 1; font-size: var(--jx-text-sm); font-weight: 600; color: var(--text);

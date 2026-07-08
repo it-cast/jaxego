@@ -196,6 +196,32 @@
   gap: var(--jx-space-3);
 }
 
+// Row com campos que dividem 100% da largura
+.jx-planos__form-row {
+  display: flex;
+  gap: var(--jx-space-3);
+  align-items: flex-end;
+}
+
+// Campo que cresce para preencher a row
+.jx-planos__field--grow {
+  flex: 1;
+  min-width: 0;
+}
+
+// Input que ocupa 100% do campo pai
+.jx-planos__input--full {
+  width: 100%;
+  font-family: var(--jx-font-mono);
+}
+
+// Select + input opcional de entregas lado a lado
+.jx-planos__entregas-group {
+  display: flex;
+  gap: var(--jx-space-3);
+  align-items: flex-end;
+}
+
 .jx-planos__form-actions {
   display: flex;
   gap: var(--jx-space-2);

@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen, faMapLocationDot } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen, faMapLocationDot, faPhone, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import { PageHeaderComponent, PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
 import {
   deliveryStateLabel,
@@ -105,7 +105,10 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
                 <strong class="jx-active__store-name">{{ delivery()!.recipient_name }}</strong>
               }
               @if (delivery()!.recipient_phone) {
-                <p class="jx-active__muted">{{ fmtPhone(delivery()!.recipient_phone) }}</p>
+                <button type="button" class="jx-active__phone-btn" (click)="showPhoneModal.set(true)">
+                  <fa-icon [icon]="iconPhone" aria-hidden="true" />
+                  {{ fmtPhone(delivery()!.recipient_phone) }}
+                </button>
               }
               <p class="jx-active__muted">
                 {{ delivery()!.dropoff_address }}@if (delivery()!.dropoff_number) {, {{ delivery()!.dropoff_number }}}@if (delivery()!.dropoff_neighborhood_name) {, {{ delivery()!.dropoff_neighborhood_name }}}
@@ -182,6 +185,27 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             <button type="button" class="jx-active__secondary" (click)="refusal()">
               Destinatario ausente / recusou
             </button>
+          }
+
+          @if (showPhoneModal()) {
+            <div class="jx-active__overlay" (click)="showPhoneModal.set(false)">
+              <div class="jx-active__modal" (click)="$event.stopPropagation()">
+                <h2 class="jx-active__modal-title">Contato</h2>
+                <button type="button" class="jx-active__modal-opt" (click)="callPhone()">
+                  <fa-icon [icon]="iconPhone" class="jx-active__modal-fa" aria-hidden="true" />
+                  <span class="jx-active__modal-label">Ligação</span>
+                  <span class="jx-active__modal-desc">Abrir discador do celular</span>
+                </button>
+                <button type="button" class="jx-active__modal-opt jx-active__modal-opt--whatsapp" (click)="openWhatsApp()">
+                  <fa-icon [icon]="iconWhatsApp" class="jx-active__modal-fa jx-active__modal-fa--whatsapp" aria-hidden="true" />
+                  <span class="jx-active__modal-label">WhatsApp</span>
+                  <span class="jx-active__modal-desc">Abrir conversa no WhatsApp</span>
+                </button>
+                <button type="button" class="jx-active__modal-cancel" (click)="showPhoneModal.set(false)">
+                  Cancelar
+                </button>
+              </div>
+            </div>
           }
 
           @if (showCollectionModal()) {
@@ -458,6 +482,29 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         padding: var(--jx-space-2);
         text-align: center;
       }
+      .jx-active__phone-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--jx-space-2);
+        background: transparent;
+        border: none;
+        padding: 0;
+        font: inherit;
+        font-size: var(--jx-text-sm);
+        color: var(--brand, #e8722a);
+        font-weight: 600;
+        cursor: pointer;
+        text-align: left;
+      }
+      .jx-active__modal-opt--whatsapp {
+        border-color: #25d36669;
+      }
+      .jx-active__modal-opt--whatsapp:hover {
+        background: #f0fdf4;
+      }
+      .jx-active__modal-fa--whatsapp {
+        color: #25d366 !important;
+      }
     `,
   ],
 })
@@ -473,11 +520,14 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly iconHand = faHandHoldingDollar;
   protected readonly iconMobile = faMobileScreen;
   protected readonly iconMap = faMapLocationDot;
+  protected readonly iconPhone = faPhone;
+  protected readonly iconWhatsApp = faCommentDots;
 
   protected readonly delivery = signal<CourierDelivery | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
   protected readonly showCollectionModal = signal(false);
+  protected readonly showPhoneModal = signal(false);
   protected readonly productImageUrl = signal<string | null>(null);
   protected readonly showLightbox = signal(false);
 
@@ -587,6 +637,21 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected collectionLabel(): string {
     const m = this.delivery()?.courier_collection_method;
     return m === 'pix_app' ? '📱 Cobrança via PIX' : '💵 Recebido em mãos';
+  }
+
+  protected callPhone(): void {
+    const phone = this.delivery()?.recipient_phone;
+    if (!phone) return;
+    this.showPhoneModal.set(false);
+    window.location.href = `tel:${phone}`;
+  }
+
+  protected openWhatsApp(): void {
+    const phone = this.delivery()?.recipient_phone;
+    if (!phone) return;
+    this.showPhoneModal.set(false);
+    const number = phone.replace(/^\+/, '');
+    window.open(`https://wa.me/${number}`, '_blank');
   }
 
   protected async setCollection(method: 'in_hand' | 'pix_app'): Promise<void> {

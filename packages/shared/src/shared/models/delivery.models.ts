@@ -65,6 +65,15 @@ export interface DeliveryListItem {
   recipient_phone_masked: string | null;
   courier_id: number | null;
   courier_name: string | null;
+  /** Dados completos do entregador — disponíveis apenas no GET /{id} (DeliveryOut). */
+  courier_phone?: string | null;
+  courier_vehicle_type?: string | null;
+  courier_vehicle_plate?: string | null;
+  courier_rating?: number | null;
+  courier_rating_count?: number;
+  courier_total_deliveries?: number;
+  /** ISO-8601 — data em que o entregador entrou na plataforma. */
+  courier_since?: string | null;
   created_at: string | null;
   scheduled_at?: string | null;
   /** Coordenadas do destino (detalhe) — usadas para o mapa. */

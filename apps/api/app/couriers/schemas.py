@@ -8,6 +8,7 @@ logged (TH-05).
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -226,6 +227,14 @@ class AvailabilityBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     online: bool
+    online_until: datetime | None = None
+
+
+class CourierLocationBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
 
 
 class AvailabilityResponse(BaseModel):
@@ -233,6 +242,7 @@ class AvailabilityResponse(BaseModel):
 
     is_online: bool
     busy: bool
+    online_until: datetime | None = None
 
 
 def mask_cpf_display(cpf: str) -> str:
@@ -327,6 +337,7 @@ class CourierProfileOut(BaseModel):
     kyc_level: str
     status: str
     is_online: bool
+    online_until: datetime | None = None
     mei_pending: bool
     team_id: int
     team_name: str | None = None

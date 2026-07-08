@@ -5,13 +5,14 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faStar as faStarSolid } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { PageHeaderComponent, DotsLoaderComponent } from '@jaxego/shared/components';
+import { EmptyStateComponent } from '@jaxego/shared/state';
 import { CourierScore, EntregadorService, RatingItem } from '../entregador.service';
 
 @Component({
   selector: 'jx-avaliacoes',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IonContent, IonInfiniteScroll, IonInfiniteScrollContent, PageHeaderComponent, DotsLoaderComponent, FaIconComponent],
+  imports: [IonContent, IonInfiniteScroll, IonInfiniteScrollContent, PageHeaderComponent, DotsLoaderComponent, FaIconComponent, EmptyStateComponent],
   template: `
     <ion-content>
       @if (loading()) {
@@ -19,61 +20,69 @@ import { CourierScore, EntregadorService, RatingItem } from '../entregador.servi
       } @else {
         <jx-page-header title="Avaliações" [backLink]="backLink()" />
         <div class="jx-aval">
-          <!-- Panorama -->
-          <div class="jx-aval__summary">
-            <div class="jx-aval__summary-main">
-              <span class="jx-aval__avg">{{ score()?.avg_stars || '-' }}</span>
-              <span class="jx-aval__avg-star">
-                <fa-icon [icon]="iconStarSolid" aria-hidden="true" />
-              </span>
-            </div>
-            <span class="jx-aval__count">{{ score()?.total_ratings || 0 }} {{ (score()?.total_ratings ?? 0) > 1 ? 'avaliações' : 'avaliação' }}</span>
-          </div>
-
-          <!-- Filter -->
-          <div class="jx-aval__filter">
-            <label class="jx-aval__filter-label">
-              <span>Filtrar por estrelas</span>
-              <select class="jx-aval__select" [value]="filterStars()" (change)="onFilter($event)">
-                <option value="0">Todas</option>
-                <option value="5">5 estrelas</option>
-                <option value="4">4 estrelas</option>
-                <option value="3">3 estrelas</option>
-                <option value="2">2 estrelas</option>
-                <option value="1">1 estrela</option>
-              </select>
-            </label>
-          </div>
-
-          <!-- List -->
-          @if (!displayed().length) {
-            <p class="jx-aval__empty">Nenhuma avaliação encontrada.</p>
+          @if (!displayed().length && !filterStars()) {
+            <jx-empty-state
+              imgSrc="self-confidence-amico.svg"
+              title="Nenhuma avaliação ainda"
+              message="Suas avaliações aparecem aqui após as entregas."
+            />
           } @else {
-            <ul class="jx-aval__list">
-              @for (r of displayed(); track r.id) {
-                <li class="jx-aval__item">
-                  @if (r.merchant_name) {
-                    <span class="jx-aval__merchant">{{ r.merchant_name }}</span>
-                  }
-                  <div class="jx-aval__item-head">
-                    <span class="jx-aval__item-stars">
-                      @for (s of [1,2,3,4,5]; track s) {
-                        <fa-icon
-                          [icon]="iconStarSolid"
-                          [class.jx-aval__star-on]="s <= r.stars"
-                          [class.jx-aval__star-off]="s > r.stars"
-                          aria-hidden="true"
-                        />
-                      }
-                    </span>
-                    <span class="jx-aval__item-date">{{ formatDate(r.created_at) }}</span>
-                  </div>
-                  @if (r.comment) {
-                    <p class="jx-aval__item-comment">"{{ r.comment }}"</p>
-                  }
-                </li>
-              }
-            </ul>
+            <!-- Panorama -->
+            <div class="jx-aval__summary">
+              <div class="jx-aval__summary-main">
+                <span class="jx-aval__avg">{{ score()?.avg_stars || '-' }}</span>
+                <span class="jx-aval__avg-star">
+                  <fa-icon [icon]="iconStarSolid" aria-hidden="true" />
+                </span>
+              </div>
+              <span class="jx-aval__count">{{ score()?.total_ratings || 0 }} {{ (score()?.total_ratings ?? 0) > 1 ? 'avaliações' : 'avaliação' }}</span>
+            </div>
+
+            <!-- Filter -->
+            <div class="jx-aval__filter">
+              <label class="jx-aval__filter-label">
+                <span>Filtrar por estrelas</span>
+                <select class="jx-aval__select" [value]="filterStars()" (change)="onFilter($event)">
+                  <option value="0">Todas</option>
+                  <option value="5">5 estrelas</option>
+                  <option value="4">4 estrelas</option>
+                  <option value="3">3 estrelas</option>
+                  <option value="2">2 estrelas</option>
+                  <option value="1">1 estrela</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- List -->
+            @if (!displayed().length) {
+              <p class="jx-aval__empty-text">Nenhuma avaliação para este filtro.</p>
+            } @else {
+              <ul class="jx-aval__list">
+                @for (r of displayed(); track r.id) {
+                  <li class="jx-aval__item">
+                    @if (r.merchant_name) {
+                      <span class="jx-aval__merchant">{{ r.merchant_name }}</span>
+                    }
+                    <div class="jx-aval__item-head">
+                      <span class="jx-aval__item-stars">
+                        @for (s of [1,2,3,4,5]; track s) {
+                          <fa-icon
+                            [icon]="iconStarSolid"
+                            [class.jx-aval__star-on]="s <= r.stars"
+                            [class.jx-aval__star-off]="s > r.stars"
+                            aria-hidden="true"
+                          />
+                        }
+                      </span>
+                      <span class="jx-aval__item-date">{{ formatDate(r.created_at) }}</span>
+                    </div>
+                    @if (r.comment) {
+                      <p class="jx-aval__item-comment">"{{ r.comment }}"</p>
+                    }
+                  </li>
+                }
+              </ul>
+            }
           }
         </div>
 
@@ -96,7 +105,7 @@ import { CourierScore, EntregadorService, RatingItem } from '../entregador.servi
     .jx-aval__filter { display: flex; }
     .jx-aval__filter-label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted, #888); flex: 1; }
     .jx-aval__select { min-height: 40px; padding: 0 12px; border: 1px solid var(--border, #ddd); border-radius: 12px; font-size: 14px; color: var(--text); background: #fff; }
-    .jx-aval__empty { text-align: center; color: var(--text-muted, #888); font-size: 14px; padding: var(--jx-space-4) 0; }
+    .jx-aval__empty-text { text-align: center; color: var(--text-muted, #888); font-size: 14px; margin: 0; }
     .jx-aval__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
     .jx-aval__item { padding: var(--jx-space-3) 0; border-bottom: 1px solid var(--border, #eee); }
     .jx-aval__merchant { font-size: 14px; font-weight: 600; color: var(--text); display: block; margin-bottom: 2px; }

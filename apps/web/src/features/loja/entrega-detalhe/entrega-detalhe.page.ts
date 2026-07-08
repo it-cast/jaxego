@@ -110,6 +110,80 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
               </dl>
             </div>
 
+            <!-- Linha: Destinatário + Entregador, lado a lado -->
+            <div class="jx-detail__row">
+              <div class="jx-detail__card">
+                <h2 class="jx-detail__card-title">Destinatário</h2>
+                <dl class="jx-detail__dl">
+                  <dt>Nome</dt>
+                  <dd>{{ d.recipient_name ?? '—' }}</dd>
+                  <dt>Telefone</dt>
+                  <dd class="jx-detail__mono">{{ fmtPhone(d.recipient_phone) }}</dd>
+                  @if (d.team_names && d.team_names.length) {
+                    <dt>Equipes acionadas</dt>
+                    <dd>{{ d.team_names.join(', ') }}</dd>
+                  }
+                  @if (d.price_cents != null) {
+                    <dt>Valor</dt>
+                    <dd class="jx-detail__price">{{ fmtCents(d.price_cents) }}</dd>
+                  }
+                  <dt>Link de rastreio</dt>
+                  <dd>
+                    <a class="jx-detail__link" [href]="'/r/' + d.public_token">/r/{{ d.public_token }}</a>
+                  </dd>
+                </dl>
+              </div>
+
+              <!-- Card: Entregador (só aparece após a entrega ser aceita) -->
+              @if (d.courier_id) {
+                <div class="jx-detail__card">
+                  <h2 class="jx-detail__card-title">Entregador</h2>
+                  <dl class="jx-detail__dl">
+                    <dt>Nome</dt>
+                    <dd>{{ d.courier_name ?? '—' }}</dd>
+                    <dt>Telefone</dt>
+                    <dd class="jx-detail__mono">{{ fmtPhone(d.courier_phone) }}</dd>
+                    @if (d.courier_vehicle_type) {
+                      <dt>Veículo</dt>
+                      <dd>
+                        {{ vehicleLabel(d.courier_vehicle_type) }}@if (d.courier_vehicle_plate) { — {{ d.courier_vehicle_plate }}}
+                      </dd>
+                    }
+                    <dt>Avaliação</dt>
+                    <dd>
+                      @if (d.courier_rating != null) {
+                        <fa-icon [icon]="iconStar" aria-hidden="true" class="jx-detail__courier-star" />
+                        {{ d.courier_rating }} ({{ d.courier_rating_count }} avaliaç{{ d.courier_rating_count === 1 ? 'ão' : 'ões' }})
+                      } @else {
+                        Ainda sem avaliações
+                      }
+                    </dd>
+                    <dt>Entregas concluídas</dt>
+                    <dd>{{ d.courier_total_deliveries ?? 0 }}</dd>
+                    @if (d.price_cents != null) {
+                      <dt>Valor da corrida</dt>
+                      <dd class="jx-detail__price">{{ fmtCents(d.price_cents) }}</dd>
+                    }
+                    @if (d.courier_since) {
+                      <dt>Na plataforma desde</dt>
+                      <dd>{{ fmtDate(d.courier_since) }}</dd>
+                    }
+                  </dl>
+                </div>
+              }
+            </div>
+
+            <!-- Mapa quadrado -->
+            @if (coords(d); as c) {
+              <div class="jx-detail__map-wrap">
+                <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
+              </div>
+            }
+          </section>
+
+          <!-- Coluna direita: meta + ações -->
+          <aside class="jx-detail__aside">
+
             <!-- Card: Itens / Observações -->
             @if (d.items_description || (d.items_quantity && d.items_quantity > 1) || d.notes || packageLabel(d)) {
               <div class="jx-detail__card">
@@ -134,44 +208,6 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
                 </dl>
               </div>
             }
-
-            <!-- Mapa quadrado -->
-            @if (coords(d); as c) {
-              <div class="jx-detail__map-wrap">
-                <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
-              </div>
-            }
-          </section>
-
-          <!-- Coluna direita: meta + ações -->
-          <aside class="jx-detail__aside">
-
-            <!-- Card: Destinatário + info -->
-            <div class="jx-detail__card">
-              <h2 class="jx-detail__card-title">Destinatário</h2>
-              <dl class="jx-detail__dl">
-                <dt>Nome</dt>
-                <dd>{{ d.recipient_name ?? '—' }}</dd>
-                <dt>Telefone</dt>
-                <dd class="jx-detail__mono">{{ fmtPhone(d.recipient_phone) }}</dd>
-                @if (d.courier_id) {
-                  <dt>Entregador</dt>
-                  <dd>{{ d.courier_name ?? '—' }}</dd>
-                }
-                @if (d.team_names && d.team_names.length) {
-                  <dt>Equipes acionadas</dt>
-                  <dd>{{ d.team_names.join(', ') }}</dd>
-                }
-                @if (d.price_cents != null) {
-                  <dt>Valor</dt>
-                  <dd class="jx-detail__price">{{ fmtCents(d.price_cents) }}</dd>
-                }
-                <dt>Link de rastreio</dt>
-                <dd>
-                  <a class="jx-detail__link" [href]="'/r/' + d.public_token">/r/{{ d.public_token }}</a>
-                </dd>
-              </dl>
-            </div>
 
             <!-- Ação: Cancelar -->
             @if (canCancel(d)) {
@@ -375,6 +411,17 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
       }
       .jx-detail__italic { font-style: italic; }
       .jx-detail__price { font-weight: var(--jx-weight-semibold); color: var(--brand); }
+      /* Linha Itens + Entregador lado a lado (responsive-breakpoint-strategy) */
+      .jx-detail__row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: var(--jx-space-4);
+        align-items: start;
+      }
+      .jx-detail__courier-star {
+        color: var(--brand);
+        margin-right: 2px;
+      }
       /* Map — square */
       .jx-detail__map-wrap {
         width: 20vw;
@@ -557,6 +604,23 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   protected fmtCents(cents: number | null | undefined): string {
     if (cents == null) return '—';
     return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  protected fmtDate(iso: string | null | undefined): string {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+  }
+
+  protected vehicleLabel(type: string | null | undefined): string {
+    const LABELS: Record<string, string> = {
+      moto: 'Moto',
+      bicicleta: 'Bicicleta',
+      carro: 'Carro',
+      a_pe: 'A pé',
+    };
+    return (type && LABELS[type]) ?? type ?? '—';
   }
 
   protected hSteps(d: DeliveryListItem): { key: string; label: string; done: boolean; current: boolean }[] {

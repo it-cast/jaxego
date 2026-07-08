@@ -31,6 +31,7 @@ from app.workers.lifecycle import (
     absent_timeout,
     anonymize_inactive,
     delete_ephemeral,
+    expire_online_couriers,
     finalize_deliveries,
     purge_locations,
 )
@@ -107,6 +108,8 @@ class WorkerSettings:
         cron(purge_locations, minute={7}),
         # "ausente" >10min → enable return (D-07 E2) — every minute.
         cron(absent_timeout, minute=set(range(0, 60))),
+        # Expire couriers whose online_until has passed — every minute.
+        cron(expire_online_couriers, minute=set(range(0, 60))),
         # Fallback: poll pending PIX authorizations hourly (primary path is on login/page load).
         cron(poll_pix_pending_authorizations, minute={30}),
         # Phase 10 — recurring billing crons (aware-UTC, idempotent).

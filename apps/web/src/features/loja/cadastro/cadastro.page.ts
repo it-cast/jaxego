@@ -16,8 +16,10 @@ import {
   WarnBannerComponent,
 } from '@jaxego/shared/state';
 import {
+  CycleToggleComponent,
   PlanCardComponent,
   WizardStepperComponent,
+  type BillingCycle,
   type Plan,
   type WizardStep,
 } from '@jaxego/shared/components';
@@ -62,6 +64,7 @@ const DRAFT_KEY = 'jx-merchant-onboarding';
     ReactiveFormsModule,
     FaIconComponent,
     WizardStepperComponent,
+    CycleToggleComponent,
     PlanCardComponent,
     SemAreaComponent,
     ErrorStateComponent,
@@ -86,6 +89,7 @@ export class CadastroLojaPage implements OnDestroy {
   protected readonly plans = signal<Plan[]>([]);
   protected readonly areas = signal<AreaOption[]>([]);
   protected readonly selectedPlan = signal<string>('free');
+  protected readonly cycle = signal<BillingCycle>('mensal');
   protected readonly showPassword = signal(false);
   protected readonly faEye = faEye;
   protected readonly faEyeSlash = faEyeSlash;
@@ -93,6 +97,8 @@ export class CadastroLojaPage implements OnDestroy {
   protected readonly gpsLoading = signal(false);
   protected readonly gpsError = signal<string | null>(null);
   protected readonly gpsFilled = signal(false);
+  private gpsLat: number | null = null;
+  private gpsLng: number | null = null;
 
   // Payment step state (shown after signup with paid plan)
   protected readonly showPayment = signal(false);
@@ -317,6 +323,8 @@ export class CadastroLojaPage implements OnDestroy {
         navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
       );
       const { latitude, longitude } = pos.coords;
+      this.gpsLat = latitude;
+      this.gpsLng = longitude;
 
       // Mapbox Geocoding API — sem types=address para cair em neighborhood/place
       // quando não houver endereço exato (comum no Brasil)
@@ -431,6 +439,8 @@ export class CadastroLojaPage implements OnDestroy {
       address_zip: f.cep ? f.cep.replace(/\D/g, '') : undefined,
       address_state: f.uf || undefined,
       plan_code: this.selectedPlan(),
+      lat: this.gpsLat ?? undefined,
+      lng: this.gpsLng ?? undefined,
     });
     this.loading.set(false);
 
@@ -548,7 +558,7 @@ export class CadastroLojaPage implements OnDestroy {
         });
         const res = await this.merchants.subscribe({
           plan_id: planId,
-          cycle: 'mensal',
+          cycle: this.cycle(),
           method: 'card',
           card_blob: cardBlob,
         });
@@ -563,7 +573,7 @@ export class CadastroLojaPage implements OnDestroy {
       } else {
         const res = await this.merchants.subscribe({
           plan_id: planId,
-          cycle: 'mensal',
+          cycle: this.cycle(),
           method: 'pix',
           pix_recorrente: true,
         });

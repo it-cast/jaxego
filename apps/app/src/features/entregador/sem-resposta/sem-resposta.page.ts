@@ -59,7 +59,7 @@ import { PoolService } from './pool.service';
             />
           } @else if (!items().length) {
             <jx-empty-state
-              icon="📭"
+              imgSrc="delivery-amico.svg"
               title="Nenhuma entrega sem resposta"
               message="Quando uma entrega ficar sem ninguém para aceitar, ela aparece aqui."
             />

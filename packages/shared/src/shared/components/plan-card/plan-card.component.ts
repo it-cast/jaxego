@@ -11,7 +11,8 @@ export interface Plan {
   id: number;
   codename: string;
   nome: string;
-  preco_cents: number;
+  preco_mensal_cents: number;
+  preco_anual_cents: number;
   entregas_mes: number;
   taxa_entrega_cents: number;
   is_free: boolean;
@@ -58,13 +59,15 @@ export interface Plan {
 export class PlanCardComponent {
   @Input({ required: true }) plan!: Plan;
   @Input() selected = false;
+  @Input() cycle: 'mensal' | 'anual' = 'mensal';
   @Output() choose = new EventEmitter<Plan>();
 
   protected get priceLabel(): string {
-    if (this.plan.preco_cents === 0) {
-      return 'R$ 0';
-    }
-    return this.formatBrl(this.plan.preco_cents);
+    const cents = this.cycle === 'anual'
+      ? this.plan.preco_anual_cents
+      : this.plan.preco_mensal_cents;
+    if (cents === 0) return 'R$ 0';
+    return this.formatBrl(cents);
   }
 
   protected get detailsLabel(): string {

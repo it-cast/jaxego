@@ -9,7 +9,8 @@ class PlanAdminRead(BaseModel):
     id: int
     code: str
     name: str
-    price_cents: int
+    price_monthly_cents: int
+    price_annual_cents: int
     deliveries_per_month: int
     fee_cents: int
     is_free: bool
@@ -23,7 +24,8 @@ class PlanCreate(BaseModel):
 
     code: str = Field(min_length=1, max_length=32)
     name: str = Field(min_length=1, max_length=80)
-    price_cents: int = Field(ge=0)
+    price_monthly_cents: int = Field(ge=0)
+    price_annual_cents: int = Field(ge=0)
     deliveries_per_month: int = Field(ge=0)
     fee_cents: int = Field(ge=0)
     is_unlimited: bool = False
@@ -34,7 +36,8 @@ class PlanUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=80)
-    price_cents: int | None = Field(default=None, ge=0)
+    price_monthly_cents: int | None = Field(default=None, ge=0)
+    price_annual_cents: int | None = Field(default=None, ge=0)
     deliveries_per_month: int | None = Field(default=None, ge=0)
     fee_cents: int | None = Field(default=None, ge=0)
     is_unlimited: bool | None = None

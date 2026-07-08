@@ -28,7 +28,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import structlog
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import write_audit
@@ -410,4 +410,21 @@ async def delete_ephemeral(ctx: dict[str, Any]) -> int:
         deleted=count,
         duration_ms=int((datetime.now(UTC) - started).total_seconds() * 1000),
     )
+    return count
+
+
+async def expire_online_couriers(ctx: dict[str, Any]) -> int:
+    """Set couriers offline whose online_until has passed. Single UPDATE — no Python loop."""
+    started = datetime.now(UTC)
+    session_factory = ctx["session_factory"]
+    async with session_factory() as session:
+        result = await session.execute(
+            update(Courier)
+            .where(Courier.is_online.is_(True), Courier.online_until <= started)
+            .values(is_online=False, online_until=None)
+        )
+        await session.commit()
+    count = result.rowcount or 0
+    if count:
+        logger.info("lifecycle.expire_online_couriers", expired=count)
     return count

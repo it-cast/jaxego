@@ -84,10 +84,10 @@ def _next_due(base: datetime, cycle: str | None) -> datetime:
 
 
 def _plan_amount_cents(plan: SubscriptionPlan, cycle: str | None) -> int:
-    """The recurring amount for a plan+cycle (annual = monthly × 10 — A8)."""
+    """The recurring amount for a plan+cycle — uses pre-set annual price (A8)."""
     if cycle == "anual":
-        return plan.price_cents * ANNUAL_MULTIPLIER
-    return plan.price_cents
+        return plan.price_annual_cents
+    return plan.price_monthly_cents
 
 
 # ---------------------------------------------------------------------------

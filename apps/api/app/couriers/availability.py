@@ -10,6 +10,8 @@ active-delivery count arrives with Phase 7/8; here only the helper and
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,19 +59,26 @@ async def _get_scoped(session: AsyncSession, *, area_id: int | None, courier_id:
 
 
 async def set_availability(
-    session: AsyncSession, *, area_id: int | None, courier_id: int, online: bool
+    session: AsyncSession,
+    *,
+    area_id: int | None,
+    courier_id: int,
+    online: bool,
+    online_until: datetime | None = None,
 ) -> Courier:
     """Toggle online/offline. Only an `active` courier may go online (409 else)."""
     courier = await _get_scoped(session, area_id=area_id, courier_id=courier_id)
     if online and courier.status != "active":
         raise CannotGoOnlineError()
     courier.is_online = online
+    courier.online_until = online_until if online else None
     await session.flush()
     logger.info(
         "courier.availability.update",
         area_id=area_id,
         courier_id=courier_id,
         online=online,
+        online_until=online_until.isoformat() if online_until else None,
     )
     return courier
 

@@ -17,7 +17,9 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="jx-empty" role="status">
-      @if (icon) {
+      @if (imgSrc) {
+        <img [src]="imgSrc" class="jx-empty__img" aria-hidden="true" />
+      } @else if (icon) {
         <span class="jx-empty__icon" aria-hidden="true">{{ icon }}</span>
       }
       <h2 class="jx-empty__title">{{ title }}</h2>
@@ -38,5 +40,6 @@ export class EmptyStateComponent {
   @Input() message?: string;
   @Input() ctaLabel?: string;
   @Input() icon?: string;
+  @Input() imgSrc?: string;
   @Output() cta = new EventEmitter<void>();
 }

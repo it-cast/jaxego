@@ -7,5 +7,5 @@
  */
 export const environment = {
   production: false,
-  mapboxToken: 'SEU-TOKEN-AQUI',
+  mapboxToken: '',
 };

@@ -104,7 +104,8 @@ export interface PlanAdmin {
   id: number;
   code: string;
   name: string;
-  price_cents: number;
+  price_monthly_cents: number;
+  price_annual_cents: number;
   deliveries_per_month: number;
   fee_cents: number;
   is_free: boolean;
@@ -116,7 +117,8 @@ export interface PlanAdmin {
 export interface PlanCreateBody {
   code: string;
   name: string;
-  price_cents: number;
+  price_monthly_cents: number;
+  price_annual_cents: number;
   deliveries_per_month: number;
   fee_cents: number;
   is_unlimited: boolean;
@@ -125,7 +127,8 @@ export interface PlanCreateBody {
 
 export interface PlanUpdateBody {
   name?: string;
-  price_cents?: number;
+  price_monthly_cents?: number;
+  price_annual_cents?: number;
   deliveries_per_month?: number;
   fee_cents?: number;
   is_unlimited?: boolean;

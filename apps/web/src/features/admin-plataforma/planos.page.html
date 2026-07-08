@@ -32,6 +32,7 @@
         {{ mode() === 'create' ? 'Novo plano' : 'Editar plano' }}
       </h2>
       <form class="jx-planos__form" (ngSubmit)="save()">
+        <!-- Row 1: Codigo + Nome -->
         <div class="jx-planos__form-grid">
           <label class="jx-planos__field">
             <span class="jx-planos__label">Codigo</span>
@@ -58,34 +59,40 @@
               placeholder="ex: Premium"
             />
           </label>
-          <label class="jx-planos__field">
-            <span class="jx-planos__label">Preco (R$)</span>
+        </div>
+
+        <!-- Row 2: precos + taxa + ordem ocupando 100% -->
+        <div class="jx-planos__form-row">
+          <label class="jx-planos__field jx-planos__field--grow">
+            <span class="jx-planos__label">Preco mensal (R$)</span>
             <input
-              class="jx-planos__input jx-planos__input--num"
+              class="jx-planos__input jx-planos__input--full"
               type="number"
-              [(ngModel)]="form.price_cents"
-              name="price_cents"
+              [(ngModel)]="form.price_monthly_cents"
+              name="price_monthly_cents"
               required
               min="0"
               step="0.01"
               placeholder="0,00"
             />
           </label>
-          <label class="jx-planos__field">
-            <span class="jx-planos__label">Entregas/mes</span>
+          <label class="jx-planos__field jx-planos__field--grow">
+            <span class="jx-planos__label">Preco anual (R$)</span>
             <input
-              class="jx-planos__input jx-planos__input--num"
+              class="jx-planos__input jx-planos__input--full"
               type="number"
-              [(ngModel)]="form.deliveries_per_month"
-              name="deliveries_per_month"
+              [(ngModel)]="form.price_annual_cents"
+              name="price_annual_cents"
               required
               min="0"
+              step="0.01"
+              placeholder="0,00"
             />
           </label>
-          <label class="jx-planos__field">
+          <label class="jx-planos__field jx-planos__field--grow">
             <span class="jx-planos__label">Taxa por entrega (R$)</span>
             <input
-              class="jx-planos__input jx-planos__input--num"
+              class="jx-planos__input jx-planos__input--full"
               type="number"
               [(ngModel)]="form.fee_cents"
               name="fee_cents"
@@ -95,10 +102,10 @@
               placeholder="0,00"
             />
           </label>
-          <label class="jx-planos__field">
+          <label class="jx-planos__field jx-planos__field--grow">
             <span class="jx-planos__label">Ordem</span>
             <input
-              class="jx-planos__input jx-planos__input--num"
+              class="jx-planos__input jx-planos__input--full"
               type="number"
               [(ngModel)]="form.sort_order"
               name="sort_order"
@@ -106,14 +113,35 @@
               min="0"
             />
           </label>
-          <label class="jx-planos__field jx-planos__field--check">
-            <input
-              type="checkbox"
+        </div>
+
+        <!-- Row 3: Entregas -->
+        <div class="jx-planos__entregas-group">
+          <label class="jx-planos__field">
+            <span class="jx-planos__label">Entregas</span>
+            <select
+              class="jx-planos__select"
               [(ngModel)]="form.is_unlimited"
-              name="is_unlimited"
-            />
-            <span>Entregas ilimitadas</span>
+              name="tipo_entregas"
+            >
+              <option [ngValue]="false">Entregas/Mês</option>
+              <option [ngValue]="true">Ilimitadas</option>
+            </select>
           </label>
+          @if (!form.is_unlimited) {
+            <label class="jx-planos__field">
+              <span class="jx-planos__label">Quantidade de entregas/mês</span>
+              <input
+                class="jx-planos__input jx-planos__input--num"
+                type="number"
+                [(ngModel)]="form.deliveries_per_month"
+                name="deliveries_per_month"
+                required
+                min="1"
+                placeholder="0"
+              />
+            </label>
+          }
         </div>
         <div class="jx-planos__form-actions">
           <button
@@ -185,7 +213,8 @@
           }
         </td>
         <td class="jx-planos__mono">{{ item.code }}</td>
-        <td class="jx-planos__num">R$ {{ formatCents(item.price_cents) }}</td>
+        <td class="jx-planos__num">R$ {{ formatCents(item.price_monthly_cents) }}</td>
+        <td class="jx-planos__num">R$ {{ formatCents(item.price_annual_cents) }}</td>
         <td class="jx-planos__num">
           {{ item.is_unlimited ? 'Ilimitado' : item.deliveries_per_month }}
         </td>

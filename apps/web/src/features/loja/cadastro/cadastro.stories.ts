@@ -61,7 +61,8 @@ export const wizardStories: ComponentStory[] = [
       plan: {
         codename: 'free',
         nome: 'Free',
-        preco_cents: 0,
+        preco_mensal_cents: 0,
+        preco_anual_cents: 0,
         entregas_mes: 2,
         taxa_entrega_cents: 200,
         is_free: true,
@@ -77,7 +78,8 @@ export const wizardStories: ComponentStory[] = [
       plan: {
         codename: 'profissional',
         nome: 'Profissional',
-        preco_cents: 12900,
+        preco_mensal_cents: 12900,
+        preco_anual_cents: 129000,
         entregas_mes: 150,
         taxa_entrega_cents: 100,
         is_free: false,

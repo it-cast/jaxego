@@ -15,12 +15,14 @@ from app.core.exceptions import NotFoundError, ValidationAppError
 from app.plans.models import SubscriptionPlan
 
 # [ASSUMIDO] seed values (DRV-009) — editable seed data, never hardcoded in UI.
-# price_cents / fee_cents are integer cents. Free is immutable (is_free=True).
+# price_monthly_cents / price_annual_cents / fee_cents are integer cents.
+# Free is immutable (is_free=True). Annual = monthly × 10 (2 months free).
 PLAN_SEEDS: tuple[dict[str, object], ...] = (
     {
         "code": "free",
         "name": "Free",
-        "price_cents": 0,
+        "price_monthly_cents": 0,
+        "price_annual_cents": 0,
         "deliveries_per_month": 2,
         "fee_cents": 200,
         "is_free": True,
@@ -30,7 +32,8 @@ PLAN_SEEDS: tuple[dict[str, object], ...] = (
     {
         "code": "inicio",
         "name": "Início",
-        "price_cents": 4900,
+        "price_monthly_cents": 4900,
+        "price_annual_cents": 49000,
         "deliveries_per_month": 40,
         "fee_cents": 150,
         "is_free": False,
@@ -40,7 +43,8 @@ PLAN_SEEDS: tuple[dict[str, object], ...] = (
     {
         "code": "profissional",
         "name": "Profissional",
-        "price_cents": 12900,
+        "price_monthly_cents": 12900,
+        "price_annual_cents": 129000,
         "deliveries_per_month": 150,
         "fee_cents": 100,
         "is_free": False,
@@ -50,7 +54,8 @@ PLAN_SEEDS: tuple[dict[str, object], ...] = (
     {
         "code": "sem_limite",
         "name": "Sem Limite",
-        "price_cents": 29900,
+        "price_monthly_cents": 29900,
+        "price_annual_cents": 299000,
         "deliveries_per_month": 0,  # 0 == unlimited (is_unlimited flag carries meaning)
         "fee_cents": 50,
         "is_free": False,
@@ -93,7 +98,8 @@ async def create_plan(
     *,
     code: str,
     name: str,
-    price_cents: int,
+    price_monthly_cents: int,
+    price_annual_cents: int,
     deliveries_per_month: int,
     fee_cents: int,
     is_unlimited: bool,
@@ -105,7 +111,8 @@ async def create_plan(
     plan = SubscriptionPlan(
         code=code,
         name=name,
-        price_cents=price_cents,
+        price_monthly_cents=price_monthly_cents,
+        price_annual_cents=price_annual_cents,
         deliveries_per_month=deliveries_per_month,
         fee_cents=fee_cents,
         is_free=False,
@@ -123,7 +130,8 @@ async def update_plan(
     plan_id: int,
     *,
     name: str | None = None,
-    price_cents: int | None = None,
+    price_monthly_cents: int | None = None,
+    price_annual_cents: int | None = None,
     deliveries_per_month: int | None = None,
     fee_cents: int | None = None,
     is_unlimited: bool | None = None,
@@ -135,8 +143,10 @@ async def update_plan(
         raise ValidationAppError("O plano Free é imutável e não pode ser editado.")
     if name is not None:
         plan.name = name
-    if price_cents is not None:
-        plan.price_cents = price_cents
+    if price_monthly_cents is not None:
+        plan.price_monthly_cents = price_monthly_cents
+    if price_annual_cents is not None:
+        plan.price_annual_cents = price_annual_cents
     if deliveries_per_month is not None:
         plan.deliveries_per_month = deliveries_per_month
     if fee_cents is not None:
@@ -169,7 +179,8 @@ async def seed_plans_if_missing(session: AsyncSession) -> None:
             # Update mutable seed values (Free price stays 0; is_free immutable).
             existing.name = str(seed["name"])
             if not existing.is_free:
-                existing.price_cents = int(seed["price_cents"])  # type: ignore[arg-type]
+                existing.price_monthly_cents = int(seed["price_monthly_cents"])  # type: ignore[arg-type]
+                existing.price_annual_cents = int(seed["price_annual_cents"])  # type: ignore[arg-type]
                 existing.deliveries_per_month = int(seed["deliveries_per_month"])  # type: ignore[arg-type]
                 existing.fee_cents = int(seed["fee_cents"])  # type: ignore[arg-type]
             existing.is_unlimited = bool(seed["is_unlimited"])

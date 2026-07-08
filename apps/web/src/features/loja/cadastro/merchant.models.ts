@@ -27,6 +27,8 @@ export interface SignupRequest {
   address_zip?: string;
   address_state?: string;
   plan_code?: string;
+  lat?: number;
+  lng?: number;
 }
 
 /** POST /v1/merchants/signup response (201). */
@@ -41,7 +43,8 @@ export interface PlanDto {
   id: number;
   codename: string;
   nome: string;
-  preco_cents: number;
+  preco_mensal_cents: number;
+  preco_anual_cents: number;
   entregas_mes: number;
   taxa_entrega_cents: number;
   is_free: boolean;

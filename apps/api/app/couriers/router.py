@@ -13,9 +13,10 @@ URL this router issues.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,6 +38,7 @@ from app.couriers.schemas import (
     CourierAdminListOut,
     CourierDocumentAdminItem,
     CourierDocumentItem,
+    CourierLocationBody,
     CourierProfileOut,
     CourierSignupBody,
     CourierSignupResponse,
@@ -360,12 +362,38 @@ async def set_availability(
     """Toggle online/offline; only an `active` courier may go online (REQ-018)."""
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     updated = await availability_svc.set_availability(
-        session, area_id=courier.area_id, courier_id=courier.id, online=body.online
+        session,
+        area_id=courier.area_id,
+        courier_id=courier.id,
+        online=body.online,
+        online_until=body.online_until,
     )
     await session.commit()
     # busy is DERIVED; the real active-delivery count arrives in Phase 7/8 (0 here).
     busy = availability_svc.compute_busy(active_deliveries=0, max_concurrent=updated.max_concurrent)
-    return AvailabilityResponse(is_online=updated.is_online, busy=busy)
+    return AvailabilityResponse(is_online=updated.is_online, busy=busy, online_until=updated.online_until)
+
+
+@router.patch("/{courier_id}/location", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+async def update_location(
+    courier_id: int,
+    body: CourierLocationBody,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> Response:
+    """Record courier's current position while online (dispatch proximity ranking).
+
+    Only accepted when the courier is online; silently ignored if offline to avoid
+    stale positions skewing the ranking after the courier goes idle.
+    """
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    if courier.is_online:
+        courier.lat = body.lat
+        courier.lng = body.lng
+        courier.location_at = datetime.now(UTC)
+        await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ---------------------------------------------------------------------------
@@ -604,6 +632,7 @@ async def get_courier_profile(
         kyc_level=courier.kyc_level,
         status=courier.status,
         is_online=courier.is_online,
+        online_until=courier.online_until,
         mei_pending=courier.mei_pending,
         team_id=courier.team_id,
         team_name=team_name,

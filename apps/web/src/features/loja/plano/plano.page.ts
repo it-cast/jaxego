@@ -8,7 +8,12 @@ import {
   signal,
 } from '@angular/core';
 import { LoadingSkeletonComponent } from '@jaxego/shared/state';
-import { PlanCardComponent, type Plan } from '@jaxego/shared/components';
+import {
+  CycleToggleComponent,
+  PlanCardComponent,
+  type BillingCycle,
+  type Plan,
+} from '@jaxego/shared/components';
 import { MerchantService } from '../cadastro/merchant.service';
 import {
   BillingService,
@@ -28,6 +33,7 @@ import { CardFormComponent } from './components/jx-card-form.component';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    CycleToggleComponent,
     PlanCardComponent,
     LoadingSkeletonComponent,
     SubscriptionStatusComponent,
@@ -79,14 +85,23 @@ import { CardFormComponent } from './components/jx-card-form.component';
             <h2 class="jx-modal__title">Alterar plano</h2>
             <button type="button" class="jx-modal__close" aria-label="Fechar" (click)="closePlanModal()">×</button>
           </div>
-          <div class="jx-modal__body jx-plano__plan-grid">
-            @for (plan of plans(); track plan.codename) {
-              <jx-plan-card
-                [plan]="plan"
-                [selected]="plan.codename === current()"
-                (choose)="onPlanSelected($event)"
+          <div class="jx-modal__body">
+            <div class="jx-plano__cycle-row">
+              <jx-cycle-toggle
+                [cycle]="cycle()"
+                (cycleChange)="cycle.set($event)"
               />
-            }
+            </div>
+            <div class="jx-plano__plan-grid">
+              @for (plan of plans(); track plan.codename) {
+                <jx-plan-card
+                  [plan]="plan"
+                  [cycle]="cycle()"
+                  [selected]="plan.codename === current()"
+                  (choose)="onPlanSelected($event)"
+                />
+              }
+            </div>
           </div>
         </div>
       </div>
@@ -168,6 +183,7 @@ export class PlanoPage implements OnDestroy {
 
   protected readonly plans = signal<Plan[]>([]);
   protected readonly current = signal<string>('free');
+  protected readonly cycle = signal<BillingCycle>('mensal');
   protected readonly subscription = signal<SubscriptionView | null>(null);
   protected readonly charges = signal<ChargeHistoryItem[]>([]);
   protected readonly method = signal<CheckoutMethod>(null);
@@ -227,7 +243,7 @@ export class PlanoPage implements OnDestroy {
     try {
       const result = await this.billing.subscribe({
         plan_id: this.pendingPlanId ?? sub.plan_id,
-        cycle: 'mensal',
+        cycle: this.cycle(),
         method: 'pix',
         pix_recorrente: true,
       });
@@ -271,7 +287,7 @@ export class PlanoPage implements OnDestroy {
     try {
       const updated = await this.billing.subscribe({
         plan_id: this.pendingPlanId ?? sub.plan_id,
-        cycle: 'mensal',
+        cycle: this.cycle(),
         method: 'card',
         card_blob: blob,
       });

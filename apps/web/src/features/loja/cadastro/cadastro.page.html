@@ -256,10 +256,17 @@
     @if (current() === 3) {
       <fieldset class="jx-cadastro__step">
         <legend class="jx-sr-only">Escolha do plano</legend>
+        <div class="jx-cadastro__cycle-row">
+          <jx-cycle-toggle
+            [cycle]="cycle()"
+            (cycleChange)="cycle.set($event)"
+          />
+        </div>
         <section class="jx-cadastro__plans" aria-label="Planos disponíveis">
           @for (plan of plans(); track plan.codename) {
             <jx-plan-card
               [plan]="plan"
+              [cycle]="cycle()"
               [selected]="plan.codename === selectedPlan()"
               (choose)="choosePlan($event)"
             />

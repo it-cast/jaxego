@@ -27,12 +27,23 @@ from app.deliveries.models import Delivery
 from app.dispatch import cascade, offer_state
 from app.integrations.base import PushMessage
 from app.integrations.factory import get_push_adapter
+from app.merchants.models import Merchant
 
 logger = structlog.get_logger("workers.dispatch")
 
 # Small slack added to the re-defer so the Redis key has surely expired before the
 # job inspects it (avoids racing the TTL boundary).
 _DEFER_SLACK_S = 1
+
+
+async def _merchant_coords(
+    session: AsyncSession, merchant_id: int
+) -> tuple[float, float] | tuple[None, None]:
+    """Return (lat, lng) of the merchant pickup point, or (None, None) if unknown."""
+    merchant = await session.get(Merchant, merchant_id)
+    if merchant is not None and merchant.lat is not None and merchant.lng is not None:
+        return float(merchant.lat), float(merchant.lng)
+    return None, None
 
 
 async def _area_config(session: AsyncSession, area_id: int) -> AreaConfig:
@@ -102,6 +113,7 @@ async def advance_offer(
         return False
 
     cfg = await _area_config(session, area_id)
+    m_lat, m_lng = await _merchant_coords(session, delivery.merchant_id)
     courier_id = await offer_state.next_candidate(r, delivery_id)
 
     if courier_id is None:
@@ -120,6 +132,8 @@ async def advance_offer(
             zona_id=delivery.zona_id,
             team_ids=delivery.team_ids,
             excluded_ids=declined,
+            merchant_lat=m_lat,
+            merchant_lng=m_lng,
         )
         if fresh:
             ttl = cfg.timeout_oferta_s * (len(fresh) + 1)
@@ -148,6 +162,8 @@ async def advance_offer(
                 zona_id=delivery.zona_id,
                 team_ids=delivery.team_ids,
                 excluded_ids=set(),
+                merchant_lat=m_lat,
+                merchant_lng=m_lng,
             )
             if raw_eligible and set(raw_eligible) <= declined:
                 from app.deliveries import service as delivery_service
@@ -225,6 +241,7 @@ async def dispatch_offer_task(
 
             # No live offer: either the very first run, or the TTL just expired.
             cfg = await _area_config(session, delivery.area_id)
+            m_lat2, m_lng2 = await _merchant_coords(session, delivery.merchant_id)
             existing = await r.exists(f"dispatch:{delivery_id}:candidates")
             if not existing:
                 pickup_id = delivery.dropoff_neighborhood_id  # pickup polygon optional (Phase 7)
@@ -239,6 +256,8 @@ async def dispatch_offer_task(
                     zona_id=delivery.zona_id,
                     team_ids=delivery.team_ids,
                     excluded_ids=declined,
+                    merchant_lat=m_lat2,
+                    merchant_lng=m_lng2,
                 )
                 # Queue lives for the whole favorites+ranking window.
                 ttl = cfg.timeout_oferta_s * (len(candidates) + 1) + cfg.timeout_favoritos_s

@@ -5,6 +5,10 @@ export {
 export { FieldComponent } from './field/field.component';
 export { PlanCardComponent, type Plan } from './plan-card/plan-card.component';
 export {
+  CycleToggleComponent,
+  type BillingCycle,
+} from './cycle-toggle/cycle-toggle.component';
+export {
   DocUploadComponent,
   type DocUploadState,
 } from './doc-upload/doc-upload.component';

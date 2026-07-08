@@ -36,7 +36,7 @@ import { formatCents } from '../billing.service';
                 class="jx-plan-compare__cta"
                 (click)="choose(plan)"
               >
-                {{ plan.preco_cents > currentPriceCents() ? 'Fazer upgrade' : 'Mudar no próximo ciclo' }}
+                {{ plan.preco_mensal_cents > currentPriceCents() ? 'Fazer upgrade' : 'Mudar no próximo ciclo' }}
               </button>
             }
           </div>
@@ -45,7 +45,7 @@ import { formatCents } from '../billing.service';
 
       @if (pending(); as p) {
         <div class="jx-plan-compare__confirm" role="dialog" aria-modal="true" aria-label="Confirmar mudança de plano">
-          @if (p.preco_cents > currentPriceCents()) {
+          @if (p.preco_mensal_cents > currentPriceCents()) {
             <p>
               Você paga <strong class="jx-plan-compare__mono">{{ prorataLabel() }}</strong> agora
               pelos dias restantes deste ciclo e muda para o {{ p.nome }} na hora.
@@ -112,7 +112,7 @@ export class PlanCompareComponent {
   }
 
   protected confirm(plan: Plan): void {
-    if (plan.preco_cents > this.currentPriceCents()) this.upgrade.emit(plan);
+    if (plan.preco_mensal_cents > this.currentPriceCents()) this.upgrade.emit(plan);
     else this.downgrade.emit(plan);
     this.pending.set(null);
   }

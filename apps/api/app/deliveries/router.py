@@ -46,6 +46,13 @@ def _delivery_out(
     courier_name: str | None = None,
     neighborhood_name: str | None = None,
     team_names: list[str] | None = None,
+    courier_phone: str | None = None,
+    courier_vehicle_type: str | None = None,
+    courier_vehicle_plate: str | None = None,
+    courier_rating: float | None = None,
+    courier_rating_count: int = 0,
+    courier_total_deliveries: int = 0,
+    courier_since: str | None = None,
 ) -> DeliveryOut:
     """Serialize a delivery for the store; recipient phone is MASKED (TH-04)."""
     created = delivery.created_at.isoformat() if delivery.created_at else None
@@ -78,6 +85,13 @@ def _delivery_out(
         recipient_phone=(recipient.phone_e164 if recipient else None),
         courier_id=delivery.courier_id,
         courier_name=courier_name,
+        courier_phone=courier_phone,
+        courier_vehicle_type=courier_vehicle_type,
+        courier_vehicle_plate=courier_vehicle_plate,
+        courier_rating=courier_rating,
+        courier_rating_count=courier_rating_count,
+        courier_total_deliveries=courier_total_deliveries,
+        courier_since=courier_since,
         items_description=delivery.items_description,
         items_quantity=delivery.items_quantity,
         notes=delivery.notes,
@@ -557,12 +571,48 @@ async def get_delivery(
 
         recipient = await session.get(Recipient, delivery.recipient_id)
     courier_name: str | None = None
+    courier_phone: str | None = None
+    courier_vehicle_type: str | None = None
+    courier_vehicle_plate: str | None = None
+    courier_rating: float | None = None
+    courier_rating_count = 0
+    courier_total_deliveries = 0
+    courier_since: str | None = None
     if delivery.courier_id is not None:
+        from sqlalchemy import func as sa_func, select
+
         from app.couriers.models import Courier
+        from app.deliveries.models import Delivery
+        from app.ratings.models import CourierRating
 
         courier = await session.get(Courier, delivery.courier_id)
         if courier is not None:
             courier_name = courier.full_name
+            courier_phone = courier.phone_e164
+            courier_vehicle_type = courier.vehicle_type
+            courier_vehicle_plate = courier.vehicle_plate
+            courier_since = courier.created_at.isoformat() if courier.created_at else None
+        rating_row = (
+            await session.execute(
+                select(
+                    sa_func.avg(CourierRating.stars),
+                    sa_func.count(CourierRating.id),
+                ).where(CourierRating.courier_id == delivery.courier_id)
+            )
+        ).one()
+        if rating_row[0] is not None:
+            courier_rating = round(float(rating_row[0]), 1)
+        courier_rating_count = int(rating_row[1] or 0)
+        courier_total_deliveries = int(
+            (
+                await session.execute(
+                    select(sa_func.count(Delivery.id)).where(
+                        Delivery.courier_id == delivery.courier_id,
+                        Delivery.state == "FINALIZADA",
+                    )
+                )
+            ).scalar_one()
+        )
     # Fetch neighborhood name for display.
     neighborhood_name: str | None = None
     from app.neighborhoods.models import Neighborhood
@@ -583,6 +633,13 @@ async def get_delivery(
         courier_name=courier_name,
         neighborhood_name=neighborhood_name,
         team_names=team_names,
+        courier_phone=courier_phone,
+        courier_vehicle_type=courier_vehicle_type,
+        courier_vehicle_plate=courier_vehicle_plate,
+        courier_rating=courier_rating,
+        courier_rating_count=courier_rating_count,
+        courier_total_deliveries=courier_total_deliveries,
+        courier_since=courier_since,
     )
 
 

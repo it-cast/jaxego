@@ -121,7 +121,14 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
     # from the load (active deliveries vs max_concurrent) — NOT a column. Only an
     # `active` courier may go online (guarded in availability.py).
     is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    online_until: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
     max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+    # Last known position (updated while online — used for dispatch proximity ranking).
+    # Overwritten in-place; no history kept (LGPD minimisation).
+    lat: Mapped[float | None] = mapped_column(Numeric(precision=9, scale=6), nullable=True)
+    lng: Mapped[float | None] = mapped_column(Numeric(precision=9, scale=6), nullable=True)
+    location_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
 
     # LGPD retention bookkeeping (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)

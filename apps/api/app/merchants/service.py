@@ -218,6 +218,30 @@ async def signup(
     if is_paid_pending:
         status = "pending_payment"
 
+    # 5b. Geocode address if lat/lng not supplied by the browser.
+    resolved_lat = body.lat
+    resolved_lng = body.lng
+    if resolved_lat is None or resolved_lng is None:
+        address_parts = [
+            p for p in [
+                body.address,
+                body.address_number,
+                body.address_neighborhood,
+                body.address_zip,
+                body.address_state,
+                "Brasil",
+            ]
+            if p
+        ]
+        if address_parts:
+            geo = await geocoding.geocode(", ".join(address_parts))
+            if geo is not None:
+                resolved_lat = geo.lat
+                resolved_lng = geo.lng
+                logger.info("geocoding_resolved", lat=resolved_lat, lng=resolved_lng)
+            else:
+                logger.warning("geocoding_failed_on_signup")
+
     # 6. Persist User (argon2id) + merchant_user + merchant + subscription.
     user = User(
         email=body.email,
@@ -246,8 +270,8 @@ async def signup(
         address_zip=body.address_zip,
         address_state=body.address_state,
         status=status,
-        lat=None,
-        lng=None,
+        lat=resolved_lat,
+        lng=resolved_lng,
         receita_validated=receita_validated,
         revalidation_attempts=0,
         next_revalidation_at=otp_mod.expires_at() if revalidation_enqueued else None,

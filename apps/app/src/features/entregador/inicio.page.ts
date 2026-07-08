@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -26,6 +27,7 @@ import {
   EntregadorService,
 } from './entregador.service';
 import { deliveryStateLabel } from '@jaxego/shared/util/delivery-format';
+import { CourierLocationService } from './courier-location.service';
 
 /** Mutually-exclusive dispatch states on the home (UI-SPEC §2.3). */
 type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
@@ -59,6 +61,9 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
       <header class="jx-home-header">
         <div class="jx-home-greeting">
           <span class="jx-home-greeting__hi">Olá {{ firstName() }}!</span>
+          @if (online() && onlineUntil()) {
+            <span class="jx-home-greeting__until">Online até {{ fmtOnlineUntil() }}</span>
+          }
         </div>
         <jx-availability-toggle
           [isOnline]="online()"
@@ -68,6 +73,26 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
           (seeValidation)="goProfile()"
         />
       </header>
+
+      @if (showOnlineModal()) {
+        <div class="jx-home-overlay" (click)="cancelOnline()">
+          <div class="jx-home-modal" (click)="$event.stopPropagation()">
+            <h2 class="jx-home-modal__title">Até quando quer ficar online?</h2>
+            <input
+              type="time"
+              class="jx-home-modal__time"
+              [value]="onlineUntilTime()"
+              (change)="onlineUntilTime.set($any($event.target).value)"
+            />
+            <button type="button" class="jx-home-modal__confirm" (click)="confirmOnline()">
+              Confirmar
+            </button>
+            <button type="button" class="jx-home-modal__cancel" (click)="cancelOnline()">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      }
 
       @if (kycPending()) {
         <div class="jx-home-warn-wrap">
@@ -97,7 +122,7 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         @switch (state()) {
           @case ('offline') {
             <div class="jx-home-offline">
-              <div class="jx-home-offline__icon">🛵</div>
+              <img src="take-away-amico.svg" class="jx-home-offline__icon" alt="Entregador offline" />
               <h2 class="jx-home-offline__title">Você está offline</h2>
               <p class="jx-home-offline__msg">Fique online para receber ofertas da sua área.</p>
             </div>
@@ -187,7 +212,7 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         display: flex; flex-direction: column; align-items: center;
         gap: var(--jx-space-2); padding: var(--jx-space-6) 0; text-align: center;
       }
-      .jx-home-offline__icon { font-size: 48px; }
+      .jx-home-offline__icon { width: 220px; height: auto; }
       .jx-home-offline__title { margin: 0; font-size: var(--jx-text-lg); font-weight: 700; color: var(--text); }
       .jx-home-offline__msg { margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted, #888); }
 
@@ -308,18 +333,75 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         color: var(--brand, #e8722a); font-weight: 600;
         cursor: pointer; font-size: var(--jx-text-xs);
       }
+
+      /* Online until indicator */
+      .jx-home-greeting { display: flex; flex-direction: column; gap: 2px; }
+      .jx-home-greeting__until {
+        font-size: var(--jx-text-xs); color: var(--brand, #e8722a); font-weight: 600;
+      }
+
+      /* Online duration modal */
+      .jx-home-overlay {
+        position: fixed; inset: 0; z-index: 200;
+        background: rgba(0,0,0,0);
+        display: flex; align-items: flex-end; justify-content: center;
+        animation: jx-home-fade 0.2s ease forwards;
+      }
+      @keyframes jx-home-fade { to { background: rgba(0,0,0,0.5); } }
+      .jx-home-modal {
+        width: 100%; max-width: 420px;
+        background: var(--jx-color-surface, #fff);
+        border-radius: 20px 20px 0 0;
+        padding: var(--jx-space-5);
+        display: flex; flex-direction: column; gap: var(--jx-space-3);
+        animation: jx-home-slide 0.3s cubic-bezier(0.22,1,0.36,1) forwards;
+      }
+      @keyframes jx-home-slide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      .jx-home-modal__title {
+        margin: 0; font-size: var(--jx-text-lg); font-weight: 700; text-align: center;
+      }
+      .jx-home-modal__time {
+        width: 100%; min-height: 56px;
+        border: 2px solid var(--brand, #e8722a);
+        border-radius: var(--jx-radius-lg);
+        padding: 0 var(--jx-space-3);
+        font-size: var(--jx-text-2xl); font-weight: 700;
+        color: var(--brand, #e8722a);
+        text-align: center;
+        background: transparent;
+        outline: none;
+        box-sizing: border-box;
+      }
+      .jx-home-modal__confirm {
+        min-height: 52px; width: 100%;
+        border: none; border-radius: 999px;
+        background: var(--brand, #e8722a); color: #fff;
+        font-size: var(--jx-text-md); font-weight: 700; cursor: pointer;
+      }
+      .jx-home-modal__cancel {
+        border: 0; background: transparent; color: var(--text-muted, #888);
+        font: inherit; font-size: var(--jx-text-sm); cursor: pointer;
+        padding: var(--jx-space-2); text-align: center;
+      }
     `,
   ],
 })
 export class EntregadorInicioPage implements OnInit {
+  @ViewChild(AvailabilityToggleComponent) private toggleRef?: AvailabilityToggleComponent;
+
   private readonly auth = inject(AuthService);
   private readonly svc = inject(EntregadorService);
   private readonly saldo = inject(SaldoService);
   private readonly monitor = inject(OfferMonitorService);
   private readonly router = inject(Router);
+  private readonly locationSvc = inject(CourierLocationService);
 
   protected readonly initialLoading = signal(true);
   protected readonly online = signal(false);
+  protected readonly onlineUntil = signal<Date | null>(null);
+  protected readonly showOnlineModal = signal(false);
+  protected readonly onlineUntilTime = signal('00:00');
+  private onlineTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly firstName = signal('');
   protected readonly balance = signal<Balance | null>(null);
   protected readonly todayCents = signal(0);
@@ -370,6 +452,10 @@ export class EntregadorInicioPage implements OnInit {
     if (profile) {
       this.online.set(profile.is_online ?? false);
       this.firstName.set(profile.full_name?.split(' ')[0] ?? '');
+      const until = profile.online_until ? new Date(profile.online_until) : null;
+      this.onlineUntil.set(until);
+      this.scheduleOfflineTimer(until);
+      if (profile.is_online) this.locationSvc.start(id);
     }
     this.balance.set(balance);
     const today = new Date().toDateString();
@@ -385,15 +471,76 @@ export class EntregadorInicioPage implements OnInit {
   }
 
   protected async setOnline(value: boolean): Promise<void> {
+    if (value) {
+      // Reverte o toggle imediatamente — só vai online após confirmar o horário.
+      this.toggleRef?.revert();
+      this.showOnlineModal.set(true);
+      return;
+    }
+    await this._applyAvailability(false, undefined);
+  }
+
+  protected cancelOnline(): void {
+    this.showOnlineModal.set(false);
+    // Toggle já está offline (revert() foi chamado ao abrir o modal).
+  }
+
+  protected async confirmOnline(): Promise<void> {
+    this.showOnlineModal.set(false);
+    const [h, m] = this.onlineUntilTime().split(':').map(Number);
+    const now = new Date();
+    const until = new Date(now);
+    until.setHours(h, m, 0, 0);
+    // Horário já passou hoje → coloca no próximo dia. Senão, usa hoje.
+    if (until <= now) until.setDate(until.getDate() + 1);
+    await this._applyAvailability(true, until.toISOString());
+  }
+
+  private async _applyAvailability(online: boolean, until?: string): Promise<void> {
     const id = this.courierId;
     if (!id) return;
     try {
-      const res = await this.svc.setAvailability(id, value);
+      const res = await this.svc.setAvailability(id, online, until);
       this.online.set(res.is_online);
+      const untilDate = res.online_until ? new Date(res.online_until) : null;
+      this.onlineUntil.set(untilDate);
+      this.scheduleOfflineTimer(untilDate);
+      if (res.is_online) {
+        this.locationSvc.start(id);
+      } else {
+        this.locationSvc.stop();
+      }
     } catch {
-      // 409 = not active; the toggle's own banner explains it. Stay offline.
       this.online.set(false);
+      this.onlineUntil.set(null);
+      this.scheduleOfflineTimer(null);
+      this.locationSvc.stop();
     }
+  }
+
+  private scheduleOfflineTimer(until: Date | null): void {
+    if (this.onlineTimer) {
+      clearTimeout(this.onlineTimer);
+      this.onlineTimer = null;
+    }
+    if (!until) return;
+    const delay = until.getTime() - Date.now();
+    if (delay <= 0) {
+      this.online.set(false);
+      this.onlineUntil.set(null);
+      return;
+    }
+    this.onlineTimer = setTimeout(() => {
+      this.online.set(false);
+      this.onlineUntil.set(null);
+      this.locationSvc.stop();
+    }, delay);
+  }
+
+  protected fmtOnlineUntil(): string {
+    const d = this.onlineUntil();
+    if (!d) return '';
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
   protected fmtPhone(e164: string | null | undefined): string {
