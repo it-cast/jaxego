@@ -45,3 +45,5 @@ ios/App/build/
 # Local data
 *.sqlite3
 *.db
+apps/web/src/environments/environment.ts
+apps/web/src/environments/environment.prod.ts
