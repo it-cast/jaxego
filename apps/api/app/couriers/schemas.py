@@ -8,7 +8,7 @@ logged (TH-05).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -38,6 +38,9 @@ def validate_cpf(raw: str) -> bool:
 # ---------------------------------------------------------------------------
 # Signup (wizard step 1 — área + dados). Creates User + Courier (pending_kyc).
 # ---------------------------------------------------------------------------
+BankAccountType = Literal["CC", "PP"]
+
+
 class CourierSignupBody(BaseModel):
     """F-02 step 1 contract. `extra='forbid'` blocks mass assignment (A03)."""
 
@@ -54,6 +57,25 @@ class CourierSignupBody(BaseModel):
     team_id: int = Field(gt=0)
     # LGPD: explicit, non-pre-checked consent is required to submit (TH-09).
     consent: bool
+
+    # Personal data for Safe2Pay subaccount creation (collected at signup).
+    birth_date: date | None = Field(default=None)
+
+    # Address
+    zip_code: str | None = Field(default=None, max_length=8)
+    street: str | None = Field(default=None, max_length=200)
+    street_number: str | None = Field(default=None, max_length=10)
+    complement: str | None = Field(default=None, max_length=60)
+    neighborhood: str | None = Field(default=None, max_length=100)
+    city: str | None = Field(default=None, max_length=100)
+    state: str | None = Field(default=None, min_length=2, max_length=2)
+
+    # Bank account
+    bank_code: str | None = Field(default=None, max_length=10)
+    bank_agency: str | None = Field(default=None, max_length=10)
+    bank_account: str | None = Field(default=None, max_length=20)
+    bank_account_digit: str | None = Field(default=None, max_length=2)
+    bank_account_type: BankAccountType | None = Field(default=None)
 
     @field_validator("cpf")
     @classmethod

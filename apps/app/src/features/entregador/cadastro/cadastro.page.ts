@@ -6,13 +6,14 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import {
   DocCardComponent,
-  WizardStepperComponent,
+  PageHeaderComponent,
   type DocStatus,
   type WizardStep,
 } from '@jaxego/shared/components';
@@ -61,9 +62,9 @@ interface DocItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     ReactiveFormsModule,
-    RouterLink,
+    FormsModule,
+    PageHeaderComponent,
     FaIconComponent,
-    WizardStepperComponent,
     DocCardComponent,
     ErrorStateComponent,
     WarnBannerComponent,
@@ -91,6 +92,8 @@ export class CadastroEntregadorPage implements OnInit {
   protected readonly faEyeSlash = faEyeSlash;
   protected readonly docs = signal<DocItem[]>([]);
   protected readonly teams = signal<{ id: number; name: string }[]>([]);
+  /** Passo 0 só exibe os demais campos depois que a cidade for escolhida. */
+  protected readonly areaChosen = signal(false);
 
   protected readonly form = this.fb.nonNullable.group({
     area_id: [0, Validators.min(1)],
@@ -105,11 +108,48 @@ export class CadastroEntregadorPage implements OnInit {
     vehicle_plate: [''],
     mei_cnpj: [''],
     consent: [false, Validators.requiredTrue],
+    // Dados pessoais / endereço (Safe2Pay subaccount)
+    birth_date: [''],
+    zip_code: [''],
+    street: [''],
+    street_number: [''],
+    complement: [''],
+    neighborhood: [''],
+    city: [''],
+    state: [''],
+    // Dados bancários
+    bank_code: [''],
+    bank_agency: [''],
+    bank_account: [''],
+    bank_account_digit: [''],
+    bank_account_type: ['CC'],
   });
 
+  protected readonly cepLoading = signal(false);
+
+  // Seletor de banco
+  protected readonly bankModalOpen = signal(false);
+  protected readonly bankLoading = signal(false);
+  protected readonly bankSearch = signal('');
+  protected readonly bankList = signal<{ ispb: string; name: string; code: number | null }[]>([]);
+  protected readonly selectedBank = signal<{ code: string; name: string } | null>(null);
+  protected readonly bankModalSelected = signal<{ ispb: string; name: string; code: number | null } | null>(null);
+
+  protected readonly filteredBanks = computed(() => {
+    const q = this.bankSearch().toLowerCase().trim();
+    const list = this.bankList();
+    if (!q) return list.slice(0, 80);
+    return list
+      .filter(b => b.name.toLowerCase().includes(q) || String(b.code ?? '').includes(q))
+      .slice(0, 80);
+  });
+
+  // Steps: 0=Dados, 1=Endereço, 2=Banco, 3=Selfie, 4=Veículo, 5=Docs(completa)
   protected readonly steps = computed<WizardStep[]>(() => {
     const base: WizardStep[] = [
       { label: 'Dados' },
+      { label: 'Endereço' },
+      { label: 'Banco' },
       { label: 'Selfie' },
       { label: 'Veículo' },
     ];
@@ -147,6 +187,7 @@ export class CadastroEntregadorPage implements OnInit {
   protected onAreaChange(areaId: number): void {
     const area = this.areas().find((a) => a.id === Number(areaId));
     this.form.controls.area_id.setValue(area?.id ?? 0);
+    this.areaChosen.set(!!area);
     const level = normalizeKycLevel(area?.level);
     this.level.set(level);
     this.initDocs(level);
@@ -230,9 +271,17 @@ export class CadastroEntregadorPage implements OnInit {
     }
   }
 
+  protected back(): void {
+    if (this.current() > 0) {
+      this.stepError.set(null);
+      this.current.update((c) => c - 1);
+    }
+  }
+
   protected async next(): Promise<void> {
     this.stepError.set(null);
 
+    // Step 0 — dados pessoais
     if (this.current() === 0) {
       if (!this.validateStep1()) return;
       this.persistDraft();
@@ -240,7 +289,22 @@ export class CadastroEntregadorPage implements OnInit {
       return;
     }
 
+    // Step 1 — endereço
     if (this.current() === 1) {
+      this.persistDraft();
+      this.current.update((c) => c + 1);
+      return;
+    }
+
+    // Step 2 — dados bancários
+    if (this.current() === 2) {
+      this.persistDraft();
+      this.current.update((c) => c + 1);
+      return;
+    }
+
+    // Step 3 — selfie
+    if (this.current() === 3) {
       if (!this.docHasFile('selfie')) {
         this.stepError.set('Tire a selfie com documento para continuar.');
         return;
@@ -255,6 +319,29 @@ export class CadastroEntregadorPage implements OnInit {
     }
 
     this.current.update((c) => c + 1);
+  }
+
+  protected async onCepInput(value: string): Promise<void> {
+    const digits = value.replace(/\D/g, '');
+    const masked = digits.length > 5 ? digits.slice(0, 5) + '-' + digits.slice(5, 8) : digits;
+    this.form.controls.zip_code.setValue(masked);
+    if (digits.length === 8) {
+      this.cepLoading.set(true);
+      try {
+        const data = await firstValueFrom(
+          this.http.get<{ logradouro: string; bairro: string; localidade: string; uf: string; erro?: boolean }>(
+            `https://viacep.com.br/ws/${digits}/json/`
+          )
+        );
+        if (!data.erro) {
+          this.form.controls.street.setValue(data.logradouro || '');
+          this.form.controls.neighborhood.setValue(data.bairro || '');
+          this.form.controls.city.setValue(data.localidade || '');
+          this.form.controls.state.setValue(data.uf || '');
+        }
+      } catch { /* ignora */ }
+      finally { this.cepLoading.set(false); }
+    }
   }
 
   private validateStep1(): boolean {
@@ -275,6 +362,15 @@ export class CadastroEntregadorPage implements OnInit {
   // --- submit tudo no final -------------------------------------------------
   private async submitAll(): Promise<void> {
     const f = this.form.getRawValue();
+
+    // Rede de segurança: senha nunca vem do draft, então pode estar vazia
+    // se algo furar o fluxo. Volta ao passo 0 em vez de enviar inválido.
+    if (this.form.controls.password.invalid || this.passwordMismatch()) {
+      this.current.set(0);
+      this.stepError.set('Digite sua senha novamente para concluir o cadastro.');
+      return;
+    }
+
     this.submitting.set(true);
     this.submitProgress.set('Criando sua conta…');
     this.stepError.set(null);
@@ -290,6 +386,19 @@ export class CadastroEntregadorPage implements OnInit {
       vehicle_plate: this.motorized ? f.vehicle_plate || null : null,
       team_id: f.team_id!,
       consent: f.consent,
+      birth_date: f.birth_date || null,
+      zip_code: f.zip_code.replace(/\D/g, '') || null,
+      street: f.street || null,
+      street_number: f.street_number || null,
+      complement: f.complement || null,
+      neighborhood: f.neighborhood || null,
+      city: f.city || null,
+      state: f.state || null,
+      bank_code: f.bank_code || null,
+      bank_agency: f.bank_agency || null,
+      bank_account: f.bank_account || null,
+      bank_account_digit: f.bank_account_digit || null,
+      bank_account_type: (f.bank_account_type as 'CC' | 'PP') || null,
     });
 
     if (!result.ok || !result.data) {
@@ -372,17 +481,61 @@ export class CadastroEntregadorPage implements OnInit {
       };
       const { step, level, ...values } = draft;
       this.form.patchValue(values as never);
+      const areaId = this.form.controls.area_id.value;
+      if (areaId > 0) {
+        this.areaChosen.set(true);
+        void this.loadTeams(areaId);
+      }
       if (level) {
         const restoredLevel = normalizeKycLevel(level);
         this.level.set(restoredLevel);
         this.initDocs(restoredLevel);
       }
       if (typeof step === 'number') {
-        this.current.set(Math.min(step, this.steps().length - 1));
+        // Senha nunca é persistida no draft: se o usuário recarregou a página,
+        // volta ao passo 0 para redigitá-la (demais campos ficam preenchidos).
+        const hasPassword = !!this.form.controls.password.value;
+        this.current.set(hasPassword ? Math.min(step, this.steps().length - 1) : 0);
       }
     } catch { /* ignore corrupt draft */ }
   }
   private clearDraft(): void {
     try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+  }
+
+  protected async openBankModal(): Promise<void> {
+    this.bankSearch.set('');
+    this.bankModalSelected.set(null);
+    this.bankModalOpen.set(true);
+    if (this.bankList().length === 0) {
+      this.bankLoading.set(true);
+      try {
+        const data = await firstValueFrom(
+          this.http.get<{ ispb: string; name: string; code: number | null }[]>(
+            'https://brasilapi.com.br/api/banks/v1'
+          )
+        );
+        this.bankList.set(
+          data.filter(b => b.name).sort((a, b) => a.name.localeCompare(b.name))
+        );
+      } catch { /* lista fica vazia */ }
+      finally { this.bankLoading.set(false); }
+    }
+  }
+
+  protected closeBankModal(): void {
+    this.bankModalOpen.set(false);
+  }
+
+  protected selectBankInModal(bank: { ispb: string; name: string; code: number | null }): void {
+    this.bankModalSelected.set(bank);
+  }
+
+  protected confirmBankSelection(): void {
+    const bank = this.bankModalSelected();
+    if (!bank) return;
+    this.selectedBank.set({ code: String(bank.code ?? ''), name: bank.name });
+    this.form.controls.bank_code.setValue(String(bank.code ?? ''));
+    this.bankModalOpen.set(false);
   }
 }

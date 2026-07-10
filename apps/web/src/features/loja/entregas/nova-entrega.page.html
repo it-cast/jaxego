@@ -21,10 +21,11 @@
     <fieldset class="jx-nova__section">
       <legend>Coleta</legend>
       <jx-field
-        label="Endereço de coleta"
+        label="Endereço de coleta *"
         formControlName="pickup_address"
         placeholder="Rua, Av., ..."
         hint="Pré-preenchido com o endereço da sua loja. Edite se a coleta for em outro lugar."
+        [error]="fieldError('pickup_address', 'Preencha o endereço de coleta.')"
       />
     </fieldset>
 
@@ -32,31 +33,39 @@
     <fieldset class="jx-nova__section">
       <legend>Entrega</legend>
       <jx-field
-        label="Endereço de entrega"
+        label="Endereço de entrega *"
         formControlName="dropoff_address"
         placeholder="Rua, Av., ..."
+        [error]="fieldError('dropoff_address', 'Preencha o endereço de entrega.')"
       />
       <jx-field label="Número" formControlName="dropoff_number" inputmode="numeric" [mono]="true" />
       <jx-field label="Complemento (opcional)" formControlName="dropoff_complement" placeholder="Apto 201, Bloco B, Fundos..." />
       <jx-field label="Referência (opcional)" formControlName="dropoff_reference" placeholder="Próximo ao mercado, casa amarela..." />
       <jx-field label="CEP" formControlName="cep" inputmode="numeric" [mono]="true" placeholder="00000-000" [maxlength]="9" />
-      <label class="jx-nova__select">
-        <span>Bairro de entrega</span>
+      <label class="jx-nova__select" [class.jx-nova__select--error]="!!neighborhoodError()">
+        <span>Bairro de entrega *</span>
         <select formControlName="dropoff_neighborhood_id">
           <option [ngValue]="null" disabled>Selecione o bairro</option>
           @for (n of neighborhoods(); track n.id) {
             <option [ngValue]="n.id">{{ n.name }}</option>
           }
         </select>
+        @if (neighborhoodError()) {
+          <p class="jx-nova__field-error">{{ neighborhoodError() }}</p>
+        }
       </label>
     </fieldset>
 
     <!-- Destinatário -->
     <fieldset class="jx-nova__section">
       <legend>Destinatário</legend>
-      <jx-field label="Nome do destinatário" formControlName="recipient_name" />
       <jx-field
-        label="Telefone do destinatário"
+        label="Nome do destinatário *"
+        formControlName="recipient_name"
+        [error]="fieldError('recipient_name', 'Preencha o nome do destinatário.')"
+      />
+      <jx-field
+        label="Telefone do destinatário *"
         type="tel"
         inputmode="numeric"
         [mono]="true"
@@ -70,7 +79,12 @@
     <!-- Itens -->
     <fieldset class="jx-nova__section">
       <legend>Itens</legend>
-      <jx-field label="O que vai ser entregue" formControlName="items_description" placeholder="1 pizza grande, 1 refrigerante 2L" />
+      <jx-field
+        label="O que vai ser entregue *"
+        formControlName="items_description"
+        placeholder="1 pizza grande, 1 refrigerante 2L"
+        [error]="fieldError('items_description', 'Descreva o que será entregue.')"
+      />
       <jx-field label="Quantidade" formControlName="items_quantity" inputmode="numeric" [mono]="true" />
       <jx-field label="Valor declarado (opcional)" inputmode="decimal" [mono]="true" placeholder="R$ 0,00" formControlName="declared_value" />
       <div class="jx-nova__packages">
@@ -232,7 +246,7 @@
         }
       </p>
 
-      @if (teamsOnline().length === 0) {
+      @if (allTeamsEmpty()) {
         <p class="jx-nova__teams-empty">
           @if (zonaNome()) {
             Nenhuma equipe com entregadores disponíveis para a zona <strong>{{ zonaNome() }}</strong> no momento.
@@ -243,6 +257,9 @@
       }
 
       @for (team of teamsOnline(); track team.id) {
+        @if (team.couriers.length === 0) {
+          <!-- skip teams with no online couriers -->
+        } @else {
         <div class="jx-nova__team-card" [class.jx-nova__team-card--open]="openTeamId() === team.id" [class.jx-nova__team-card--selected]="isTeamSelected(team.id)">
           <button type="button" class="jx-nova__team-header" (click)="toggleTeam(team.id)">
             <label class="jx-nova__team-check" (click)="$event.stopPropagation()">
@@ -274,6 +291,7 @@
             </div>
           }
         </div>
+        }
       }
     </div>
 
@@ -285,6 +303,32 @@
 
     @if (submitError()) {
       <jx-error-state [message]="submitError()!" retryLabel="Tentar de novo" (retry)="submit()" />
+    }
+
+    @if (deliveryMode() === 'immediate' && totalPixCents() > 0) {
+      <div class="jx-nova__max-price">
+        <div class="jx-nova__max-price-row">
+          <span>Corrida (máx. estimado)</span>
+          <span>R$ {{ formatBrl(maxPriceCents()) }}</span>
+        </div>
+        @if (planTaxaPixCents() > 0) {
+          <div class="jx-nova__max-price-row jx-nova__max-price-row--sub">
+            <span>Taxa PIX</span>
+            <span>R$ {{ formatBrl(planTaxaPixCents()) }}</span>
+          </div>
+        }
+        @if (planTaxaServicoCents() > 0) {
+          <div class="jx-nova__max-price-row jx-nova__max-price-row--sub">
+            <span>Taxa de serviço</span>
+            <span>R$ {{ formatBrl(planTaxaServicoCents()) }}</span>
+          </div>
+        }
+        <div class="jx-nova__max-price-row jx-nova__max-price-row--total">
+          <span>Total a pagar via PIX</span>
+          <strong>R$ {{ formatBrl(totalPixCents()) }}</strong>
+        </div>
+        <span class="jx-nova__max-price-hint">Se a entrega sair mais barata, a corrida será menor.</span>
+      </div>
     }
 
     <div class="jx-nova__step2-actions">
@@ -319,3 +363,49 @@
     (dismiss)="onUpgradeDismiss()"
   />
 }
+
+@if (showPixConfirm()) {
+  <div class="jx-nova__modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pix-confirm-title">
+    <div class="jx-nova__modal">
+      <h2 class="jx-nova__modal-title" id="pix-confirm-title">Confirmar pagamento via PIX</h2>
+
+      <table class="jx-nova__breakdown">
+        <tbody>
+          <tr>
+            <td>Corrida (máx. estimado)</td>
+            <td class="jx-nova__breakdown-val">R$ {{ formatBrl(maxPriceCents()) }}</td>
+          </tr>
+          @if (planTaxaPixCents() > 0) {
+            <tr>
+              <td>Taxa PIX</td>
+              <td class="jx-nova__breakdown-val">R$ {{ formatBrl(planTaxaPixCents()) }}</td>
+            </tr>
+          }
+          @if (planTaxaServicoCents() > 0) {
+            <tr>
+              <td>Taxa de serviço</td>
+              <td class="jx-nova__breakdown-val">R$ {{ formatBrl(planTaxaServicoCents()) }}</td>
+            </tr>
+          }
+          <tr class="jx-nova__breakdown-total">
+            <td><strong>Total</strong></td>
+            <td class="jx-nova__breakdown-val"><strong>R$ {{ formatBrl(totalPixCents()) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="jx-nova__modal-hint">
+        Se a corrida sair mais barata, o valor cobrado será menor. As taxas permanecem fixas.
+      </p>
+      <div class="jx-nova__modal-actions">
+        <button type="button" class="jx-nova__btn-secondary" (click)="cancelPixConfirm()">
+          Cancelar
+        </button>
+        <button type="button" class="jx-nova__cta" (click)="confirmPix()">
+          Confirmar e gerar PIX
+        </button>
+      </div>
+    </div>
+  </div>
+}
+

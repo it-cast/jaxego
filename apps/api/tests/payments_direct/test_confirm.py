@@ -59,7 +59,6 @@ async def pay_seed(session_factory: async_sessionmaker[AsyncSession]) -> PaySeed
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=2,
         )
         s.add(courier)
         await s.flush()

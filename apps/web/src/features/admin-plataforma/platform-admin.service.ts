@@ -108,6 +108,8 @@ export interface PlanAdmin {
   price_annual_cents: number;
   deliveries_per_month: number;
   fee_cents: number;
+  taxa_pix_cents: number;
+  taxa_servico_cents: number;
   is_free: boolean;
   is_unlimited: boolean;
   is_active: boolean;
@@ -121,6 +123,8 @@ export interface PlanCreateBody {
   price_annual_cents: number;
   deliveries_per_month: number;
   fee_cents: number;
+  taxa_pix_cents: number;
+  taxa_servico_cents: number;
   is_unlimited: boolean;
   sort_order: number;
 }
@@ -131,6 +135,8 @@ export interface PlanUpdateBody {
   price_annual_cents?: number;
   deliveries_per_month?: number;
   fee_cents?: number;
+  taxa_pix_cents?: number;
+  taxa_servico_cents?: number;
   is_unlimited?: boolean;
   is_active?: boolean;
   sort_order?: number;

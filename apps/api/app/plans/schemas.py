@@ -13,6 +13,8 @@ class PlanAdminRead(BaseModel):
     price_annual_cents: int
     deliveries_per_month: int
     fee_cents: int
+    taxa_pix_cents: int
+    taxa_servico_cents: int
     is_free: bool
     is_unlimited: bool
     is_active: bool
@@ -27,7 +29,9 @@ class PlanCreate(BaseModel):
     price_monthly_cents: int = Field(ge=0)
     price_annual_cents: int = Field(ge=0)
     deliveries_per_month: int = Field(ge=0)
-    fee_cents: int = Field(ge=0)
+    fee_cents: int = Field(ge=0, default=0)
+    taxa_pix_cents: int = Field(ge=0, default=0)
+    taxa_servico_cents: int = Field(ge=0, default=0)
     is_unlimited: bool = False
     sort_order: int = Field(ge=0, default=0)
 
@@ -40,6 +44,8 @@ class PlanUpdate(BaseModel):
     price_annual_cents: int | None = Field(default=None, ge=0)
     deliveries_per_month: int | None = Field(default=None, ge=0)
     fee_cents: int | None = Field(default=None, ge=0)
+    taxa_pix_cents: int | None = Field(default=None, ge=0)
+    taxa_servico_cents: int | None = Field(default=None, ge=0)
     is_unlimited: bool | None = None
     is_active: bool | None = None
     sort_order: int | None = Field(default=None, ge=0)

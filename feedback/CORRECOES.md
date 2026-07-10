@@ -1,0 +1,8 @@
+- CORRECAO-222: Area config save não enviava PATCH — removeu Validators.required em inputs numéricos, adicionou markForCheck() após patchValue, botão disabled apenas por saving() (2026-07-09)
+- CORRECAO-223: Save não funcionava — uvicorn sem --reload não recarregava mudanças Python; `docker restart jaxego-api-1` resolveu (2026-07-09)
+- CORRECAO-224: Entregadores sem oferta — worker rodando ORM antigo com couriers.max_concurrent após migration; docker restart jaxego-worker-1 resolveu (2026-07-09)
+- CORRECAO-225: Início do entregador exibia só a última entrega ativa — signal `active` era scalar; trocado para array `actives`, novo endpoint `/active-list`, entrega-ativa aceita `?deliveryId` (2026-07-09)
+- CORRECAO-226: Planos — adicionados taxa_pix_cents e taxa_servico_cents; seed simplificado para 2 planos (Básico grátis e Pro R$29,90); migration 0042; CRUD admin e frontend atualizados (2026-07-09)
+- CORRECAO-227: Fluxo PIX antes de despachar entregador — novo estado AGUARDANDO_PAGAMENTO, migration 0043, modal de confirmação, tela com QR code, polling de status, worker transiciona para CRIADA ao confirmar pagamento (2026-07-09)
+- CORRECAO-228: Cadastro entregador — seletor de banco via modal (BrasilAPI), jx-page-header + botão Voltar no rodapé; fix signup 422: restart da API (schema stale) e senha vazia após restore de draft volta ao passo 0 (2026-07-10)
+- CORRECAO-229: Signup não cria mais courier_zonas (preço 0 virava override R$0,00) — entregador herda zonas/preços da equipe; removido banner "Configure suas zonas" e gating de cobertura no início; limpeza de 5 linhas zeradas no banco (2026-07-10)

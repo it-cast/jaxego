@@ -33,6 +33,8 @@ async def list_plans(session: SessionDep) -> list[PlanRead]:
             preco_anual_cents=p.price_annual_cents,
             entregas_mes=p.deliveries_per_month,
             taxa_entrega_cents=p.fee_cents,
+            taxa_pix_cents=p.taxa_pix_cents,
+            taxa_servico_cents=p.taxa_servico_cents,
             is_free=p.is_free,
             is_unlimited=p.is_unlimited,
         )

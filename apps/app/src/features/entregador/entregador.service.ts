@@ -163,6 +163,15 @@ export class EntregadorService {
     );
   }
 
+  /** All of the courier's in-progress deliveries (ACEITA/COLETADA), newest first. */
+  async activeDeliveries(courierId: number): Promise<CourierDelivery[]> {
+    return firstValueFrom(
+      this.http.get<CourierDelivery[]>(
+        `/v1/couriers/${courierId}/deliveries/active-list`
+      )
+    );
+  }
+
   async getDelivery(courierId: number, deliveryId: number): Promise<CourierDelivery> {
     return firstValueFrom(
       this.http.get<CourierDelivery>(

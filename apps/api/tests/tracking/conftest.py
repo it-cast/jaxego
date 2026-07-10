@@ -58,7 +58,6 @@ async def _base_world(s: AsyncSession) -> tuple[int, int, int]:
         status="active",
         vehicle_type="moto",
         is_online=True,
-        max_concurrent=2,
     )
     s.add(courier)
     await s.flush()

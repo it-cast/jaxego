@@ -132,7 +132,7 @@ async def auth_payments_client(session_factory, monkeypatch):
     from app.main import create_app
     from httpx import ASGITransport, AsyncClient
 
-    monkeypatch.setenv("SAFE2PAY_WEBHOOK_SECRET", "test-webhook-secret")
+    monkeypatch.setenv("SAFE2PAY_SECRET_KEY", "test-webhook-secret")
     config_mod.get_settings.cache_clear()
     config_mod.settings = config_mod.get_settings()
     import app.payments.webhooks_router as wh_mod
@@ -267,7 +267,6 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=1,
             mei_cnpj="98765432000100",
             mei_pending=False,
             s2p_recipient_id="recip_courier_1",
@@ -283,7 +282,6 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=1,
             mei_cnpj=None,
             mei_pending=True,
             s2p_recipient_id=None,

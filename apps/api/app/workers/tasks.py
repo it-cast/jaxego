@@ -226,6 +226,32 @@ async def process_safe2pay_event(
                 await subscriptions.activate_pix_on_charge_paid(
                     session, subscription_id=charge.subscription_id
                 )
+            # PIX delivery: transition AGUARDANDO_PAGAMENTO → CRIADA then dispatch.
+            if charge.kind == "delivery" and charge.delivery_id is not None:
+                from sqlalchemy import select as _select
+
+                from app.deliveries.models import Delivery
+                from app.deliveries.service import transition as delivery_transition
+
+                delivery = await session.get(Delivery, charge.delivery_id)
+                if delivery is not None and delivery.state == "AGUARDANDO_PAGAMENTO":
+                    await delivery_transition(
+                        session,
+                        delivery=delivery,
+                        to_state="CRIADA",
+                        actor_id=None,
+                        reason="pix_confirmed",
+                    )
+                    await session.commit()
+                    from app.workers.dispatch import enqueue_dispatch
+
+                    await enqueue_dispatch(delivery.id)
+                    logger.info(
+                        "payments.delivery_pix_confirmed",
+                        delivery_id=delivery.id,
+                        transaction_id=transaction_id,
+                    )
+                    return "ok"
         await session.commit()
 
     logger.info("payments.process_event", transaction_id=transaction_id, approved=approved)

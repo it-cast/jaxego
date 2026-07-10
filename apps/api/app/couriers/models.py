@@ -21,11 +21,12 @@ key is generated server-side and contains NO CPF (TH-11).
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
+    Date,
     ForeignKey,
     Index,
     Integer,
@@ -104,9 +105,29 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
     mei_cnpj: Mapped[str | None] = mapped_column(String(14), nullable=True)
     mei_pending: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    # Safe2Pay subaccount/recipient id (Phase 10, RN-010): set when the MEI is approved
-    # so the delivery split can pay the courier's corrida. NULL → no platform repasse.
+    # Safe2Pay subaccount (Phase 10, RN-010): created on KYC approval.
+    # s2p_recipient_id = Safe2Pay subaccount Id; s2p_token = subconta token for transfers.
     s2p_recipient_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    s2p_token: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Personal data required for Safe2Pay subaccount creation.
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    # Address (collected at signup, required for subaccount).
+    zip_code: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    street: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    street_number: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    complement: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    neighborhood: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(2), nullable=True)
+
+    # Bank account for subaccount repasse.
+    bank_code: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    bank_agency: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    bank_account: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    bank_account_digit: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    bank_account_type: Mapped[str | None] = mapped_column(String(2), nullable=True)  # CC | PP
 
     # Team (every courier must belong to a team).
     team_id: Mapped[int] = mapped_column(
@@ -118,11 +139,10 @@ class Courier(Base, AreaScopedMixin, TimestampMixin):
     )
 
     # Availability (Phase 6, D-06): online/offline is persisted; `busy` is DERIVED
-    # from the load (active deliveries vs max_concurrent) — NOT a column. Only an
-    # `active` courier may go online (guarded in availability.py).
+    # from active deliveries vs area config `max_entregas_simultaneas` — NOT a column.
+    # Only an `active` courier may go online (guarded in availability.py).
     is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     online_until: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
-    max_concurrent: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
     # Last known position (updated while online — used for dispatch proximity ranking).
     # Overwritten in-place; no history kept (LGPD minimisation).

@@ -295,6 +295,7 @@ async def create_delivery(
     card_blob: str | None = None,
     customer_document: str | None = None,
     customer_email: str | None = None,
+    pix_payment_port: object | None = None,
 ) -> CreateDeliveryResponse:
     """Create a delivery in CRIADA (F-03). `direct` is free; card/pix charges first.
 
@@ -349,9 +350,16 @@ async def create_delivery(
     recipient = await upsert_recipient(session, area_id=area_id, body=body)
 
     # Scheduled delivery: use AGENDADA as initial state; Inngest will transition
-    # to CRIADA at the scheduled time. Immediate delivery stays CRIADA (current path).
+    # to CRIADA at the scheduled time. Platform PIX: AGUARDANDO_PAGAMENTO until paid.
+    # Immediate delivery without PIX stays CRIADA (current path).
     scheduled_at = getattr(body, "scheduled_at", None)
-    initial_state = "AGENDADA" if scheduled_at is not None else "CRIADA"
+    platform_pix = getattr(body, "platform_pix", False) and pix_payment_port is not None
+    if scheduled_at is not None:
+        initial_state = "AGENDADA"
+    elif platform_pix:
+        initial_state = "AGUARDANDO_PAGAMENTO"
+    else:
+        initial_state = "CRIADA"
 
     delivery = Delivery(
         area_id=area_id,
@@ -419,6 +427,56 @@ async def create_delivery(
     if dlat is not None and dlng is not None:
         from app.areas.zona_finder import find_zona_id
         delivery.zona_id = await find_zona_id(session, area_id=area_id, lat=dlat, lng=dlng)
+
+    # Platform PIX delivery (Phase 12): generate PIX QR directed to itcast subconta.
+    # The delivery stays in AGUARDANDO_PAGAMENTO until the webhook confirms payment.
+    pix_qr_code: str | None = None
+    pix_qr_code_base64: str | None = None
+    if platform_pix:
+        from app.core.config import get_settings
+        from app.merchants.models import Merchant
+        from app.payments.port import Customer
+
+        pix_amount = getattr(body, "pix_amount_cents", None) or 0
+        merchant = await session.get(Merchant, merchant_id)
+        pix_customer = Customer(
+            name=merchant.trade_name if merchant else "Loja",
+            document=merchant.document if merchant else "00000000000",
+            email=merchant.email if merchant else "",
+            zip_code=merchant.address_zip if merchant else None,
+            street=merchant.address if merchant else None,
+            street_number=merchant.address_number if merchant else "S/N",
+            neighborhood=merchant.address_neighborhood if merchant else None,
+            state=merchant.address_state if merchant else None,
+        )
+        now_ts = int(datetime.now(UTC).timestamp())
+        pix_ref = f"delivery-{delivery.id}-pix-{now_ts}"
+        pix_result = await pix_payment_port.create_pix_authorization(  # type: ignore[union-attr]
+            amount_cents=pix_amount,
+            customer=pix_customer,
+            reference=pix_ref,
+            recorrente=False,
+        )
+        delivery.pix_transaction_id = pix_result.transaction_id or None
+        delivery.pix_qr_code = pix_result.qr_code or None
+        delivery.pix_qr_code_base64 = pix_result.qr_code_base64 or None
+        pix_qr_code = delivery.pix_qr_code
+        pix_qr_code_base64 = delivery.pix_qr_code_base64
+        await session.flush()
+
+        from app.payments import repo as payments_repo
+
+        await payments_repo.record_charge(
+            session,
+            area_id=area_id,
+            idempotency_key=pix_ref,
+            transaction_id=pix_result.transaction_id,
+            amount_cents=pix_amount,
+            method="pix",
+            kind="delivery",
+            status="open",
+            delivery_id=delivery.id,
+        )
 
     # Card/PIX (Phase 10): charge corrida+taxa with a split BEFORE finalising. A refusal/
     # outage raises PaymentGatewayError → the caller's transaction rolls back and the
@@ -488,6 +546,8 @@ async def create_delivery(
         fee_cents=delivery.fee_cents,
         no_couriers_warning=no_couriers_warning,
         scheduled_at=scheduled_at_iso,
+        pix_qr_code=pix_qr_code,
+        pix_qr_code_base64=pix_qr_code_base64,
     )
 
 
@@ -534,7 +594,7 @@ def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
     """
     base = delivery.price_cents or 0
     state = delivery.state
-    if state in ("AGENDADA", "CRIADA", "SEM_RESPOSTA"):
+    if state in ("AGENDADA", "AGUARDANDO_PAGAMENTO", "CRIADA", "SEM_RESPOSTA"):
         return 0
     if state == "ACEITA":
         return base // 2
@@ -669,6 +729,27 @@ async def get_courier_active_delivery(
         else None
     )
     return delivery, recipient
+
+
+async def get_courier_active_deliveries(
+    session: AsyncSession, *, courier_id: int
+) -> list[tuple[Delivery, Recipient | None]]:
+    """All of the courier's in-progress deliveries (ACEITA/COLETADA), newest first."""
+    stmt = (
+        select(Delivery)
+        .where(Delivery.courier_id == courier_id, Delivery.state.in_(_COURIER_ACTIVE_STATES))
+        .order_by(Delivery.accepted_at.desc())
+    )
+    deliveries = (await session.execute(stmt)).scalars().all()
+    results: list[tuple[Delivery, Recipient | None]] = []
+    for delivery in deliveries:
+        recipient = (
+            await session.get(Recipient, delivery.recipient_id)
+            if delivery.recipient_id is not None
+            else None
+        )
+        results.append((delivery, recipient))
+    return results
 
 
 async def release_scheduled_delivery(

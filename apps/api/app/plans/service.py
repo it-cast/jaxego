@@ -17,52 +17,38 @@ from app.plans.models import SubscriptionPlan
 # [ASSUMIDO] seed values (DRV-009) — editable seed data, never hardcoded in UI.
 # price_monthly_cents / price_annual_cents / fee_cents are integer cents.
 # Free is immutable (is_free=True). Annual = monthly × 10 (2 months free).
+# taxa_pix_cents: taxa por operação PIX; taxa_servico_cents: taxa de serviço por entrega.
 PLAN_SEEDS: tuple[dict[str, object], ...] = (
     {
         "code": "free",
-        "name": "Free",
+        "name": "Básico",
         "price_monthly_cents": 0,
         "price_annual_cents": 0,
-        "deliveries_per_month": 2,
-        "fee_cents": 200,
+        "deliveries_per_month": 0,
+        "fee_cents": 100,
+        "taxa_pix_cents": 50,
+        "taxa_servico_cents": 100,
         "is_free": True,
-        "is_unlimited": False,
+        "is_unlimited": True,
         "sort_order": 0,
     },
     {
-        "code": "inicio",
-        "name": "Início",
-        "price_monthly_cents": 4900,
-        "price_annual_cents": 49000,
-        "deliveries_per_month": 40,
-        "fee_cents": 150,
-        "is_free": False,
-        "is_unlimited": False,
-        "sort_order": 1,
-    },
-    {
-        "code": "profissional",
-        "name": "Profissional",
-        "price_monthly_cents": 12900,
-        "price_annual_cents": 129000,
-        "deliveries_per_month": 150,
-        "fee_cents": 100,
-        "is_free": False,
-        "is_unlimited": False,
-        "sort_order": 2,
-    },
-    {
-        "code": "sem_limite",
-        "name": "Sem Limite",
-        "price_monthly_cents": 29900,
-        "price_annual_cents": 299000,
-        "deliveries_per_month": 0,  # 0 == unlimited (is_unlimited flag carries meaning)
-        "fee_cents": 50,
+        "code": "pro",
+        "name": "Pro",
+        "price_monthly_cents": 2990,
+        "price_annual_cents": 29900,
+        "deliveries_per_month": 0,
+        "fee_cents": 0,
+        "taxa_pix_cents": 50,
+        "taxa_servico_cents": 0,
         "is_free": False,
         "is_unlimited": True,
-        "sort_order": 3,
+        "sort_order": 1,
     },
 )
+
+# Códigos dos planos antigos que devem ser desativados ao rodar o seed.
+_LEGACY_PLAN_CODES = frozenset({"inicio", "profissional", "sem_limite"})
 
 
 async def list_active_plans(session: AsyncSession) -> list[SubscriptionPlan]:
@@ -101,7 +87,9 @@ async def create_plan(
     price_monthly_cents: int,
     price_annual_cents: int,
     deliveries_per_month: int,
-    fee_cents: int,
+    fee_cents: int = 0,
+    taxa_pix_cents: int = 0,
+    taxa_servico_cents: int = 0,
     is_unlimited: bool,
     sort_order: int,
 ) -> SubscriptionPlan:
@@ -115,6 +103,8 @@ async def create_plan(
         price_annual_cents=price_annual_cents,
         deliveries_per_month=deliveries_per_month,
         fee_cents=fee_cents,
+        taxa_pix_cents=taxa_pix_cents,
+        taxa_servico_cents=taxa_servico_cents,
         is_free=False,
         is_unlimited=is_unlimited,
         is_active=True,
@@ -134,13 +124,15 @@ async def update_plan(
     price_annual_cents: int | None = None,
     deliveries_per_month: int | None = None,
     fee_cents: int | None = None,
+    taxa_pix_cents: int | None = None,
+    taxa_servico_cents: int | None = None,
     is_unlimited: bool | None = None,
     is_active: bool | None = None,
     sort_order: int | None = None,
 ) -> SubscriptionPlan:
     plan = await get_plan_by_id(session, plan_id)
     if plan.is_free:
-        raise ValidationAppError("O plano Free é imutável e não pode ser editado.")
+        raise ValidationAppError("O plano Básico é imutável e não pode ser editado.")
     if name is not None:
         plan.name = name
     if price_monthly_cents is not None:
@@ -151,6 +143,10 @@ async def update_plan(
         plan.deliveries_per_month = deliveries_per_month
     if fee_cents is not None:
         plan.fee_cents = fee_cents
+    if taxa_pix_cents is not None:
+        plan.taxa_pix_cents = taxa_pix_cents
+    if taxa_servico_cents is not None:
+        plan.taxa_servico_cents = taxa_servico_cents
     if is_unlimited is not None:
         plan.is_unlimited = is_unlimited
     if is_active is not None:
@@ -170,19 +166,30 @@ async def delete_plan(session: AsyncSession, plan_id: int) -> None:
 
 
 async def seed_plans_if_missing(session: AsyncSession) -> None:
-    """Idempotent upsert of the 4 plans by natural key `code` (Pitfall 4)."""
+    """Idempotent upsert of active plans by natural key `code` (Pitfall 4).
+    Legacy plan codes in _LEGACY_PLAN_CODES are deactivated if they exist."""
     for seed in PLAN_SEEDS:
         existing = await get_plan_by_code(session, str(seed["code"]))
         if existing is None:
             session.add(SubscriptionPlan(**seed))  # type: ignore[arg-type]
         else:
-            # Update mutable seed values (Free price stays 0; is_free immutable).
             existing.name = str(seed["name"])
+            existing.is_unlimited = bool(seed["is_unlimited"])
+            existing.sort_order = int(seed["sort_order"])  # type: ignore[arg-type]
+            existing.taxa_pix_cents = int(seed["taxa_pix_cents"])  # type: ignore[arg-type]
+            existing.taxa_servico_cents = int(seed["taxa_servico_cents"])  # type: ignore[arg-type]
             if not existing.is_free:
                 existing.price_monthly_cents = int(seed["price_monthly_cents"])  # type: ignore[arg-type]
                 existing.price_annual_cents = int(seed["price_annual_cents"])  # type: ignore[arg-type]
                 existing.deliveries_per_month = int(seed["deliveries_per_month"])  # type: ignore[arg-type]
                 existing.fee_cents = int(seed["fee_cents"])  # type: ignore[arg-type]
-            existing.is_unlimited = bool(seed["is_unlimited"])
-            existing.sort_order = int(seed["sort_order"])  # type: ignore[arg-type]
+            existing.is_active = True
+    # Deactivate legacy plans no longer in the active seed.
+    from sqlalchemy import select as _select
+    legacy_stmt = _select(SubscriptionPlan).where(
+        SubscriptionPlan.code.in_(_LEGACY_PLAN_CODES)
+    )
+    legacy_plans = (await session.execute(legacy_stmt)).scalars().all()
+    for lp in legacy_plans:
+        lp.is_active = False
     await session.flush()

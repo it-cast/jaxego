@@ -7,6 +7,7 @@ export interface AreaConfig {
   kyc_level: 'simples' | 'completa';
   timeout_oferta_s: number;
   timeout_favoritos_s: number;
+  max_entregas_simultaneas: number;
 }
 
 export interface AreaRead {

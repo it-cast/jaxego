@@ -73,7 +73,6 @@ async def _make_courier_online(
         status="active",
         vehicle_type="moto",
         is_online=True,
-        max_concurrent=2,
     )
     s.add(courier)
     await s.flush()

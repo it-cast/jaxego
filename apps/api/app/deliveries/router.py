@@ -100,6 +100,8 @@ def _delivery_out(
         team_names=team_names or [],
         created_at=created,
         scheduled_at=scheduled,
+        pix_qr_code=delivery.pix_qr_code,
+        pix_qr_code_base64=delivery.pix_qr_code_base64,
     )
 
 
@@ -121,6 +123,14 @@ async def create_delivery(
         from app.payments.service import PaymentService
 
         payment_service = PaymentService(session, payment=get_payment_adapter())
+
+    # Phase 12: platform PIX delivery payment (corrida collected before dispatch).
+    pix_payment_port = None
+    if body.platform_pix:
+        from app.payments.factory import get_payment_adapter
+
+        pix_payment_port = get_payment_adapter()
+
     result = await service.create_delivery(
         session,
         area_id=scope.area_id,
@@ -132,15 +142,44 @@ async def create_delivery(
         card_blob=body.card_blob,
         customer_document=body.payer_document,
         customer_email=str(body.payer_email) if body.payer_email else None,
+        pix_payment_port=pix_payment_port,
     )
     await session.commit()
     # Kick off the cascade only for immediate deliveries (Phase 8 — RN-009 / D-01).
-    # Scheduled deliveries (AGENDADA) are released by the Inngest webhook.
-    if result.state != "AGENDADA":
+    # Scheduled (AGENDADA) → released by Inngest. PIX (AGUARDANDO_PAGAMENTO) → released
+    # by the Safe2Pay webhook after payment is confirmed.
+    if result.state not in ("AGENDADA", "AGUARDANDO_PAGAMENTO"):
         from app.workers.dispatch import enqueue_dispatch
 
         await enqueue_dispatch(result.delivery_id)
     return result
+
+
+@router.get("/{delivery_id}/pix-status", response_model=dict)
+async def get_delivery_pix_status(
+    delivery_id: int,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Poll PIX payment status for a delivery in AGUARDANDO_PAGAMENTO (Phase 12).
+
+    Returns `paid=true` once the Safe2Pay webhook has confirmed the charge. The
+    frontend polls this endpoint every few seconds until paid, then navigates to
+    the delivery detail page and dispatch starts.
+    """
+    delivery = await service.get_delivery(
+        session, area_id=scope.area_id, merchant_id=scope.merchant_id, delivery_id=delivery_id
+    )
+    from app.payments import repo as payments_repo
+
+    charge = await payments_repo.get_charge_by_delivery(session, delivery_id=delivery.id)
+    paid = charge is not None and charge.status == "paid"
+    return {
+        "paid": paid,
+        "state": delivery.state,
+        "qr_code": delivery.pix_qr_code,
+        "qr_code_base64": delivery.pix_qr_code_base64,
+    }
 
 
 @router.post("/scheduled/release", status_code=status.HTTP_200_OK)
@@ -428,6 +467,7 @@ async def teams_for_address(
         {
             "id": team.id,
             "name": team.name,
+            "preco_minimo_cents": tz_map.get(team.id),
             "couriers": [
                 {
                     "id": c.id,
@@ -440,7 +480,34 @@ async def teams_for_address(
         }
         for team in teams
     ]
-    return {"zona_id": zona_id, "zona_name": zona_name, "teams": result_teams}
+
+    # Active plan taxa — included so the frontend can show the full cost breakdown
+    # (corrida + taxa_pix + taxa_servico) in the PIX confirmation modal.
+    from app.merchants.models import MerchantSubscription
+    from app.plans.models import SubscriptionPlan
+
+    plan_taxa_pix_cents = 0
+    plan_taxa_servico_cents = 0
+    active_plan = (await session.execute(
+        select(SubscriptionPlan)
+        .join(MerchantSubscription, MerchantSubscription.plan_id == SubscriptionPlan.id)
+        .where(
+            MerchantSubscription.merchant_id == scope.merchant_id,
+            MerchantSubscription.area_id == scope.area_id,
+            MerchantSubscription.status == "active",
+        )
+    )).scalars().first()
+    if active_plan is not None:
+        plan_taxa_pix_cents = active_plan.taxa_pix_cents
+        plan_taxa_servico_cents = active_plan.taxa_servico_cents
+
+    return {
+        "zona_id": zona_id,
+        "zona_name": zona_name,
+        "teams": result_teams,
+        "plan_taxa_pix_cents": plan_taxa_pix_cents,
+        "plan_taxa_servico_cents": plan_taxa_servico_cents,
+    }
 
 
 @router.get("/estimate")

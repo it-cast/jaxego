@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormBuilder,
@@ -42,6 +42,7 @@ interface CourierOnline {
 interface TeamOnline {
   id: number;
   name: string;
+  preco_minimo_cents: number | null;
   couriers: CourierOnline[];
 }
 
@@ -49,6 +50,15 @@ interface TeamsForAddressResponse {
   zona_id: number | null;
   zona_name: string | null;
   teams: TeamOnline[];
+  plan_taxa_pix_cents: number;
+  plan_taxa_servico_cents: number;
+}
+
+interface PixStatusResponse {
+  paid: boolean;
+  state: string;
+  qr_code: string | null;
+  qr_code_base64: string | null;
 }
 
 /**
@@ -155,6 +165,8 @@ export class NovaEntregaPage {
   protected readonly teamsOnline = signal<TeamOnline[]>([]);
   protected readonly openTeamId = signal<number | null>(null);
   protected readonly selectedTeamIds = signal<Set<number>>(new Set());
+  protected readonly planTaxaPixCents = signal(0);
+  protected readonly planTaxaServicoCents = signal(0);
 
   // E1 (out of area) and E4 (plan limit) state.
   protected readonly outOfArea = signal(false);
@@ -169,7 +181,7 @@ export class NovaEntregaPage {
   protected readonly iconXmark = faXmark;
   protected readonly imagePreview = signal<string | null>(null);
   protected readonly lightboxUrl = signal<string | null>(null);
-  protected readonly submitLabel = signal('Chamar entregador');
+  protected readonly submitLabel = signal('Pagar e chamar entregador');
   protected imageFile: File | null = null;
   protected readonly proofMethod = signal<string>('photo');
   protected readonly receiptMethod = signal<string>('dinheiro');
@@ -178,6 +190,43 @@ export class NovaEntregaPage {
   protected readonly scheduledAt = signal<string>('');
   protected readonly scheduledAtError = signal<string | null>(null);
   private cardBlob: string | null = null;
+
+  // ── PIX delivery payment flow ─────────────────────────────────────────────
+  protected readonly showPixConfirm = signal(false);
+  protected readonly showPixScreen = signal(false);
+  protected readonly pixDeliveryId = signal<number | null>(null);
+  protected readonly pixQrCode = signal<string | null>(null);
+  protected readonly pixQrCodeBase64 = signal<string | null>(null);
+  protected readonly pixCopied = signal(false);
+  protected readonly pixPollError = signal<string | null>(null);
+  private pixPollTimer: ReturnType<typeof setInterval> | null = null;
+
+  protected readonly maxPriceCents = computed(() => {
+    const selected = this.selectedTeamIds();
+    const teams = this.teamsOnline();
+    let max = 0;
+    for (const team of teams) {
+      if (!selected.has(team.id)) continue;
+      for (const c of team.couriers) {
+        const price = c.price_cents ?? team.preco_minimo_cents ?? 0;
+        if (price > max) max = price;
+      }
+    }
+    return max;
+  });
+
+  protected readonly totalPixCents = computed(
+    () => this.maxPriceCents() + this.planTaxaPixCents() + this.planTaxaServicoCents()
+  );
+
+  protected readonly allTeamsEmpty = computed(() =>
+    this.teamsOnline().length === 0 ||
+    this.teamsOnline().every(t => t.couriers.length === 0)
+  );
+
+  protected formatBrl(cents: number): string {
+    return (cents / 100).toFixed(2).replace('.', ',');
+  }
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -267,6 +316,8 @@ export class NovaEntregaPage {
       this.zonaId.set(res.zona_id);
       this.zonaNome.set(res.zona_name);
       this.teamsOnline.set(res.teams);
+      this.planTaxaPixCents.set(res.plan_taxa_pix_cents ?? 0);
+      this.planTaxaServicoCents.set(res.plan_taxa_servico_cents ?? 0);
       this.step.set(2);
     } catch {
       this.resolveError.set('Não foi possível verificar a cobertura do endereço. Tente de novo.');
@@ -373,10 +424,20 @@ export class NovaEntregaPage {
 
   protected phoneError(): string | null {
     const c = this.form.controls.recipient_phone;
-    if (c.touched && c.value && !isPhoneComplete(c.value)) {
-      return 'Telefone incompleto. Use (DD) 9XXXX-XXXX.';
-    }
+    if (!c.touched) return null;
+    if (!c.value) return 'Telefone obrigatório.';
+    if (!isPhoneComplete(c.value)) return 'Telefone incompleto. Use (DD) 9XXXX-XXXX.';
     return null;
+  }
+
+  protected fieldError(name: keyof typeof this.form.controls, msg: string): string | null {
+    const c = this.form.controls[name];
+    return c.touched && c.invalid ? msg : null;
+  }
+
+  protected neighborhoodError(): string | null {
+    const c = this.form.controls.dropoff_neighborhood_id;
+    return c.touched && !c.value ? 'Selecione o bairro de entrega.' : null;
   }
 
   protected get scheduledAtMin(): string {
@@ -389,7 +450,7 @@ export class NovaEntregaPage {
     this.deliveryMode.set(mode);
     this.scheduledAtError.set(null);
     if (mode === 'immediate') this.scheduledAt.set('');
-    this.submitLabel.set(mode === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
+    this.submitLabel.set(mode === 'scheduled' ? 'Agendar entrega' : 'Pagar e chamar entregador');
   }
 
   protected canSubmit(): boolean {
@@ -413,8 +474,24 @@ export class NovaEntregaPage {
         this.scheduledAtError.set('O horário deve ser pelo menos 1 minuto no futuro.'); return;
       }
       this.scheduledAtError.set(null);
+      // Scheduled → direct submit (no PIX).
+      await this.doSubmit(false);
+      return;
     }
+    // Immediate → open PIX confirmation modal.
+    this.showPixConfirm.set(true);
+  }
 
+  protected cancelPixConfirm(): void {
+    this.showPixConfirm.set(false);
+  }
+
+  protected async confirmPix(): Promise<void> {
+    this.showPixConfirm.set(false);
+    await this.doSubmit(true);
+  }
+
+  private async doSubmit(platformPix: boolean): Promise<void> {
     this.submitting.set(true);
     this.submitLabel.set('Salvando os dados...');
     this.submitError.set(null);
@@ -453,6 +530,8 @@ export class NovaEntregaPage {
       scheduled_at: this.deliveryMode() === 'scheduled' && this.scheduledAt()
         ? new Date(this.scheduledAt()).toISOString()
         : null,
+      platform_pix: platformPix || undefined,
+      pix_amount_cents: platformPix ? this.totalPixCents() : undefined,
     };
 
     const result = await this.service.create(req);
@@ -463,16 +542,66 @@ export class NovaEntregaPage {
         await this.uploadImage(result.data.delivery_id);
       }
       this.submitting.set(false);
-      this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
+
+      // PIX delivery: navigate directly to detail page (QR code shown there).
+      if (platformPix) {
+        void this.router.navigate(['/loja/entregas', result.data.delivery_id]);
+        return;
+      }
+
+      this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Pagar e chamar entregador');
       void this.router.navigate(['/loja/entregas', result.data.delivery_id]);
       return;
     }
     this.submitting.set(false);
-    this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Chamar entregador');
+    this.submitLabel.set(this.deliveryMode() === 'scheduled' ? 'Agendar entrega' : 'Pagar e chamar entregador');
 
     if (result.planLimit) { this.openUpgrade(result); return; }
     if (result.code === 'dropoff_out_of_area') { this.outOfArea.set(true); return; }
     this.submitError.set(result.message ?? 'Não foi possível criar a entrega. Tente de novo.');
+  }
+
+  private startPixPolling(deliveryId: number): void {
+    this.stopPixPolling();
+    this.pixPollError.set(null);
+    this.pixPollTimer = setInterval(async () => {
+      try {
+        const status = await firstValueFrom(
+          this.http.get<PixStatusResponse>(`/v1/deliveries/${deliveryId}/pix-status`)
+        );
+        if (status.paid) {
+          this.stopPixPolling();
+          void this.router.navigate(['/loja/entregas', deliveryId]);
+        }
+      } catch {
+        this.pixPollError.set('Erro ao verificar pagamento. Aguarde...');
+      }
+    }, 5000);
+  }
+
+  private stopPixPolling(): void {
+    if (this.pixPollTimer !== null) {
+      clearInterval(this.pixPollTimer);
+      this.pixPollTimer = null;
+    }
+  }
+
+  protected async copyPixCode(): Promise<void> {
+    const code = this.pixQrCode();
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      this.pixCopied.set(true);
+      setTimeout(() => this.pixCopied.set(false), 2000);
+    } catch { /* ignore */ }
+  }
+
+  protected cancelPixPayment(): void {
+    this.stopPixPolling();
+    this.showPixScreen.set(false);
+    this.pixDeliveryId.set(null);
+    this.pixQrCode.set(null);
+    this.pixQrCodeBase64.set(null);
   }
 
   private openUpgrade(result: { planName?: string; planLimitCount?: number; planUsed?: number }): void {

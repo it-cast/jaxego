@@ -25,7 +25,7 @@ import structlog
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.areas.models import Area, Zona
+from app.areas.models import Area
 from app.audit.service import write_audit
 from app.auth.models import User
 from app.core.exceptions import AppError
@@ -33,7 +33,7 @@ from app.core.logging import mask_email, mask_phone
 from app.core.security import hash_password, verify_dummy
 from app.couriers import documents as docs_mod
 from app.couriers import kyc
-from app.couriers.models import Courier, CourierDocument, CourierZona
+from app.couriers.models import Courier, CourierDocument
 from app.couriers.schemas import CourierSignupBody, validate_cpf
 from app.couriers.state_machine import assert_courier_transition, assert_document_transition
 from app.integrations.base import PresignResult, ReceitaPort, StoragePort
@@ -196,24 +196,25 @@ async def signup(
         vehicle_plate=body.vehicle_plate,
         team_id=body.team_id,
         mei_pending=False,
+        birth_date=body.birth_date,
+        zip_code=body.zip_code,
+        street=body.street,
+        street_number=body.street_number,
+        complement=body.complement,
+        neighborhood=body.neighborhood,
+        city=body.city,
+        state=body.state,
+        bank_code=body.bank_code,
+        bank_agency=body.bank_agency,
+        bank_account=body.bank_account,
+        bank_account_digit=body.bank_account_digit,
+        bank_account_type=body.bank_account_type,
     )
     session.add(courier)
     await session.flush()
 
-    # Link courier to all existing zones of the area (ativo=True by default).
-    zonas = list(
-        (await session.execute(select(Zona).where(Zona.area_id == area.id))).scalars().all()
-    )
-    for z in zonas:
-        session.add(CourierZona(
-            area_id=area.id,
-            courier_id=courier.id,
-            zona_id=z.id,
-            ativo=True,
-            preco_cents=0,
-        ))
-    if zonas:
-        await session.flush()
+    # Sem CourierZona no signup: sem registros, o entregador herda zonas e
+    # preços definidos pela equipe. Registros só surgem se ele personalizar.
 
     await write_audit(
         session,
@@ -461,6 +462,13 @@ async def review_document(
             area_id=courier.area_id,
             after={"courier_id": courier.id, "status": "active"},
             cross_area_bypass=cross_area_bypass,
+        )
+        # Criar subconta Safe2Pay para receber repasse das corridas.
+        from app.couriers.subaccount import register_subaccount_on_kyc_active
+        from app.payments.factory import get_payment_adapter
+
+        await register_subaccount_on_kyc_active(
+            session, courier=courier, payment=get_payment_adapter()
         )
 
     return doc, cast(CourierStatus, courier.status)

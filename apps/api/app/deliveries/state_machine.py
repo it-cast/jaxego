@@ -32,6 +32,7 @@ from app.core.exceptions import AppError
 # courier self-assigns it from the unanswered pool (D-03 ADR — see dispatch).
 DELIVERY_STATES = (
     "AGENDADA",
+    "AGUARDANDO_PAGAMENTO",
     "CRIADA",
     "SEM_RESPOSTA",
     "ACEITA",
@@ -46,6 +47,7 @@ DELIVERY_STATES = (
 # exercised in Phase 7, the rest are covered by tests and enabled in Phases 8/9.
 DELIVERY_TRANSITIONS: dict[str, set[str]] = {
     "AGENDADA": {"CRIADA", "CANCELADA"},  # CRIADA = Inngest fires; CANCELADA = store cancels
+    "AGUARDANDO_PAGAMENTO": {"CRIADA", "CANCELADA"},  # CRIADA = PIX confirmed; CANCELADA = timeout/cancel
     "CRIADA": {"ACEITA", "CANCELADA", "SEM_RESPOSTA"},
     "SEM_RESPOSTA": {"ACEITA", "CANCELADA"},  # self-assign from the pool, or store cancels
     "ACEITA": {"COLETADA", "CANCELADA"},

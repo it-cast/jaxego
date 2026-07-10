@@ -134,6 +134,7 @@ async def advance_offer(
             excluded_ids=declined,
             merchant_lat=m_lat,
             merchant_lng=m_lng,
+            area_max_concurrent=cfg.max_entregas_simultaneas,
         )
         if fresh:
             ttl = cfg.timeout_oferta_s * (len(fresh) + 1)
@@ -164,6 +165,7 @@ async def advance_offer(
                 excluded_ids=set(),
                 merchant_lat=m_lat,
                 merchant_lng=m_lng,
+                area_max_concurrent=cfg.max_entregas_simultaneas,
             )
             if raw_eligible and set(raw_eligible) <= declined:
                 from app.deliveries import service as delivery_service
@@ -258,6 +260,7 @@ async def dispatch_offer_task(
                     excluded_ids=declined,
                     merchant_lat=m_lat2,
                     merchant_lng=m_lng2,
+                    area_max_concurrent=cfg.max_entregas_simultaneas,
                 )
                 # Queue lives for the whole favorites+ranking window.
                 ttl = cfg.timeout_oferta_s * (len(candidates) + 1) + cfg.timeout_favoritos_s

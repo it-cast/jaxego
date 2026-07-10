@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -512,6 +512,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly svc = inject(EntregadorService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly iconStore = faStore;
   protected readonly iconLocation = faLocationDot;
@@ -561,7 +562,11 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     this.loading.set(true);
     this.error.set(false);
     try {
-      const d = await this.svc.activeDelivery(courierId);
+      const deliveryIdParam = this.route.snapshot.queryParamMap.get('deliveryId');
+      const deliveryId = deliveryIdParam ? parseInt(deliveryIdParam, 10) : null;
+      const d = deliveryId
+        ? await this.svc.getDelivery(courierId, deliveryId)
+        : await this.svc.activeDelivery(courierId);
       this.delivery.set(d);
       if (d?.has_image) {
         const url = await this.svc.deliveryImageUrl(courierId, d.id);

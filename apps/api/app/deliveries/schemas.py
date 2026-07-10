@@ -98,6 +98,12 @@ class CreateDeliveryBody(BaseModel):
     payer_document: str | None = Field(default=None, max_length=14)
     payer_email: EmailStr | None = None
 
+    # --- Platform PIX delivery payment (Phase 12). When True the corrida is charged
+    # via PIX to the itcast subconta BEFORE dispatch. pix_amount_cents is the max
+    # price the store confirmed (displayed from teams_for_address). ---
+    platform_pix: bool = False
+    pix_amount_cents: int | None = Field(default=None, ge=1)
+
     # --- Scheduled dispatch (Inngest). NULL = dispatch immediately (CRIADA). ---
     # Must be at least 5 minutes in the future (prevents near-instant scheduling
     # that would race with the immediate dispatch path).
@@ -182,6 +188,8 @@ class DeliveryOut(BaseModel):
     team_names: list[str] = []
     created_at: str | None = None
     scheduled_at: str | None = None
+    pix_qr_code: str | None = None
+    pix_qr_code_base64: str | None = None
 
 
 class DeliveryListItem(BaseModel):
@@ -233,6 +241,9 @@ class CreateDeliveryResponse(BaseModel):
     no_couriers_warning: bool
     # Populated when scheduled_at was provided (AGENDADA state).
     scheduled_at: str | None = None
+    # Populated when platform_pix=True (AGUARDANDO_PAGAMENTO state).
+    pix_qr_code: str | None = None
+    pix_qr_code_base64: str | None = None
 
 
 class CourierDeliveryOut(BaseModel):

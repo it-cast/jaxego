@@ -3,9 +3,8 @@
 Only a courier with status `active` (KYC ok — Phase 5) may go online; a
 non-active courier is rejected with 409 (item 6 of the Security Notes — do not
 expose availability of someone who cannot operate). `busy` is NOT a column: it is
-DERIVED from the load (`compute_busy`) using `max_concurrent`. The real
-active-delivery count arrives with Phase 7/8; here only the helper and
-`max_concurrent` persist.
+DERIVED from the load (`compute_busy`) using the area's `max_entregas_simultaneas`
+config. The actual active-delivery count arrives from Phase 7/8.
 """
 
 from __future__ import annotations
@@ -32,18 +31,8 @@ class CannotGoOnlineError(AppError):
         super().__init__("Termine sua validação para ficar online e receber ofertas.")
 
 
-class InvalidMaxConcurrentError(AppError):
-    """max_concurrent must be >= 1 (422)."""
-
-    status_code = 422
-    code = "invalid_max_concurrent"
-
-    def __init__(self) -> None:
-        super().__init__("O número máximo de entregas simultâneas deve ser ao menos 1.")
-
-
 def compute_busy(active_deliveries: int, max_concurrent: int) -> bool:
-    """busy iff the courier is at/over capacity (DERIVED — no persistence)."""
+    """busy iff the courier is at/over capacity (DERIVED — uses area config limit)."""
     return active_deliveries >= max_concurrent
 
 
@@ -83,13 +72,3 @@ async def set_availability(
     return courier
 
 
-async def set_max_concurrent(
-    session: AsyncSession, *, area_id: int | None, courier_id: int, max_concurrent: int
-) -> Courier:
-    """Set the courier's max simultaneous deliveries (>= 1)."""
-    if max_concurrent < 1:
-        raise InvalidMaxConcurrentError()
-    courier = await _get_scoped(session, area_id=area_id, courier_id=courier_id)
-    courier.max_concurrent = max_concurrent
-    await session.flush()
-    return courier

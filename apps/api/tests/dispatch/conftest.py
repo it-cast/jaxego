@@ -76,7 +76,6 @@ async def _courier(
     phone: str,
     email: str,
     online: bool = True,
-    max_concurrent: int = 2,
 ) -> Courier:
     courier = Courier(
         area_id=area_id,
@@ -90,7 +89,6 @@ async def _courier(
         vehicle_type="moto",
         vehicle_plate="ABC1D23",
         is_online=online,
-        max_concurrent=max_concurrent,
     )
     s.add(courier)
     await s.flush()
@@ -130,7 +128,7 @@ async def dispatch_seed(
 ) -> DispatchSeed:
     """Seed area + store + CRIADA delivery + 4 couriers (favorite/plain/blocked/uncovered)."""
     async with session_factory() as s:
-        area = Area(codename="padua", name="Pádua", config={})
+        area = Area(codename="padua", name="Pádua", config={"max_entregas_simultaneas": 2})
         s.add(area)
         await s.flush()
 

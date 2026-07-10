@@ -1,14 +1,15 @@
 <div class="jx-cad">
-  <div class="jx-cad__wrap">
-    <div class="jx-cad__top">
-      <a routerLink="/entrar" class="jx-cad__back">← Voltar ao login</a>
-    </div>
+  <jx-page-header title="Cadastro de entregador" backLink="/" />
 
+  <div class="jx-cad__wrap">
     <h1 class="jx-cad__h1">
       Entregue na sua cidade. Comece <em>hoje.</em>
     </h1>
 
-    <jx-wizard-stepper [steps]="steps()" [current]="current()" (goTo)="goToStep($event)" />
+    <div class="jx-cad__progress" role="progressbar" [attr.aria-valuenow]="current() + 1" [attr.aria-valuemax]="steps().length">
+      <div class="jx-cad__progress-bar" [style.width.%]="((current() + 1) / steps().length) * 100"></div>
+    </div>
+    <p class="jx-cad__progress-label">Passo {{ current() + 1 }} de {{ steps().length }} — {{ steps()[current()].label }}</p>
 
     @if (stepError()) {
       <jx-error-state [message]="stepError()!" />
@@ -23,12 +24,13 @@
           class="jx-cad__select"
           (change)="onAreaChange($any($event.target).value)"
         >
-          <option [value]="0" disabled selected>Selecione a cidade</option>
+          <option [value]="0" disabled [selected]="form.controls.area_id.value === 0">Selecione a cidade</option>
           @for (a of areas(); track a.id) {
-            <option [value]="a.id">{{ a.name }}</option>
+            <option [value]="a.id" [selected]="a.id === form.controls.area_id.value">{{ a.name }}</option>
           }
         </select>
 
+        @if (areaChosen()) {
         <label class="jx-cad__label" for="team">Equipe</label>
         <select id="team" class="jx-cad__select" formControlName="team_id" required>
           <option [ngValue]="null" disabled>Selecione a equipe</option>
@@ -114,11 +116,159 @@
           <input type="checkbox" formControlName="consent" />
           <span>Concordo com o uso dos meus dados e documentos para validação.</span>
         </label>
+        }
       </section>
     }
 
-    <!-- Step 2 — selfie (foto guardada em memória, upload só no final) -->
+    <!-- Step 2 — endereço -->
     @if (current() === 1) {
+      <section class="jx-cad__step" [formGroup]="form">
+        <p class="jx-cad__hint">Endereço para cadastro na operadora de pagamentos. Campos opcionais, mas necessários para receber repasse.</p>
+
+        <label class="jx-cad__label" for="zip">CEP</label>
+        <div class="jx-cad__input-wrap">
+          <input
+            id="zip"
+            class="jx-cad__input jx-cad__input--mono"
+            type="text"
+            inputmode="numeric"
+            maxlength="9"
+            placeholder="00000-000"
+            [value]="form.controls.zip_code.value"
+            (input)="onCepInput($any($event.target).value)"
+          />
+          @if (cepLoading()) {
+            <span class="jx-cad__cep-loading">Buscando…</span>
+          }
+        </div>
+
+        <label class="jx-cad__label" for="street">Rua</label>
+        <input id="street" class="jx-cad__input" type="text" formControlName="street" />
+
+        <div class="jx-cad__row">
+          <div class="jx-cad__col">
+            <label class="jx-cad__label" for="number">Número</label>
+            <input id="number" class="jx-cad__input" type="text" formControlName="street_number" />
+          </div>
+          <div class="jx-cad__col">
+            <label class="jx-cad__label" for="complement">Complemento</label>
+            <input id="complement" class="jx-cad__input" type="text" formControlName="complement" />
+          </div>
+        </div>
+
+        <label class="jx-cad__label" for="neighborhood">Bairro</label>
+        <input id="neighborhood" class="jx-cad__input" type="text" formControlName="neighborhood" />
+
+        <div class="jx-cad__row">
+          <div class="jx-cad__col jx-cad__col--grow">
+            <label class="jx-cad__label" for="city">Cidade</label>
+            <input id="city" class="jx-cad__input" type="text" formControlName="city" />
+          </div>
+          <div class="jx-cad__col jx-cad__col--sm">
+            <label class="jx-cad__label" for="state">UF</label>
+            <input id="state" class="jx-cad__input" type="text" maxlength="2" formControlName="state" />
+          </div>
+        </div>
+
+        <label class="jx-cad__label" for="birth">Data de nascimento</label>
+        <input id="birth" class="jx-cad__input" type="date" formControlName="birth_date" />
+      </section>
+    }
+
+    <!-- Step 3 — dados bancários -->
+    @if (current() === 2) {
+      <section class="jx-cad__step" [formGroup]="form">
+        <p class="jx-cad__hint">Dados da conta bancária para receber o repasse das corridas. Opcional agora, pode preencher depois no perfil.</p>
+
+        <label class="jx-cad__label">Banco</label>
+        <div class="jx-cad__bank-picker">
+          <span class="jx-cad__bank-display">
+            @if (selectedBank()) {
+              <span class="jx-cad__bank-code">{{ selectedBank()!.code }}</span>
+              <span class="jx-cad__bank-name">{{ selectedBank()!.name }}</span>
+            } @else {
+              <span class="jx-cad__bank-placeholder">Nenhum banco selecionado</span>
+            }
+          </span>
+          <button type="button" class="jx-cad__bank-btn" (click)="openBankModal()">Selecionar</button>
+        </div>
+
+        <div class="jx-cad__row">
+          <div class="jx-cad__col jx-cad__col--sm">
+            <label class="jx-cad__label" for="agency">Agência</label>
+            <input id="agency" class="jx-cad__input jx-cad__input--mono" type="text" inputmode="numeric" maxlength="10" formControlName="bank_agency" />
+          </div>
+          <div class="jx-cad__col jx-cad__col--grow">
+            <label class="jx-cad__label" for="account">Conta</label>
+            <input id="account" class="jx-cad__input jx-cad__input--mono" type="text" inputmode="numeric" maxlength="20" formControlName="bank_account" />
+          </div>
+          <div class="jx-cad__col jx-cad__col--xs">
+            <label class="jx-cad__label" for="digit">Dígito</label>
+            <input id="digit" class="jx-cad__input jx-cad__input--mono" type="text" inputmode="numeric" maxlength="2" formControlName="bank_account_digit" />
+          </div>
+        </div>
+
+        <label class="jx-cad__label" for="actype">Tipo de conta</label>
+        <select id="actype" class="jx-cad__select" formControlName="bank_account_type">
+          <option value="CC">Conta Corrente</option>
+          <option value="PP">Conta Poupança</option>
+        </select>
+      </section>
+    }
+
+    <!-- Modal seletor de banco -->
+    @if (bankModalOpen()) {
+      <div class="jx-bank-overlay" (click)="closeBankModal()">
+        <div class="jx-bank-modal" (click)="$event.stopPropagation()">
+          <div class="jx-bank-modal__header">
+            <span class="jx-bank-modal__title">Selecionar banco</span>
+            <button type="button" class="jx-bank-modal__close" aria-label="Fechar" (click)="closeBankModal()">✕</button>
+          </div>
+
+          <div class="jx-bank-modal__search">
+            <input
+              class="jx-cad__input"
+              type="search"
+              placeholder="Buscar por nome ou código…"
+              [ngModel]="bankSearch()"
+              (ngModelChange)="bankSearch.set($event)"
+              autocomplete="off"
+            />
+          </div>
+
+          @if (bankLoading()) {
+            <p class="jx-bank-modal__loading">Buscando bancos…</p>
+          }
+
+          <ul class="jx-bank-modal__list">
+            @for (bank of filteredBanks(); track bank.ispb) {
+              <li
+                class="jx-bank-modal__item"
+                [class.jx-bank-modal__item--selected]="bankModalSelected()?.ispb === bank.ispb"
+                (click)="selectBankInModal(bank)"
+              >
+                @if (bank.code) {
+                  <span class="jx-bank-modal__item-code">{{ bank.code }}</span>
+                }
+                <span class="jx-bank-modal__item-name">{{ bank.name }}</span>
+              </li>
+            }
+            @if (filteredBanks().length === 0) {
+              <li class="jx-bank-modal__empty">Nenhum banco encontrado.</li>
+            }
+          </ul>
+
+          <div class="jx-bank-modal__footer">
+            <button type="button" class="jx-cad__cta" [disabled]="!bankModalSelected()" (click)="confirmBankSelection()">
+              Selecionar
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Step 4 — selfie (foto guardada em memória, upload só no final) -->
+    @if (current() === 3) {
       <section class="jx-cad__step">
         <p class="jx-cad__trust">
           Sua foto vai criptografada e só o admin da sua cidade vê. A gente nunca publica.
@@ -146,8 +296,8 @@
       </section>
     }
 
-    <!-- Step 3 — veículo -->
-    @if (current() === 2) {
+    <!-- Step 5 — veículo -->
+    @if (current() === 4) {
       <section class="jx-cad__step" [formGroup]="form">
         <label class="jx-cad__label" for="vtype">Tipo de veículo</label>
         <select id="vtype" class="jx-cad__select" formControlName="vehicle_type">
@@ -171,8 +321,8 @@
       </section>
     }
 
-    <!-- Step 4 — documentos completos (condicional) -->
-    @if (current() === 3 && level() === 'completa') {
+    <!-- Step 6 — documentos completos (condicional) -->
+    @if (current() === 5 && level() === 'completa') {
       <section class="jx-cad__step" [formGroup]="form">
         <jx-warn-banner
           message="Sua cidade pede validação completa: CNH com EAR, CRLV e MEI. Sem MEI você ainda entrega recebendo direto da loja."
@@ -215,5 +365,10 @@
     <button type="button" class="jx-cad__cta" [disabled]="loading() || submitting()" (click)="next()">
       {{ isLastStep() ? 'Enviar para análise' : 'Continuar' }}
     </button>
+    @if (current() > 0) {
+      <button type="button" class="jx-cad__back-btn" [disabled]="submitting()" (click)="back()">
+        Voltar
+      </button>
+    }
   </footer>
 </div>

@@ -66,10 +66,12 @@ async def build_candidates(
     excluded_ids: set[int] | None = None,
     merchant_lat: float | None = None,
     merchant_lng: float | None = None,
+    area_max_concurrent: int = 1,
 ) -> list[int]:
     """Ordered candidate courier ids: favorites first, then ranking (RN-009).
 
-    Eligible = online + active + not deleted + in team (if specified) + load < max +
+    Eligible = online + active + not deleted + in team (if specified) +
+    load < area_max_concurrent (from AreaConfig, not per-courier) +
     NOT blocked by the store + NOT in excluded_ids. Coverage by neighborhood is no
     longer required — zone pricing determines eligibility. Bulk-loads all pricing
     data (no N+1).
@@ -166,7 +168,7 @@ async def build_candidates(
         if courier.id in zona_inactive:
             continue  # courier opted out of this zone
         load = load_by.get(courier.id, 0)
-        if load >= courier.max_concurrent:
+        if load >= area_max_concurrent:
             continue  # at/over capacity
         # Zone price first; fall back to old neighborhood/distance table.
         if courier.id in cz_map:

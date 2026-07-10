@@ -116,6 +116,22 @@ async def get_charge_by_transaction(
     return (await session.execute(stmt)).scalars().first()
 
 
+async def get_charge_by_delivery(
+    session: AsyncSession, *, delivery_id: int
+) -> PlatformCharge | None:
+    """Load the open/paid PIX charge for a delivery (pix-status polling — index-backed)."""
+    stmt = (
+        select(PlatformCharge)
+        .where(
+            PlatformCharge.delivery_id == delivery_id,
+            PlatformCharge.kind == "delivery",
+        )
+        .order_by(PlatformCharge.id.desc())
+        .limit(1)
+    )
+    return (await session.execute(stmt)).scalars().first()
+
+
 async def list_charges_between(
     session: AsyncSession, *, since: datetime, until: datetime
 ) -> list[PlatformCharge]:

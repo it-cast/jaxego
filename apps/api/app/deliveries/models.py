@@ -35,6 +35,7 @@ from sqlalchemy import (
     Integer,
     JSON,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -48,6 +49,7 @@ from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
 # reached when the dispatch cascade exhausts every eligible courier.
 DELIVERY_STATES = (
     "AGENDADA",
+    "AGUARDANDO_PAGAMENTO",
     "CRIADA",
     "SEM_RESPOSTA",
     "ACEITA",
@@ -201,6 +203,12 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
 
     # LGPD retention (RN-021) — reachable by Phase 14 jobs.
     anonymized_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+
+    # PIX delivery payment — set when platform_pix=True (state AGUARDANDO_PAGAMENTO).
+    # pix_qr_code is the EMV copia-e-cola string; pix_qr_code_base64 is the QR image.
+    pix_transaction_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pix_qr_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pix_qr_code_base64: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class DeliveryStateTransition(Base, AreaScopedMixin):

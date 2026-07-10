@@ -3,15 +3,15 @@
     Configurações da <em>área</em> · {{ areaName() }}
   </h1>
 
-  @if (saveError() && !confirming()) {
+  @if (saveError()) {
     <jx-error-state
       [message]="saveError()!"
       retryLabel="Tentar de novo"
-      (retry)="requestSave()"
+      (retry)="save()"
     />
   }
 
-  <form class="jx-area-config__form" [formGroup]="form" (ngSubmit)="requestSave()">
+  <form class="jx-area-config__form" [formGroup]="form" (ngSubmit)="save()">
     <!-- Validação de entregadores -->
     <fieldset class="jx-area-config__fieldset">
       <legend>Validação de entregadores</legend>
@@ -65,6 +65,40 @@
           <p class="jx-area-config__error" id="favoritos-error">{{ err }}</p>
         }
       </label>
+
+      <label class="jx-area-config__field">
+        <span class="jx-area-config__label">
+          Entregas simultâneas por entregador
+          <span class="jx-area-config__tooltip-wrap">
+            <button
+              type="button"
+              class="jx-area-config__help-btn"
+              aria-describedby="max-entregas-hint"
+              tabindex="0"
+            >?</button>
+            <span
+              class="jx-area-config__tooltip"
+              id="max-entregas-hint"
+              role="tooltip"
+            >Máximo de entregas ativas que um entregador pode acumular antes de parar de receber ofertas (1–10).</span>
+          </span>
+        </span>
+        <input
+          class="jx-area-config__input jx-area-config__input--mono"
+          inputmode="numeric"
+          type="number"
+          min="1"
+          max="10"
+          formControlName="max_entregas_simultaneas"
+          [attr.aria-invalid]="rangeError('max_entregas_simultaneas') ? 'true' : null"
+          [attr.aria-describedby]="
+            rangeError('max_entregas_simultaneas') ? 'max-entregas-error' : null
+          "
+        />
+        @if (rangeError('max_entregas_simultaneas'); as err) {
+          <p class="jx-area-config__error" id="max-entregas-error">{{ err }}</p>
+        }
+      </label>
     </fieldset>
 
     @if (saved()) {
@@ -74,58 +108,11 @@
     <button
       type="submit"
       class="jx-area-config__save"
-      [disabled]="saving() || form.invalid"
+      [disabled]="saving()"
       [attr.aria-busy]="saving() ? 'true' : null"
     >
-      {{ saving() ? 'Salvando…' : 'Salvar configurações (auditado)' }}
+      {{ saving() ? 'Salvando…' : 'Salvar configurações' }}
     </button>
   </form>
 
-  <!-- Sensitive-change confirmation (audit) -->
-  @if (confirming()) {
-    <div
-      class="jx-area-config__confirm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-title"
-    >
-      <div class="jx-area-config__confirm-card">
-        <h2 id="confirm-title" class="jx-area-config__confirm-title">
-          Confirmar alterações
-        </h2>
-        <p class="jx-area-config__confirm-copy">
-          Você está alterando regras da área. Isso fica registrado no histórico
-          (audit). Confirmar?
-        </p>
-        @if (sensitiveDiff().length > 0) {
-          <ul class="jx-area-config__diff">
-            @for (row of sensitiveDiff(); track row.label) {
-              <li>
-                <span class="jx-area-config__diff-label">{{ row.label }}</span>
-                <span class="jx-area-config__diff-mono">
-                  {{ row.before }} → {{ row.after }}
-                </span>
-              </li>
-            }
-          </ul>
-        }
-        <div class="jx-area-config__confirm-actions">
-          <button
-            type="button"
-            class="jx-area-config__confirm-cancel"
-            (click)="cancelConfirm()"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="jx-area-config__confirm-ok"
-            (click)="confirmSave()"
-          >
-            Confirmar e salvar
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 </main>

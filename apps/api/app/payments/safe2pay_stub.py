@@ -136,6 +136,11 @@ class PaymentStubAdapter:
         self._guard()
         return f"stub_recipient_{next(self.subaccount_seq)}"
 
+    async def register_subaccount_full(self, *, courier: object) -> dict[str, str]:
+        self._guard()
+        n = next(self.subaccount_seq)
+        return {"recipient_id": f"stub_recipient_{n}", "token": f"stub_token_{n}"}
+
     async def get_statement(self, *, since: datetime, until: datetime) -> list[StatementEntry]:
         self._guard()
         return [

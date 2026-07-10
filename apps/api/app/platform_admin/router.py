@@ -170,6 +170,8 @@ async def create_plan(
         price_annual_cents=body.price_annual_cents,
         deliveries_per_month=body.deliveries_per_month,
         fee_cents=body.fee_cents,
+        taxa_pix_cents=body.taxa_pix_cents,
+        taxa_servico_cents=body.taxa_servico_cents,
         is_unlimited=body.is_unlimited,
         sort_order=body.sort_order,
     )
@@ -192,6 +194,8 @@ async def update_plan(
         price_annual_cents=body.price_annual_cents,
         deliveries_per_month=body.deliveries_per_month,
         fee_cents=body.fee_cents,
+        taxa_pix_cents=body.taxa_pix_cents,
+        taxa_servico_cents=body.taxa_servico_cents,
         is_unlimited=body.is_unlimited,
         is_active=body.is_active,
         sort_order=body.sort_order,

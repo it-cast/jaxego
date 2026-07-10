@@ -2,24 +2,23 @@
   background: var(--surface);
   height: 100vh;
   height: 100dvh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .jx-cad__wrap {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
   max-width: 480px;
   margin: 0 auto;
   padding: var(--jx-space-4);
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--jx-space-3);
-}
-
-.jx-cad__back {
-  font-size: var(--jx-text-sm);
-  color: var(--text-muted);
-  text-decoration: none;
 }
 
 .jx-cad__h1 {
@@ -103,6 +102,26 @@
   color: var(--error);
 }
 
+.jx-cad__progress {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.jx-cad__progress-bar {
+  height: 100%;
+  background: var(--primary, #f97316);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.jx-cad__progress-label {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+  margin: 0;
+}
+
 .jx-cad__hint {
   margin: 0;
   font-size: var(--jx-text-xs);
@@ -130,12 +149,37 @@
 }
 
 .jx-cad__footer {
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
   padding: var(--jx-space-3) var(--jx-space-4)
     calc(var(--jx-space-3) + env(safe-area-inset-bottom));
   background: var(--surface);
   border-top: 1px solid var(--border);
+}
+
+.jx-cad__back-btn {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--jx-font-display);
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-base);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
 }
 
 .jx-cad__cta {
@@ -189,4 +233,250 @@
   padding: var(--jx-space-4);
   font-size: var(--jx-text-sm);
   color: var(--text-muted);
+}
+
+.jx-cad__hint {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.jx-cad__row {
+  display: flex;
+  gap: var(--jx-space-2);
+  align-items: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.jx-cad__col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+
+  &--grow { flex: 2; min-width: 0; }
+  &--sm { flex: 0 0 80px; min-width: 0; }
+  &--xs { flex: 0 0 56px; min-width: 0; }
+
+  .jx-cad__input {
+    margin-top: 0;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+  }
+}
+
+.jx-cad__cep-loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ── bank picker ─────────────────────────────────── */
+.jx-cad__bank-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface-elevated);
+}
+
+.jx-cad__bank-display {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  overflow: hidden;
+}
+
+.jx-cad__bank-code {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.jx-cad__bank-name {
+  font-size: var(--jx-text-base);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jx-cad__bank-placeholder {
+  font-size: var(--jx-text-base);
+  color: var(--text-subtle);
+}
+
+.jx-cad__bank-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--jx-radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+/* ── bank modal ──────────────────────────────────── */
+.jx-bank-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+
+  @media (min-width: 480px) {
+    align-items: center;
+    justify-content: center;
+    padding: var(--jx-space-4);
+  }
+}
+
+.jx-bank-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 80dvh;
+  background: var(--surface-elevated);
+  border-radius: var(--jx-radius-lg) var(--jx-radius-lg) 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+
+  @media (min-width: 480px) {
+    border-radius: var(--jx-radius-lg);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.jx-bank-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--jx-space-3) var(--jx-space-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.jx-bank-modal__title {
+  font-weight: var(--jx-weight-semibold);
+  font-size: var(--jx-text-base);
+  color: var(--text);
+}
+
+.jx-bank-modal__close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  border-radius: var(--jx-radius-full);
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-bank-modal__search {
+  padding: var(--jx-space-3) var(--jx-space-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+
+  .jx-cad__input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+.jx-bank-modal__list {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jx-bank-modal__item {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: 12px var(--jx-space-4);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+
+  &:last-child { border-bottom: none; }
+
+  &:active { background: var(--surface); }
+
+  &--selected {
+    background: color-mix(in srgb, var(--brand) 12%, transparent);
+    .jx-bank-modal__item-name { font-weight: var(--jx-weight-semibold); }
+  }
+}
+
+.jx-bank-modal__item-code {
+  flex-shrink: 0;
+  min-width: 36px;
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-bank-modal__item-name {
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jx-bank-modal__loading {
+  padding: var(--jx-space-6) var(--jx-space-4);
+  text-align: center;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.jx-bank-modal__empty {
+  padding: var(--jx-space-6) var(--jx-space-4);
+  text-align: center;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-bank-modal__footer {
+  padding: var(--jx-space-3) var(--jx-space-4)
+    calc(var(--jx-space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }

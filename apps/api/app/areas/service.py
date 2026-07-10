@@ -131,7 +131,8 @@ async def update_area(
                 "Configuração da área inválida (verifique faixas e chaves)."
             ) from exc
         before_config = dict(area.config or {})
-        new_config = validated.model_dump(mode="json")
+        # Merge: preserve unknown legacy fields, overwrite only the validated ones.
+        new_config = {**before_config, **validated.model_dump(mode="json")}
         diff = diff_sensitive(before_config, new_config)
         area.config = new_config
 

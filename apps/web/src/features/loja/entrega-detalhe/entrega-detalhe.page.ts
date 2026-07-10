@@ -20,7 +20,7 @@ import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 import { DeliveryService } from '../entregas/delivery.service';
 import { FavoritosService } from '../favoritos/favoritos.service';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icons';
 
 /**
  * Store delivery detail (tela 13). Reuses jx-tracking-timeline + jx-state-badge.
@@ -47,8 +47,55 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
         <!-- Header: ID + badge -->
         <header class="jx-detail__header">
           <h1 class="jx-detail__title">Entrega #{{ d.id }}</h1>
-          <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
+          @if (d.state !== 'AGUARDANDO_PAGAMENTO') {
+            <jx-state-badge [state]="trackingState(d)" variant="dashboard" />
+          } @else {
+            <span class="jx-detail__pix-badge">Aguardando pagamento</span>
+          }
         </header>
+
+        <!-- ── Modo PIX: aguardando pagamento ───────────────────────────── -->
+        @if (d.state === 'AGUARDANDO_PAGAMENTO') {
+          <div class="jx-detail__pix-screen" role="status" aria-live="polite">
+            <p class="jx-detail__pix-hint">Escaneie o QR code ou copie o código para pagar via PIX. O entregador será chamado automaticamente após a confirmação.</p>
+            @if (d.pix_qr_code_base64) {
+              <img
+                class="jx-detail__pix-qr"
+                [src]="d.pix_qr_code_base64"
+                alt="QR Code PIX"
+              />
+            }
+            @if (d.pix_qr_code) {
+              <div class="jx-detail__pix-copy-row">
+                <input
+                  class="jx-detail__pix-code"
+                  [value]="d.pix_qr_code"
+                  readonly
+                  aria-label="Código PIX copia e cola"
+                />
+                <button
+                  type="button"
+                  class="jx-detail__pix-copy-btn"
+                  (click)="copyPix(d.pix_qr_code)"
+                  [attr.aria-label]="pixCopied() ? 'Copiado' : 'Copiar código PIX'"
+                >
+                  @if (pixCopied()) {
+                    <fa-icon [icon]="iconCheck" />
+                  } @else {
+                    <fa-icon [icon]="iconCopy" />
+                  }
+                </button>
+              </div>
+              @if (pixCopied()) {
+                <p class="jx-detail__pix-copied-msg">Código copiado!</p>
+              }
+            }
+            <p class="jx-detail__pix-waiting">Aguardando confirmação de pagamento…</p>
+          </div>
+
+        } @else {
+
+        <!-- ── Modo normal ───────────────────────────────────────────────── -->
 
         <!-- Banners contextuais -->
         @if (d.state === 'AGENDADA') {
@@ -291,6 +338,7 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
             }
           </aside>
         </div>
+        } <!-- end @else (modo normal) -->
 
       } @else if (notFound()) {
         <p class="jx-detail__empty" role="status">Entrega não encontrada.</p>
@@ -436,6 +484,81 @@ import { faStar, faBan } from '@fortawesome/free-solid-svg-icons';
         width: 100%;
         height: 100%;
       }
+      /* PIX payment screen */
+      .jx-detail__pix-badge {
+        display: inline-block;
+        padding: 2px var(--jx-space-2);
+        border-radius: var(--jx-radius-sm);
+        background: var(--brand-wash, #fff7ed);
+        color: var(--brand);
+        font-size: var(--jx-text-xs);
+        font-weight: var(--jx-weight-semibold);
+        border: 1px solid var(--brand);
+      }
+      .jx-detail__pix-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--jx-space-3);
+        padding: .5em 1em 1em;
+        max-width: 420px;
+        margin: var(--jx-space-4) auto 0;
+      }
+      .jx-detail__pix-hint {
+        font-size: var(--jx-text-sm);
+        color: var(--text-muted);
+        text-align: center;
+        margin: 0;
+      }
+      .jx-detail__pix-qr {
+        width: 300px;
+        height: 300px;
+        object-fit: contain;
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-md);
+        padding: .5em 1em 1em;
+        background: #fff;
+      }
+      .jx-detail__pix-copy-row {
+        display: flex;
+        width: 100%;
+        gap: var(--jx-space-2);
+      }
+      .jx-detail__pix-code {
+        flex: 1;
+        min-width: 0;
+        padding: var(--jx-space-2) var(--jx-space-3);
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-md);
+        background: var(--surface-sunken);
+        font-size: var(--jx-text-xs);
+        font-family: monospace;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .jx-detail__pix-copy-btn {
+        padding: var(--jx-space-2) var(--jx-space-3);
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-md);
+        background: var(--surface-elevated);
+        color: var(--text);
+        cursor: pointer;
+        flex-shrink: 0;
+        &:hover { background: var(--surface-sunken); }
+      }
+      .jx-detail__pix-copied-msg {
+        font-size: var(--jx-text-xs);
+        color: var(--success, #16a34a);
+        margin: 0;
+      }
+      .jx-detail__pix-waiting {
+        font-size: var(--jx-text-sm);
+        color: var(--text-muted);
+        margin: 0;
+        text-align: center;
+      }
     `,
   ],
 })
@@ -446,6 +569,9 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   protected readonly iconStar = faStar;
   protected readonly iconBan = faBan;
+  protected readonly iconCopy = faCopy;
+  protected readonly iconCheck = faCheck;
+  protected readonly pixCopied = signal(false);
 
   protected readonly delivery = signal<DeliveryListItem | null>(null);
   protected readonly notFound = signal(false);
@@ -500,12 +626,21 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   private async poll(): Promise<void> {
     const state = this.delivery()?.state;
-    if (state !== 'CRIADA' && state !== 'AGENDADA' && state !== 'SEM_RESPOSTA') {
+    const pollStates = ['CRIADA', 'AGENDADA', 'SEM_RESPOSTA', 'AGUARDANDO_PAGAMENTO'];
+    if (!pollStates.includes(state ?? '')) {
       if (this.pollHandle) clearInterval(this.pollHandle);
       this.pollHandle = null;
       return;
     }
     await this.load();
+  }
+
+  protected async copyPix(code: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(code);
+      this.pixCopied.set(true);
+      setTimeout(() => this.pixCopied.set(false), 2500);
+    } catch { /* clipboard bloqueado — sem ação */ }
   }
 
   protected trackingState(d: DeliveryListItem): TrackingState {

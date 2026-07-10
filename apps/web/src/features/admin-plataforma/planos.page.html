@@ -90,12 +90,25 @@
             />
           </label>
           <label class="jx-planos__field jx-planos__field--grow">
-            <span class="jx-planos__label">Taxa por entrega (R$)</span>
+            <span class="jx-planos__label">Taxa PIX (R$)</span>
             <input
               class="jx-planos__input jx-planos__input--full"
               type="number"
-              [(ngModel)]="form.fee_cents"
-              name="fee_cents"
+              [(ngModel)]="form.taxa_pix_cents"
+              name="taxa_pix_cents"
+              required
+              min="0"
+              step="0.01"
+              placeholder="0,00"
+            />
+          </label>
+          <label class="jx-planos__field jx-planos__field--grow">
+            <span class="jx-planos__label">Taxa serviço (R$)</span>
+            <input
+              class="jx-planos__input jx-planos__input--full"
+              type="number"
+              [(ngModel)]="form.taxa_servico_cents"
+              name="taxa_servico_cents"
               required
               min="0"
               step="0.01"
@@ -218,7 +231,8 @@
         <td class="jx-planos__num">
           {{ item.is_unlimited ? 'Ilimitado' : item.deliveries_per_month }}
         </td>
-        <td class="jx-planos__num">R$ {{ formatCents(item.fee_cents) }}</td>
+        <td class="jx-planos__num">R$ {{ formatCents(item.taxa_pix_cents) }}</td>
+        <td class="jx-planos__num">R$ {{ formatCents(item.taxa_servico_cents) }}</td>
         <td>
           <span
             class="jx-planos__badge"

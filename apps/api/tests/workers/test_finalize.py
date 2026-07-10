@@ -100,7 +100,6 @@ async def fin_seed(session_factory: async_sessionmaker[AsyncSession]) -> FinSeed
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=2,
         )
         s.add(courier)
         await s.flush()

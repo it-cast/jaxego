@@ -103,15 +103,6 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         </div>
       }
 
-      @if (noCoverage() && !kycPending()) {
-        <div class="jx-home-warn-wrap">
-          <div class="jx-home-kyc-card">
-            <span class="jx-home-kyc-msg">Configure suas zonas de entrega e preços para ficar online.</span>
-            <button type="button" class="jx-home-kyc-btn" (click)="goCobertura()">Ver zonas</button>
-          </div>
-        </div>
-      }
-
       @if (meiPending()) {
         <jx-warn-banner
           message="Voce ainda nao tem MEI ativo. Pode entregar recebendo direto da loja."
@@ -162,29 +153,31 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
             </div>
           }
           @case ('busy') {
-            <article class="jx-home-busy-card">
-              <span class="jx-home-busy-card__label">Entrega em andamento</span>
-              @if (active()!.recipient_name) {
-                <strong class="jx-home-busy-card__name">{{ active()!.recipient_name }}</strong>
-              }
-              @if (active()!.recipient_phone) {
-                <span class="jx-home-busy-card__phone">{{ fmtPhone(active()!.recipient_phone) }}</span>
-              }
-              @if (active()!.dropoff_address) {
-                <span class="jx-home-busy-card__addr">
-                  {{ active()!.dropoff_address }}@if (active()!.dropoff_number) {, {{ active()!.dropoff_number }}}@if (active()!.dropoff_neighborhood_name) {, {{ active()!.dropoff_neighborhood_name }}}
-                </span>
-              }
-              @if (active()!.dropoff_complement) {
-                <span class="jx-home-busy-card__detail">{{ active()!.dropoff_complement }}</span>
-              }
-              @if (active()!.dropoff_reference) {
-                <span class="jx-home-busy-card__detail jx-home-busy-card__detail--ref">{{ active()!.dropoff_reference }}</span>
-              }
-              <button type="button" class="jx-home-busy-card__btn" (click)="goActive()">
-                Abrir entrega
-              </button>
-            </article>
+            @for (d of actives(); track d.id) {
+              <article class="jx-home-busy-card">
+                <span class="jx-home-busy-card__label">Entrega em andamento</span>
+                @if (d.recipient_name) {
+                  <strong class="jx-home-busy-card__name">{{ d.recipient_name }}</strong>
+                }
+                @if (d.recipient_phone) {
+                  <span class="jx-home-busy-card__phone">{{ fmtPhone(d.recipient_phone) }}</span>
+                }
+                @if (d.dropoff_address) {
+                  <span class="jx-home-busy-card__addr">
+                    {{ d.dropoff_address }}@if (d.dropoff_number) {, {{ d.dropoff_number }}}@if (d.dropoff_neighborhood_name) {, {{ d.dropoff_neighborhood_name }}}
+                  </span>
+                }
+                @if (d.dropoff_complement) {
+                  <span class="jx-home-busy-card__detail">{{ d.dropoff_complement }}</span>
+                }
+                @if (d.dropoff_reference) {
+                  <span class="jx-home-busy-card__detail jx-home-busy-card__detail--ref">{{ d.dropoff_reference }}</span>
+                }
+                <button type="button" class="jx-home-busy-card__btn" (click)="goActive(d.id)">
+                  Abrir entrega
+                </button>
+              </article>
+            }
           }
           @case ('offer') {
             <div class="jx-home-offer-hint">
@@ -407,9 +400,8 @@ export class EntregadorInicioPage implements OnInit {
   protected readonly todayCents = signal(0);
   protected readonly score = signal<CourierScore | null>(null);
   protected readonly recent = signal<CourierDeliveryListItem[]>([]);
-  protected readonly active = signal<CourierDelivery | null>(null);
+  protected readonly actives = signal<CourierDelivery[]>([]);
 
-  protected readonly noCoverage = signal(false);
   protected readonly kycPending = computed(() => {
     const s = this.auth.me()?.status ?? 'active';
     return s !== 'active' && s !== 'mei_pending';
@@ -417,13 +409,11 @@ export class EntregadorInicioPage implements OnInit {
   protected readonly meiPending = computed(
     () => this.auth.me()?.status === 'mei_pending'
   );
-  protected readonly toggleDisabled = computed(
-    () => this.kycPending() || this.noCoverage()
-  );
+  protected readonly toggleDisabled = computed(() => this.kycPending());
 
   // "offer" vem do monitor global — exibido pelo shell, não mais pelo início.
   protected readonly state = computed<HomeState>(() => {
-    if (this.active()) return 'busy';
+    if (this.actives().length > 0) return 'busy';
     if (!this.online()) return 'offline';
     return this.monitor.offer() ? 'offer' : 'waiting';
   });
@@ -439,16 +429,14 @@ export class EntregadorInicioPage implements OnInit {
       void this.router.navigate(['/entrar']);
       return;
     }
-    const [balance, score, list, active, extract, profile, covCount] = await Promise.all([
+    const [balance, score, list, actives, extract, profile] = await Promise.all([
       this.saldo.balance().catch(() => null),
       this.svc.score(id),
       this.svc.listDeliveries(id).catch(() => null),
-      this.svc.activeDelivery(id).catch(() => null),
+      this.svc.activeDeliveries(id).catch(() => []),
       this.saldo.extract().catch(() => []),
       this.svc.profile(id),
-      this.svc.coverageCount(id),
     ]);
-    this.noCoverage.set(covCount === 0);
     if (profile) {
       this.online.set(profile.is_online ?? false);
       this.firstName.set(profile.full_name?.split(' ')[0] ?? '');
@@ -466,7 +454,7 @@ export class EntregadorInicioPage implements OnInit {
     );
     this.score.set(score);
     this.recent.set((list?.items ?? []).slice(0, 3));
-    this.active.set(active);
+    this.actives.set(actives);
     this.initialLoading.set(false);
   }
 
@@ -572,11 +560,8 @@ export class EntregadorInicioPage implements OnInit {
   protected goDocumentacao(): void {
     void this.router.navigate(['/entregador/perfil/documentacao']);
   }
-  protected goCobertura(): void {
-    void this.router.navigate(['/entregador/cobertura']);
-  }
-  protected goActive(): void {
-    void this.router.navigate(['/entregador/entrega-ativa']);
+  protected goActive(deliveryId: number): void {
+    void this.router.navigate(['/entregador/entrega-ativa'], { queryParams: { deliveryId } });
   }
   protected goEntregas(): void {
     void this.router.navigate(['/entregador/entregas']);

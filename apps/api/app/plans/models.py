@@ -31,6 +31,10 @@ class SubscriptionPlan(Base, TimestampMixin):
     deliveries_per_month: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Per-delivery fee in cents (-1 sentinel reserved for "unlimited" tiers if needed).
     fee_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Taxa cobrada por operação PIX (centavos).
+    taxa_pix_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Taxa de serviço por entrega (centavos) — substitui fee_cents no CRUD.
+    taxa_servico_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # True only for the immutable Free plan (seed marks it; app refuses to mutate).
     is_free: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Free has unlimited months but a hard delivery cap; this flags the no-cap tier.

@@ -226,6 +226,16 @@
       box-shadow: var(--focus-ring);
     }
   }
+
+  &--error select {
+    border-color: var(--error, #dc2626);
+  }
+}
+
+.jx-nova__field-error {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--error, #dc2626);
 }
 
 .jx-nova__e1 {
@@ -699,5 +709,186 @@
     border-color: var(--brand, #e8722a);
     color: var(--brand, #e8722a);
     background: var(--brand-wash, hsl(24 80% 95%));
+  }
+}
+
+// ── Max price display ───────────────────────────────────────────────────────
+.jx-nova__max-price {
+  margin: 0 0 var(--jx-space-3);
+  padding: var(--jx-space-3);
+  background: var(--bg-subtle, #faf8f5);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  font-size: var(--jx-text-sm);
+  color: var(--text-primary);
+
+  strong { color: var(--brand, #e8722a); font-size: var(--jx-text-base); }
+}
+
+.jx-nova__max-price-hint {
+  display: block;
+  margin-top: var(--jx-space-1);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+// ── PIX modal backdrop + card ───────────────────────────────────────────────
+.jx-nova__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: var(--jx-space-4);
+}
+
+.jx-nova__modal {
+  background: var(--bg-card, #fff);
+  border-radius: var(--jx-radius-xl);
+  padding: var(--jx-space-6);
+  max-width: 420px;
+  width: 100%;
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0,0,0,.18));
+
+  &--pix {
+    max-width: 480px;
+    text-align: center;
+  }
+}
+
+.jx-nova__modal-title {
+  margin: 0 0 var(--jx-space-3);
+  font-size: var(--jx-text-lg);
+  font-weight: 700;
+}
+
+.jx-nova__modal-body {
+  margin: 0 0 var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  line-height: 1.5;
+}
+
+.jx-nova__modal-hint {
+  margin: 0 0 var(--jx-space-4);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-nova__modal-actions {
+  display: flex;
+  gap: var(--jx-space-3);
+  justify-content: flex-end;
+  margin-top: var(--jx-space-4);
+}
+
+.jx-nova__btn-secondary {
+  min-height: 40px;
+  width: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-sunken);
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// ── PIX QR / copy ──────────────────────────────────────────────────────────
+.jx-nova__pix-qr {
+  display: block;
+  margin: 0 auto var(--jx-space-4);
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-nova__pix-copy {
+  display: flex;
+  gap: var(--jx-space-2);
+  margin-bottom: var(--jx-space-3);
+}
+
+.jx-nova__pix-code {
+  flex: 1;
+  font-size: var(--jx-text-xs);
+  font-family: monospace;
+  padding: var(--jx-space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--bg-subtle, #faf8f5);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jx-nova__cta--sm {
+  padding: var(--jx-space-2) var(--jx-space-3);
+  font-size: var(--jx-text-xs);
+  white-space: nowrap;
+}
+
+.jx-nova__pix-waiting {
+  margin: var(--jx-space-3) 0 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-nova__pix-error {
+  margin: var(--jx-space-2) 0;
+  font-size: var(--jx-text-xs);
+  color: var(--color-error, #c0392b);
+}
+
+// ── Price breakdown rows (step-2 summary + modal table) ────────────────────
+.jx-nova__max-price-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  padding: 2px 0;
+  color: var(--text-primary);
+
+  &--sub {
+    color: var(--text-muted);
+    font-size: var(--jx-text-xs);
+  }
+
+  &--total {
+    border-top: 1px solid var(--border);
+    padding-top: var(--jx-space-2);
+    margin-top: var(--jx-space-1);
+    font-size: var(--jx-text-base);
+  }
+}
+
+.jx-nova__breakdown {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--jx-space-3);
+  font-size: var(--jx-text-sm);
+
+  td { padding: 4px 0; }
+
+  &-val { text-align: right; font-variant-numeric: tabular-nums; }
+
+  &-total {
+    border-top: 1px solid var(--border);
+    td { padding-top: var(--jx-space-2); }
   }
 }

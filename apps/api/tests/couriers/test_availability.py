@@ -15,7 +15,7 @@ import pytest
 
 
 def test_compute_busy_is_derived() -> None:
-    """busy = active_deliveries >= max_concurrent (pure, no persistence)."""
+    """busy = active_deliveries >= area max_concurrent (pure, no persistence)."""
     availability = pytest.importorskip("app.couriers.availability")
     assert availability.compute_busy(active_deliveries=0, max_concurrent=1) is False
     assert availability.compute_busy(active_deliveries=1, max_concurrent=1) is True

@@ -18,7 +18,6 @@ justified — the HMAC + idempotency + GET-confirmation are the auth (TH-M).
 
 from __future__ import annotations
 
-import hashlib
 import hmac
 import json
 from typing import Annotated
@@ -38,25 +37,32 @@ router = APIRouter(prefix="/payments/webhooks", tags=["payments-webhooks"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def _verify_hmac(body: bytes, signature: str | None, *, secret: str | None) -> bool:
-    """HMAC-SHA256 of the raw body, compared with `compare_digest` (anti-timing).
+def _verify_secret_key(payload: dict, *, secret: str | None) -> bool:
+    """Safe2Pay envia SecretKey no body (não há header HMAC).
 
-    When no secret is configured (dev/test default), the check passes — the defence in
-    depth (idempotency + GET-confirmation in the worker) is the real guard ([ASSUMIDO A4]).
+    Compara o SecretKey do payload com a chave configurada usando compare_digest
+    (anti-timing). Sem secret configurado, passa — a defesa em profundidade é a
+    idempotência + confirmação por GET no worker ([ASSUMIDO A4]).
     """
     if not secret:
         return True
-    if not signature:
+    body_key = payload.get("SecretKey") or ""
+    if not body_key:
         return False
-    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, signature)
+    return hmac.compare_digest(secret.upper(), body_key.upper())
 
 
 def _extract(payload: dict, *keys: str) -> str:
-    """Pull a field from `data` or the root (Safe2Pay varies nomenclature — SAAS §8.4)."""
+    """Pull a field from payload root, data sub-dict, or TransactionStatus (Safe2Pay varies)."""
     raw = payload.get("data") if isinstance(payload.get("data"), dict) else payload
     for key in keys:
         val = (raw or {}).get(key) or payload.get(key)
+        if val:
+            return str(val)
+    # Safe2Pay PIX avulso: status em TransactionStatus.Code
+    ts = payload.get("TransactionStatus")
+    if isinstance(ts, dict):
+        val = ts.get("Code") or ts.get("Id")
         if val:
             return str(val)
     return ""
@@ -72,12 +78,19 @@ async def safe2pay_webhook(request: Request, session: SessionDep) -> dict:
         payload = json.loads(body) if body else {}
     except json.JSONDecodeError:
         payload = {}
+
+    logger.info(
+        "safe2pay_webhook_received",
+        raw_body=body.decode("utf-8", errors="replace")[:2000],
+        headers=dict(request.headers),
+        payload=payload,
+    )
+
     transaction_id = _extract(payload, "IdTransaction", "Id")
     event_status = _extract(payload, "Status")
 
-    # 2. Verify HMAC (compare_digest, never ==).
-    signature = request.headers.get("x-safe2pay-signature")
-    if not _verify_hmac(body, signature, secret=settings.safe2pay_webhook_secret):
+    # 2. Verify SecretKey from body (Safe2Pay embeds it in payload, not as a header).
+    if not _verify_secret_key(payload, secret=settings.safe2pay_secret_key):
         logger.warning("safe2pay_webhook_bad_signature")
         raise HTTPException(status_code=403, detail="assinatura inválida")
 
@@ -98,23 +111,67 @@ async def safe2pay_webhook(request: Request, session: SessionDep) -> dict:
     if not seen:
         return {"ok": True, "idempotent": True}
 
-    # 4. Enqueue the heavy work (confirm via GET before any money moves — TH-E).
-    await _enqueue_event(transaction_id, event_status)
+    # 4. Processar direto (sem worker intermediário).
+    await _process_event(session, transaction_id, event_status)
 
     # 5. 200 < 5s.
     return {"ok": True}
 
 
-async def _enqueue_event(transaction_id: str, event_status: str) -> None:
-    """Best-effort enqueue of `process_safe2pay_event` (never 500 a webhook)."""
-    from arq import create_pool
-    from arq.connections import RedisSettings
+async def _process_event(session: AsyncSession, transaction_id: str, event_status: str) -> None:
+    """Processa o evento Safe2Pay diretamente na request (sem ARQ)."""
+    from app.payments import repo, subscriptions
 
-    try:
-        pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
-        try:
-            await pool.enqueue_job("process_safe2pay_event", transaction_id, event_status)
-        finally:
-            await pool.aclose()
-    except Exception:  # noqa: BLE001 — the event row is logged; an ops re-run recovers
-        logger.warning("safe2pay_webhook_enqueue_failed")
+    approved = event_status in {"3", "4", "APROVADA", "ATIVA", "CONCLUIDA", "PAGO"}
+
+    # PIX Automático authorization APROVADA: look up by authorization id.
+    if event_status == "APROVADA":
+        found = await subscriptions.activate_approved_pix(
+            session, pix_autorizacao_id=transaction_id
+        )
+        if found:
+            await session.commit()
+            logger.info("payments.pix_auto_approved", authorization_id=transaction_id)
+            return
+
+    # Standard charge event (card ou PIX QR).
+    charge = await repo.get_charge_by_transaction(session, transaction_id=transaction_id)
+    logger.info(
+        "payments.process_event",
+        transaction_id=transaction_id,
+        event_status=event_status,
+        approved=approved,
+        charge_found=charge is not None,
+        charge_kind=charge.kind if charge else None,
+        charge_status=charge.status if charge else None,
+        delivery_id=charge.delivery_id if charge else None,
+    )
+    if charge is not None and approved and charge.status == "open":
+        charge.status = "paid"
+        if charge.subscription_id is not None and charge.method == "pix":
+            await subscriptions.activate_pix_on_charge_paid(
+                session, subscription_id=charge.subscription_id
+            )
+        if charge.kind == "delivery" and charge.delivery_id is not None:
+            from app.deliveries.models import Delivery
+            from app.deliveries.service import transition as delivery_transition
+            from app.workers.dispatch import enqueue_dispatch
+
+            delivery = await session.get(Delivery, charge.delivery_id)
+            if delivery is not None and delivery.state == "AGUARDANDO_PAGAMENTO":
+                await delivery_transition(
+                    session,
+                    delivery=delivery,
+                    to_state="CRIADA",
+                    actor_id=None,
+                    reason="pix_confirmed",
+                )
+                await session.commit()
+                await enqueue_dispatch(delivery.id)
+                logger.info(
+                    "payments.delivery_pix_confirmed",
+                    delivery_id=delivery.id,
+                    transaction_id=transaction_id,
+                )
+                return
+    await session.commit()

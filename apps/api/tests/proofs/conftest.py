@@ -134,7 +134,6 @@ async def proof_seed(session_factory: async_sessionmaker[AsyncSession]) -> Proof
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=2,
         )
         other_courier = Courier(
             area_id=area.id,
@@ -147,7 +146,6 @@ async def proof_seed(session_factory: async_sessionmaker[AsyncSession]) -> Proof
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=2,
         )
         s.add_all([courier, other_courier])
         await s.flush()

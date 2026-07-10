@@ -47,6 +47,8 @@ export interface PlanDto {
   preco_anual_cents: number;
   entregas_mes: number;
   taxa_entrega_cents: number;
+  taxa_pix_cents: number;
+  taxa_servico_cents: number;
   is_free: boolean;
   is_unlimited: boolean;
 }

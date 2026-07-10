@@ -67,6 +67,8 @@ from app.deliveries.schemas import (
     CourierDeliveryOut,
     mask_phone_display,
 )
+from app.areas.config_schema import AreaConfig
+from app.areas.models import Area
 from app.integrations.factory import get_receita_adapter, get_storage_adapter
 
 router = APIRouter(prefix="/couriers", tags=["couriers"])
@@ -370,7 +372,12 @@ async def set_availability(
     )
     await session.commit()
     # busy is DERIVED; the real active-delivery count arrives in Phase 7/8 (0 here).
-    busy = availability_svc.compute_busy(active_deliveries=0, max_concurrent=updated.max_concurrent)
+    raw_cfg = {}
+    area_obj = await session.get(Area, updated.area_id)
+    if area_obj and area_obj.config:
+        raw_cfg = dict(area_obj.config)
+    area_cfg = AreaConfig(**raw_cfg)
+    busy = availability_svc.compute_busy(active_deliveries=0, max_concurrent=area_cfg.max_entregas_simultaneas)
     return AvailabilityResponse(is_online=updated.is_online, busy=busy, online_until=updated.online_until)
 
 
@@ -463,6 +470,28 @@ async def get_active_delivery(
     merchant = await session.get(Merchant, delivery.merchant_id)
     nbhd = await session.get(Neighborhood, delivery.dropoff_neighborhood_id)
     return _courier_delivery_out(delivery, recipient, merchant_trade_name=merchant.trade_name if merchant else None, dropoff_neighborhood_name=nbhd.name if nbhd else None)
+
+
+@router.get("/{courier_id}/deliveries/active-list", response_model=list[CourierDeliveryOut])
+async def list_active_deliveries(
+    courier_id: int,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> list[CourierDeliveryOut]:
+    """All of the courier's in-progress deliveries (ACEITA/COLETADA), newest first."""
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    results = await delivery_service.get_courier_active_deliveries(session, courier_id=courier.id)
+    out: list[CourierDeliveryOut] = []
+    for delivery, recipient in results:
+        merchant = await session.get(Merchant, delivery.merchant_id)
+        nbhd = await session.get(Neighborhood, delivery.dropoff_neighborhood_id)
+        out.append(_courier_delivery_out(
+            delivery, recipient,
+            merchant_trade_name=merchant.trade_name if merchant else None,
+            dropoff_neighborhood_name=nbhd.name if nbhd else None,
+        ))
+    return out
 
 
 @router.get("/{courier_id}/deliveries", response_model=CourierDeliveryListOut)

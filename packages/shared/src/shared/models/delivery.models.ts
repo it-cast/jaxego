@@ -38,6 +38,10 @@ export interface CreateDeliveryRequest {
   payer_email?: string | null;
   /** ISO-8601 UTC — quando o entregador deve ser chamado. Null = imediato. */
   scheduled_at?: string | null;
+  /** Quando true, a corrida é cobrada via PIX antes de chamar entregadores. */
+  platform_pix?: boolean;
+  /** Valor máximo confirmado pelo usuário para o PIX (centavos). */
+  pix_amount_cents?: number | null;
 }
 
 export interface CreateDeliveryResponse {
@@ -49,6 +53,10 @@ export interface CreateDeliveryResponse {
   no_couriers_warning: boolean;
   /** ISO-8601 UTC do horário agendado; presente quando state === 'AGENDADA'. */
   scheduled_at?: string | null;
+  /** PIX QR code EMV copia-e-cola (quando platform_pix=true). */
+  pix_qr_code?: string | null;
+  /** PIX QR code em base64 para exibição como imagem (quando platform_pix=true). */
+  pix_qr_code_base64?: string | null;
 }
 
 export interface DeliveryListItem {
@@ -100,6 +108,8 @@ export interface DeliveryListItem {
   team_names?: string[];
   has_image?: boolean;
   proof_method?: string;
+  pix_qr_code?: string | null;
+  pix_qr_code_base64?: string | null;
 }
 
 export interface DeliveryListResponse {

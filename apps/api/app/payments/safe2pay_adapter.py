@@ -298,35 +298,60 @@ class Safe2PayHttpAdapter:
     async def _create_pix_qr(
         self, *, amount_cents: int, customer: Customer, reference: str
     ) -> ChargeResult:
-        # PIX simples (avulso) via /v2/payment (PaymentMethod 10) — gera QR Code único.
+        # PIX avulso via /v2/payment (PaymentMethod 6) — gera QR Code único.
+        # PaymentMethod 6 = PIX (doc Safe2Pay: https://developers.safe2pay.com.br/reference/cobranca-criar)
         amount = amount_cents / 100
         logger.info(
             "safe2pay_pix_qr_attempt",
             is_sandbox=self._sandbox,
             amount=amount,
-            payment_method=10,
+            payment_method=6,
         )
+        from app.core.config import get_settings
+        callback_url = get_settings().safe2pay_callback_url or ""
         data = await self._call_safe2pay(
             f"{self._payment_url}/v2/payment",
             {
                 "IsSandbox": self._sandbox,
+                "Application": "Jaxegô",
+                "CallbackUrl": callback_url,
                 "Reference": reference,
-                "Amount": amount,
-                "PaymentMethod": "10",
+                "PaymentMethod": "6",
                 "Customer": {
                     "Name": customer.name,
                     "Identity": customer.document,
                     "Email": customer.email,
+                    "Address": {
+                        "ZipCode": (customer.zip_code or "").replace("-", ""),
+                        "Street": _ascii(customer.street or ""),
+                        "Number": customer.street_number or "S/N",
+                        "Complement": "",
+                        "District": _ascii(customer.neighborhood or ""),
+                        "CityName": "",
+                        "StateInitials": customer.state or "",
+                        "CountryName": "Brasil",
+                    },
                 },
-                "PaymentObject": {},
+                "Products": [
+                    {
+                        "Code": "ENTREGA",
+                        "Description": "Entrega",
+                        "UnitPrice": amount,
+                        "Quantity": 1,
+                    }
+                ],
+                "PaymentObject": {
+                    "Expiration": 600,
+                },
             },
         )
-        pix_obj = data.get("PaymentObject") or {}
+        # _call_safe2pay returns ResponseDetail directly.
+        # Key = EMV copia-e-cola; QrCode = URL da imagem PNG do QR.
         return ChargeResult(
             transaction_id=str(data.get("IdTransaction", "")),
             status="pending",
-            qr_code=pix_obj.get("Key"),
-            qr_code_base64=pix_obj.get("QrCode"),
+            qr_code=data.get("Key"),
+            qr_code_base64=data.get("QrCode"),
             authorization_id="",
         )
 
@@ -450,12 +475,79 @@ class Safe2PayHttpAdapter:
     async def register_subaccount(
         self, *, courier_id: int, mei_cnpj: str, pix_key: str | None
     ) -> str:
-        # [ASSUMIDO A3] subaccount API — may require manual registration; confirm at T-13.
-        data = await self._call_safe2pay(
-            f"{self._api_url}/v2/marketplace/subaccount",
-            {"Identity": mei_cnpj, "PixKey": pix_key},
+        result = await self.register_subaccount_full(courier=type("_C", (), {
+            "full_name": "", "mei_cnpj": mei_cnpj, "email": "", "phone_e164": "",
+            "birth_date": None, "zip_code": None, "street": None, "street_number": None,
+            "complement": None, "neighborhood": None, "city": None, "state": None,
+            "bank_code": None, "bank_agency": None, "bank_account": None,
+            "bank_account_digit": None, "bank_account_type": None,
+        })())
+        return result.get("recipient_id", "")
+
+    async def register_subaccount_full(self, *, courier: object) -> dict[str, str]:
+        """Cria subconta no Safe2Pay Marketplace via /v2/marketplace/add."""
+        identity = getattr(courier, "mei_cnpj", None) or ""
+        phone = (getattr(courier, "phone_e164", "") or "").lstrip("+")
+        birth = getattr(courier, "birth_date", None)
+
+        payload: dict = {
+            "Name": getattr(courier, "full_name", ""),
+            "CommercialName": getattr(courier, "full_name", ""),
+            "Identity": identity,
+            "Email": getattr(courier, "email", ""),
+            "ResponsibleName": getattr(courier, "full_name", ""),
+            "ResponsibleIdentity": identity,
+            "ResponsiblePhone": phone,
+            "ResponsibleBirthDate": birth.strftime("%Y-%m-%d") if birth else "",
+            "IsPanelRestricted": True,
+            "IsTransferCheckingAccountDisabled": False,
+            "Address": {
+                "ZipCode": (getattr(courier, "zip_code", "") or "").replace("-", ""),
+                "Street": getattr(courier, "street", "") or "",
+                "Number": getattr(courier, "street_number", "") or "S/N",
+                "Complement": getattr(courier, "complement", "") or "",
+                "District": getattr(courier, "neighborhood", "") or "",
+                "CityName": getattr(courier, "city", "") or "",
+                "StateInitials": getattr(courier, "state", "") or "",
+                "CountryName": "Brasil",
+            },
+            "MerchantSplit": [
+                {
+                    "PaymentMethodCode": "6",
+                    "IsSubaccountTaxPayer": False,
+                    "Taxes": [{"TaxTypeName": "2", "Tax": "0"}],
+                }
+            ],
+        }
+
+        bank_code = getattr(courier, "bank_code", None)
+        bank_agency = getattr(courier, "bank_agency", None)
+        bank_account = getattr(courier, "bank_account", None)
+        bank_digit = getattr(courier, "bank_account_digit", None)
+        bank_type = getattr(courier, "bank_account_type", None) or "CC"
+        if bank_code and bank_agency and bank_account:
+            payload["BankData"] = {
+                "Bank": {"Code": bank_code},
+                "AccountType": {"Code": bank_type},
+                "BankAgency": bank_agency,
+                "BankAgencyDigit": "",
+                "BankAccount": bank_account,
+                "BankAccountDigit": bank_digit or "0",
+            }
+
+        import structlog as _sl
+        _sl.get_logger("payments.subaccount").info(
+            "safe2pay_subaccount_create", identity_prefix=identity[:3] if identity else ""
         )
-        return str(data.get("RecipientId", ""))
+
+        data = await self._call_safe2pay(
+            f"{self._api_url}/v2/marketplace/add",
+            payload,
+        )
+        return {
+            "recipient_id": str(data.get("Id", "")),
+            "token": str(data.get("Token", "")),
+        }
 
     async def get_statement(self, *, since: datetime, until: datetime) -> list[StatementEntry]:
         data = await self._call_safe2pay(

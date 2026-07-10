@@ -76,7 +76,8 @@ export class PlataformaPlanosPage implements OnInit {
     { key: 'price_monthly_cents', label: 'Mensal (R$)', numeric: true },
     { key: 'price_annual_cents', label: 'Anual (R$)', numeric: true },
     { key: 'deliveries_per_month', label: 'Entregas/mes', numeric: true },
-    { key: 'fee_cents', label: 'Taxa (R$)', numeric: true },
+    { key: 'taxa_pix_cents', label: 'Taxa PIX (R$)', numeric: true },
+    { key: 'taxa_servico_cents', label: 'Taxa Servico (R$)', numeric: true },
     { key: 'is_active', label: 'Status' },
     { key: 'actions', label: 'Acoes' },
   ];
@@ -140,6 +141,8 @@ export class PlataformaPlanosPage implements OnInit {
       price_annual_cents: plan.price_annual_cents / 100,
       deliveries_per_month: plan.deliveries_per_month,
       fee_cents: plan.fee_cents / 100,
+      taxa_pix_cents: plan.taxa_pix_cents / 100,
+      taxa_servico_cents: plan.taxa_servico_cents / 100,
       is_unlimited: plan.is_unlimited,
       sort_order: plan.sort_order,
     };
@@ -165,6 +168,8 @@ export class PlataformaPlanosPage implements OnInit {
           price_annual_cents: Math.round(this.form.price_annual_cents * 100),
           deliveries_per_month: this.form.deliveries_per_month,
           fee_cents: Math.round(this.form.fee_cents * 100),
+          taxa_pix_cents: Math.round(this.form.taxa_pix_cents * 100),
+          taxa_servico_cents: Math.round(this.form.taxa_servico_cents * 100),
           is_unlimited: this.form.is_unlimited,
           sort_order: this.form.sort_order,
         });
@@ -176,6 +181,8 @@ export class PlataformaPlanosPage implements OnInit {
           price_annual_cents: Math.round(this.form.price_annual_cents * 100),
           deliveries_per_month: this.form.deliveries_per_month,
           fee_cents: Math.round(this.form.fee_cents * 100),
+          taxa_pix_cents: Math.round(this.form.taxa_pix_cents * 100),
+          taxa_servico_cents: Math.round(this.form.taxa_servico_cents * 100),
           is_unlimited: this.form.is_unlimited,
           sort_order: this.form.sort_order,
         });
@@ -228,6 +235,8 @@ export class PlataformaPlanosPage implements OnInit {
       price_annual_cents: 0,
       deliveries_per_month: 0,
       fee_cents: 0,
+      taxa_pix_cents: 0,
+      taxa_servico_cents: 0,
       is_unlimited: false,
       sort_order: 0,
     };

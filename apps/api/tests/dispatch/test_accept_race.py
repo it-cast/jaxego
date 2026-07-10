@@ -129,7 +129,6 @@ async def _seed(engine: AsyncEngine) -> tuple[int, int, int, int]:
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=2,
         )
         c2 = Courier(
             area_id=area.id,
@@ -142,7 +141,6 @@ async def _seed(engine: AsyncEngine) -> tuple[int, int, int, int]:
             status="active",
             vehicle_type="moto",
             is_online=True,
-            max_concurrent=2,
         )
         s.add_all([c1, c2])
         await s.flush()

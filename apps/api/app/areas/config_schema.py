@@ -6,9 +6,11 @@ validation and no audit trail (Pitfall 4). `AreaConfig` (Pydantic v2,
 that would break the Phase 8 dispatch is rejected with 422 (RFC-7807) at the
 boundary:
 
-- `kyc_level`            — "simples" | "completa" (alimenta a Phase 5).
-- `timeout_oferta_s`     — 10..60 s (ADR-104, default 20).
-- `timeout_favoritos_s`  — 30..180 s (ADR-007, default 60).
+- `kyc_level`                  — "simples" | "completa" (alimenta a Phase 5).
+- `timeout_oferta_s`           — 10..60 s (ADR-104, default 20).
+- `timeout_favoritos_s`        — 30..180 s (ADR-007, default 60).
+- `max_entregas_simultaneas`   — 1..10; limite de entregas ativas por entregador
+                                 desta área antes de ele parar de receber ofertas.
 
 Pricing floors (piso_entrega / piso_km) and geofence_m / politica_retorno_pct
 were removed — pricing is now handled per-zone by teams.
@@ -31,6 +33,7 @@ SENSITIVE_KEYS: frozenset[str] = frozenset(
         "kyc_level",
         "timeout_oferta_s",
         "timeout_favoritos_s",
+        "max_entregas_simultaneas",
     }
 )
 
@@ -44,6 +47,8 @@ class AreaConfig(BaseModel):
     # Dispatch timeouts (ADR-104 / ADR-007).
     timeout_oferta_s: int = Field(default=20, ge=10, le=60)
     timeout_favoritos_s: int = Field(default=60, ge=30, le=180)
+    # Limite de entregas ativas simultâneas por entregador nesta área.
+    max_entregas_simultaneas: int = Field(default=1, ge=1, le=10)
 
 
 def diff_sensitive(before: dict, after: dict) -> tuple[dict, dict] | None:

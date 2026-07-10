@@ -64,7 +64,6 @@ async def _courier(s: AsyncSession, *, area_id: int, email: str, cpf: str) -> Co
         status="active",
         vehicle_type="moto",
         is_online=True,
-        max_concurrent=1,
         s2p_recipient_id=f"recip_{cpf[:4]}",
     )
     s.add(courier)

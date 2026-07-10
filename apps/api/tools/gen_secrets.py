@@ -9,7 +9,7 @@ Roda NO SERVIDOR (os segredos nascem lá, nunca trafegam pelo chat):
 Formatos (validados contra o código):
 - JWT_SECRET                : token_urlsafe (>=256 bits) — auth HS256 (essencial)
 - SAFE2PAY_TOKEN_ENCRYPT_KEY: 64 hex (AES-256-GCM do token do cartão)
-- SAFE2PAY_WEBHOOK_SECRET   : token_urlsafe (HMAC do webhook)
+- SAFE2PAY_SECRET_KEY   : token_urlsafe (HMAC do webhook)
 - RSA_PRIVATE_KEY/PUBLIC    : base64(PEM) single-line (crypto.py aceita PEM ou base64(PEM))
 - VAPID_PRIVATE_KEY         : base64url do escalar privado (32 bytes) — pywebpush from_string
 - VAPID_PUBLIC_KEY          : base64url do ponto público (65 bytes) — applicationServerKey
@@ -55,7 +55,7 @@ def _gen() -> dict[str, str]:
     return {
         "JWT_SECRET": secrets.token_urlsafe(48),
         "SAFE2PAY_TOKEN_ENCRYPT_KEY": secrets.token_hex(32),
-        "SAFE2PAY_WEBHOOK_SECRET": secrets.token_urlsafe(36),
+        "SAFE2PAY_SECRET_KEY": secrets.token_urlsafe(36),
         "RSA_PRIVATE_KEY": base64.b64encode(priv_pem).decode(),
         "RSA_PUBLIC_KEY": base64.b64encode(pub_pem).decode(),
         "VAPID_PRIVATE_KEY": _b64url(d),
@@ -117,9 +117,9 @@ VAPID_CLAIM_SUB=mailto:ops@jaxego.com.br
 
 # --- Safe2Pay — DESLIGADO no piloto direto (liga com o contrato — DEC-004/TD-10-0x) ---
 SAFE2PAY_SANDBOX=true
-SAFE2PAY_API_KEY=
+SAFE2PAY_TOKEN=
 SAFE2PAY_TOKEN_ENCRYPT_KEY={s["SAFE2PAY_TOKEN_ENCRYPT_KEY"]}
-SAFE2PAY_WEBHOOK_SECRET={s["SAFE2PAY_WEBHOOK_SECRET"]}
+SAFE2PAY_SECRET_KEY={s["SAFE2PAY_SECRET_KEY"]}
 RSA_PRIVATE_KEY={s["RSA_PRIVATE_KEY"]}
 RSA_PUBLIC_KEY={s["RSA_PUBLIC_KEY"]}
 SAFE2PAY_JAXEGO_RECIPIENT=

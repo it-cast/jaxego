@@ -29,7 +29,7 @@ def get_payment_adapter() -> PaymentPort:
     if _use_stub():
         return PaymentStubAdapter(scenario="approved")
     return Safe2PayHttpAdapter(
-        api_key=settings.safe2pay_api_key,
+        api_key=settings.safe2pay_token,
         payment_url=settings.safe2pay_payment_url,
         api_url=settings.safe2pay_api_url,
         services_url=settings.safe2pay_services_url,

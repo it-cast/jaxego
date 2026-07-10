@@ -156,6 +156,8 @@ class PlanRead(BaseModel):
     preco_anual_cents: int
     entregas_mes: int
     taxa_entrega_cents: int
+    taxa_pix_cents: int
+    taxa_servico_cents: int
     is_free: bool
     is_unlimited: bool
 

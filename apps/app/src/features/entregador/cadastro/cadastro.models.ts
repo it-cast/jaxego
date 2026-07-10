@@ -3,6 +3,8 @@
 export type KycLevel = 'simples' | 'completa';
 export type VehicleType = 'moto' | 'bicicleta' | 'carro' | 'a_pe';
 
+export type BankAccountType = 'CC' | 'PP';
+
 export interface CourierSignupRequest {
   area_id: number;
   cpf: string;
@@ -14,6 +16,19 @@ export interface CourierSignupRequest {
   vehicle_plate?: string | null;
   team_id: number;
   consent: boolean;
+  birth_date?: string | null;
+  zip_code?: string | null;
+  street?: string | null;
+  street_number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+  bank_code?: string | null;
+  bank_agency?: string | null;
+  bank_account?: string | null;
+  bank_account_digit?: string | null;
+  bank_account_type?: BankAccountType | null;
 }
 
 export interface CourierSignupResponse {
