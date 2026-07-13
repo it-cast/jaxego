@@ -256,7 +256,15 @@ async def update_area_admin(
     session: SessionDep,
     admin: PlatformAdmin,
 ) -> AreaAdminRead:
-    await areas_service.update_area_admin(session, admin_id, role=body.role, area_id=body.area_id)
+    await areas_service.update_area_admin(
+        session,
+        admin_id,
+        role=body.role,
+        area_id=body.area_id,
+        name=body.name,
+        email=str(body.email) if body.email else None,
+        password_hash=hash_password(body.password) if body.password else None,
+    )
     await session.commit()
     rows = await areas_service.list_area_admins(session)
     match = next((r for r in rows if r["id"] == admin_id), None)

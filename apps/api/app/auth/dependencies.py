@@ -3,13 +3,9 @@
 Authorisation lives ENTIRELY in dependencies, never in the route body (A01):
     get_current_user -> area_scope -> require_role(...) / require_platform_admin
 
-- `get_current_user` decodes the access token with the pinned algorithm and
-  required claims, loads the active user, binds `user_id` into the log context,
-  and forces TOTP enrolment for a platform admin who has not enrolled yet (D-03).
-- `area_scope` resolves the effective area from the token, validating it against
-  an `area_id` path parameter: a non-platform admin reaching another area gets
-  403 (D-06 / F-08 E1). A platform admin may operate cross-area (scope None).
-- `require_role` / `require_platform_admin` gate by resolved role.
+Pós-remoção da tabela `users`: o token carrega `typ` (courier|merchant|team|
+area_admin|platform_admin) + `sub` (id na tabela do tipo). `get_current_user`
+carrega o `Actor` da tabela certa. O guard de TOTP vale só para platform_admin.
 """
 
 from __future__ import annotations
@@ -21,8 +17,8 @@ import structlog
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.areas.service import load_memberships, resolve_role
-from app.auth.models import User
+from app.auth.models import ACTOR_PLATFORM_ADMIN, ACTOR_TYPES
+from app.auth.principals import Actor, load_actor
 from app.core.exceptions import AppError
 from app.core.security import decode_access
 from app.db.session import get_session
@@ -30,8 +26,6 @@ from app.db.session import get_session
 logger = structlog.get_logger("auth.deps")
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
-
-PLATFORM_ADMIN_ROLE = "admin_plataforma"
 
 
 class NotAuthenticatedError(AppError):
@@ -72,33 +66,42 @@ def _extract_bearer(request: Request) -> str:
     return token
 
 
-async def get_current_user(request: Request, session: SessionDep) -> User:
-    """Decode the access token, load the active user, bind log context."""
+async def get_current_user(request: Request, session: SessionDep) -> Actor:
+    """Decode the access token, load the actor from its own table, bind context."""
     token = _extract_bearer(request)
     try:
         claims = decode_access(token)
     except jwt.PyJWTError as exc:
         raise NotAuthenticatedError() from exc
 
-    user = await session.get(User, int(claims["sub"]))  # type: ignore[arg-type]
-    if user is None or not user.is_active:
+    actor_type = str(claims.get("typ", ""))
+    if actor_type not in ACTOR_TYPES:
         raise NotAuthenticatedError()
 
-    # Populate the reserved user_id log field (no PII) — observability.
-    structlog.contextvars.bind_contextvars(user_id=user.id)
+    actor = await load_actor(
+        session, actor_type=actor_type, actor_id=int(claims["sub"])  # type: ignore[arg-type]
+    )
+    if actor is None:
+        raise NotAuthenticatedError()
 
-    # TOTP guard: only block if totp_required is set and user hasn't enrolled yet.
-    if user.totp_required and not user.totp_enrolled:
-        if not request.url.path.endswith(("/auth/totp/enroll", "/auth/totp/verify", "/auth/me")):
-            raise TotpEnrollmentRequiredError()
+    # Populate the reserved log fields (no PII) — observability.
+    structlog.contextvars.bind_contextvars(user_id=actor.id, actor_type=actor.type)
+
+    # TOTP guard: só platform_admin tem TOTP obrigatório (D-03).
+    if actor.type == ACTOR_PLATFORM_ADMIN:
+        row = actor.row
+        if row.totp_required and not row.totp_enrolled:
+            if not request.url.path.endswith(
+                ("/auth/totp/enroll", "/auth/totp/verify", "/auth/me")
+            ):
+                raise TotpEnrollmentRequiredError()
 
     # Cache the token's claimed scope for area_scope to read.
     request.state.token_area_scope = claims.get("area_scope")
-    await load_memberships(session, user)
-    return user
+    return actor
 
 
-CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUser = Annotated[Actor, Depends(get_current_user)]
 
 
 async def area_scope(
@@ -115,7 +118,7 @@ async def area_scope(
     """
     token_scope: int | None = getattr(request.state, "token_area_scope", None)
 
-    if user.platform_role == PLATFORM_ADMIN_ROLE:
+    if user.type == ACTOR_PLATFORM_ADMIN:
         return None
 
     if area_id is not None and token_scope is not None and area_id != token_scope:
@@ -129,29 +132,29 @@ AreaScopeDep = Annotated["int | None", Depends(area_scope)]
 
 
 def require_role(*allowed: str):
-    """Dependency factory: require the resolved role to be one of `allowed`.
+    """Dependency factory: require the actor's role to be one of `allowed`.
 
     Matches an exact role or a prefix family (e.g. 'admin_area' matches
     'admin_area:owner').
     """
 
-    async def _dep(user: CurrentUser, scope: AreaScopeDep) -> User:
-        role = resolve_role(user, area_id=scope)
+    async def _dep(user: CurrentUser, scope: AreaScopeDep) -> Actor:
+        role = user.role
         base = role.split(":", 1)[0]
         if role not in allowed and base not in allowed:
-            logger.warning("forbidden_role", user_id=user.id)
+            logger.warning("forbidden_role", user_id=user.id, actor_type=user.type)
             raise ForbiddenError()
         return user
 
     return _dep
 
 
-async def require_platform_admin(user: CurrentUser) -> User:
+async def require_platform_admin(user: CurrentUser) -> Actor:
     """Separate dependency for platform-admin-only routes (A01)."""
-    if user.platform_role != PLATFORM_ADMIN_ROLE:
+    if user.type != ACTOR_PLATFORM_ADMIN:
         logger.warning("forbidden_not_platform_admin", user_id=user.id)
         raise ForbiddenError()
     return user
 
 
-PlatformAdmin = Annotated[User, Depends(require_platform_admin)]
+PlatformAdmin = Annotated[Actor, Depends(require_platform_admin)]

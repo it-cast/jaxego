@@ -1,4 +1,4 @@
-"""Merchant + MerchantUser + MerchantSubscription models (F-01, D-05).
+"""Merchant + MerchantSubscription models (F-01, D-05).
 
 `Merchant` is AREA-SCOPED (AreaScopedMixin): every store belongs to exactly one
 delivery area (Pádua in the pilot). It carries the state-machine `status`
@@ -12,7 +12,8 @@ RN-011 uniqueness is per ACCOUNT TYPE: the composite UNIQUE
 string coexist, while blocking a true duplicate. `phone_e164` and `email` are
 globally unique on the merchant (anti-duplicidade across the three identifiers).
 
-`MerchantUser` links the owner `User` (argon2id via `auth/`) to the merchant.
+A conta da loja vive na própria tabela (CredentialsMixin) — não há mais tabela
+global `users` nem a associação `merchant_users`.
 `MerchantSubscription` ties a merchant to a `subscription_plan` with a status.
 """
 
@@ -33,7 +34,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
+from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, CredentialsMixin, TimestampMixin
 
 # Merchant state machine values (D-05). The valid transitions live in
 # `state_machine.py`; these are the persisted strings.
@@ -41,8 +42,11 @@ MERCHANT_STATUSES = ("pending_payment", "pending_validation", "active", "suspend
 ACCOUNT_TYPES = ("cnpj", "cpf")
 
 
-class Merchant(Base, AreaScopedMixin, TimestampMixin):
-    """A store (F-01). Area-scoped; status is the state machine (D-05)."""
+class Merchant(Base, AreaScopedMixin, CredentialsMixin, TimestampMixin):
+    """A store (F-01). Area-scoped; status is the state machine (D-05).
+
+    Conta própria (CredentialsMixin): o dono loga com merchants.email + senha.
+    """
 
     __tablename__ = "merchants"
     __table_args__ = (
@@ -87,35 +91,6 @@ class Merchant(Base, AreaScopedMixin, TimestampMixin):
     receita_validated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     revalidation_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     next_revalidation_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
-
-
-class MerchantUser(Base, TimestampMixin):
-    """Owner membership: links a global User to a Merchant with a role.
-
-    GLOBAL (not AreaScopedMixin): the merchant already carries area_id; this is a
-    pure association row mirroring `area_admins`.
-    """
-
-    __tablename__ = "merchant_users"
-    __table_args__ = (
-        UniqueConstraint("merchant_id", "user_id", name="uq_merchant_users_merchant_id_user_id"),
-        Base.__table_args__,
-    )
-
-    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
-    merchant_id: Mapped[int] = mapped_column(
-        BIG_ID,
-        ForeignKey("merchants.id", ondelete="RESTRICT", onupdate="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-    user_id: Mapped[int] = mapped_column(
-        BIG_ID,
-        ForeignKey("users.id", ondelete="RESTRICT", onupdate="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
-    role: Mapped[str] = mapped_column(String(32), nullable=False, default="owner")
 
 
 # Recurring-billing state machine (Phase 10 / SAAS-BILLING §10). Separate from the

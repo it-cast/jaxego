@@ -5,6 +5,7 @@ import {
   ApiErrorEnvelope,
   ERROR_CODE,
   LoginErrorKind,
+  LoginProfile,
   LoginRequest,
   Me,
   Surface,
@@ -90,6 +91,17 @@ export class AuthService {
     }
   }
 
+  /**
+   * Rota de login correspondente a uma URL do sistema — cada superfície tem o
+   * seu login (/entrar = loja, /equipe/entrar, /admin/entrar, /plataforma/entrar).
+   */
+  loginPathForUrl(url: string): string {
+    if (url.startsWith('/equipe')) return '/equipe/entrar';
+    if (url.startsWith('/plataforma')) return '/plataforma/entrar';
+    if (url.startsWith('/admin')) return '/admin/entrar';
+    return '/entrar';
+  }
+
   /** Map a surface to its shell route. 'none' has no home (caller handles it). */
   surfaceHome(surface: Surface): string {
     switch (surface) {
@@ -108,10 +120,10 @@ export class AuthService {
     }
   }
 
-  async login(req: LoginRequest): Promise<LoginResult> {
+  async login(req: LoginRequest, profile: LoginProfile = 'loja'): Promise<LoginResult> {
     try {
       const pair = await firstValueFrom(
-        this.http.post<TokenPair>('/v1/auth/login', req, {
+        this.http.post<TokenPair>(`/v1/auth/${profile}/login`, req, {
           withCredentials: true,
         })
       );

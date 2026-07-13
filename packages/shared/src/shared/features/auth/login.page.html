@@ -3,8 +3,8 @@
   <main class="jx-login" [attr.aria-busy]="loading()">
     <header class="jx-login__header">
       <div class="jx-login__logo">J</div>
-      <h1 class="jx-login__welcome">Bem-vindo de volta!</h1>
-      <p class="jx-login__subtitle">Faça login para continuar</p>
+      <h1 class="jx-login__welcome">{{ profileTitle }}</h1>
+      <p class="jx-login__subtitle">{{ profileSubtitle }}</p>
     </header>
 
     <form class="jx-login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -84,13 +84,15 @@
       </button>
     </form>
 
-    <section class="jx-login__cta-block">
-      @if (!isApp) {
+    @if (profile === 'loja') {
+      <section class="jx-login__cta-block">
         <span>Não tem conta?</span> <a routerLink="/loja/cadastro">Cadastrar minha loja</a>
-      } @else {
+      </section>
+    } @else if (profile === 'entregador') {
+      <section class="jx-login__cta-block">
         <span>Quer entregar?</span> <a routerLink="/entregador/cadastro">Cadastre-se agora</a>
-      }
-    </section>
+      </section>
+    }
 
     <footer class="jx-login__footer">jaxego.com.br · Grupo Itcast</footer>
   </main>

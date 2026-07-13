@@ -47,3 +47,4 @@ export {
 } from './payment-badge/payment-badge.component';
 export { PageHeaderComponent } from './page-header/page-header.component';
 export { DotsLoaderComponent } from './dots-loader/dots-loader.component';
+export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';

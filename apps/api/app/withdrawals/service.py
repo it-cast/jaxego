@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import AppError
+from app.couriers.models import Courier
 from app.payments.errors import PaymentGatewayError
 from app.withdrawals import repo
 from app.withdrawals.models import Withdrawal
@@ -41,6 +42,16 @@ class WithdrawalBelowMinimumError(AppError):
     def __init__(self, minimum_cents: int) -> None:
         self.minimum_cents = minimum_cents
         super().__init__(f"O valor mínimo para saque é de R$ {minimum_cents / 100:.2f}.")
+
+
+class CourierSubaccountMissingError(AppError):
+    """Courier has no Safe2Pay subaccount yet — nowhere to send the payout."""
+
+    status_code = 422
+    code = "courier_subaccount_missing"
+
+    def __init__(self) -> None:
+        super().__init__("Sua conta na Safe2Pay ainda não foi configurada. Aguarde a aprovação do cadastro.")
 
 
 class InsufficientBalanceError(AppError):
@@ -90,6 +101,12 @@ async def request_withdrawal(
     if amount_cents > balance:
         raise InsufficientBalanceError()
 
+    # Subconta Safe2Pay é o destino real da transferência (InternalTransfer usa o
+    # Id numérico da subconta, não um identificador sintético) — sem ela, nada a fazer.
+    courier = await session.get(Courier, courier_id)
+    if courier is None or not courier.s2p_recipient_id:
+        raise CourierSubaccountMissingError()
+
     # Reserve the balance: insert the withdrawal PENDING (counts against the balance now,
     # so a concurrent withdrawal blocked on the FOR UPDATE sees it once committed — TH-02).
     withdrawal = Withdrawal(
@@ -105,7 +122,7 @@ async def request_withdrawal(
     # Repasse via the PaymentPort (never move money without the call — TH-07).
     try:
         result = await payment.payout(
-            recipient=f"courier_{courier_id}", amount_cents=amount_cents, reference=reference
+            recipient=courier.s2p_recipient_id, amount_cents=amount_cents, reference=reference
         )
     except PaymentGatewayError as exc:
         # Compensation: the payout failed → mark failed (frees the balance), idempotent.

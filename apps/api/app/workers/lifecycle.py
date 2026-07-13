@@ -32,7 +32,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.service import write_audit
-from app.auth.models import RefreshToken, User
+from app.auth.models import RefreshToken
 from app.couriers.models import Courier
 from app.db.mixins import ensure_aware_utc
 from app.deliveries.models import Delivery, Recipient
@@ -65,6 +65,7 @@ async def finalize_deliveries(ctx: dict[str, Any]) -> int:
     cutoff = started - FINALIZE_AFTER
     session_factory = ctx["session_factory"]
     count = 0
+    finalized_ids: list[int] = []
     async with session_factory() as session:
         rows = (
             (await session.execute(select(Delivery).where(Delivery.state == "ENTREGUE")))
@@ -84,8 +85,14 @@ async def finalize_deliveries(ctx: dict[str, Any]) -> int:
                 actor_id=None,
                 reason="auto_finalize_24h",
             )
+            finalized_ids.append(delivery.id)
             count += 1
         await session.commit()
+    if finalized_ids:
+        from app.workers.payout import enqueue_payout
+
+        for delivery_id in finalized_ids:
+            await enqueue_payout(delivery_id)
     logger.info(
         "lifecycle.finalize_deliveries",
         finalized=count,
@@ -187,23 +194,6 @@ async def _courier_has_legal_retention(session: AsyncSession, *, courier_id: int
     return False
 
 
-async def _user_has_legal_retention(session: AsyncSession, *, user_id: int) -> bool:
-    """True if the user owns a courier profile under legal retention (D-02).
-
-    A user is the global identity behind a courier; if that courier has a financial
-    trail the user's PII is needed for the fiscal record → never anonymise.
-    """
-    courier_ids = (
-        (await session.execute(select(Courier.id).where(Courier.user_id == user_id)))
-        .scalars()
-        .all()
-    )
-    for courier_id in courier_ids:
-        if await _courier_has_legal_retention(session, courier_id=courier_id):
-            return True
-    return False
-
-
 async def anonymize_inactive(ctx: dict[str, Any]) -> int:
     """Anonymise PII of entities inactive >12 months (D-01/D-02). Returns count.
 
@@ -239,8 +229,12 @@ async def anonymize_inactive(ctx: dict[str, Any]) -> int:
                     continue  # fiscal/financial retention (D-02)
                 courier.full_name = _PII_NAME
                 courier.phone_e164 = _PII_TOMBSTONE  # NOT NULL column → tombstone
-                courier.email = _PII_TOMBSTONE
+                # email é UNIQUE → tombstone único por id.
+                courier.email = f"{_PII_TOMBSTONE}+{courier.id}@anonymized.invalid"
+                courier.cpf = None
                 courier.mei_cnpj = None
+                courier.password_hash = None
+                courier.is_active = False
                 courier.anonymized_at = started
                 await write_audit(
                     session,
@@ -286,42 +280,8 @@ async def anonymize_inactive(ctx: dict[str, Any]) -> int:
             except Exception:  # noqa: BLE001
                 logger.warning("lifecycle.anonymize_inactive.row_error", entity="recipient")
 
-        # --- Users (global) ---
-        users = (
-            (
-                await session.execute(
-                    select(User).where(
-                        User.updated_at < cutoff,
-                        User.anonymized_at.is_(None),
-                    )
-                )
-            )
-            .scalars()
-            .all()
-        )
-        for user in users:
-            try:
-                if ensure_aware_utc(user.updated_at) >= cutoff:
-                    continue
-                if await _user_has_legal_retention(session, user_id=user.id):
-                    continue  # owns a courier with a financial trail (D-02)
-                # email is UNIQUE NOT NULL → tombstone made unique by id.
-                user.email = f"{_PII_TOMBSTONE}+{user.id}@anonymized.invalid"
-                user.name = _PII_NAME
-                user.phone = None
-                user.cpf = None
-                user.is_active = False
-                user.anonymized_at = started
-                await write_audit(
-                    session,
-                    actor_id=None,
-                    action="lgpd.anonymize.user",
-                    area_id=None,
-                    after={"entity": "user", "id": user.id},
-                )
-                count += 1
-            except Exception:  # noqa: BLE001
-                logger.warning("lifecycle.anonymize_inactive.row_error", entity="user")
+        # (Pós-users: não há mais tabela global de usuários — a PII de conta
+        # vive em couriers/merchants/teams/area_admins e é varrida acima.)
 
         await session.commit()
     logger.info(
@@ -338,17 +298,11 @@ async def anonymize_inactive(ctx: dict[str, Any]) -> int:
 async def delete_ephemeral(ctx: dict[str, Any]) -> int:
     """Hard-delete non-consumed ephemeral data older than 30 days (D-01). Returns count.
 
-    Two classes of ephemeral row:
-      - abandoned signups: a `User` never activated (`is_active=False`,
-        `anonymized_at IS NULL`), with NO area membership, NO courier profile and NO
-        financial trail, untouched for >30 days. (An anonymised user is left alone.)
-      - expired refresh tokens: `RefreshToken.expires_at` in the past beyond the
-        window (a vencida idempotency key is already swept by `purge_idempotency_keys`).
+    Ephemeral rows: expired refresh tokens (`RefreshToken.expires_at` past the
+    window). Pós-users não há mais "abandoned signups" globais — cada conta vive
+    na tabela do seu tipo e segue a retenção do domínio.
     Idempotent: a re-run on an already-clean window is a 0-row no-op.
     """
-    from app.areas.models import AreaAdmin
-    from app.merchants.models import MerchantUser
-
     started = datetime.now(UTC)
     cutoff = started - EPHEMERAL_AFTER
     session_factory = ctx["session_factory"]
@@ -357,52 +311,6 @@ async def delete_ephemeral(ctx: dict[str, Any]) -> int:
         # --- Expired refresh tokens (consumed/expired credentials). ---
         result = await session.execute(delete(RefreshToken).where(RefreshToken.expires_at < cutoff))
         count += result.rowcount or 0
-
-        # --- Abandoned signups: inactive, never anonymised, no attachments. ---
-        candidates = (
-            (
-                await session.execute(
-                    select(User).where(
-                        User.is_active.is_(False),
-                        User.anonymized_at.is_(None),
-                        User.updated_at < cutoff,
-                        User.platform_role != "admin_plataforma",
-                    )
-                )
-            )
-            .scalars()
-            .all()
-        )
-        for user in candidates:
-            try:
-                has_area = (
-                    await session.execute(
-                        select(func.count())
-                        .select_from(AreaAdmin)
-                        .where(AreaAdmin.user_id == user.id)
-                    )
-                ).scalar_one()
-                has_merchant = (
-                    await session.execute(
-                        select(func.count())
-                        .select_from(MerchantUser)
-                        .where(MerchantUser.user_id == user.id)
-                    )
-                ).scalar_one()
-                has_courier = (
-                    await session.execute(
-                        select(func.count()).select_from(Courier).where(Courier.user_id == user.id)
-                    )
-                ).scalar_one()
-                if has_area or has_merchant or has_courier:
-                    continue  # attached → not an abandoned signup
-                if await _user_has_legal_retention(session, user_id=user.id):
-                    continue  # defensive — financial trail
-                await session.execute(delete(RefreshToken).where(RefreshToken.user_id == user.id))
-                await session.delete(user)
-                count += 1
-            except Exception:  # noqa: BLE001 — one bad row never derails the sweep
-                logger.warning("lifecycle.delete_ephemeral.row_error", entity="user")
 
         await session.commit()
     logger.info(

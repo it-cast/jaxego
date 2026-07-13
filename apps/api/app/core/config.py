@@ -113,6 +113,12 @@ class Settings(BaseSettings):
     # one of the secrets below is `Field(default=None)` — a real value committed to the
     # repo is a Gate 8 FAIL-BLOCK and MUST be ROTATED, not just removed from history.
     safe2pay_token: str | None = Field(default=None)
+    # Token da conta matriz/Marketplace — usado SÓ para criar subconta de
+    # entregador (/v2/marketplace/add). Uma subconta filha (ex.: ITCAST, alvo
+    # de safe2pay_token) não tem permissão de Marketplace para criar outras
+    # subcontas (erro 300 da Safe2Pay). Sem secret key própria: autenticação
+    # de chamada de saída é só o token (x-api-key); SecretKey é só p/ webhook.
+    safe2pay_marketplace_token: str | None = Field(default=None)
     safe2pay_sandbox: bool = Field(default=True)
     # 64 hex chars (32 bytes) for AES-256-GCM of the card token at rest (TH-B).
     safe2pay_token_encrypt_key: str | None = Field(default=None)

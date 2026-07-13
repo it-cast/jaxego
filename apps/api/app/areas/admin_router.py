@@ -18,13 +18,13 @@ from app.areas import service
 from app.areas.schemas import AreaRead, AreaUpdate, ZonaCreate, ZonaRead, ZonaUpdate
 from app.audit.service import write_audit
 from app.auth.dependencies import AreaScopeDep, require_role
-from app.auth.models import User
+from app.auth.principals import Actor
 from app.db.session import get_session
 
 router = APIRouter(prefix="/admin/area", tags=["admin-area"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
-AreaAdminDep = Annotated[User, Depends(require_role("admin_area"))]
+AreaAdminDep = Annotated[Actor, Depends(require_role("admin_area"))]
 
 
 @router.get("", response_model=AreaRead)

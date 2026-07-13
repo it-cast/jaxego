@@ -24,7 +24,7 @@ from app.areas.schemas import (
 )
 from app.audit.service import write_audit
 from app.auth.dependencies import PlatformAdmin
-from app.auth.models import User
+from app.auth.principals import Actor
 from app.db.session import get_session
 
 router = APIRouter(prefix="/areas", tags=["areas"])
@@ -45,7 +45,7 @@ def _client_ip(request: Request) -> str | None:
 async def _audit_bypass(
     session: AsyncSession,
     *,
-    actor: User,
+    actor: Actor,
     action: str,
     area_id: int | None,
     request: Request,
@@ -87,14 +87,15 @@ async def assign_area_admin(
         action="area.admin_assigned",
         area_id=area_id,
         request=request,
-        after={"user_id": membership.user_id, "role": membership.role},
+        after={"user_id": membership.id, "role": membership.role},
     )
     await session.commit()
     return AreaAdminRead(
         id=membership.id,
         area_id=membership.area_id,
-        user_id=membership.user_id,
+        user_id=membership.id,
         user_email=email,
+        user_name=membership.name,
         role=membership.role,
     )
 

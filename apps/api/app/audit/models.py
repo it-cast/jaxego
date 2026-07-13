@@ -27,6 +27,9 @@ class AuditLog(Base):
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
     actor_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)
+    # Tipo do ator (courier|merchant|team|area_admin|platform_admin) — o id acima
+    # é relativo à tabela do tipo. NULL em linhas antigas (era users.id).
+    actor_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     action: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     # Nullable: global table, but attribute to an area when one applies.
     area_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, index=True)

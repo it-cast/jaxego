@@ -27,7 +27,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas.models import Area
 from app.audit.service import write_audit
-from app.auth.models import User
 from app.core.exceptions import AppError
 from app.core.logging import mask_email, mask_phone
 from app.core.security import hash_password, verify_dummy
@@ -35,7 +34,7 @@ from app.couriers import documents as docs_mod
 from app.couriers import kyc
 from app.couriers.models import Courier, CourierDocument
 from app.couriers.schemas import CourierSignupBody, validate_cpf
-from app.couriers.state_machine import assert_courier_transition, assert_document_transition
+from app.couriers.state_machine import assert_document_transition
 from app.integrations.base import PresignResult, ReceitaPort, StoragePort
 
 logger = structlog.get_logger("couriers")
@@ -138,13 +137,11 @@ def _area_requires_antecedentes(area: Area) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Signup (step 1) — E2 anti-enumeration per area.
+# Signup (step 1) — E2 anti-enumeration (email/cpf únicos globais na tabela).
 # ---------------------------------------------------------------------------
-async def _assert_unique_in_area(
-    session: AsyncSession, *, area_id: int, user_id: int, password: str
-) -> None:
-    """Raise CourierExistsError if this user already onboarded in this area."""
-    stmt = select(Courier.id).where(Courier.area_id == area_id, Courier.user_id == user_id)
+async def _assert_unique(session: AsyncSession, *, email: str, cpf: str, password: str) -> None:
+    """Raise CourierExistsError se já existe conta com este email ou CPF."""
+    stmt = select(Courier.id).where((Courier.email == email) | (Courier.cpf == cpf))
     if (await session.execute(stmt)).first() is not None:
         verify_dummy(password)
         logger.info("courier_collision")
@@ -157,36 +154,23 @@ async def signup(
     body: CourierSignupBody,
     ip: str | None = None,
 ) -> SignupResult:
-    """Run the F-02 step-1 signup (creates User + Courier, pending_kyc)."""
+    """Run the F-02 step-1 signup (cria a conta do Courier, pending_kyc).
+
+    A conta vive na própria tabela couriers (email/senha) — sem tabela users.
+    """
     if not validate_cpf(body.cpf):
         raise InvalidCpfError()
 
     area = await _get_area(session, body.area_id)
     level = _area_kyc_level(area)
 
-    existing = (
-        await session.execute(select(User).where(User.email == body.email))
-    ).scalar_one_or_none()
-    if existing is not None:
-        user = existing
-        if not user.cpf:
-            user.cpf = body.cpf
-    else:
-        user = User(
-            email=body.email,
-            name=body.full_name,
-            cpf=body.cpf,
-            password_hash=hash_password(body.password),
-            platform_role="user",
-        )
-        session.add(user)
-        await session.flush()
-
-    await _assert_unique_in_area(session, area_id=area.id, user_id=user.id, password=body.password)
+    cpf_digits = body.cpf
+    await _assert_unique(session, email=body.email, cpf=cpf_digits, password=body.password)
 
     courier = Courier(
         area_id=area.id,
-        user_id=user.id,
+        cpf=cpf_digits,
+        password_hash=hash_password(body.password),
         full_name=body.full_name,
         phone_e164=body.phone_e164,
         email=body.email,
@@ -218,7 +202,8 @@ async def signup(
 
     await write_audit(
         session,
-        actor_id=user.id,
+        actor_id=courier.id,
+        actor_type="courier",
         action="courier.submitted",
         area_id=area.id,
         after={
@@ -300,7 +285,8 @@ async def presign_document(
     )
     await write_audit(
         session,
-        actor_id=courier.user_id,
+        actor_id=courier.id,
+        actor_type="courier",
         action="courier.document_presigned",
         area_id=courier.area_id,
         after={"courier_id": courier.id, "document_id": doc.id, "kind": kind},
@@ -357,7 +343,8 @@ async def validate_mei(
 
     await write_audit(
         session,
-        actor_id=courier.user_id,
+        actor_id=courier.id,
+        actor_type="courier",
         action="courier.mei_pending" if courier.mei_pending else "courier.mei_active",
         area_id=courier.area_id,
         after={"courier_id": courier.id, "mei_pending": courier.mei_pending},
@@ -388,90 +375,9 @@ async def _approved_kinds(session: AsyncSession, courier_id: int) -> set[str]:
     return {row[0] for row in (await session.execute(stmt)).all()}
 
 
-async def review_document(
-    session: AsyncSession,
-    *,
-    courier_id: int,
-    document_id: int,
-    area_id: int | None,
-    actor_id: int,
-    action: Literal["approve", "reject"],
-    reason: str | None = None,
-    detail: str | None = None,
-    cross_area_bypass: bool = False,
-) -> tuple[CourierDocument, CourierStatus]:
-    """Approve/reject a document item-a-item; activate the courier when complete.
-
-    Each item is independent (E4): rejecting one never touches another's status.
-    A reject requires a reason (D-04). When every required document for the
-    courier's level is approved, the courier transitions to `active` (RN-002).
-    """
-    doc = await get_document_for_scope(
-        session, document_id=document_id, courier_id=courier_id, area_id=area_id
-    )
-    courier = await get_courier(session, courier_id)
-
-    if action == "reject":
-        if not reason:
-            raise RejectReasonRequiredError()
-        assert_document_transition(doc.status, "rejected")
-        doc.status = "rejected"
-        doc.reject_reason = reason
-        doc.reject_detail = detail
-        await write_audit(
-            session,
-            actor_id=actor_id,
-            action="kyc.item_rejected",
-            area_id=courier.area_id,
-            after={"document_id": doc.id, "kind": doc.kind, "reason": reason},
-            cross_area_bypass=cross_area_bypass,
-        )
-    else:
-        assert_document_transition(doc.status, "approved")
-        doc.status = "approved"
-        doc.reject_reason = None
-        doc.reject_detail = None
-        await write_audit(
-            session,
-            actor_id=actor_id,
-            action="kyc.item_approved",
-            area_id=courier.area_id,
-            after={"document_id": doc.id, "kind": doc.kind},
-            cross_area_bypass=cross_area_bypass,
-        )
-
-    # Activate the courier iff every required document for the level is approved.
-    await session.flush()
-    approved = await _approved_kinds(session, courier_id)
-    area = await _get_area(session, courier.area_id)
-    if (
-        courier.status == "pending_kyc"
-        and action == "approve"
-        and kyc.all_required_approved(
-            courier.kyc_level,
-            approved,
-            antecedentes_required=_area_requires_antecedentes(area),
-        )
-    ):
-        assert_courier_transition(courier.status, "active")
-        courier.status = "active"
-        await write_audit(
-            session,
-            actor_id=actor_id,
-            action="courier.activated",
-            area_id=courier.area_id,
-            after={"courier_id": courier.id, "status": "active"},
-            cross_area_bypass=cross_area_bypass,
-        )
-        # Criar subconta Safe2Pay para receber repasse das corridas.
-        from app.couriers.subaccount import register_subaccount_on_kyc_active
-        from app.payments.factory import get_payment_adapter
-
-        await register_subaccount_on_kyc_active(
-            session, courier=courier, payment=get_payment_adapter()
-        )
-
-    return doc, cast(CourierStatus, courier.status)
+# NOTA: a aprovação/reprovação de documentos (KYC) mudou de dono — é o admin da
+# EQUIPE quem revisa, em app/teams/team_admin_router.py (approve/reject). Ao
+# ativar o entregador lá, a subconta Safe2Pay é criada (RN-010).
 
 
 async def list_area_couriers(
@@ -488,7 +394,7 @@ async def list_area_couriers(
     cross-area bypass (audited at the caller). Optional `status` filter powers the
     KYC queue (status='pending_kyc'). Single query + COUNT, no N+1.
     """
-    base = select(Courier, User.cpf).join(User, Courier.user_id == User.id).where(Courier.deleted_at.is_(None))
+    base = select(Courier, Courier.cpf).where(Courier.deleted_at.is_(None))
     count_stmt = select(func.count(Courier.id)).where(Courier.deleted_at.is_(None))
     if area_id is not None:
         base = base.where(Courier.area_id == area_id)

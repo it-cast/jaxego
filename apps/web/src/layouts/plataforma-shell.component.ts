@@ -201,6 +201,6 @@ export class PlataformaShellComponent {
 
   protected async logout(): Promise<void> {
     await this.auth.logout();
-    void this.router.navigate(['/entrar']);
+    void this.router.navigate(['/plataforma/entrar']);
   }
 }

@@ -89,11 +89,14 @@ export class AppLoginPage implements AfterViewInit {
 
     this.loading.set(true);
     const { email, password, totp } = this.form.getRawValue();
-    const result = await this.auth.login({
-      email,
-      password,
-      totp: totp ? totp : undefined,
-    });
+    const result = await this.auth.login(
+      {
+        email,
+        password,
+        totp: totp ? totp : undefined,
+      },
+      'entregador'
+    );
     this.loading.set(false);
 
     if (result.ok) {

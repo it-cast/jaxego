@@ -48,13 +48,10 @@ async def get_my_score(
     user: CurrentUser,
     session: SessionDep,
 ) -> dict:
+    if user.type != "courier" or user.id != courier_id:
+        raise NotFoundError("Entregador nao encontrado.")
     courier = (
-        await session.execute(
-            select(Courier).where(
-                Courier.id == courier_id,
-                Courier.user_id == user.id,
-            )
-        )
+        await session.execute(select(Courier).where(Courier.id == courier_id))
     ).scalar_one_or_none()
     if courier is None:
         raise NotFoundError("Entregador nao encontrado.")
@@ -69,10 +66,10 @@ async def list_my_ratings(
     limit: int = 10,
     offset: int = 0,
 ) -> dict:
+    if user.type != "courier" or user.id != courier_id:
+        raise NotFoundError("Entregador nao encontrado.")
     courier = (
-        await session.execute(
-            select(Courier).where(Courier.id == courier_id, Courier.user_id == user.id)
-        )
+        await session.execute(select(Courier).where(Courier.id == courier_id))
     ).scalar_one_or_none()
     if courier is None:
         raise NotFoundError("Entregador nao encontrado.")

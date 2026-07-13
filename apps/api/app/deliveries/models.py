@@ -178,6 +178,8 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     # Cancellation bookkeeping (who/why) — reason/actor set on cancel.
     cancel_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     cancel_actor_user_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True)
+    # Tipo do ator do cancelamento (courier|merchant|...) — id acima é da tabela do tipo.
+    cancel_actor_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # RN-004 cancellation cost in cents, computed server-side by state at cancel
     # time and RECORDED here (the effective charge is the Phase 11 invoice). Phase 9.
     cancel_cost_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -210,6 +212,10 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     pix_qr_code: Mapped[str | None] = mapped_column(Text, nullable=True)
     pix_qr_code_base64: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Repasse ao entregador (courier.s2p_recipient_id) disparado na FINALIZADA —
+    # ver app/deliveries/payout.py. Idempotência: setado uma vez, nunca repete.
+    courier_payout_transaction_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
 
 class DeliveryStateTransition(Base, AreaScopedMixin):
     """Append-only history of state transitions (D-04 / RN-012 / TH-02).
@@ -235,6 +241,8 @@ class DeliveryStateTransition(Base, AreaScopedMixin):
     from_state: Mapped[str | None] = mapped_column(String(24), nullable=True)
     to_state: Mapped[str] = mapped_column(String(24), nullable=False)
     actor_user_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True)
+    # Tipo do ator (courier|merchant|...) — NULL em linhas antigas (era users.id).
+    actor_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     gps_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     gps_lng: Mapped[float | None] = mapped_column(Float, nullable=True)

@@ -417,6 +417,7 @@ export class CadastroEntregadorPage implements OnInit {
     // MEI (opcional)
     const cnpj = f.mei_cnpj.replace(/\D/g, '');
     if (cnpj.length === 14) {
+      this.submitProgress.set('Salvando dados do MEI…');
       await this.couriers.submitMei(courierId, cnpj);
     }
 
@@ -428,9 +429,10 @@ export class CadastroEntregadorPage implements OnInit {
       await this.uploadDoc(courierId, doc);
     }
 
-    this.submitting.set(false);
+    this.submitProgress.set('Finalizando…');
     this.clearDraft();
     void this.router.navigate(['/entregador/cadastro/em-analise']);
+    this.submitting.set(false);
   }
 
   private async uploadDoc(courierId: number, doc: DocItem): Promise<void> {

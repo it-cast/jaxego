@@ -108,3 +108,6 @@ class AreaAdminUpdateBody(BaseModel):
 
     role: Literal["owner", "manager", "viewer"] | None = None
     area_id: int | None = None
+    name: str | None = Field(default=None, max_length=160)
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=10, max_length=128)

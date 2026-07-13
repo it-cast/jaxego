@@ -33,7 +33,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return from(refreshing).pipe(
           switchMap((ok) => {
             if (!ok) {
-              void router.navigate(['/entrar']);
+              // Login da superfície onde o usuário estava (equipe/admin/plataforma/loja).
+              void router.navigate([auth.loginPathForUrl(router.url)]);
               return throwError(() => err);
             }
             return next(attachToken(req, auth.accessToken));

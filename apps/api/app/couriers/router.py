@@ -21,7 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import AreaScopeDep, CurrentUser, require_role
-from app.auth.models import User
+from app.auth.principals import Actor
 from app.core.exceptions import NotFoundError
 from app.core.logging import mask_email, mask_phone
 from app.core.ratelimit import signup_rate_limit
@@ -47,8 +47,6 @@ from app.couriers.schemas import (
     DocumentPresignBody,
     DocumentPresignResponse,
     DocumentReadResponse,
-    DocumentReviewBody,
-    DocumentReviewResponse,
     MeiBody,
     MeiResponse,
     PricingBody,
@@ -187,9 +185,12 @@ async def submit_mei(
 # (no existence leak — TH-03/item 2 of the Security Notes).
 # ---------------------------------------------------------------------------
 async def _own_courier(
-    session: AsyncSession, *, courier_id: int, user: User, scope: int | None
+    session: AsyncSession, *, courier_id: int, user: Actor, scope: int | None
 ) -> Courier:
-    stmt = select(Courier).where(Courier.id == courier_id, Courier.user_id == user.id)
+    # Pós-users: o ator courier É a linha de couriers — self-only = mesmo id.
+    if user.type != "courier" or user.id != courier_id:
+        raise NotFoundError("Entregador não encontrado.")
+    stmt = select(Courier).where(Courier.id == courier_id)
     if scope is not None:
         stmt = stmt.where(Courier.area_id == scope)
     courier = (await session.execute(stmt)).scalar_one_or_none()
@@ -303,7 +304,13 @@ async def list_courier_zonas(
             "zona_id": z.id,
             "zona_nome": z.name,
             "boundary": z.boundary,
-            "ativo": courier_zonas[z.id].ativo if z.id in courier_zonas else True,
+            # Sem override do entregador: só está ativo se a equipe configurou
+            # preço mínimo para a zona (mesma regra do despacho — cascade.py).
+            "ativo": (
+                courier_zonas[z.id].ativo
+                if z.id in courier_zonas
+                else z.id in team_prices
+            ),
             "team_preco_cents": team_prices.get(z.id),
             "courier_preco_cents": courier_zonas[z.id].preco_cents if z.id in courier_zonas else None,
         }
@@ -583,7 +590,7 @@ async def mark_collected(
     delivery, _ = await delivery_service.get_courier_delivery(
         session, courier_id=courier.id, delivery_id=delivery_id
     )
-    await transition(session, delivery=delivery, to_state="COLETADA", actor_id=user.id, ip=None)
+    await transition(session, delivery=delivery, to_state="COLETADA", actor_id=user.id, actor_type="courier", ip=None)
     await session.commit()
     return {"ok": True, "state": "COLETADA"}
 
@@ -605,34 +612,14 @@ async def finalize_no_proof(
     if delivery.proof_method != "none":
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Esta entrega exige comprovação.")
-    await transition(session, delivery=delivery, to_state="ENTREGUE", actor_id=user.id, ip=None)
-    await transition(session, delivery=delivery, to_state="FINALIZADA", actor_id=user.id, ip=None)
+    await transition(session, delivery=delivery, to_state="ENTREGUE", actor_id=user.id, actor_type="courier", ip=None)
+    await transition(session, delivery=delivery, to_state="FINALIZADA", actor_id=user.id, actor_type="courier", ip=None)
     await session.commit()
+
+    from app.workers.payout import enqueue_payout
+    await enqueue_payout(delivery.id)
+
     return {"ok": True, "state": "FINALIZADA"}
-
-
-@router.patch("/{courier_id}/deliveries/{delivery_id}/collection-method")
-async def set_collection_method(
-    courier_id: int,
-    delivery_id: int,
-    body: dict,
-    user: CurrentUser,
-    scope: AreaScopeDep,
-    session: SessionDep,
-) -> dict:
-    """Set how the courier will collect payment (in_hand or pix_app)."""
-    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
-    delivery, _ = await delivery_service.get_courier_delivery(
-        session, courier_id=courier.id, delivery_id=delivery_id
-    )
-    method = body.get("collection_method", "")
-    if method not in ("in_hand", "pix_app"):
-        from app.core.exceptions import ValidationAppError
-        raise ValidationAppError("Metodo invalido. Use 'in_hand' ou 'pix_app'.")
-    delivery.courier_collection_method = method
-    await session.flush()
-    await session.commit()
-    return {"collection_method": delivery.courier_collection_method}
 
 
 @router.get("/{courier_id}/profile", response_model=CourierProfileOut)
@@ -653,7 +640,7 @@ async def get_courier_profile(
     return CourierProfileOut(
         id=courier.id,
         full_name=courier.full_name,
-        cpf_masked=mask_cpf_display(user.cpf or ''),
+        cpf_masked=mask_cpf_display(courier.cpf or ''),
         phone_masked=mask_phone(courier.phone_e164),
         email_masked=mask_email(courier.email),
         vehicle_type=courier.vehicle_type,
@@ -690,11 +677,11 @@ async def update_courier_profile(
     if "password" in body and body["password"]:
         from app.core.security import hash_password, verify_password
         current = body.get("current_password", "")
-        ok, _ = verify_password(user.password_hash, current)
+        ok, _ = verify_password(courier.password_hash or "", current)
         if not ok:
             from fastapi import HTTPException
             raise HTTPException(status_code=400, detail="Senha atual incorreta")
-        user.password_hash = hash_password(body["password"])
+        courier.password_hash = hash_password(body["password"])
     await session.flush()
     await session.commit()
     return {"ok": True}
@@ -748,14 +735,14 @@ async def get_area_courier(
     """Courier detail + documents for the KYC review page. Area-scoped (TH-09)."""
     from app.couriers.models import Courier, CourierDocument
 
-    query = select(Courier, User.cpf).join(User, Courier.user_id == User.id).where(Courier.id == courier_id)
+    query = select(Courier).where(Courier.id == courier_id)
     if scope is not None:
         query = query.where(Courier.area_id == scope)
-    row = (await session.execute(query)).first()
-    if row is None:
+    courier = (await session.execute(query)).scalar_one_or_none()
+    if courier is None:
         from app.core.exceptions import NotFoundError
         raise NotFoundError("Entregador não encontrado.")
-    courier, user_cpf = row[0], row[1]
+    user_cpf = courier.cpf
     docs = (
         await session.execute(
             select(CourierDocument)
@@ -810,33 +797,6 @@ async def view_url(
     return ViewUrlResponse(url=url, expires_in=expires_in)
 
 
-@admin_router.patch(
-    "/{courier_id}/documents/{document_id}",
-    response_model=DocumentReviewResponse,
-)
-async def review_document(
-    courier_id: int,
-    document_id: int,
-    body: DocumentReviewBody,
-    session: SessionDep,
-    admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
-    scope: AreaScopeDep,
-) -> DocumentReviewResponse:
-    """Approve/reject a document item-a-item (D-04). Reject requires a reason."""
-    doc, courier_status = await service.review_document(
-        session,
-        courier_id=courier_id,
-        document_id=document_id,
-        area_id=scope,
-        actor_id=admin.id,
-        action=body.action,
-        reason=body.reason,
-        detail=body.detail,
-        cross_area_bypass=scope is None,
-    )
-    await session.commit()
-    return DocumentReviewResponse(
-        document_id=doc.id,
-        status=doc.status,  # type: ignore[arg-type]
-        courier_status=courier_status,
-    )
+# A aprovação/reprovação de documentos (KYC) é feita pelo admin da EQUIPE em
+# /v1/team-admin/couriers/{id}/documents/{doc_id}/approve|reject — não há mais
+# review pelo admin da cidade.

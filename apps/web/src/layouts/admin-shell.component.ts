@@ -197,6 +197,6 @@ export class AdminShellComponent {
 
   protected async logout(): Promise<void> {
     await this.auth.logout();
-    void this.router.navigate(['/entrar']);
+    void this.router.navigate(['/admin/entrar']);
   }
 }

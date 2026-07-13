@@ -8,13 +8,20 @@ from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
+from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, CredentialsMixin, TimestampMixin
 
 
-class Team(Base, AreaScopedMixin, TimestampMixin):
-    """A team within an area — groups couriers for management."""
+class Team(Base, AreaScopedMixin, CredentialsMixin, TimestampMixin):
+    """A team within an area — groups couriers for management.
+
+    Conta própria (CredentialsMixin): o responsável loga com teams.email + senha.
+    """
 
     __tablename__ = "teams"
+    __table_args__ = (
+        UniqueConstraint("email", name="uq_teams_email"),
+        Base.__table_args__,
+    )
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
@@ -22,11 +29,8 @@ class Team(Base, AreaScopedMixin, TimestampMixin):
     razao_social: Mapped[str | None] = mapped_column(String(200), nullable=True)
     responsavel: Mapped[str] = mapped_column(String(120), nullable=False, default="")
     responsavel_cpf: Mapped[str] = mapped_column(String(14), nullable=False, default="")
-    responsavel_user_id: Mapped[int | None] = mapped_column(
-        BIG_ID,
-        ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True,
-    )
+    # Login do responsável (nullable em times legados sem acesso).
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
 
 

@@ -18,6 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import service
 from app.auth.dependencies import CurrentUser
+from app.auth.models import (
+    ACTOR_AREA_ADMIN,
+    ACTOR_COURIER,
+    ACTOR_MERCHANT,
+    ACTOR_PLATFORM_ADMIN,
+    ACTOR_TEAM,
+)
 from app.auth.schemas import (
     LoginBody,
     LogoutBody,
@@ -60,19 +67,45 @@ def _clear_refresh_cookie(response: Response) -> None:
     response.delete_cookie(key=REFRESH_COOKIE, path="/v1/auth")
 
 
-@router.post("/login", response_model=TokenPair)
-async def login(
-    body: LoginBody,
-    response: Response,
-    session: SessionDep,
+async def _login(
+    body: LoginBody, response: Response, session: AsyncSession, *, actor_type: str
 ) -> TokenPair:
-    """Authenticate and issue an access JWT + opaque refresh token."""
     pair = await service.authenticate(
-        session, email=body.email, password=body.password, totp=body.totp
+        session, actor_type=actor_type, email=body.email, password=body.password, totp=body.totp
     )
     await session.commit()
     _set_refresh_cookie(response, pair.refresh_token)
     return pair
+
+
+@router.post("/entregador/login", response_model=TokenPair)
+async def login_entregador(body: LoginBody, response: Response, session: SessionDep) -> TokenPair:
+    """Login do entregador — autentica na tabela couriers."""
+    return await _login(body, response, session, actor_type=ACTOR_COURIER)
+
+
+@router.post("/loja/login", response_model=TokenPair)
+async def login_loja(body: LoginBody, response: Response, session: SessionDep) -> TokenPair:
+    """Login da loja — autentica na tabela merchants."""
+    return await _login(body, response, session, actor_type=ACTOR_MERCHANT)
+
+
+@router.post("/equipe/login", response_model=TokenPair)
+async def login_equipe(body: LoginBody, response: Response, session: SessionDep) -> TokenPair:
+    """Login da equipe — autentica na tabela teams."""
+    return await _login(body, response, session, actor_type=ACTOR_TEAM)
+
+
+@router.post("/admin/login", response_model=TokenPair)
+async def login_admin_area(body: LoginBody, response: Response, session: SessionDep) -> TokenPair:
+    """Login do admin da cidade — autentica na tabela area_admins."""
+    return await _login(body, response, session, actor_type=ACTOR_AREA_ADMIN)
+
+
+@router.post("/plataforma/login", response_model=TokenPair)
+async def login_plataforma(body: LoginBody, response: Response, session: SessionDep) -> TokenPair:
+    """Login do admin do sistema — autentica na tabela platform_admins (TOTP)."""
+    return await _login(body, response, session, actor_type=ACTOR_PLATFORM_ADMIN)
 
 
 @router.post("/refresh", response_model=TokenPair)
@@ -110,31 +143,34 @@ async def logout(
 
 
 @router.get("/me", response_model=MeResponse)
-async def me(user: CurrentUser, session: SessionDep) -> MeResponse:
+async def me(user: CurrentUser) -> MeResponse:
     """Resolved identity + surface for the authenticated user (R0.4).
 
     The SPA calls this right after login to route the user to the correct shell
-    (entregador / loja / admin / plataforma) and on app boot to restore context.
+    (entregador / loja / equipe / admin / plataforma) and on app boot to restore
+    context. O tipo já vem do token — cada conta cai sempre na sua superfície.
     """
-    return await service.resolve_surface(session, user)
+    return service.resolve_surface_for(user)
 
 
 @router.post("/totp/enroll", response_model=TotpEnrollResponse)
 async def totp_enroll(user: CurrentUser, session: SessionDep) -> TotpEnrollResponse:
     """Generate a TOTP secret + provisioning URI (shown ONCE; never re-fetched).
 
-    Allowed for a not-yet-enrolled user (the platform-admin enrolment gate in
-    get_current_user explicitly permits this path). Enrolment is confirmed by
-    /totp/verify with a code from the authenticator app.
+    Só platform_admin tem TOTP (D-03). Enrolment is confirmed by /totp/verify
+    with a code from the authenticator app.
     """
-    if user.totp_enrolled:
-        from app.core.exceptions import ValidationAppError
+    from app.core.exceptions import ValidationAppError
 
+    if user.type != ACTOR_PLATFORM_ADMIN:
+        raise ValidationAppError("TOTP disponível apenas para admin da plataforma.")
+    admin = user.row
+    if admin.totp_enrolled:
         raise ValidationAppError("TOTP já configurado nesta conta.")
     secret = generate_totp_secret()
-    user.totp_secret = secret
+    admin.totp_secret = secret
     await session.commit()
-    uri = totp_provisioning_uri(secret, account_name=user.email)
+    uri = totp_provisioning_uri(secret, account_name=admin.email)
     return TotpEnrollResponse(provisioning_uri=uri, secret=secret)
 
 
@@ -146,11 +182,16 @@ async def totp_verify(
     session: SessionDep,
 ) -> Response:
     """Confirm TOTP enrolment with a code; flips totp_enrolled/required on."""
-    if user.totp_secret is None or not verify_totp(user.totp_secret, body.code):
+    from app.core.exceptions import ValidationAppError
+
+    if user.type != ACTOR_PLATFORM_ADMIN:
+        raise ValidationAppError("TOTP disponível apenas para admin da plataforma.")
+    admin = user.row
+    if admin.totp_secret is None or not verify_totp(admin.totp_secret, body.code):
         raise service.TotpRequiredError("Código TOTP inválido.")
-    user.totp_enrolled = True
-    user.totp_required = True
-    user.totp_last_window = current_totp_window(user.totp_secret)
+    admin.totp_enrolled = True
+    admin.totp_required = True
+    admin.totp_last_window = current_totp_window(admin.totp_secret)
     await session.commit()
     response.status_code = 204
     return response

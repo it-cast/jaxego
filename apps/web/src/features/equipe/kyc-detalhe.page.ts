@@ -50,6 +50,13 @@ function timeAgo(iso: string | null): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, KycReviewRowComponent],
   template: `
+    @if (registeringOnPlatform()) {
+      <div class="jx-kyc-det__overlay" role="status" aria-live="polite" aria-busy="true">
+        <div class="jx-kyc-det__overlay-spinner"></div>
+        <p class="jx-kyc-det__overlay-text">Cadastrando entregador na plataforma…</p>
+      </div>
+    }
+
     <section class="jx-kyc-det">
       <header class="jx-kyc-det__head">
         <a class="jx-kyc-det__back" routerLink="/equipe/entregadores">← Entregadores</a>
@@ -123,7 +130,7 @@ function timeAgo(iso: string | null): string {
       </div>
     }
   `,
-  styleUrl: '../admin/kyc/kyc-detalhe.page.scss',
+  styleUrl: './kyc-detalhe.page.scss',
 })
 export class EquipeKycDetalhePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -134,6 +141,9 @@ export class EquipeKycDetalhePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly lightboxUrl = signal<string | null>(null);
   protected readonly lightboxTitle = signal('');
+  /** true só quando esta aprovação é a última pendente — dispara o cadastro do
+   * entregador na Safe2Pay no backend (pode levar alguns segundos). */
+  protected readonly registeringOnPlatform = signal(false);
 
   protected readonly filterKind = signal<string>('all');
   protected readonly filterStatus = signal<string>('pending');
@@ -192,11 +202,17 @@ export class EquipeKycDetalhePage implements OnInit {
 
   protected async onDecide(item: ReviewItem, decision: ReviewDecision): Promise<void> {
     const next: ReviewStatus = decision.action === 'approve' ? 'approved' : 'rejected';
+    // Se todos os OUTROS documentos já estão aprovados, esta aprovação é a que
+    // ativa o entregador e dispara a criação da subconta na Safe2Pay.
+    const isFinalApproval = decision.action === 'approve' && this.willActivateCourier(item);
+
     this.items.update(list => list.map(i => i.documentId === item.documentId ? { ...i, status: next } : i));
 
-    const ok = decision.action === 'approve'
-      ? await this.svc.approve(this.courierId, item.documentId)
-      : await this.svc.reject(this.courierId, item.documentId, decision.reason ?? 'outro');
+    if (isFinalApproval) this.registeringOnPlatform.set(true);
+    const ok = await (decision.action === 'approve'
+      ? this.svc.approve(this.courierId, item.documentId)
+      : this.svc.reject(this.courierId, item.documentId, decision.reason ?? 'outro'));
+    if (isFinalApproval) this.registeringOnPlatform.set(false);
 
     if (!ok) {
       this.items.update(list => list.map(i => i.documentId === item.documentId ? { ...i, status: item.status } : i));
@@ -204,6 +220,11 @@ export class EquipeKycDetalhePage implements OnInit {
       const c = await this.svc.getCourier(this.courierId);
       if (c) this.courier.set(c);
     }
+  }
+
+  /** True se, ao aprovar `item`, todos os demais documentos já estarão aprovados. */
+  private willActivateCourier(item: ReviewItem): boolean {
+    return this.items().every(i => i.documentId === item.documentId || i.status === 'approved');
   }
 
   protected kindLabel(kind: string): string { return KIND_LABELS[kind] ?? kind; }

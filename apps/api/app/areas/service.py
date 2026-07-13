@@ -23,7 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.areas.config_schema import AreaConfig, diff_sensitive
 from app.areas.models import Area, AreaAdmin, Zona
 from app.areas.schemas import AreaCreate, AreaUpdate, ZonaCreate, ZonaUpdate
-from app.auth.models import User
 from app.core.exceptions import AppError, NotFoundError, ValidationAppError
 
 logger = structlog.get_logger("areas")
@@ -49,32 +48,6 @@ class AreaHasDependentsError(AppError):
 
     def __init__(self) -> None:
         super().__init__("Área possui registros vinculados; arquive em vez de excluir.")
-
-
-def resolve_role(user: User, *, area_id: int | None) -> str:
-    """Resolve the user's role in the given area context (D-09).
-
-    Platform admins are 'admin_plataforma' everywhere. Otherwise the role is
-    derived from the user's `area_admins` membership for that area, if any.
-    NOTE: membership lookup uses the eagerly-loaded `_memberships` cache set by
-    the dependency layer to avoid a query here; falls back to 'user'.
-    """
-    if user.platform_role == PLATFORM_ADMIN_ROLE:
-        return PLATFORM_ADMIN_ROLE
-    memberships: list[AreaAdmin] = getattr(user, "_memberships", []) or []
-    if area_id is not None:
-        for m in memberships:
-            if m.area_id == area_id:
-                return f"admin_area:{m.role}"
-    return "user"
-
-
-async def load_memberships(session: AsyncSession, user: User) -> list[AreaAdmin]:
-    """Load and cache the user's area memberships (single query, no N+1)."""
-    stmt = select(AreaAdmin).where(AreaAdmin.user_id == user.id)
-    memberships = list((await session.execute(stmt)).scalars().all())
-    user._memberships = memberships  # type: ignore[attr-defined]
-    return memberships
 
 
 async def create_area(session: AsyncSession, body: AreaCreate) -> Area:
@@ -149,42 +122,32 @@ async def archive_area(session: AsyncSession, area_id: int) -> Area:
 
 
 class AdminUserNotFoundError(NotFoundError):
-    """No user with the given e-mail to assign as area admin (F3.3)."""
+    """No area admin account with the given e-mail (F3.3)."""
 
     def __init__(self) -> None:
-        super().__init__("Nenhum usuário com esse e-mail. Peça para a pessoa criar a conta antes.")
+        super().__init__("Nenhum admin com esse e-mail. Crie a conta de admin antes.")
 
 
 async def assign_area_admin(
     session: AsyncSession, *, area_id: int, user_email: str, role: str
 ) -> tuple[AreaAdmin, str]:
-    """Link a user (by e-mail) to an area as admin, or update the role if it
-    already exists. The area must exist (404 otherwise). Returns (membership, email)."""
+    """Move/atualiza uma conta de admin (por e-mail) para a área com o role dado."""
     await get_area(session, area_id)  # 404 if missing/archived
-    user = (
-        await session.execute(select(User).where(User.email == user_email))
+    admin = (
+        await session.execute(select(AreaAdmin).where(AreaAdmin.email == user_email))
     ).scalar_one_or_none()
-    if user is None:
+    if admin is None:
         raise AdminUserNotFoundError()
-    membership = (
-        await session.execute(
-            select(AreaAdmin).where(AreaAdmin.area_id == area_id, AreaAdmin.user_id == user.id)
-        )
-    ).scalar_one_or_none()
-    if membership is None:
-        membership = AreaAdmin(area_id=area_id, user_id=user.id, role=role)
-        session.add(membership)
-        await session.flush()
-    else:
-        membership.role = role
-    return membership, user.email
+    admin.area_id = area_id
+    admin.role = role
+    await session.flush()
+    return admin, admin.email or ""
 
 
 async def list_area_admins(session: AsyncSession) -> list[dict]:
-    """All area admin memberships with user email and area name (single query)."""
+    """All area admin accounts with area name (single query)."""
     stmt = (
-        select(AreaAdmin, User.email, User.name, Area.name.label("area_name"))
-        .join(User, AreaAdmin.user_id == User.id)
+        select(AreaAdmin, Area.name.label("area_name"))
         .join(Area, AreaAdmin.area_id == Area.id)
         .order_by(AreaAdmin.area_id, AreaAdmin.id)
     )
@@ -194,12 +157,12 @@ async def list_area_admins(session: AsyncSession) -> list[dict]:
             "id": m.id,
             "area_id": m.area_id,
             "area_name": area_name,
-            "user_id": m.user_id,
-            "user_email": email,
-            "user_name": name,
+            "user_id": m.id,
+            "user_email": m.email,
+            "user_name": m.name,
             "role": m.role,
         }
-        for m, email, name, area_name in rows
+        for m, area_name in rows
     ]
 
 
@@ -212,38 +175,32 @@ async def create_area_admin_with_user(
     password_hash: str,
     role: str,
 ) -> AreaAdmin:
-    """Create a user + area admin membership in one step."""
+    """Cria a conta do admin da cidade (credenciais na própria tabela)."""
     from app.core.exceptions import ValidationAppError
 
     await get_area(session, area_id)
-    existing_user = (
-        await session.execute(select(User).where(User.email == email))
+    existing = (
+        await session.execute(select(AreaAdmin).where(AreaAdmin.email == email))
     ).scalar_one_or_none()
-    if existing_user is not None:
-        existing_membership = (
-            await session.execute(
-                select(AreaAdmin).where(
-                    AreaAdmin.area_id == area_id, AreaAdmin.user_id == existing_user.id
-                )
-            )
-        ).scalar_one_or_none()
-        if existing_membership is not None:
-            raise ValidationAppError(f"'{email}' ja e admin desta area.")
-        membership = AreaAdmin(area_id=area_id, user_id=existing_user.id, role=role)
-        session.add(membership)
-        await session.flush()
-        return membership
-    user = User(email=email, name=name, password_hash=password_hash, platform_role="user")
-    session.add(user)
+    if existing is not None:
+        raise ValidationAppError(f"'{email}' ja e admin de uma area.")
+    admin = AreaAdmin(
+        area_id=area_id, email=email, name=name, password_hash=password_hash, role=role
+    )
+    session.add(admin)
     await session.flush()
-    membership = AreaAdmin(area_id=area_id, user_id=user.id, role=role)
-    session.add(membership)
-    await session.flush()
-    return membership
+    return admin
 
 
 async def update_area_admin(
-    session: AsyncSession, admin_id: int, *, role: str | None = None, area_id: int | None = None
+    session: AsyncSession,
+    admin_id: int,
+    *,
+    role: str | None = None,
+    area_id: int | None = None,
+    name: str | None = None,
+    email: str | None = None,
+    password_hash: str | None = None,
 ) -> AreaAdmin:
     membership = await session.get(AreaAdmin, admin_id)
     if membership is None:
@@ -253,6 +210,19 @@ async def update_area_admin(
     if area_id is not None:
         await get_area(session, area_id)
         membership.area_id = area_id
+    if name is not None:
+        membership.name = name
+    if email is not None:
+        dup = (
+            await session.execute(
+                select(AreaAdmin.id).where(AreaAdmin.email == email, AreaAdmin.id != admin_id)
+            )
+        ).first()
+        if dup is not None:
+            raise ValidationAppError(f"'{email}' ja e admin de uma area.")
+        membership.email = email
+    if password_hash is not None:
+        membership.password_hash = password_hash
     await session.flush()
     return membership
 

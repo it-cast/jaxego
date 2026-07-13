@@ -97,6 +97,7 @@ async def submit_proof(
         ip=_client_ip(request),
     )
     # If delivery just became ENTREGUE, finalize immediately.
+    just_finalized = False
     if delivery.state == "ENTREGUE":
         from app.deliveries.service import transition
 
@@ -104,7 +105,12 @@ async def submit_proof(
             session, delivery=delivery, to_state="FINALIZADA",
             actor_id=scope.user_id, reason="immediate_finalize", ip=_client_ip(request),
         )
+        just_finalized = True
     await session.commit()
+    if just_finalized:
+        from app.workers.payout import enqueue_payout
+
+        await enqueue_payout(delivery.id)
     # Notify the recipient on the queue (a caminho / entregue — never inline).
     from app.notifications.dispatcher import enqueue_notification
 
@@ -140,6 +146,7 @@ async def submit_reference(
         reference_number=body.reference_number,
         ip=_client_ip(request),
     )
+    just_finalized = False
     if result.state == "ENTREGUE":
         from app.deliveries.service import transition
 
@@ -147,11 +154,16 @@ async def submit_reference(
             session, delivery=delivery, to_state="FINALIZADA",
             actor_id=scope.user_id, reason="immediate_finalize", ip=_client_ip(request),
         )
+        just_finalized = True
         result = ProofResponse(
             delivery_id=delivery.id, state=delivery.state,
             geofence_ok=result.geofence_ok, low_confidence=result.low_confidence,
         )
     await session.commit()
+    if just_finalized:
+        from app.workers.payout import enqueue_payout
+
+        await enqueue_payout(delivery.id)
     if delivery.state == "FINALIZADA" or result.state == "ENTREGUE":
         from app.notifications.dispatcher import enqueue_notification
 

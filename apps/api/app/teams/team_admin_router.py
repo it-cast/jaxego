@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from app.areas.models import Zona
 from app.auth.dependencies import CurrentUser
-from app.auth.models import User
+from app.auth.principals import Actor
 from app.couriers.models import Courier, CourierDocument
 from app.db.session import get_session
 from app.deliveries.models import Delivery
@@ -26,10 +26,13 @@ router = APIRouter(prefix="/team-admin", tags=["team-admin"])
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-async def _resolve_team(user: User, session: AsyncSession) -> Team:
+async def _resolve_team(user: Actor, session: AsyncSession) -> Team:
+    # Pós-users: o ator do tipo team É a equipe.
+    if user.type != "team":
+        raise HTTPException(status_code=403, detail="Acesso restrito a responsáveis de equipe.")
     team = (
         await session.execute(
-            select(Team).where(Team.responsavel_user_id == user.id, Team.deleted_at.is_(None)).limit(1)
+            select(Team).where(Team.id == user.id, Team.deleted_at.is_(None)).limit(1)
         )
     ).scalar_one_or_none()
     if team is None:
@@ -142,6 +145,23 @@ async def approve_document(
     all_approved = bool(latest_by_kind) and all(s == "approved" for s in latest_by_kind.values())
     if all_approved and courier.status == "pending_kyc":
         courier.status = "active"
+        from app.audit.service import write_audit
+
+        await write_audit(
+            session,
+            actor_id=user.id,
+            actor_type="team",
+            action="courier.activated",
+            area_id=courier.area_id,
+            after={"courier_id": courier.id, "status": "active"},
+        )
+        # Criar subconta Safe2Pay para receber repasse das corridas (RN-010).
+        from app.couriers.subaccount import register_subaccount_on_kyc_active
+        from app.payments.factory import get_payment_adapter
+
+        await register_subaccount_on_kyc_active(
+            session, courier=courier, payment=get_payment_adapter()
+        )
 
     await session.commit()
     return {"ok": True, "doc_status": "approved", "courier_status": courier.status}
@@ -187,17 +207,16 @@ async def get_courier_detail(
     ).scalar_one_or_none()
     if courier is None:
         raise HTTPException(status_code=404, detail="Entregador não encontrado.")
-    from app.auth.models import User as UserModel
-    u = await session.get(UserModel, courier.user_id)
     docs = list(
         (await session.execute(
             select(CourierDocument).where(CourierDocument.courier_id == courier.id).order_by(CourierDocument.id)
         )).scalars().all()
     )
+    cpf = courier.cpf or ""
     return {
         "id": courier.id,
         "full_name": courier.full_name,
-        "cpf_masked": f"***.{(u.cpf or '')[3:6]}.***-{(u.cpf or '')[-2:]}" if u and u.cpf else "***",
+        "cpf_masked": f"***.{cpf[3:6]}.***-{cpf[-2:]}" if cpf else "***",
         "status": courier.status,
         "kyc_level": courier.kyc_level,
         "vehicle_type": courier.vehicle_type,

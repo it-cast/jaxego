@@ -1,0 +1,90 @@
+// jx-confirm-dialog — bottom-sheet de confirmação (mobile-first). Tokens only.
+
+.jx-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: jx-confirm-fade-in 0.2s ease forwards;
+}
+
+@keyframes jx-confirm-fade-in {
+  from { background: rgba(0, 0, 0, 0); }
+  to { background: rgba(0, 0, 0, 0.5); }
+}
+
+.jx-confirm {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-elevated, #fff);
+  border-radius: var(--jx-radius-xl, 20px) var(--jx-radius-xl, 20px) 0 0;
+  padding: var(--jx-space-5);
+  padding-bottom: max(var(--jx-space-5), env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+  animation: jx-confirm-slide-up 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes jx-confirm-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.jx-confirm__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold, 700);
+  color: var(--text);
+  text-align: center;
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.jx-confirm__message {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted, #888);
+  text-align: center;
+}
+
+.jx-confirm__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  margin-top: var(--jx-space-2);
+}
+
+.jx-confirm__confirm,
+.jx-confirm__cancel {
+  min-height: 48px;
+  border-radius: 999px;
+  font-size: var(--jx-text-base);
+  font-weight: 700;
+  cursor: pointer;
+  font: inherit;
+}
+
+.jx-confirm__confirm {
+  background: var(--brand, #e8722a);
+  color: var(--brand-contrast, #fff);
+  border: none;
+}
+
+.jx-confirm__cancel {
+  background: transparent;
+  color: var(--text-muted, #888);
+  border: none;
+}
+
+.jx-confirm__confirm:focus-visible,
+.jx-confirm__cancel:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

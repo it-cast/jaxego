@@ -9,8 +9,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { IonContent } from '@ionic/angular/standalone';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
-import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faHandHoldingDollar, faMobileScreen, faMapLocationDot, faPhone, faCommentDots } from '@fortawesome/free-solid-svg-icons';
-import { PageHeaderComponent, PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
+import { faStore, faLocationDot, faBoxOpen, faNoteSticky, faMapLocationDot, faPhone, faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { ConfirmDialogComponent, PageHeaderComponent, PaymentBadgeComponent, type PaymentMethod } from '@jaxego/shared/components';
 import {
   deliveryStateLabel,
   packageLabel as fmtPackage,
@@ -44,6 +44,7 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     PaymentBadgeComponent,
     FaIconComponent,
     PageHeaderComponent,
+    ConfirmDialogComponent,
   ],
   template: `
     <ion-content>
@@ -141,18 +142,11 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             </div>
           }
 
-          @if (delivery()!.receipt_method || delivery()!.courier_collection_method) {
+          @if (delivery()!.receipt_method) {
             <div class="jx-active__payment-info">
-              @if (delivery()!.receipt_method) {
-                <p class="jx-active__receipt-line">
-                  Forma de recebimento do cliente: <strong>{{ receiptLabel() }}</strong>
-                </p>
-              }
-              @if (delivery()!.courier_collection_method) {
-                <p class="jx-active__receipt-line">
-                  Forma de cobranca do entregador: <strong>{{ collectionLabel() }}</strong>
-                </p>
-              }
+              <p class="jx-active__receipt-line">
+                Forma de recebimento do cliente: <strong>{{ receiptLabel() }}</strong>
+              </p>
             </div>
           }
 
@@ -171,18 +165,14 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
           }
 
           @if (delivery()!.state === 'ACEITA') {
-            <button type="button" class="jx-active__primary" (click)="collectAndCharge()">
-              Coletar e cobrar entrega
-            </button>
-          } @else if (delivery()!.state === 'COLETADA' && !delivery()!.courier_collection_method) {
-            <button type="button" class="jx-active__primary" (click)="showCollectionModal.set(true)">
-              Cobrar entrega
+            <button type="button" class="jx-active__primary" (click)="askCollect()">
+              Já coletei
             </button>
           } @else if (delivery()!.state === 'COLETADA') {
-            <button type="button" class="jx-active__primary" (click)="advance()">
+            <button type="button" class="jx-active__primary" (click)="askAdvance()">
               Cheguei no destino
             </button>
-            <button type="button" class="jx-active__secondary" (click)="refusal()">
+            <button type="button" class="jx-active__secondary" (click)="askRefusal()">
               Destinatario ausente / recusou
             </button>
           }
@@ -208,25 +198,14 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             </div>
           }
 
-          @if (showCollectionModal()) {
-            <div class="jx-active__overlay" (click)="showCollectionModal.set(false)">
-              <div class="jx-active__modal" (click)="$event.stopPropagation()">
-                <h2 class="jx-active__modal-title">Como vai cobrar?</h2>
-                <button type="button" class="jx-active__modal-opt" (click)="setCollection('in_hand')">
-                  <fa-icon [icon]="iconHand" class="jx-active__modal-fa" aria-hidden="true" />
-                  <span class="jx-active__modal-label">Recebi em maos</span>
-                  <span class="jx-active__modal-desc">Dinheiro ou PIX direto para voce</span>
-                </button>
-                <button type="button" class="jx-active__modal-opt" (click)="setCollection('pix_app')">
-                  <fa-icon [icon]="iconMobile" class="jx-active__modal-fa" aria-hidden="true" />
-                  <span class="jx-active__modal-label">Cobrar com PIX</span>
-                  <span class="jx-active__modal-desc">Gerar QR Code para o destinatario pagar</span>
-                </button>
-                <button type="button" class="jx-active__modal-cancel" (click)="showCollectionModal.set(false)">
-                  Cancelar
-                </button>
-              </div>
-            </div>
+          @if (confirmDialog(); as cd) {
+            <jx-confirm-dialog
+              [title]="cd.title"
+              [message]="cd.message"
+              [confirmLabel]="cd.confirmLabel"
+              (confirm)="confirmPending()"
+              (cancel)="confirmDialog.set(null)"
+            />
           }
         </div>
       }
@@ -518,8 +497,6 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly iconLocation = faLocationDot;
   protected readonly iconBox = faBoxOpen;
   protected readonly iconNotes = faNoteSticky;
-  protected readonly iconHand = faHandHoldingDollar;
-  protected readonly iconMobile = faMobileScreen;
   protected readonly iconMap = faMapLocationDot;
   protected readonly iconPhone = faPhone;
   protected readonly iconWhatsApp = faCommentDots;
@@ -527,10 +504,16 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly delivery = signal<CourierDelivery | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
-  protected readonly showCollectionModal = signal(false);
   protected readonly showPhoneModal = signal(false);
   protected readonly productImageUrl = signal<string | null>(null);
   protected readonly showLightbox = signal(false);
+
+  protected readonly confirmDialog = signal<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    action: () => void | Promise<void>;
+  } | null>(null);
 
   protected fmtPhone(e164: string | null): string {
     if (!e164) return '';
@@ -639,11 +622,6 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
   }
 
-  protected collectionLabel(): string {
-    const m = this.delivery()?.courier_collection_method;
-    return m === 'pix_app' ? '📱 Cobrança via PIX' : '💵 Recebido em mãos';
-  }
-
   protected callPhone(): void {
     const phone = this.delivery()?.recipient_phone;
     if (!phone) return;
@@ -659,29 +637,48 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     window.open(`https://wa.me/${number}`, '_blank');
   }
 
-  protected async setCollection(method: 'in_hand' | 'pix_app'): Promise<void> {
-    const d = this.delivery();
-    const courierId = this.auth.me()?.courier_id;
-    if (!d || !courierId) return;
-    try {
-      await this.svc.setCollectionMethod(courierId, d.id, method);
-      this.showCollectionModal.set(false);
-      await this.reload();
-    } catch {
-      // stay on modal
-    }
+  protected askCollect(): void {
+    this.confirmDialog.set({
+      title: 'Deseja realmente coletar a entrega?',
+      message: 'Confirme que você já retirou o pedido na loja.',
+      confirmLabel: 'Já coletei',
+      action: () => this.collect(),
+    });
   }
 
-  protected async collectAndCharge(): Promise<void> {
+  protected askAdvance(): void {
+    this.confirmDialog.set({
+      title: 'Deseja realmente confirmar a chegada?',
+      message: 'Confirme que você chegou ao local de entrega.',
+      confirmLabel: 'Cheguei no destino',
+      action: () => this.advance(),
+    });
+  }
+
+  protected askRefusal(): void {
+    this.confirmDialog.set({
+      title: 'Deseja realmente reportar ausência/recusa?',
+      message: 'Isso registra que não foi possível concluir a entrega no destino.',
+      confirmLabel: 'Confirmar',
+      action: () => this.refusal(),
+    });
+  }
+
+  protected async confirmPending(): Promise<void> {
+    const pending = this.confirmDialog();
+    this.confirmDialog.set(null);
+    if (pending) await pending.action();
+  }
+
+  private async collect(): Promise<void> {
     const d = this.delivery();
     const courierId = this.auth.me()?.courier_id;
     if (!d || !courierId) return;
     await this.svc.markCollected(courierId, d.id);
     await this.reload();
-    this.showCollectionModal.set(true);
   }
 
-  protected async advance(): Promise<void> {
+  private async advance(): Promise<void> {
     const d = this.delivery();
     const courierId = this.auth.me()?.courier_id;
     if (!d || !courierId) return;
@@ -693,7 +690,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     }
   }
 
-  protected refusal(): void {
+  private refusal(): void {
     const d = this.delivery();
     if (!d) return;
     void this.router.navigate(['/entregador/entrega', d.id, 'comprovar', 'refusal']);

@@ -448,7 +448,7 @@ export class CadastroLojaPage implements OnDestroy {
       this.clearDraft();
       if (result.data?.status === 'pending_payment') {
         // Auto-login so the payment endpoint can authenticate the request.
-        await this.auth.login({ email: f.email, password: f.password });
+        await this.auth.login({ email: f.email, password: f.password }, 'loja');
         const key = await this.merchants.getPublicKey();
         this.rsaPublicKey = key;
         this.pendingDocument = cleanDoc;

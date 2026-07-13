@@ -58,12 +58,14 @@ async def register_subscription(
         existing.keys_json = json.dumps(body.keys)
         existing.delivery_id = body.delivery_id
         existing.user_id = user.id
+        existing.actor_type = user.type
         await session.commit()
         return PushSubscriptionOut(id=existing.id, endpoint=existing.endpoint)
 
     sub = PushSubscription(
         area_id=body.area_id,
         user_id=user.id,
+        actor_type=user.type,
         delivery_id=body.delivery_id,
         endpoint=body.endpoint,
         keys_json=json.dumps(body.keys),
@@ -84,6 +86,7 @@ async def remove_subscription(
         delete(PushSubscription).where(
             PushSubscription.endpoint == endpoint,
             PushSubscription.user_id == user.id,
+            PushSubscription.actor_type == user.type,
         )
     )
     await session.commit()

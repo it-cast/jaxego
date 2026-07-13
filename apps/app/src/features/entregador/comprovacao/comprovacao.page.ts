@@ -15,13 +15,13 @@ import {
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { EntregadorService } from '../entregador.service';
 import { PendingUploadService } from './pending-upload.service';
-import { PageHeaderComponent } from '@jaxego/shared/components';
+import { ConfirmDialogComponent, PageHeaderComponent } from '@jaxego/shared/components';
 import { ProofKind, ProofService } from './proof.service';
 
 @Component({
   selector: 'jx-comprovacao-page',
   standalone: true,
-  imports: [ProofCaptureComponent, DirectPaymentConfirmComponent, PendingUploadBannerComponent, PageHeaderComponent],
+  imports: [ProofCaptureComponent, DirectPaymentConfirmComponent, PendingUploadBannerComponent, PageHeaderComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="jx-proof-page">
@@ -79,7 +79,7 @@ import { ProofKind, ProofService } from './proof.service';
           type="button"
           class="jx-proof-page__finalize"
           [disabled]="finalizing()"
-          (click)="finalize()"
+          (click)="askFinalize()"
         >
           @if (finalizing()) {
             <span class="jx-proof-page__spinner" aria-hidden="true"></span>
@@ -88,6 +88,16 @@ import { ProofKind, ProofService } from './proof.service';
             Finalizar entrega
           }
         </button>
+      }
+
+      @if (confirmingFinalize()) {
+        <jx-confirm-dialog
+          title="Deseja realmente finalizar a entrega?"
+          message="Confirme que a entrega foi concluída com sucesso."
+          confirmLabel="Finalizar entrega"
+          (confirm)="confirmingFinalize.set(false); finalize()"
+          (cancel)="confirmingFinalize.set(false)"
+        />
       }
 
       @if (lowConfidence()) {
@@ -121,6 +131,7 @@ export class ComprovacaoPage implements OnInit {
   protected readonly validatingRef = signal(false);
   protected readonly refMessage = signal<string | null>(null);
   protected readonly finalizing = signal(false);
+  protected readonly confirmingFinalize = signal(false);
 
   private deliveryId = 0;
   protected kind: ProofKind = 'pickup';
@@ -236,6 +247,10 @@ export class ComprovacaoPage implements OnInit {
     } finally {
       this.validatingRef.set(false);
     }
+  }
+
+  protected askFinalize(): void {
+    this.confirmingFinalize.set(true);
   }
 
   protected async finalize(): Promise<void> {

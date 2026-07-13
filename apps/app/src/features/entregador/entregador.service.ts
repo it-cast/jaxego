@@ -201,19 +201,6 @@ export class EntregadorService {
     );
   }
 
-  async setCollectionMethod(
-    courierId: number,
-    deliveryId: number,
-    method: 'in_hand' | 'pix_app',
-  ): Promise<void> {
-    await firstValueFrom(
-      this.http.patch(
-        `/v1/couriers/${courierId}/deliveries/${deliveryId}/collection-method`,
-        { collection_method: method },
-      ),
-    );
-  }
-
   async updateProfile(courierId: number, data: { full_name?: string; password?: string; current_password?: string; team_id?: number | null }): Promise<boolean> {
     try {
       await firstValueFrom(this.http.patch(`/v1/couriers/${courierId}/profile`, data));

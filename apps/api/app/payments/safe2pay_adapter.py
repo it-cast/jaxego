@@ -75,6 +75,7 @@ class Safe2PayHttpAdapter:
         allowlist: set[str],
         sandbox: bool = True,
         jaxego_recipient: str | None = None,
+        marketplace_api_key: str | None = None,
     ) -> None:
         self._api_key = api_key or ""
         self._payment_url = payment_url.rstrip("/")
@@ -83,17 +84,25 @@ class Safe2PayHttpAdapter:
         self._allowlist = allowlist
         self._sandbox = sandbox
         self._jaxego_recipient = jaxego_recipient
+        # Token da conta matriz/Marketplace — só a matriz pode criar subcontas
+        # via /v2/marketplace/add (uma subconta filha recebe erro 300 da S2P).
+        self._marketplace_api_key = marketplace_api_key or api_key or ""
 
     def _headers(self) -> dict[str, str]:
         # x-api-key only; NEVER logged (A09).
         return {"x-api-key": self._api_key, "Content-Type": "application/json"}
 
-    async def _call_safe2pay(self, url: str, payload: dict) -> dict:
+    def _marketplace_headers(self) -> dict[str, str]:
+        return {"x-api-key": self._marketplace_api_key, "Content-Type": "application/json"}
+
+    async def _call_safe2pay(
+        self, url: str, payload: dict, *, headers: dict[str, str] | None = None
+    ) -> dict:
         """POST to Safe2Pay; raise on HasError even when HTTP is 200 (skill A2)."""
         assert_safe_url(url, allowlist=self._allowlist)  # A10 SSRF (before connect)
         try:
             async with build_client(timeout=httpx.Timeout(30.0)) as client:
-                resp = await client.post(url, json=payload, headers=self._headers())
+                resp = await client.post(url, json=payload, headers=headers or self._headers())
                 # Read body BEFORE raise_for_status so it's available inside the context.
                 if resp.status_code >= 400:
                     raw = resp.content.decode("utf-8", errors="replace")
@@ -485,8 +494,14 @@ class Safe2PayHttpAdapter:
         return result.get("recipient_id", "")
 
     async def register_subaccount_full(self, *, courier: object) -> dict[str, str]:
-        """Cria subconta no Safe2Pay Marketplace via /v2/marketplace/add."""
-        identity = getattr(courier, "mei_cnpj", None) or ""
+        """Cria subconta no Safe2Pay Marketplace via /v2/marketplace/add.
+
+        Identity: CNPJ do MEI quando existe; senão o CPF do entregador
+        (pós-users o CPF vive na própria tabela couriers).
+        """
+        identity = getattr(courier, "mei_cnpj", None) or getattr(courier, "cpf", None) or ""
+        # Responsável é sempre pessoa física — CPF (a conta MEI usa CNPJ só na Identity).
+        responsible_identity = getattr(courier, "cpf", None) or identity
         phone = (getattr(courier, "phone_e164", "") or "").lstrip("+")
         birth = getattr(courier, "birth_date", None)
 
@@ -496,7 +511,7 @@ class Safe2PayHttpAdapter:
             "Identity": identity,
             "Email": getattr(courier, "email", ""),
             "ResponsibleName": getattr(courier, "full_name", ""),
-            "ResponsibleIdentity": identity,
+            "ResponsibleIdentity": responsible_identity,
             "ResponsiblePhone": phone,
             "ResponsibleBirthDate": birth.strftime("%Y-%m-%d") if birth else "",
             "IsPanelRestricted": True,
@@ -515,7 +530,11 @@ class Safe2PayHttpAdapter:
                 {
                     "PaymentMethodCode": "6",
                     "IsSubaccountTaxPayer": False,
-                    "Taxes": [{"TaxTypeName": "2", "Tax": "0"}],
+                    # Taxa mínima exigida pela Safe2Pay para PIX (PaymentMethodCode
+                    # 6) no cadastro da subconta — erro 1273 abaixo de 0,35. Não é
+                    # o split real da corrida (isso é calculado à parte, por
+                    # transação, em charge_with_split); é só a config da subconta.
+                    "Taxes": [{"TaxTypeName": "2", "Tax": "0.35"}],
                 }
             ],
         }
@@ -543,6 +562,7 @@ class Safe2PayHttpAdapter:
         data = await self._call_safe2pay(
             f"{self._api_url}/v2/marketplace/add",
             payload,
+            headers=self._marketplace_headers(),
         )
         return {
             "recipient_id": str(data.get("Id", "")),
@@ -564,20 +584,21 @@ class Safe2PayHttpAdapter:
         ]
 
     async def payout(self, *, recipient: str, amount_cents: int, reference: str) -> PayoutResult:
-        # [ASSUMIDO — TD-15-01] Courier withdrawal repasse (transfer to subaccount). The
-        # exact Safe2Pay endpoint/shape for a payout/transfer is NOT confirmed (the cutover
-        # depends on the contract — DEC-003). Isolated HERE behind `PaymentPort`; the Stub
-        # drives dev/test. Validated against the real contract at cutover; an ADR then
-        # supersedes DEC-003 and only this file changes.
-        data = await self._call_safe2pay(
-            f"{self._api_url}/v2/marketplace/transfer",
+        """Transfere da conta autenticada (self._api_key, quem perde o dinheiro) para
+        a subconta `recipient` (courier.s2p_recipient_id — Id numérico da subconta).
+
+        Contrato real confirmado com a Safe2Pay: `POST {payment_url}/v2/InternalTransfer`.
+        A resposta de sucesso só traz `{"ResponseDetail": {"Message": "..."}, "HasError":
+        false}` — sem id de transação — então `reference` (nossa própria chave de
+        idempotência, ex. "dlv_123") é o que persistimos como transaction_id.
+        """
+        await self._call_safe2pay(
+            f"{self._payment_url}/v2/InternalTransfer",
             {
-                "Recipient": recipient,
+                "IdReceiver": int(recipient),
+                "IdentificationDebit": f"Repasse {reference}",
+                "IdentificationCredit": f"Recebimento {reference}",
                 "Amount": amount_cents / 100,
-                "Reference": reference,
             },
         )
-        return PayoutResult(
-            transaction_id=str(data.get("IdTransaction", "")),
-            status="paid" if str(data.get("Status", "")) in _APPROVED else "pending",
-        )
+        return PayoutResult(transaction_id=reference, status="paid")

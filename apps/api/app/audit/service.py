@@ -23,15 +23,21 @@ async def write_audit(
     *,
     actor_id: int | None,
     action: str,
+    actor_type: str | None = None,
     area_id: int | None = None,
     before: dict | None = None,
     after: dict | None = None,
     ip: str | None = None,
     cross_area_bypass: bool = False,
 ) -> AuditLog:
-    """Append one audit row. Caller commits within the request transaction."""
+    """Append one audit row. Caller commits within the request transaction.
+
+    `actor_id` é o id na tabela do `actor_type` (courier|merchant|team|
+    area_admin|platform_admin). NULL actor_type em eventos de sistema.
+    """
     entry = AuditLog(
         actor_user_id=actor_id,
+        actor_type=actor_type,
         action=action,
         area_id=area_id,
         before=before,

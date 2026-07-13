@@ -119,7 +119,10 @@ async def build_candidates(
 
     # Zone pricing maps (bulk, no N+1): courier override → team minimum.
     # `zona_inactive` holds couriers who explicitly opted out of this zone (ativo=False).
-    # Couriers with NO row are treated as active (backward compat with pre-migration data).
+    # Couriers with NO override row inherit the team's zone price (tz_map) — but
+    # if the TEAM never configured a price for this zone either, the courier is
+    # NOT eligible here (see loop below): a zone without preço mínimo do time
+    # must stay disabled, not silently fall back to the old pricing table.
     cz_map: dict[int, int] = {}
     zona_inactive: set[int] = set()
     tz_map: dict[int, int] = {}
@@ -175,6 +178,11 @@ async def build_candidates(
             price: int | None = cz_map[courier.id]
         elif courier.team_id is not None and courier.team_id in tz_map:
             price = tz_map[courier.team_id]
+        elif zona_id is not None:
+            # Zona sem preço mínimo configurado pelo time (nem override próprio
+            # do entregador) → NÃO fica habilitado nessa zona. Sem isso, uma zona
+            # recém-criada sem preço liberava todo entregador do time nela.
+            continue
         else:
             price = effective_price_cents(
                 pricing_by.get(courier.id, []),

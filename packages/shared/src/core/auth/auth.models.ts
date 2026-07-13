@@ -31,6 +31,12 @@ export interface LoginRequest {
   totp?: string;
 }
 
+/**
+ * Perfil de login — cada tipo de conta autentica no seu endpoint
+ * (/v1/auth/<perfil>/login) e na sua própria tabela no backend.
+ */
+export type LoginProfile = 'entregador' | 'loja' | 'equipe' | 'admin' | 'plataforma';
+
 /** Machine error codes the auth flow reacts to (app/auth/service.py + dependencies.py). */
 export const ERROR_CODE = {
   TOTP_REQUIRED: 'totp_required',

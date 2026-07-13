@@ -228,11 +228,52 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.jx-cad__submitting {
-  text-align: center;
+/* ── overlay de salvamento (cadastro/upload em andamento) ─────── */
+.jx-cad__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jx-space-3);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(2px);
   padding: var(--jx-space-4);
+  text-align: center;
+}
+
+.jx-cad__overlay-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand, #f97316);
+  border-radius: 50%;
+  animation: jx-cad-spin 0.8s linear infinite;
+}
+
+.jx-cad__overlay-text {
+  margin: 0;
   font-size: var(--jx-text-sm);
-  color: var(--text-muted);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-cad__cta-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: var(--jx-space-2);
+  vertical-align: -3px;
+  border: 2px solid color-mix(in srgb, var(--brand-contrast) 40%, transparent);
+  border-top-color: var(--brand-contrast);
+  border-radius: 50%;
+  animation: jx-cad-spin 0.7s linear infinite;
+}
+
+@keyframes jx-cad-spin {
+  to { transform: rotate(360deg); }
 }
 
 .jx-cad__hint {

@@ -129,14 +129,21 @@ def current_totp_window(secret: str) -> int:
 # decode pins algorithms=["HS256"] (defeats alg:none) AND requires the critical
 # claims, so a stripped token is rejected.
 # ---------------------------------------------------------------------------
-_REQUIRED_CLAIMS = ["exp", "iat", "iss", "aud", "sub", "jti"]
+_REQUIRED_CLAIMS = ["exp", "iat", "iss", "aud", "sub", "jti", "typ"]
 
 
-def encode_access(user_id: int, area_scope: int | None, role: str) -> str:
-    """Issue a 15-minute HS256 access token with pinned claims (aware UTC)."""
+def encode_access(
+    actor_id: int, actor_type: str, area_scope: int | None, role: str
+) -> str:
+    """Issue a 15-minute HS256 access token with pinned claims (aware UTC).
+
+    `sub` é o id na tabela do ator; `typ` diz qual tabela (courier|merchant|
+    team|area_admin|platform_admin) — não há mais tabela global users.
+    """
     now = datetime.now(UTC)  # AWARE — TD-010
     payload: dict[str, object] = {
-        "sub": str(user_id),
+        "sub": str(actor_id),
+        "typ": actor_type,
         "area_scope": area_scope,  # None for platform admin (audited bypass)
         "role": role,
         "iat": now,

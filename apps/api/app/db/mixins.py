@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.mysql import DATETIME as MYSQL_DATETIME
 from sqlalchemy.orm import Mapped, declared_attr, mapped_column
 
@@ -36,6 +36,24 @@ def ensure_aware_utc(value: datetime) -> datetime:
     read back IS UTC — attach the tzinfo so comparisons never mix naive/aware.
     """
     return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+
+class CredentialsMixin:
+    """Login credentials + lockout counters for actor tables (pós-users).
+
+    Cada tipo de acesso (courier, merchant, team, area_admin, platform_admin)
+    guarda as próprias credenciais na própria tabela. `password_hash` é nullable
+    para linhas legadas sem login (ex.: team sem responsável); o login falha
+    com mensagem genérica quando NULL.
+    """
+
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Lockout 5/15min (RN-011 / D-04) — datetimes aware UTC (TD-010).
+    failed_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    first_failed_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+    locked_until: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
 
 
 class TimestampMixin:

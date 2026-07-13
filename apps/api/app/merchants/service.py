@@ -29,13 +29,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.areas.models import Area
 from app.audit.service import write_audit
-from app.auth.models import User
 from app.core.exceptions import AppError
 from app.core.logging import mask_email, mask_phone
 from app.core.security import hash_password, verify_dummy
 from app.integrations.base import GeocodingPort, ReceitaPort
 from app.merchants import otp as otp_mod
-from app.merchants.models import Merchant, MerchantSubscription, MerchantUser
+from app.merchants.models import Merchant, MerchantSubscription
 from app.merchants.schemas import MerchantSignupBody, validate_document
 from app.plans import service as plans_service
 from app.plans.models import SubscriptionPlan
@@ -242,20 +241,7 @@ async def signup(
             else:
                 logger.warning("geocoding_failed_on_signup")
 
-    # 6. Persist User (argon2id) + merchant_user + merchant + subscription.
-    user = User(
-        email=body.email,
-        name=body.trade_name,
-        password_hash=hash_password(body.password),
-        platform_role="user",
-    )
-    session.add(user)
-    try:
-        await session.flush()
-    except IntegrityError:
-        await session.rollback()
-        raise DuplicateAccountError()
-
+    # 6. Persist merchant (credenciais na própria tabela — argon2id) + subscription.
     merchant = Merchant(
         area_id=area.id,
         account_type=body.account_type,
@@ -264,6 +250,7 @@ async def signup(
         category=body.category,
         phone_e164=body.phone_e164,
         email=body.email,
+        password_hash=hash_password(body.password),
         address=body.address,
         address_number=body.address_number,
         address_neighborhood=body.address_neighborhood,
@@ -277,9 +264,12 @@ async def signup(
         next_revalidation_at=otp_mod.expires_at() if revalidation_enqueued else None,
     )
     session.add(merchant)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        raise DuplicateAccountError()
 
-    session.add(MerchantUser(merchant_id=merchant.id, user_id=user.id, role="owner"))
     session.add(
         MerchantSubscription(
             area_id=area.id,
@@ -292,7 +282,8 @@ async def signup(
     # 7. Audit the creation + initial status (RN-012, append-only, no PII).
     await write_audit(
         session,
-        actor_id=user.id,
+        actor_id=merchant.id,
+        actor_type="merchant",
         action="merchant.signup",
         area_id=area.id,
         after={

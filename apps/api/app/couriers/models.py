@@ -37,7 +37,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
-from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
+from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, CredentialsMixin, TimestampMixin
 
 # Coverage row kinds (Pattern 3 — RN-003).
 COVERAGE_KINDS = ("include", "exclude")
@@ -66,27 +66,26 @@ DOCUMENT_STATUSES = (
 )
 
 
-class Courier(Base, AreaScopedMixin, TimestampMixin):
-    """A delivery person (F-02). Area-scoped; status is the state machine (D-08)."""
+class Courier(Base, AreaScopedMixin, CredentialsMixin, TimestampMixin):
+    """A delivery person (F-02). Area-scoped; status is the state machine (D-08).
+
+    Conta própria (CredentialsMixin): email/senha vivem aqui — não há mais
+    tabela `users`. Um entregador atua na área da equipe dele, então email e
+    cpf são únicos globais nesta tabela (uma conta por pessoa).
+    """
 
     __tablename__ = "couriers"
     __table_args__ = (
-        # F-02 E2: same user cannot onboard twice in the SAME area.
-        UniqueConstraint("area_id", "user_id", name="uq_couriers_area_id_user_id"),
+        UniqueConstraint("email", name="uq_couriers_email"),
+        UniqueConstraint("cpf", name="uq_couriers_cpf"),
         Base.__table_args__,
     )
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
 
-    # Owner User. CPF lives in users (unique global). One user may have several
-    # courier rows across areas (F-02 E2).
-    user_id: Mapped[int] = mapped_column(
-        BIG_ID,
-        ForeignKey("users.id", ondelete="RESTRICT", onupdate="RESTRICT"),
-        nullable=False,
-        index=True,
-    )
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    # [PII] CPF (11 dígitos) — masked in outputs, never logged.
+    cpf: Mapped[str | None] = mapped_column(String(11), nullable=True)
     # [PII] E.164 phone — masked in outputs, never logged.
     phone_e164: Mapped[str] = mapped_column(String(20), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)  # [PII]

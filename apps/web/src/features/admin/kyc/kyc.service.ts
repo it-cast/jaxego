@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ReviewDecision } from './review-row.component';
 
 export interface ViewUrlResponse {
   url: string;
@@ -96,20 +95,6 @@ export class AdminKycService {
     }
   }
 
-  async review(
-    courierId: number,
-    documentId: number,
-    decision: ReviewDecision
-  ): Promise<ReviewResponse | null> {
-    try {
-      return await firstValueFrom(
-        this.http.patch<ReviewResponse>(
-          `/v1/admin/couriers/${courierId}/documents/${documentId}`,
-          decision
-        )
-      );
-    } catch {
-      return null; // caller rolls back the optimistic update + shows an error
-    }
-  }
+  // A revisão de documentos (approve/reject) é do admin da EQUIPE — ver
+  // features/equipe/equipe-kyc.service.ts. O admin da cidade só visualiza.
 }

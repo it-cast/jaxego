@@ -36,6 +36,32 @@ export class LoginPage implements AfterViewInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly isApp = this.route.snapshot.data['surface'] === 'app';
+  /** Perfil de login da rota — define o endpoint (/v1/auth/<perfil>/login). */
+  protected readonly profile =
+    (this.route.snapshot.data['profile'] as
+      | 'entregador'
+      | 'loja'
+      | 'equipe'
+      | 'admin'
+      | 'plataforma'
+      | undefined) ?? (this.isApp ? 'entregador' : 'loja');
+
+  /** Identidade visual da tela por perfil (título/subtítulo do header). */
+  protected readonly profileTitle = {
+    entregador: 'Bem-vindo de volta!',
+    loja: 'Bem-vindo de volta!',
+    equipe: 'Painel da Equipe',
+    admin: 'Admin da Cidade',
+    plataforma: 'Admin da Plataforma',
+  }[this.profile];
+
+  protected readonly profileSubtitle = {
+    entregador: 'Faça login para continuar',
+    loja: 'Faça login para acessar sua loja',
+    equipe: 'Acesso do responsável da equipe',
+    admin: 'Acesso do administrador da cidade',
+    plataforma: 'Acesso restrito · verificação em duas etapas',
+  }[this.profile];
 
   private readonly REMEMBER_KEY = 'jx-remember-email';
 
@@ -97,11 +123,14 @@ export class LoginPage implements AfterViewInit {
     } else {
       localStorage.removeItem(this.REMEMBER_KEY);
     }
-    const result = await this.auth.login({
-      email,
-      password,
-      totp: totp ? totp : undefined,
-    });
+    const result = await this.auth.login(
+      {
+        email,
+        password,
+        totp: totp ? totp : undefined,
+      },
+      this.profile
+    );
     this.loading.set(false);
 
     if (result.ok) {

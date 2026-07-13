@@ -6,10 +6,29 @@ import { authGuard } from '@jaxego/core/auth/auth.guard';
  * plataforma + auth + tracking público). O entregador (mobile) vive em apps/app.
  */
 
-/** Login (public). */
+/** Login (public) — uma rota por perfil; cada uma autentica no seu endpoint. */
 export const authRoutes: Routes = [
   {
     path: 'entrar',
+    data: { profile: 'loja' },
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
+  },
+  {
+    path: 'equipe/entrar',
+    data: { profile: 'equipe' },
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
+  },
+  {
+    path: 'admin/entrar',
+    data: { profile: 'admin' },
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
+  },
+  {
+    path: 'plataforma/entrar',
+    data: { profile: 'plataforma' },
     loadComponent: () =>
       import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
   },

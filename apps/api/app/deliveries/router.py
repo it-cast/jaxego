@@ -343,7 +343,9 @@ async def teams_for_address(
     """Geocode address → resolve zone → return eligible teams (couriers with ativo=True).
 
     Falls back to all teams when geocoding fails or address has no zone match.
-    Couriers with no courier_zonas row are treated as active (backward compat).
+    Couriers with no courier_zonas row inherit the team's zone price; if the TEAM
+    never configured a price for this zone either, those couriers are excluded
+    (a zone without preço mínimo do time não pode virar cobrança de R$0,00).
     """
     from datetime import UTC, datetime, timedelta
 
@@ -443,6 +445,13 @@ async def teams_for_address(
                     select(TeamZona).where(TeamZona.zona_id == zona_id, TeamZona.team_id.in_(team_ids_set))
                 )).scalars()
             }
+        # Sem preço próprio nem preço do time para esta zona → fora da lista
+        # (nunca oferecer entrega a preço 0 por omissão).
+        couriers = [
+            c for c in couriers
+            if c.id in cz_prices or (c.team_id is not None and c.team_id in tz_map)
+        ]
+        courier_ids = [c.id for c in couriers]
         for c in couriers:
             if c.id in cz_prices:
                 pricing[c.id] = cz_prices[c.id]

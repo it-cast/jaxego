@@ -35,6 +35,7 @@ from app.workers.lifecycle import (
     finalize_deliveries,
     purge_locations,
 )
+from app.workers.payout import payout_courier_task
 from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import (
     charge_pix_subscriptions_daily,
@@ -98,6 +99,8 @@ class WorkerSettings:
         mark_invoices_overdue,
         expire_dispute_blocks,
         reconcile_finance_daily,
+        # Repasse ao entregador na finalização (enfileirado, idempotente).
+        payout_courier_task,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).

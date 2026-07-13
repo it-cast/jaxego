@@ -1,9 +1,13 @@
-"""Auth service: login, lockout (5/15min, aware UTC), anti-enumeration, TOTP,
-refresh issue/rotate/reuse-detection, logout.
+"""Auth service: login por tipo de conta, lockout (5/15min, aware UTC),
+anti-enumeration, TOTP (só platform_admin), refresh issue/rotate/reuse-detection,
+logout.
 
-Security invariants live here, server-side (A04). All datetimes are aware UTC
-(TD-010). Login emits structured events WITHOUT PII (RN-021). The login path
-spends ~constant time whether or not the user exists (anti-enumeration, RN-011).
+Não existe mais a tabela global `users`: cada tipo de acesso (courier, merchant,
+team, area_admin, platform_admin) autentica na própria tabela via o endpoint de
+login do seu tipo. Security invariants live here, server-side (A04). All
+datetimes are aware UTC (TD-010). Login emits structured events WITHOUT PII
+(RN-021). The login path spends ~constant time whether or not the account
+exists (anti-enumeration, RN-011).
 """
 
 from __future__ import annotations
@@ -15,7 +19,11 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.models import RefreshToken, User
+from app.auth.models import (
+    ACTOR_PLATFORM_ADMIN,
+    RefreshToken,
+)
+from app.auth.principals import Actor, build_actor, load_actor, _model_for
 from app.auth.schemas import MeResponse, TokenPair
 from app.core.config import settings
 from app.core.exceptions import AppError
@@ -41,7 +49,7 @@ INVALID_CREDENTIALS = "Credenciais inválidas."
 
 
 class InvalidCredentialsError(AppError):
-    """Generic auth failure — same message for unknown user / wrong password."""
+    """Generic auth failure — same message for unknown account / wrong password."""
 
     status_code = 401
     code = "invalid_credentials"
@@ -91,145 +99,86 @@ class InvalidRefreshError(AppError):
 
 
 # ---------------------------------------------------------------------------
-# Lockout (aware UTC — TD-010). Mirrors the RESEARCH code example.
+# Lockout (aware UTC — TD-010) — genérico para qualquer tabela com
+# CredentialsMixin (failed_attempts / first_failed_at / locked_until).
 # ---------------------------------------------------------------------------
-def is_locked(user: User) -> bool:
+def is_locked(account: object) -> bool:
     """True while the account is within an active lock window."""
-    return user.locked_until is not None and datetime.now(UTC) < ensure_aware_utc(user.locked_until)
+    locked_until = getattr(account, "locked_until", None)
+    return locked_until is not None and datetime.now(UTC) < ensure_aware_utc(locked_until)
 
 
-def register_failed_attempt(user: User) -> None:
+def register_failed_attempt(account: object) -> None:
     """Increment the failure counter; lock at the threshold (aware UTC)."""
     now = datetime.now(UTC)
-    if user.first_failed_at is None or now - ensure_aware_utc(user.first_failed_at) > LOCK_WINDOW:
-        user.first_failed_at = now
-        user.failed_attempts = 1
+    first = getattr(account, "first_failed_at", None)
+    if first is None or now - ensure_aware_utc(first) > LOCK_WINDOW:
+        account.first_failed_at = now
+        account.failed_attempts = 1
     else:
-        user.failed_attempts += 1
-    if user.failed_attempts >= LOCK_THRESHOLD:
-        user.locked_until = now + LOCK_WINDOW
+        account.failed_attempts += 1
+    if account.failed_attempts >= LOCK_THRESHOLD:
+        account.locked_until = now + LOCK_WINDOW
 
 
-def reset_lockout(user: User) -> None:
+def reset_lockout(account: object) -> None:
     """Clear the failure counters after a successful login."""
-    user.failed_attempts = 0
-    user.first_failed_at = None
-    user.locked_until = None
+    account.failed_attempts = 0
+    account.first_failed_at = None
+    account.locked_until = None
 
 
-async def _get_user_by_email(session: AsyncSession, email: str) -> User | None:
-    stmt = select(User).where(User.email == email)
-    return (await session.execute(stmt)).scalar_one_or_none()
-
-
-async def _resolve_session_context(session: AsyncSession, user: User) -> tuple[int | None, str]:
-    """Resolve the (area_scope, role) the token is minted with.
-
-    Platform admins get area_scope=None (audited bypass). Otherwise checks
-    area_admins, then couriers, then merchant_users — first match wins.
-    """
-    from app.areas.models import AreaAdmin
-    from app.couriers.models import Courier
-    from app.merchants.models import MerchantUser
-
-    if user.platform_role == "admin_plataforma":
-        return None, "admin_plataforma"
-
-    stmt = select(AreaAdmin).where(AreaAdmin.user_id == user.id).limit(1)
-    membership = (await session.execute(stmt)).scalar_one_or_none()
-    if membership is not None:
-        return membership.area_id, f"admin_area:{membership.role}"
-
-    stmt_courier = select(Courier).where(Courier.user_id == user.id).limit(1)
-    courier = (await session.execute(stmt_courier)).scalar_one_or_none()
-    if courier is not None:
-        return courier.area_id, "courier"
-
-    stmt_merchant = select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1)
-    merchant_user = (await session.execute(stmt_merchant)).scalar_one_or_none()
-    if merchant_user is not None:
-        from app.merchants.models import Merchant
-
-        merchant = await session.get(Merchant, merchant_user.merchant_id)
-        area_id = merchant.area_id if merchant else None
-        return area_id, "merchant"
-
-    return None, "user"
-
-
-async def resolve_surface(session: AsyncSession, user: User) -> MeResponse:
-    """Resolve which SPA surface the user belongs to (R0.4 post-login routing).
-
-    Priority: platform admin > area admin > courier > merchant. A user with no
-    binding gets surface='none' (the SPA shows a neutral "no access" state rather
-    than looping back to /entrar). Single query per candidate; no N+1.
-    """
-    from app.areas.models import AreaAdmin
-    from app.couriers.models import Courier
-    from app.merchants.models import Merchant, MerchantUser
-
-    if user.platform_role == "admin_plataforma":
-        return MeResponse(user_id=user.id, surface="plataforma")
-
-    membership = (
-        await session.execute(select(AreaAdmin).where(AreaAdmin.user_id == user.id).limit(1))
-    ).scalar_one_or_none()
-    if membership is not None:
-        return MeResponse(user_id=user.id, surface="admin", area_id=membership.area_id)
-
-    from app.teams.models import Team
-    team = (
-        await session.execute(select(Team).where(Team.responsavel_user_id == user.id, Team.deleted_at.is_(None)).limit(1))
-    ).scalar_one_or_none()
-    if team is not None:
-        return MeResponse(user_id=user.id, surface="equipe", area_id=team.area_id, team_id=team.id)
-
-    courier = (
-        await session.execute(select(Courier).where(Courier.user_id == user.id).limit(1))
-    ).scalar_one_or_none()
-    if courier is not None:
+# ---------------------------------------------------------------------------
+# Surface / contexto do token — direto do ator (sem prioridade mágica).
+# ---------------------------------------------------------------------------
+def resolve_surface_for(actor: Actor) -> MeResponse:
+    """MeResponse do ator — cada tipo cai SEMPRE na sua superfície."""
+    if actor.type == "courier":
         return MeResponse(
-            user_id=user.id,
+            user_id=actor.id,
             surface="entregador",
-            area_id=courier.area_id,
-            courier_id=courier.id,
-            status=courier.status,
+            area_id=actor.area_id,
+            courier_id=actor.id,
+            status=actor.row.status,
         )
-
-    link = (
-        await session.execute(select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1))
-    ).scalar_one_or_none()
-    if link is not None:
-        merchant = await session.get(Merchant, link.merchant_id)
+    if actor.type == "merchant":
+        m = actor.row
         return MeResponse(
-            user_id=user.id,
+            user_id=actor.id,
             surface="loja",
-            area_id=merchant.area_id if merchant else None,
-            merchant_id=link.merchant_id,
-            trade_name=merchant.trade_name if merchant else None,
-            address=merchant.address if merchant else None,
-            address_number=merchant.address_number if merchant else None,
-            address_neighborhood=merchant.address_neighborhood if merchant else None,
-            status=merchant.status if merchant else None,
+            area_id=actor.area_id,
+            merchant_id=actor.id,
+            trade_name=m.trade_name,
+            address=m.address,
+            address_number=m.address_number,
+            address_neighborhood=m.address_neighborhood,
+            status=m.status,
         )
-
-    return MeResponse(user_id=user.id, surface="none")
+    if actor.type == "team":
+        return MeResponse(
+            user_id=actor.id, surface="equipe", area_id=actor.area_id, team_id=actor.id
+        )
+    if actor.type == "area_admin":
+        return MeResponse(user_id=actor.id, surface="admin", area_id=actor.area_id)
+    return MeResponse(user_id=actor.id, surface="plataforma")
 
 
 async def issue_token_pair(
-    session: AsyncSession, user: User, *, family_id: str | None = None
+    session: AsyncSession, actor: Actor, *, family_id: str | None = None
 ) -> TokenPair:
     """Mint an access JWT + persist a fresh opaque refresh token.
 
     A new login starts a new family; a rotation passes the existing `family_id`
     so reuse-detection can revoke the whole chain (TH-03).
     """
-    area_scope, role = await _resolve_session_context(session, user)
-    access = encode_access(user_id=user.id, area_scope=area_scope, role=role)
+    access = encode_access(
+        actor_id=actor.id, actor_type=actor.type, area_scope=actor.area_id, role=actor.role
+    )
     raw, digest = new_refresh_token()
     session.add(
         RefreshToken(
-            user_id=user.id,
+            actor_type=actor.type,
+            actor_id=actor.id,
             family_id=family_id or str(uuid.uuid4()),
             token_hash=digest,
             expires_at=datetime.now(UTC) + timedelta(days=settings.refresh_token_days),
@@ -244,62 +193,76 @@ async def issue_token_pair(
 
 
 async def authenticate(
-    session: AsyncSession, *, email: str, password: str, totp: str | None
+    session: AsyncSession,
+    *,
+    actor_type: str,
+    email: str,
+    password: str,
+    totp: str | None = None,
 ) -> TokenPair:
-    """Authenticate and issue tokens, or raise a generic auth error.
+    """Authenticate against the actor's own table and issue tokens.
 
-    Anti-enumeration (RN-011): a missing user still pays the argon2 cost via
+    Anti-enumeration (RN-011): a missing account still pays the argon2 cost via
     `verify_dummy`, and every failure returns the SAME generic message.
     """
-    user = await _get_user_by_email(session, email)
+    model = _model_for(actor_type)
+    stmt = select(model).where(model.email == email)
+    account = (await session.execute(stmt)).scalars().first()
 
-    if user is None:
+    if account is None or getattr(account, "password_hash", None) is None:
         verify_dummy(password)  # constant-time path
-        logger.info("login_fail", reason="unknown_user")  # no PII (no email)
+        logger.info("login_fail", actor_type=actor_type, reason="unknown_account")
         raise InvalidCredentialsError()
 
-    if is_locked(user):
-        logger.warning("lockout", user_id=user.id)
+    if getattr(account, "deleted_at", None) is not None:
+        verify_dummy(password)
+        logger.info("login_fail", actor_type=actor_type, reason="deleted")
+        raise InvalidCredentialsError()
+
+    if is_locked(account):
+        logger.warning("lockout", actor_type=actor_type, actor_id=account.id)
         raise AccountLockedError()
 
-    if not user.is_active:
+    if not bool(getattr(account, "is_active", True)):
         verify_dummy(password)
-        logger.info("login_fail", user_id=user.id, reason="inactive")
+        logger.info("login_fail", actor_type=actor_type, actor_id=account.id, reason="inactive")
         raise InvalidCredentialsError()
 
-    ok, new_hash = verify_password(user.password_hash, password)
+    ok, new_hash = verify_password(account.password_hash, password)
     if not ok:
-        register_failed_attempt(user)
+        register_failed_attempt(account)
         # COMMIT now: the failure counter / lock must persist even though we
         # raise (the router does not commit on the error path).
         await session.commit()
-        logger.info("login_fail", user_id=user.id, reason="bad_password")
-        if is_locked(user):
+        logger.info("login_fail", actor_type=actor_type, actor_id=account.id, reason="bad_password")
+        if is_locked(account):
             raise AccountLockedError()
         raise InvalidCredentialsError()
 
     if new_hash is not None:
-        user.password_hash = new_hash  # transparent argon2 param upgrade
+        account.password_hash = new_hash  # transparent argon2 param upgrade
 
-    # TOTP: only required when totp_required is set AND the user has enrolled.
-    if user.totp_required and user.totp_enrolled and user.totp_secret is not None:
-        if not totp or not verify_totp(user.totp_secret, totp):
-            register_failed_attempt(user)
-            await session.commit()
-            logger.info("login_fail", user_id=user.id, reason="bad_totp")
-            raise TotpRequiredError()
-        # Anti-replay: reject a code reused within the same window (TH-08).
-        from app.core.security import current_totp_window
+    # TOTP: só platform_admin tem TOTP (D-03).
+    if actor_type == ACTOR_PLATFORM_ADMIN:
+        if account.totp_required and account.totp_enrolled and account.totp_secret is not None:
+            if not totp or not verify_totp(account.totp_secret, totp):
+                register_failed_attempt(account)
+                await session.commit()
+                logger.info("login_fail", actor_type=actor_type, actor_id=account.id, reason="bad_totp")
+                raise TotpRequiredError()
+            # Anti-replay: reject a code reused within the same window (TH-08).
+            from app.core.security import current_totp_window
 
-        window = current_totp_window(user.totp_secret)
-        if user.totp_last_window is not None and window <= user.totp_last_window:
-            logger.info("login_fail", user_id=user.id, reason="totp_replay")
-            raise TotpRequiredError("Código TOTP já utilizado.")
-        user.totp_last_window = window
+            window = current_totp_window(account.totp_secret)
+            if account.totp_last_window is not None and window <= account.totp_last_window:
+                logger.info("login_fail", actor_id=account.id, reason="totp_replay")
+                raise TotpRequiredError("Código TOTP já utilizado.")
+            account.totp_last_window = window
 
-    reset_lockout(user)
-    pair = await issue_token_pair(session, user)
-    logger.info("login_ok", user_id=user.id)
+    reset_lockout(account)
+    actor = build_actor(actor_type, account)
+    pair = await issue_token_pair(session, actor)
+    logger.info("login_ok", actor_type=actor_type, actor_id=account.id)
     return pair
 
 
@@ -343,19 +306,19 @@ async def rotate_refresh(session: AsyncSession, raw: str) -> TokenPair:
         # error path). Re-login is required (TH-03).
         await _revoke_family(session, token.family_id)
         await session.commit()
-        logger.warning("refresh_reuse_detected", user_id=token.user_id)
+        logger.warning("refresh_reuse_detected", actor_id=token.actor_id)
         raise RefreshReuseError()
 
     if datetime.now(UTC) >= ensure_aware_utc(token.expires_at):
         raise InvalidRefreshError()
 
-    user = await session.get(User, token.user_id)
-    if user is None or not user.is_active:
+    actor = await load_actor(session, actor_type=token.actor_type, actor_id=token.actor_id)
+    if actor is None:
         raise InvalidRefreshError()
 
     token.rotated_at = datetime.now(UTC)
-    pair = await issue_token_pair(session, user, family_id=token.family_id)
-    logger.info("refresh_rotated", user_id=user.id)
+    pair = await issue_token_pair(session, actor, family_id=token.family_id)
+    logger.info("refresh_rotated", actor_type=actor.type, actor_id=actor.id)
     return pair
 
 
@@ -365,4 +328,4 @@ async def logout(session: AsyncSession, raw: str) -> None:
     if token is not None and token.revoked_at is None:
         token.revoked_at = datetime.now(UTC)
         await session.flush()
-        logger.info("logout", user_id=token.user_id)
+        logger.info("logout", actor_id=token.actor_id)

@@ -58,7 +58,9 @@ class PushSubscription(Base, AreaScopedMixin, TimestampMixin):
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
     # The subscriber (a recipient may be anonymous; user_id NULL for public devices).
+    # Pós-users: user_id é o id na tabela do actor_type (courier|merchant|...).
     user_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True)
+    actor_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     delivery_id: Mapped[int | None] = mapped_column(
         BIG_ID,
         ForeignKey("deliveries.id", ondelete="RESTRICT", onupdate="RESTRICT"),

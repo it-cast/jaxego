@@ -36,4 +36,5 @@ def get_payment_adapter() -> PaymentPort:
         allowlist=_hosts(settings.safe2pay_allowlist_hosts),
         sandbox=settings.safe2pay_sandbox,
         jaxego_recipient=settings.safe2pay_jaxego_recipient,
+        marketplace_api_key=settings.safe2pay_marketplace_token,
     )

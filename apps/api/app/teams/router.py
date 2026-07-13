@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import AreaScopeDep, require_role
-from app.auth.models import User
+from app.auth.principals import Actor
 from app.db.session import get_session
 from app.teams import service
 from app.teams.schemas import TeamCreate, TeamRead, TeamUpdate
@@ -19,7 +19,7 @@ from app.teams.schemas import TeamCreate, TeamRead, TeamUpdate
 router = APIRouter(prefix="/admin/teams", tags=["admin-teams"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
-AreaAdminDep = Annotated[User, Depends(require_role("admin_area"))]
+AreaAdminDep = Annotated[Actor, Depends(require_role("admin_area"))]
 
 
 async def _team_read(session: AsyncSession, team) -> TeamRead:

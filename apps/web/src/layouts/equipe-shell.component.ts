@@ -124,6 +124,6 @@ export class EquipeShellComponent {
 
   protected async logout(): Promise<void> {
     await this.auth.logout();
-    void this.router.navigate(['/entrar']);
+    void this.router.navigate(['/equipe/entrar']);
   }
 }

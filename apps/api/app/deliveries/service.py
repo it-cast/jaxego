@@ -107,6 +107,7 @@ async def transition(
     delivery: Delivery,
     to_state: str,
     actor_id: int | None,
+    actor_type: str | None = None,
     reason: str | None = None,
     gps: tuple[float, float] | None = None,
     ip: str | None = None,
@@ -147,6 +148,7 @@ async def transition(
     if to_state == "CANCELADA":
         locked.cancel_reason = reason
         locked.cancel_actor_user_id = actor_id
+        locked.cancel_actor_type = actor_type
 
     session.add(
         DeliveryStateTransition(
@@ -155,6 +157,7 @@ async def transition(
             from_state=from_state,
             to_state=to_state,
             actor_user_id=actor_id,
+            actor_type=actor_type,
             reason=reason,
             gps_lat=gps[0] if gps else None,
             gps_lng=gps[1] if gps else None,

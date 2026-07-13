@@ -39,7 +39,6 @@ from app.merchants.schemas import (
     SignupResponse,
     mask_document_display,
 )
-from app.merchants.models import MerchantUser
 
 router = APIRouter(prefix="/merchants", tags=["merchants"])
 interest_router = APIRouter(prefix="/interest", tags=["interest"])
@@ -88,16 +87,12 @@ async def get_profile(
     session: SessionDep,
     user: CurrentUser,
 ) -> MerchantProfileRead:
-    from sqlalchemy import select
     from app.merchants.models import Merchant
 
-    link = (
-        await session.execute(select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1))
-    ).scalar_one_or_none()
-    if link is None:
+    if user.type != "merchant":
         from app.core.exceptions import NotFoundError
         raise NotFoundError("Loja nao encontrada.")
-    merchant = await session.get(Merchant, link.merchant_id)
+    merchant = await session.get(Merchant, user.id)
     if merchant is None:
         from app.core.exceptions import NotFoundError
         raise NotFoundError("Loja nao encontrada.")
@@ -118,16 +113,12 @@ async def update_profile(
     session: SessionDep,
     user: CurrentUser,
 ) -> MerchantProfileRead:
-    from sqlalchemy import select
     from app.merchants.models import Merchant
 
-    link = (
-        await session.execute(select(MerchantUser).where(MerchantUser.user_id == user.id).limit(1))
-    ).scalar_one_or_none()
-    if link is None:
+    if user.type != "merchant":
         from app.core.exceptions import NotFoundError
         raise NotFoundError("Loja nao encontrada.")
-    merchant = await session.get(Merchant, link.merchant_id)
+    merchant = await session.get(Merchant, user.id)
     if merchant is None:
         from app.core.exceptions import NotFoundError
         raise NotFoundError("Loja nao encontrada.")

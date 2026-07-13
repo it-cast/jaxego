@@ -123,6 +123,11 @@ async def _process_event(session: AsyncSession, transaction_id: str, event_statu
     from app.payments import repo, subscriptions
 
     approved = event_status in {"3", "4", "APROVADA", "ATIVA", "CONCLUIDA", "PAGO"}
+    # Estorno confirmado pela Safe2Pay — evidência real observada em produção:
+    # PIX avulso estornado pelo painel da Safe2Pay chega com event_status "6".
+    # Sem isso, platform_charges.status fica "paid" pra sempre mesmo depois do
+    # estorno já efetivado do lado da Safe2Pay (gap de reconciliação).
+    refunded = event_status in {"6"}
 
     # PIX Automático authorization APROVADA: look up by authorization id.
     if event_status == "APROVADA":
@@ -141,11 +146,22 @@ async def _process_event(session: AsyncSession, transaction_id: str, event_statu
         transaction_id=transaction_id,
         event_status=event_status,
         approved=approved,
+        refunded=refunded,
         charge_found=charge is not None,
         charge_kind=charge.kind if charge else None,
         charge_status=charge.status if charge else None,
         delivery_id=charge.delivery_id if charge else None,
     )
+    if charge is not None and refunded and charge.status == "paid":
+        charge.status = "refunded"
+        await session.commit()
+        logger.info(
+            "payments.charge_refunded",
+            transaction_id=transaction_id,
+            delivery_id=charge.delivery_id,
+            subscription_id=charge.subscription_id,
+        )
+        return
     if charge is not None and approved and charge.status == "open":
         charge.status = "paid"
         if charge.subscription_id is not None and charge.method == "pix":

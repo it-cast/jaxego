@@ -1,4 +1,11 @@
 <div class="jx-cad">
+  @if (submitting()) {
+    <div class="jx-cad__overlay" role="status" aria-live="polite" aria-busy="true">
+      <div class="jx-cad__overlay-spinner"></div>
+      <p class="jx-cad__overlay-text">{{ submitProgress() || 'Salvando dados…' }}</p>
+    </div>
+  }
+
   <jx-page-header title="Cadastro de entregador" backLink="/" />
 
   <div class="jx-cad__wrap">
@@ -354,15 +361,13 @@
       </section>
     }
 
-    @if (submitting()) {
-      <div class="jx-cad__submitting" role="status" aria-busy="true">
-        <p>{{ submitProgress() }}</p>
-      </div>
-    }
   </div>
 
   <footer class="jx-cad__footer">
     <button type="button" class="jx-cad__cta" [disabled]="loading() || submitting()" (click)="next()">
+      @if (submitting()) {
+        <span class="jx-cad__cta-spinner" aria-hidden="true"></span>
+      }
       {{ isLastStep() ? 'Enviar para análise' : 'Continuar' }}
     </button>
     @if (current() > 0) {
