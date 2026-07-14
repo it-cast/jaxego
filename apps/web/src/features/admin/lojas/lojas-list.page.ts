@@ -53,15 +53,40 @@ const PAGE_SIZE = 20;
     <section class="jx-lojas">
       <header class="jx-lojas__head">
         <h1 class="jx-lojas__title">Lojas</h1>
+      </header>
+
+      <div class="jx-lojas__filters">
         <input
           type="search"
           class="jx-lojas__search"
-          placeholder="Buscar loja…"
+          placeholder="Buscar por nome..."
           [value]="query()"
           (input)="onSearch($event)"
-          aria-label="Buscar loja"
+          aria-label="Buscar loja por nome"
         />
-      </header>
+        <select
+          class="jx-lojas__select"
+          [value]="categoryFilter()"
+          (change)="onCategoryFilter($event)"
+          aria-label="Filtrar por categoria"
+        >
+          <option value="">Todas as categorias</option>
+          @for (c of categoryOptions(); track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+        <select
+          class="jx-lojas__select"
+          [value]="statusFilter()"
+          (change)="onStatusFilter($event)"
+          aria-label="Filtrar por status"
+        >
+          <option value="">Todos os status</option>
+          @for (s of statusOptions; track s.value) {
+            <option [value]="s.value">{{ s.label }}</option>
+          }
+        </select>
+      </div>
 
       <jx-data-table
         [columns]="columns"
@@ -122,14 +147,32 @@ const PAGE_SIZE = 20;
         font-size: var(--jx-text-2xl);
         margin: 0;
       }
-      .jx-lojas__search {
-        padding: var(--jx-space-2);
-        border: 1px solid var(--border);
-        border-radius: var(--jx-radius-md);
-        background: var(--surface);
+      .jx-lojas__filters {
+        display: flex;
+        align-items: center;
+        gap: var(--jx-space-2);
+        flex-wrap: wrap;
+      }
+      .jx-lojas__search,
+      .jx-lojas__select {
+        min-height: 44px;
+        padding: 0 var(--jx-space-3);
+        border: 1px solid var(--border-strong, var(--border));
+        border-radius: var(--jx-radius-lg);
+        font-size: var(--jx-text-base);
         color: var(--text);
-        font-size: var(--jx-text-sm);
+        background: var(--surface);
+      }
+      .jx-lojas__search:focus,
+      .jx-lojas__select:focus {
+        outline: none;
+        border-color: var(--brand);
+      }
+      .jx-lojas__search {
         min-width: 220px;
+      }
+      .jx-lojas__select {
+        min-width: 170px;
       }
       .jx-lojas__mono {
         font-family: var(--jx-font-mono);
@@ -170,16 +213,38 @@ export class AdminLojasPage implements OnInit {
   ];
   protected readonly trackById = (item: unknown) => (item as MerchantRow).id;
 
+  protected readonly statusOptions: { value: string; label: string }[] = [
+    { value: 'active', label: 'Ativa' },
+    { value: 'pending_payment', label: 'Aguardando pagamento' },
+    { value: 'pending_validation', label: 'Em validação' },
+    { value: 'suspended', label: 'Suspensa' },
+  ];
+
   private readonly items = signal<MerchantRow[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
   protected readonly query = signal('');
+  protected readonly categoryFilter = signal('');
+  protected readonly statusFilter = signal('');
   protected readonly page = signal(0);
   private readonly sortKey = signal<string | null>(null);
   private readonly sortDir = signal<SortDir>('none');
 
+  /** Categorias distintas presentes na lista carregada — não é uma lista fixa
+   * (category é texto livre no cadastro da loja, sem enum no backend). */
+  protected readonly categoryOptions = computed<string[]>(() => {
+    const set = new Set(
+      this.items()
+        .map((m) => m.category)
+        .filter((c): c is string => !!c)
+    );
+    return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  });
+
   private readonly view = computed<MerchantRow[]>(() => {
     const q = this.query().trim().toLowerCase();
+    const category = this.categoryFilter();
+    const status = this.statusFilter();
     let rows = this.items();
     if (q) {
       rows = rows.filter(
@@ -187,6 +252,12 @@ export class AdminLojasPage implements OnInit {
           m.trade_name.toLowerCase().includes(q) ||
           m.document_masked.toLowerCase().includes(q)
       );
+    }
+    if (category) {
+      rows = rows.filter((m) => m.category === category);
+    }
+    if (status) {
+      rows = rows.filter((m) => m.status === status);
     }
     const key = this.sortKey();
     const dir = this.sortDir();
@@ -240,6 +311,16 @@ export class AdminLojasPage implements OnInit {
 
   protected onSearch(e: Event): void {
     this.query.set((e.target as HTMLInputElement).value);
+    this.page.set(0);
+  }
+
+  protected onCategoryFilter(e: Event): void {
+    this.categoryFilter.set((e.target as HTMLSelectElement).value);
+    this.page.set(0);
+  }
+
+  protected onStatusFilter(e: Event): void {
+    this.statusFilter.set((e.target as HTMLSelectElement).value);
     this.page.set(0);
   }
 

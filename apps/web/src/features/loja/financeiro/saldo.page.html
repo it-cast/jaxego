@@ -14,7 +14,12 @@
   } @else {
     <div class="jx-saldo__balance-card">
       <span class="jx-saldo__balance-label">Saldo disponível</span>
-      <jx-money [cents]="balanceCents()" variant="display" [sign]="balanceCents() !== 0 ? balanceSign : 'none'" label="Saldo disponível" />
+      <div class="jx-saldo__balance-row">
+        <jx-money [cents]="balanceCents()" variant="display" [sign]="balanceCents() !== 0 ? balanceSign : 'none'" label="Saldo disponível" />
+        <button type="button" class="jx-saldo__topup-btn" (click)="openTopupModal()">
+          + Adicionar saldo
+        </button>
+      </div>
       @if (balanceCents() < 0) {
         <p class="jx-saldo__balance-hint">
           O saldo negativo é compensado automaticamente na próxima sobra — não bloqueia novas entregas.
@@ -50,4 +55,104 @@
       </ng-template>
     </jx-data-table>
   </section>
+
+  @if (showTopupModal()) {
+    <div class="jx-modal-overlay" role="dialog" aria-modal="true" aria-label="Adicionar saldo" (click)="closeTopupModal()">
+      <div class="jx-modal jx-modal--narrow" (click)="$event.stopPropagation()">
+        <div class="jx-modal__header">
+          <h2 class="jx-modal__title">
+            @if (topupConfirmed()) { Saldo adicionado! } @else { Adicionar saldo }
+          </h2>
+          <button type="button" class="jx-modal__close" aria-label="Fechar" (click)="closeTopupModal()">×</button>
+        </div>
+        <div class="jx-modal__body">
+
+          @if (topupConfirmed()) {
+            <div class="jx-saldo__topup-success">
+              <div class="jx-saldo__topup-success-icon" aria-hidden="true">✓</div>
+              <p class="jx-saldo__topup-success-msg">PIX confirmado. Seu saldo já foi atualizado.</p>
+              <button type="button" class="jx-saldo__topup-cta" (click)="closeTopupModal()">Continuar</button>
+            </div>
+
+          } @else if (topupPending()) {
+            <div class="jx-saldo__topup-pix" role="status" aria-live="polite">
+              @if (topupQrImage()) {
+                <img [src]="topupQrImage()!" alt="QR Code PIX" class="jx-saldo__topup-qr" />
+              }
+              @if (topupQrCode()) {
+                <p class="jx-saldo__topup-code">{{ topupQrCode() }}</p>
+                <button type="button" class="jx-saldo__topup-copy" (click)="copyTopupCode()">
+                  {{ topupCopied() ? 'Copiado!' : 'Copiar código PIX' }}
+                </button>
+              }
+              <p class="jx-saldo__topup-note">Aguardando confirmação do pagamento…</p>
+            </div>
+
+          } @else {
+            <div class="jx-saldo__topup-presets">
+              @for (r of presetsReais; track r) {
+                <button type="button" class="jx-saldo__topup-preset" (click)="selectPreset(r)">
+                  R$ {{ r }}
+                </button>
+              }
+            </div>
+
+            <label class="jx-saldo__topup-field">
+              <span class="jx-saldo__topup-label">Ou digite outro valor</span>
+              <input
+                class="jx-saldo__topup-input"
+                inputmode="decimal"
+                placeholder="R$ 0,00"
+                [value]="topupInput()"
+                (input)="onTopupInput($any($event.target).value)"
+              />
+            </label>
+
+            @if (topupInput() && !topupValid()) {
+              <p class="jx-saldo__topup-err">Digite um valor maior que R$ 0,00.</p>
+            }
+
+            @if (topupValid()) {
+              <div class="jx-saldo__topup-breakdown">
+                <div class="jx-saldo__topup-row jx-saldo__topup-row--sub">
+                  <span>Recarga (vira saldo)</span>
+                  <span>{{ formatBrl(topupAmountCents()) }}</span>
+                </div>
+                @if (topupTaxaPixCents() > 0) {
+                  <div class="jx-saldo__topup-row jx-saldo__topup-row--sub">
+                    <span>Taxa PIX</span>
+                    <span>{{ formatBrl(topupTaxaPixCents()) }}</span>
+                  </div>
+                }
+                @if (topupTaxaServicoCents() > 0) {
+                  <div class="jx-saldo__topup-row jx-saldo__topup-row--sub">
+                    <span>Taxa de serviço</span>
+                    <span>{{ formatBrl(topupTaxaServicoCents()) }}</span>
+                  </div>
+                }
+                <div class="jx-saldo__topup-row jx-saldo__topup-row--total">
+                  <span>Total a pagar via PIX</span>
+                  <strong>{{ formatBrl(topupExpectedTotalCents()) }}</strong>
+                </div>
+              </div>
+            }
+
+            @if (topupError(); as err) {
+              <p class="jx-saldo__topup-err">{{ err }}</p>
+            }
+
+            <button
+              type="button"
+              class="jx-saldo__topup-cta"
+              [disabled]="!topupValid() || topupLoading()"
+              (click)="submitTopup()"
+            >
+              {{ topupLoading() ? 'Gerando PIX...' : 'Fazer recarga' }}
+            </button>
+          }
+
+        </div>
+      </div>
+    </div>
+  }
 </section>

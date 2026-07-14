@@ -3,10 +3,14 @@
 Money is integer CENTS everywhere (never Float — DRV-009). All datetimes are aware UTC
 (UTC_DATETIME / TD-010). The three tables:
 
-- `PlatformCharge` — every online charge (subscription or delivery). `idempotency_key`
-  is UNIQUE → a re-charge with the same key is a no-op (TH-D). `transaction_id` is the
-  Safe2Pay `IdTransaction`, indexed for webhook/reconcile lookup. `kind` ∈
-  {subscription, delivery}; `status` ∈ {open, paid, failed, refunded, canceled}.
+- `PlatformCharge` — every online charge (subscription, delivery, or merchant credit
+  topup). `idempotency_key` is UNIQUE → a re-charge with the same key is a no-op
+  (TH-D). `transaction_id` is the Safe2Pay `IdTransaction`, indexed for webhook/
+  reconcile lookup. `kind` ∈ {subscription, delivery, topup}; `status` ∈ {open, paid,
+  failed, refunded, canceled}. A `topup` charge sets `merchant_id` (the other two kinds
+  resolve their owner via `subscription_id`/`delivery_id`) and `net_amount_cents` (the
+  slice that becomes saldo — `amount_cents` is the FULL PIX total, taxa_pix +
+  taxa_servico included, CORRECAO-260).
 
 - `EscrowLedger` — the internal 24h escrow (RN-006), a domain ledger independent of the
   PSP. A delivery's corrida is HELD on charge; `release_escrow` moves it to RELEASED only
@@ -32,7 +36,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin, TimestampMixin
 
-CHARGE_KINDS = ("subscription", "delivery")
+CHARGE_KINDS = ("subscription", "delivery", "topup")
 CHARGE_STATUSES = ("open", "paid", "failed", "refunded", "canceled")
 ESCROW_STATES = ("HELD", "RELEASED", "REFUNDED", "FROZEN")
 
@@ -63,12 +67,17 @@ class PlatformCharge(Base, AreaScopedMixin, TimestampMixin):
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
 
-    # Link back to the originating entity (one of the two is set).
+    # Link back to the originating entity (exactly one of the three is set, by kind).
     subscription_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True, index=True)
     delivery_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True, index=True)
+    merchant_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True, index=True)
 
     # Subscription charges carry the due date (cron + delinquency). aware-UTC.
     due_at: Mapped[datetime | None] = mapped_column(UTC_DATETIME, nullable=True)
+
+    # topup only: the slice of amount_cents that becomes saldo (amount_cents itself is
+    # the full PIX total, taxa_pix + taxa_servico included — CORRECAO-260).
+    net_amount_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class EscrowLedger(Base, AreaScopedMixin, TimestampMixin):

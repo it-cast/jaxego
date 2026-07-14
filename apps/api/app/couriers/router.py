@@ -637,6 +637,58 @@ async def mark_collected(
     return {"ok": True, "state": "COLETADA"}
 
 
+@router.post("/{courier_id}/deliveries/{delivery_id}/cancel-acceptance")
+async def cancel_acceptance(
+    courier_id: int,
+    delivery_id: int,
+    body: CourierLocationBody,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Entregador desiste depois de aceitar, antes de coletar (CORRECAO-262).
+
+    ACEITA → CRIADA — reabre a entrega pra fila de despacho, excluído da nova
+    rodada. Só é possível entre o aceite e a coleta (422 depois de COLETADA).
+    """
+    from app.deliveries.service import courier_cancel_acceptance
+    from app.tracking.service import ACTION_CANCELOU_ACEITE, log_courier_action
+
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery = await courier_cancel_acceptance(
+        session,
+        delivery_id=delivery_id,
+        courier_id=courier.id,
+        reason="courier_desistiu_pre_coleta",
+        gps=(body.lat, body.lng),
+        ip=None,
+    )
+    await log_courier_action(
+        session,
+        area_id=delivery.area_id,
+        delivery_id=delivery.id,
+        courier_id=courier.id,
+        action=ACTION_CANCELOU_ACEITE,
+        lat=body.lat,
+        lng=body.lng,
+    )
+    await session.commit()
+
+    # Reabre a fila — efeito em Redis/fila, nunca dentro da transação do banco
+    # (mesmo padrão de enqueue_payout/enqueue_refund). Best-effort: uma falha
+    # aqui não desfaz o cancelamento já persistido; a entrega fica CRIADA e o
+    # sweep `redispatch_stale_deliveries` (cron) recupera em até 5 min.
+    from app.core.redis import get_redis_client
+    from app.dispatch import offer_state
+    from app.workers.dispatch import enqueue_dispatch
+
+    r = get_redis_client()
+    await offer_state.add_declined(r, delivery.id, courier.id)
+    await enqueue_dispatch(delivery.id)
+
+    return {"ok": True, "state": delivery.state}
+
+
 @router.post("/{courier_id}/deliveries/{delivery_id}/finalize-no-proof")
 async def finalize_no_proof(
     courier_id: int,

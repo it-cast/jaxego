@@ -3,7 +3,9 @@
 Plans are catalog data, not area-scoped: a plan is offered platform-wide, a
 *subscription* (merchant_subscriptions) is what carries area_id. Values
 (price, monthly deliveries, per-delivery fee) live in the SEED (`tools/seed.py`),
-NEVER hardcoded in code or UI (DRV-009). `is_free` marks the immutable Free plan.
+NEVER hardcoded in code or UI (DRV-009). `is_free` marks which plan is the
+default/free tier for `_pick_active_plan` (merchants/service.py) — editable and
+deletable (soft, via is_active) like any other plan since CORRECAO-257.
 Money is stored as integer cents (no float) — `price_monthly_cents`, `price_annual_cents`, `fee_cents`.
 """
 
@@ -35,7 +37,7 @@ class SubscriptionPlan(Base, TimestampMixin):
     taxa_pix_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Taxa de serviço por entrega (centavos) — substitui fee_cents no CRUD.
     taxa_servico_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    # True only for the immutable Free plan (seed marks it; app refuses to mutate).
+    # True for the default/free tier (seed marks it) — editable/deletable like any plan.
     is_free: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Free has unlimited months but a hard delivery cap; this flags the no-cap tier.
     is_unlimited: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

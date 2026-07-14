@@ -193,6 +193,13 @@ export class EntregadorService {
     );
   }
 
+  /** Desiste depois de aceitar, antes de coletar — reabre a entrega pra fila (CORRECAO-262). */
+  async cancelAcceptance(courierId: number, deliveryId: number, lat: number, lng: number): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/cancel-acceptance`, { lat, lng }),
+    );
+  }
+
   async deliveryImageUrl(courierId: number, deliveryId: number): Promise<string | null> {
     try {
       const res = await firstValueFrom(

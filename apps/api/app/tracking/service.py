@@ -22,6 +22,7 @@ ACTION_CHEGOU_DESTINO = "chegou_destino"
 ACTION_COLETOU = "coletou"
 ACTION_ENTREGOU = "entregou"
 ACTION_RECUSOU_ENTREGA = "recusou_entrega"
+ACTION_CANCELOU_ACEITE = "cancelou_aceite"
 
 COURIER_ACTIONS = frozenset(
     {
@@ -30,6 +31,7 @@ COURIER_ACTIONS = frozenset(
         ACTION_COLETOU,
         ACTION_ENTREGOU,
         ACTION_RECUSOU_ENTREGA,
+        ACTION_CANCELOU_ACEITE,
     }
 )
 

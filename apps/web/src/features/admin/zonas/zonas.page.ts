@@ -15,17 +15,62 @@ import {
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faPlus,
-  faPenToSquare,
   faTrashCan,
   faCheck,
   faXmark,
   faChevronLeft,
   faChevronRight,
+  faDrawPolygon,
 } from '@fortawesome/free-solid-svg-icons';
 import { AdminZonasService, Zona } from './zonas.service';
-import { AreaMapComponent } from '../../admin-plataforma/area-map.component';
+import { AreaMapComponent, AreaMapDraft } from '../../admin-plataforma/area-map.component';
 
-type ViewMode = 'list' | 'create' | 'edit';
+type ViewMode = 'list' | 'mass-add';
+
+/** Cores cicladas pros rascunhos de zona no modo de adicionar em massa — precisam
+ * ser visualmente distintas entre si e da cor cinza das zonas existentes (#9aa0a6). */
+const DRAFT_COLORS = ['#e8722a', '#2563eb', '#16a34a', '#c026d3', '#dc2626', '#0891b2', '#ca8a04', '#7c3aed'];
+let draftSeq = 0;
+
+interface ZoneDraftRow extends AreaMapDraft {
+  /** null = zona nova (ainda não existe); número = zona já cadastrada sendo editada junto. */
+  zonaId: number | null;
+  originalName: string;
+  originalBoundary: object | null;
+}
+
+function newDraftRow(): ZoneDraftRow {
+  draftSeq += 1;
+  return {
+    id: `draft-${draftSeq}`,
+    zonaId: null,
+    name: '',
+    boundary: null,
+    originalName: '',
+    originalBoundary: null,
+    color: DRAFT_COLORS[(draftSeq - 1) % DRAFT_COLORS.length],
+  };
+}
+
+function rowFromExisting(z: Zona): ZoneDraftRow {
+  draftSeq += 1;
+  return {
+    id: `draft-${draftSeq}`,
+    zonaId: z.id,
+    name: z.name,
+    boundary: z.boundary,
+    originalName: z.name,
+    originalBoundary: z.boundary,
+    color: DRAFT_COLORS[(draftSeq - 1) % DRAFT_COLORS.length],
+  };
+}
+
+function rowChanged(d: ZoneDraftRow): boolean {
+  return (
+    d.name.trim() !== d.originalName.trim() ||
+    JSON.stringify(d.boundary) !== JSON.stringify(d.originalBoundary)
+  );
+}
 
 @Component({
   selector: 'jx-zonas-page',
@@ -37,7 +82,7 @@ type ViewMode = 'list' | 'create' | 'edit';
       <header class="jx-zonas__header">
         <h1 class="jx-zonas__title">Zonas</h1>
         @if (mode() === 'list') {
-          <button type="button" class="jx-zonas__cta" (click)="showCreate()">
+          <button type="button" class="jx-zonas__cta" (click)="showMassAdd()">
             <fa-icon [icon]="iconPlus" aria-hidden="true" /> Adicionar
           </button>
         }
@@ -49,40 +94,85 @@ type ViewMode = 'list' | 'create' | 'edit';
         </div>
       }
 
-      @if (mode() === 'create' || mode() === 'edit') {
+      @if (mode() === 'mass-add') {
         <section class="jx-zonas__form-card">
-          <h2 class="jx-zonas__form-title">{{ mode() === 'create' ? 'Nova zona' : 'Editar zona' }}</h2>
-          <form class="jx-zonas__form" (ngSubmit)="save()">
-            <label class="jx-zonas__field">
-              <span class="jx-zonas__label">Nome da zona</span>
-              <input
-                class="jx-zonas__input"
-                type="text"
-                [(ngModel)]="formName"
-                name="name"
-                required
-                maxlength="160"
-                placeholder="Ex: Norte, Centro, Zona Sul"
-              />
-            </label>
-            <div class="jx-zonas__field">
-              <span class="jx-zonas__label">Polígono da zona</span>
-              <jx-area-map
-                [boundary]="formBoundary"
-                (boundaryChange)="formBoundary = $event"
-              />
-              <span class="jx-zonas__hint">Desenhe o polígono que delimita esta zona no mapa.</span>
-            </div>
-            <div class="jx-zonas__form-actions">
-              <button type="submit" class="jx-zonas__cta" [disabled]="saving() || !formName.trim()">
-                <fa-icon [icon]="iconSave" aria-hidden="true" />
-                {{ saving() ? 'Salvando...' : 'Salvar' }}
-              </button>
-              <button type="button" class="jx-zonas__btn-secondary" (click)="cancel()">
-                <fa-icon [icon]="iconCancel" aria-hidden="true" /> Cancelar
-              </button>
-            </div>
-          </form>
+          <h2 class="jx-zonas__form-title">Zonas</h2>
+          <p class="jx-zonas__hint">
+            As zonas já cadastradas já aparecem abaixo, pra editar nome/polígono
+            junto com as novas. Clique em "Desenhar"/"Redesenhar" pra marcar o
+            polígono de qualquer linha no mapa, ou em "+ Nova zona" pra adicionar
+            mais uma.
+          </p>
+
+          <div class="jx-zonas__draft-list">
+            @for (d of drafts(); track d.id) {
+              <div class="jx-zonas__draft-row" [class.jx-zonas__draft-row--active]="d.id === activeDraftId()">
+                <span class="jx-zonas__draft-swatch" [style.background]="d.color"></span>
+                <input
+                  class="jx-zonas__input jx-zonas__draft-input"
+                  type="text"
+                  [(ngModel)]="d.name"
+                  [name]="'draft-name-' + d.id"
+                  maxlength="160"
+                  placeholder="Nome da zona"
+                />
+                <button
+                  type="button"
+                  class="jx-zonas__draft-draw-btn"
+                  [class.jx-zonas__draft-draw-btn--active]="d.id === activeDraftId()"
+                  (click)="setActiveDraft(d.id)"
+                >
+                  <fa-icon [icon]="iconPolygon" aria-hidden="true" />
+                  {{ d.boundary ? 'Redesenhar' : 'Desenhar' }}
+                </button>
+                @if (d.zonaId !== null) {
+                  <span class="jx-zonas__draft-badge jx-zonas__draft-badge--existing">Existente</span>
+                } @else {
+                  <span class="jx-zonas__draft-badge">Nova</span>
+                }
+                @if (isRowChanged(d)) {
+                  <span class="jx-zonas__draft-badge jx-zonas__draft-badge--changed">Alterada</span>
+                }
+                @if (d.zonaId === null) {
+                  <button
+                    type="button"
+                    class="jx-zonas__action-btn jx-zonas__action-btn--danger"
+                    (click)="removeDraftRow(d.id)"
+                    aria-label="Remover esta linha"
+                  >
+                    <fa-icon [icon]="iconRemove" aria-hidden="true" />
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <button type="button" class="jx-zonas__btn-secondary" (click)="addDraftRow()">
+            <fa-icon [icon]="iconPlus" aria-hidden="true" /> Nova zona
+          </button>
+
+          <div class="jx-zonas__field">
+            <span class="jx-zonas__label">
+              Mapa
+              @if (activeDraftName(); as n) { — desenhando: <strong>{{ n }}</strong> }
+            </span>
+            <jx-area-map
+              [multiMode]="true"
+              [drafts]="drafts()"
+              [activeDraftId]="activeDraftId()"
+              (draftBoundaryChange)="onDraftBoundaryChange($event)"
+            />
+          </div>
+
+          <div class="jx-zonas__form-actions">
+            <button type="button" class="jx-zonas__cta" [disabled]="saving() || !hasSavableDraft()" (click)="saveAllDrafts()">
+              <fa-icon [icon]="iconSave" aria-hidden="true" />
+              {{ saving() ? 'Salvando...' : 'Salvar alterações' }}
+            </button>
+            <button type="button" class="jx-zonas__btn-secondary" (click)="cancel()">
+              <fa-icon [icon]="iconCancel" aria-hidden="true" /> Cancelar
+            </button>
+          </div>
         </section>
       }
 
@@ -129,9 +219,6 @@ type ViewMode = 'list' | 'create' | 'edit';
                   <fa-icon [icon]="iconCancel" aria-hidden="true" />
                 </button>
               } @else {
-                <button type="button" class="jx-zonas__action-btn" (click)="showEdit(item)" aria-label="Editar">
-                  <fa-icon [icon]="iconEdit" aria-hidden="true" />
-                </button>
                 <button type="button" class="jx-zonas__action-btn jx-zonas__action-btn--danger" (click)="confirmRemove(item.id)" aria-label="Remover">
                   <fa-icon [icon]="iconRemove" aria-hidden="true" />
                 </button>
@@ -160,7 +247,7 @@ type ViewMode = 'list' | 'create' | 'edit';
     .jx-zonas__title { margin: 0; font-family: var(--jx-font-display); font-size: var(--jx-text-2xl); font-weight: var(--jx-weight-bold); color: var(--text); }
     .jx-zonas__cta { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 0; border-radius: var(--jx-radius-lg); background: var(--brand); color: var(--brand-contrast, #fff); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
     .jx-zonas__cta:disabled { opacity: 0.6; cursor: default; }
-    .jx-zonas__btn-secondary { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 1px solid var(--border); border-radius: var(--jx-radius-lg); background: transparent; color: var(--text); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
+    .jx-zonas__btn-secondary { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 1px solid var(--border); border-radius: var(--jx-radius-lg); background: transparent; color: var(--text); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; align-self: flex-start; }
     .jx-zonas__msg { padding: var(--jx-space-3) var(--jx-space-4); border-radius: var(--jx-radius-lg); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); }
     .jx-zonas__msg--ok { background: var(--success-wash, var(--brand-wash)); color: var(--success, var(--brand)); }
     .jx-zonas__msg--err { background: var(--error-wash, hsl(0 70% 95%)); color: var(--error); }
@@ -169,9 +256,10 @@ type ViewMode = 'list' | 'create' | 'edit';
     .jx-zonas__form { display: flex; flex-direction: column; gap: var(--jx-space-3); }
     .jx-zonas__field { display: flex; flex-direction: column; gap: var(--jx-space-1); }
     .jx-zonas__label { font-size: var(--jx-text-xs); font-weight: var(--jx-weight-semibold); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .jx-zonas__label strong { text-transform: none; letter-spacing: normal; color: var(--text); }
     .jx-zonas__input { min-height: 44px; padding: 0 var(--jx-space-3); border: 1px solid var(--border-strong, var(--border)); border-radius: var(--jx-radius-lg); font-size: var(--jx-text-base); color: var(--text); background: var(--surface); }
     .jx-zonas__input:focus { outline: none; border-color: var(--brand); }
-    .jx-zonas__hint { font-size: var(--jx-text-xs); color: var(--text-muted); }
+    .jx-zonas__hint { font-size: var(--jx-text-xs); color: var(--text-muted); margin: 0; }
     .jx-zonas__form-actions { display: flex; gap: var(--jx-space-2); }
     .jx-zonas__num { font-size: var(--jx-text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .jx-zonas__badge { font-size: var(--jx-text-xs); font-weight: 600; padding: 2px 8px; border-radius: 999px; }
@@ -188,18 +276,29 @@ type ViewMode = 'list' | 'create' | 'edit';
     .jx-zonas__page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .jx-zonas__page-info { font-size: var(--jx-text-sm); color: var(--text-muted); font-weight: 600; }
     .jx-zonas__search { margin-bottom: 0; }
+
+    .jx-zonas__draft-list { display: flex; flex-direction: column; gap: var(--jx-space-2); }
+    .jx-zonas__draft-row { display: flex; align-items: center; gap: var(--jx-space-2); padding: var(--jx-space-2); border: 1px solid var(--border); border-radius: var(--jx-radius-md); }
+    .jx-zonas__draft-row--active { border-color: var(--brand); background: var(--brand-wash, hsl(24 80% 97%)); }
+    .jx-zonas__draft-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+    .jx-zonas__draft-input { flex: 1; min-height: 40px; }
+    .jx-zonas__draft-draw-btn { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 var(--jx-space-3); border: 1px solid var(--border-strong, var(--border)); border-radius: var(--jx-radius-md); background: var(--surface); color: var(--text); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; white-space: nowrap; }
+    .jx-zonas__draft-draw-btn--active { background: var(--brand); border-color: var(--brand); color: var(--brand-contrast, #fff); }
+    .jx-zonas__draft-badge { font-size: var(--jx-text-xs); font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--brand-wash, hsl(24 80% 95%)); color: var(--brand, #e8722a); white-space: nowrap; }
+    .jx-zonas__draft-badge--existing { background: var(--surface-sunken); color: var(--text-muted); }
+    .jx-zonas__draft-badge--changed { background: hsl(45 90% 92%); color: hsl(35 80% 35%); }
   `],
 })
 export class ZonasPage implements OnInit {
   private readonly service = inject(AdminZonasService);
 
   protected readonly iconPlus = faPlus;
-  protected readonly iconEdit = faPenToSquare;
   protected readonly iconRemove = faTrashCan;
   protected readonly iconSave = faCheck;
   protected readonly iconCancel = faXmark;
   protected readonly iconPrev = faChevronLeft;
   protected readonly iconNext = faChevronRight;
+  protected readonly iconPolygon = faDrawPolygon;
 
   protected readonly columns: DataTableColumn[] = [
     { key: 'id', label: 'ID', numeric: true },
@@ -219,9 +318,10 @@ export class ZonasPage implements OnInit {
   protected readonly PAGE_SIZE = 20;
 
   protected searchQuery = '';
-  protected formName = '';
-  protected formBoundary: object | null = null;
-  private editingId: number | null = null;
+
+  // --- Adicionar/editar em massa (CORRECAO-261) -------------------------------
+  protected readonly drafts = signal<ZoneDraftRow[]>([]);
+  protected readonly activeDraftId = signal<string | null>(null);
 
   protected get totalPages(): number {
     return Math.ceil(this.filteredRows().length / this.PAGE_SIZE);
@@ -256,48 +356,11 @@ export class ZonasPage implements OnInit {
     this.currentPage.set(page);
   }
 
-  protected showCreate(): void {
-    this.formName = '';
-    this.formBoundary = null;
-    this.editingId = null;
-    this.msg.set(null);
-    this.mode.set('create');
-  }
-
-  protected showEdit(zona: Zona): void {
-    this.formName = zona.name;
-    this.formBoundary = zona.boundary;
-    this.editingId = zona.id;
-    this.msg.set(null);
-    this.mode.set('edit');
-  }
-
   protected cancel(): void {
     this.mode.set('list');
-    this.editingId = null;
+    this.drafts.set([]);
+    this.activeDraftId.set(null);
     this.msg.set(null);
-  }
-
-  protected async save(): Promise<void> {
-    const name = this.formName.trim();
-    if (!name) return;
-    this.saving.set(true);
-    try {
-      if (this.editingId !== null) {
-        await this.service.update(this.editingId, { name, boundary: this.formBoundary });
-        this.msg.set({ text: 'Zona atualizada com sucesso.', tone: 'ok' });
-      } else {
-        await this.service.create({ name, boundary: this.formBoundary });
-        this.msg.set({ text: 'Zona adicionada com sucesso.', tone: 'ok' });
-      }
-      this.mode.set('list');
-      this.editingId = null;
-      await this.load();
-    } catch {
-      this.msg.set({ text: 'Não conseguimos salvar a zona. Tente de novo.', tone: 'err' });
-    } finally {
-      this.saving.set(false);
-    }
   }
 
   protected confirmRemove(id: number): void {
@@ -320,6 +383,112 @@ export class ZonasPage implements OnInit {
       } else {
         this.msg.set({ text: 'Não conseguimos remover a zona. Tente de novo.', tone: 'err' });
       }
+    }
+  }
+
+  // --- Adicionar/editar em massa -----------------------------------------------
+
+  /** Abre com todas as zonas já cadastradas como linhas editáveis + uma linha nova em branco. */
+  protected showMassAdd(): void {
+    this.msg.set(null);
+    const existingRows = this.allRows.map(rowFromExisting);
+    const blank = newDraftRow();
+    this.drafts.set([...existingRows, blank]);
+    this.activeDraftId.set(blank.id);
+    this.mode.set('mass-add');
+  }
+
+  protected addDraftRow(): void {
+    const row = newDraftRow();
+    this.drafts.update((rows) => [...rows, row]);
+    this.activeDraftId.set(row.id);
+  }
+
+  /** Só remove linhas de zona NOVA (sem zonaId) desta sessão de edição — zonas já
+   * cadastradas não podem ser tiradas por aqui (é preciso pra continuar mostrando/
+   * editando todas as existentes). Apagar uma zona de verdade continua sendo só
+   * pelo botão de remover na lista, com confirmação e checagem de uso. */
+  protected removeDraftRow(id: string): void {
+    const row = this.drafts().find((r) => r.id === id);
+    if (!row || row.zonaId !== null) return;
+    this.drafts.update((rows) => rows.filter((r) => r.id !== id));
+    if (this.activeDraftId() === id) {
+      const remaining = this.drafts();
+      this.activeDraftId.set(remaining.length ? remaining[remaining.length - 1].id : null);
+    }
+  }
+
+  protected setActiveDraft(id: string): void {
+    this.activeDraftId.set(id);
+  }
+
+  protected activeDraftName(): string | null {
+    const active = this.drafts().find((d) => d.id === this.activeDraftId());
+    return active?.name.trim() || null;
+  }
+
+  protected onDraftBoundaryChange(e: { id: string; boundary: any }): void {
+    this.drafts.update((rows) =>
+      rows.map((r) => (r.id === e.id ? { ...r, boundary: e.boundary } : r))
+    );
+  }
+
+  protected isRowChanged(d: ZoneDraftRow): boolean {
+    return d.zonaId !== null && rowChanged(d);
+  }
+
+  /** Zona nova completa (nome + polígono), OU zona existente com nome/polígono alterado. */
+  private savable(d: ZoneDraftRow): boolean {
+    if (d.zonaId === null) return !!(d.name.trim() && d.boundary);
+    return rowChanged(d) && !!d.name.trim();
+  }
+
+  protected hasSavableDraft(): boolean {
+    return this.drafts().some((d) => this.savable(d));
+  }
+
+  protected async saveAllDrafts(): Promise<void> {
+    const toSave = this.drafts().filter((d) => this.savable(d));
+    if (toSave.length === 0) return;
+    this.saving.set(true);
+    this.msg.set(null);
+    let created = 0;
+    let updated = 0;
+    const failedIds: string[] = [];
+    for (const d of toSave) {
+      try {
+        if (d.zonaId === null) {
+          await this.service.create({ name: d.name.trim(), boundary: d.boundary });
+          created += 1;
+        } else {
+          await this.service.update(d.zonaId, { name: d.name.trim(), boundary: d.boundary });
+          updated += 1;
+        }
+      } catch {
+        failedIds.push(d.id);
+      }
+    }
+    this.saving.set(false);
+
+    if (failedIds.length === 0) {
+      const parts: string[] = [];
+      if (created > 0) parts.push(`${created} nova${created > 1 ? 's' : ''}`);
+      if (updated > 0) parts.push(`${updated} atualizada${updated > 1 ? 's' : ''}`);
+      this.msg.set({ text: `Zonas salvas: ${parts.join(', ')}.`, tone: 'ok' });
+      this.mode.set('list');
+      this.drafts.set([]);
+      this.activeDraftId.set(null);
+      await this.load();
+    } else {
+      // Mantém no modo de edição só as que falharam, pra tentar de novo sem perder o trabalho.
+      const failed = this.drafts().filter((d) => failedIds.includes(d.id));
+      this.drafts.set(failed);
+      this.activeDraftId.set(failed[0]?.id ?? null);
+      this.msg.set({
+        text: `${created + updated} zona${created + updated > 1 ? 's' : ''} salva${created + updated > 1 ? 's' : ''}. ${failedIds.length} falharam — corrija e tente de novo.`,
+        tone: 'err',
+      });
+      await this.load();
     }
   }
 }

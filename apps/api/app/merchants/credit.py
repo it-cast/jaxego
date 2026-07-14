@@ -115,6 +115,47 @@ async def record_consumption(
     )
 
 
+async def record_topup(
+    session: AsyncSession, *, area_id: int, merchant_id: int, charge_id: int, amount_cents: int
+) -> None:
+    """Grava a recarga de saldo (positivo) quando o PIX é confirmado pelo webhook.
+
+    `amount_cents` é só a parte que vira saldo (net_amount_cents da cobrança — sem
+    taxa_pix/taxa_servico). Idempotente por `charge_id` (uma cobrança credita o saldo
+    no máximo uma vez, mesmo se o webhook reenviar — TH-E já filtra a maioria dos
+    reenvios, isso é a segunda camada). No-op se <= 0."""
+    if amount_cents <= 0:
+        return
+    existing = (
+        await session.execute(
+            select(MerchantCreditLedger.id).where(
+                MerchantCreditLedger.charge_id == charge_id,
+                MerchantCreditLedger.kind == "topup",
+            )
+        )
+    ).first()
+    if existing is not None:
+        return
+    session.add(
+        MerchantCreditLedger(
+            area_id=area_id,
+            merchant_id=merchant_id,
+            delivery_id=None,
+            charge_id=charge_id,
+            kind="topup",
+            amount_cents=amount_cents,
+            reason="Recarga de saldo via PIX",
+        )
+    )
+    await session.flush()
+    logger.info(
+        "merchant_credit.topup",
+        merchant_id=merchant_id,
+        charge_id=charge_id,
+        amount_cents=amount_cents,
+    )
+
+
 async def reverse_consumption(
     session: AsyncSession, *, area_id: int, merchant_id: int, delivery_id: int, amount_cents: int
 ) -> None:

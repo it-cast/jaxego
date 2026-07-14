@@ -76,3 +76,276 @@
 .jx-saldo__num {
   text-align: right;
 }
+
+// ── Botão "Adicionar saldo" ─────────────────────────────────────────────────
+
+.jx-saldo__balance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-3);
+  flex-wrap: wrap;
+}
+
+.jx-saldo__topup-btn {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 var(--jx-space-4);
+  border: 0;
+  border-radius: var(--jx-radius-lg);
+  background: var(--brand, #e8722a);
+  color: var(--brand-contrast, #fff);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+
+.jx-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0 0 0 / 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--jx-space-4);
+}
+
+.jx-modal {
+  background: var(--surface-elevated, #fff);
+  border-radius: var(--jx-radius-xl);
+  box-shadow: 0 20px 60px rgba(0 0 0 / 0.25);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.jx-modal--narrow {
+  max-width: 420px;
+}
+
+.jx-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--jx-space-4) var(--jx-space-5);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.jx-modal__title {
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  margin: 0;
+  color: var(--text);
+}
+
+.jx-modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: var(--jx-radius-full);
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.jx-modal__body {
+  padding: var(--jx-space-5);
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+// ── Recarga: valores prontos + campo custom ─────────────────────────────────
+
+.jx-saldo__topup-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--jx-space-2);
+}
+
+.jx-saldo__topup-preset {
+  min-height: 44px;
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--jx-radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-saldo__topup-preset:hover {
+  border-color: var(--brand, #e8722a);
+  color: var(--brand, #e8722a);
+}
+
+.jx-saldo__topup-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-saldo__topup-label {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-saldo__topup-input {
+  min-height: 44px;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--jx-radius-lg);
+  font-size: var(--jx-text-base);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.jx-saldo__topup-input:focus {
+  outline: none;
+  border-color: var(--brand, #e8722a);
+}
+
+.jx-saldo__topup-err {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--error, #d32f2f);
+  font-weight: var(--jx-weight-semibold);
+}
+
+// ── Resumo (recarga + taxas) ─────────────────────────────────────────────────
+
+.jx-saldo__topup-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--jx-space-3);
+  background: var(--surface-sunken, var(--bg-subtle));
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-saldo__topup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  color: var(--text);
+  padding: 2px 0;
+}
+
+.jx-saldo__topup-row--sub {
+  color: var(--text-muted);
+  font-size: var(--jx-text-xs);
+}
+
+.jx-saldo__topup-row--total {
+  border-top: 1px solid var(--border);
+  padding-top: var(--jx-space-2);
+  margin-top: var(--jx-space-1);
+  font-size: var(--jx-text-base);
+}
+
+.jx-saldo__topup-cta {
+  min-height: 48px;
+  width: 100%;
+  border: 0;
+  border-radius: var(--jx-radius-lg);
+  background: var(--brand, #e8722a);
+  color: var(--brand-contrast, #fff);
+  font-size: var(--jx-text-md);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+}
+
+.jx-saldo__topup-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// ── PIX: QR + copia-e-cola ───────────────────────────────────────────────────
+
+.jx-saldo__topup-pix {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-3);
+}
+
+.jx-saldo__topup-qr {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+}
+
+.jx-saldo__topup-code {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-xs);
+  word-break: break-all;
+  background: var(--surface-sunken, var(--bg-subtle));
+  padding: var(--jx-space-2) var(--jx-space-3);
+  border-radius: var(--jx-radius-sm);
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.jx-saldo__topup-copy {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--jx-space-2) var(--jx-space-4);
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+}
+
+.jx-saldo__topup-note {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+// ── Sucesso ───────────────────────────────────────────────────────────────────
+
+.jx-saldo__topup-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jx-space-4);
+  padding: var(--jx-space-5) 0;
+  text-align: center;
+}
+
+.jx-saldo__topup-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--success, #2e7d32);
+  color: #fff;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jx-saldo__topup-success-msg {
+  font-size: var(--jx-text-base);
+  color: var(--text);
+  margin: 0;
+}

@@ -193,3 +193,36 @@ class MerchantAdminListOut(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+# Recarga de saldo (CORRECAO-260) — servidor recalcula taxa_pix/taxa_servico do
+# plano ativo (nunca confia num total vindo do cliente).
+# TEMPORÁRIO: mínimo de R$5 (500) removido a pedido do usuário só pra teste — 1
+# cent é o piso técnico (não dá pra recarregar R$0). Reintroduzir o mínimo de
+# R$5 antes de ir pra produção.
+CREDIT_TOPUP_MIN_CENTS = 1
+
+
+class CreditTopupBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    amount_cents: int = Field(ge=CREDIT_TOPUP_MIN_CENTS)
+
+
+class CreditTopupResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    charge_id: int
+    amount_cents: int  # o pedido (vira saldo)
+    taxa_pix_cents: int
+    taxa_servico_cents: int
+    total_cents: int  # amount_cents + taxas — é o que o PIX cobra
+    qr_code: str | None
+    qr_code_base64: str | None
+
+
+class CreditTopupStatusResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    paid: bool
+    status: str

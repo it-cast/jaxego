@@ -221,9 +221,6 @@
       <ng-template #row let-item>
         <td>
           <span class="jx-planos__name">{{ item.name }}</span>
-          @if (item.is_free) {
-            <span class="jx-planos__badge jx-planos__badge--free">Free</span>
-          }
         </td>
         <td class="jx-planos__mono">{{ item.code }}</td>
         <td class="jx-planos__num">R$ {{ formatCents(item.price_monthly_cents) }}</td>
@@ -265,7 +262,6 @@
             <button
               type="button"
               class="jx-planos__action-btn"
-              [disabled]="item.is_free"
               (click)="showEdit(item)"
               [attr.aria-label]="'Editar ' + item.name"
             >
@@ -274,7 +270,7 @@
             <button
               type="button"
               class="jx-planos__action-btn jx-planos__action-btn--danger"
-              [disabled]="item.is_free || !item.is_active"
+              [disabled]="!item.is_active"
               (click)="confirmDelete(item.id)"
               [attr.aria-label]="'Desativar ' + item.name"
             >

@@ -169,6 +169,9 @@ import { currentPosition } from '../geolocation.util';
             <button type="button" class="jx-active__primary" (click)="askCollect()">
               Já coletei
             </button>
+            <button type="button" class="jx-active__secondary" (click)="askCancelAcceptance()">
+              Cancelar entrega
+            </button>
           } @else if (delivery()!.state === 'COLETADA') {
             <button type="button" class="jx-active__primary" (click)="askAdvance()">
               Cheguei no destino
@@ -677,6 +680,15 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     });
   }
 
+  protected askCancelAcceptance(): void {
+    this.confirmDialog.set({
+      title: 'Deseja realmente cancelar esta entrega?',
+      message: 'Ela volta pra fila e outro entregador poderá aceitá-la. Só dá pra fazer isso antes de coletar o pedido.',
+      confirmLabel: 'Cancelar entrega',
+      action: () => this.cancelAcceptance(),
+    });
+  }
+
   protected async confirmPending(): Promise<void> {
     const pending = this.confirmDialog();
     this.confirmDialog.set(null);
@@ -720,5 +732,25 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     const d = this.delivery();
     if (!d) return;
     void this.router.navigate(['/entregador/entrega', d.id, 'comprovar', 'refusal']);
+  }
+
+  /** Desiste depois de aceitar, antes de coletar (CORRECAO-262) — a entrega volta
+   * pra fila pra outro entregador aceitar; deixa de ser "minha", então sai da tela. */
+  private async cancelAcceptance(): Promise<void> {
+    const d = this.delivery();
+    const courierId = this.auth.me()?.courier_id;
+    if (!d || !courierId) return;
+    const pos = await currentPosition();
+    if (pos === null) {
+      this.actionError.set('Precisamos da sua localização pra cancelar. Ative o GPS e tente de novo.');
+      return;
+    }
+    this.actionError.set(null);
+    try {
+      await this.svc.cancelAcceptance(courierId, d.id, pos.lat, pos.lng);
+      void this.router.navigate(['/entregador/inicio']);
+    } catch {
+      this.actionError.set('Não foi possível cancelar agora. Tente de novo.');
+    }
   }
 }

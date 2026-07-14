@@ -20,6 +20,7 @@ import { NoticeComponent } from '@jaxego/shared/components/notice/notice.compone
 import { ScoreBadgeComponent } from '@jaxego/shared/components/score-badge/score-badge.component';
 import { ScoreBreakdownComponent } from '@jaxego/shared/components/score-breakdown/score-breakdown.component';
 import {
+  Area,
   CourierScore,
   CourierSearchRow,
   MerchantSearchRow,
@@ -64,6 +65,8 @@ export class PlataformaPessoasPage implements OnInit {
     areaId: this.fb.nonNullable.control<number | null>(null),
   });
 
+  protected readonly areas = signal<Area[]>([]);
+
   // --- Entregadores ---------------------------------------------------------
   protected readonly couriersState = signal<DataTableState>('loading');
   protected readonly couriers = signal<CourierSearchRow[]>([]);
@@ -98,7 +101,16 @@ export class PlataformaPessoasPage implements OnInit {
   private breakdownClose?: ElementRef<HTMLButtonElement>;
 
   async ngOnInit(): Promise<void> {
-    await this.search();
+    await Promise.all([this.loadAreas(), this.search()]);
+  }
+
+  private async loadAreas(): Promise<void> {
+    try {
+      const areas = await this.service.listAreas();
+      this.areas.set([...areas].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')));
+    } catch {
+      this.areas.set([]);
+    }
   }
 
   protected setTab(tab: Tab): void {

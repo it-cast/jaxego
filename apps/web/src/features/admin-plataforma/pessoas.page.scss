@@ -79,9 +79,8 @@
   box-shadow: var(--focus-ring);
 }
 
-.jx-plat-people__input--num {
-  width: 140px;
-  font-family: var(--jx-font-mono);
+select.jx-plat-people__input {
+  min-width: 180px;
 }
 
 .jx-plat-people__cta {

@@ -132,6 +132,18 @@ async def get_charge_by_delivery(
     return (await session.execute(stmt)).scalars().first()
 
 
+async def get_topup_charge_for_merchant(
+    session: AsyncSession, *, charge_id: int, merchant_id: int
+) -> PlatformCharge | None:
+    """Load a topup charge scoped to its owning merchant (IDOR closed — status polling)."""
+    stmt = select(PlatformCharge).where(
+        PlatformCharge.id == charge_id,
+        PlatformCharge.merchant_id == merchant_id,
+        PlatformCharge.kind == "topup",
+    )
+    return (await session.execute(stmt)).scalars().first()
+
+
 async def list_charges_between(
     session: AsyncSession, *, since: datetime, until: datetime
 ) -> list[PlatformCharge]:

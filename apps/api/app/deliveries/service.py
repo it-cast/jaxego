@@ -700,6 +700,59 @@ async def cancel_delivery(
     return delivery
 
 
+class DeliveryNotAcceptedError(AppError):
+    """Courier tried to cancel-acceptance on a delivery not in ACEITA (422)."""
+
+    status_code = 422
+    code = "delivery_not_accepted"
+
+    def __init__(self) -> None:
+        super().__init__("Só é possível cancelar entre o aceite e a coleta.")
+
+
+async def courier_cancel_acceptance(
+    session: AsyncSession,
+    *,
+    delivery_id: int,
+    courier_id: int,
+    reason: str | None,
+    gps: tuple[float, float] | None,
+    ip: str | None,
+) -> Delivery:
+    """Entregador desiste depois de aceitar, antes de coletar (CORRECAO-262).
+
+    ACEITA → CRIADA (o state machine só permite a partir de ACEITA — depois de
+    COLETADA, `assert_delivery_transition` já rejeita com 422). Reabre a entrega
+    pra fila de despacho: limpa `courier_id`/`price_cents`/`accepted_at` (o
+    próximo entregador que aceitar seta os dele de novo, igual em qualquer
+    aceite) — a exclusão desse entregador da nova rodada (`offer_state.
+    add_declined`) e o reenfileiramento (`enqueue_dispatch`) ficam por conta do
+    router, depois do commit (mesmo padrão de `enqueue_refund`/`enqueue_payout`:
+    efeito em Redis/fila nunca dentro da mesma transação do banco).
+    """
+    delivery, _ = await get_courier_delivery(
+        session, courier_id=courier_id, delivery_id=delivery_id
+    )
+    if delivery.state != "ACEITA":
+        raise DeliveryNotAcceptedError()
+
+    await transition(
+        session,
+        delivery=delivery,
+        to_state="CRIADA",
+        actor_id=courier_id,
+        actor_type="courier",
+        reason=reason,
+        gps=gps,
+        ip=ip,
+    )
+    delivery.courier_id = None
+    delivery.price_cents = None
+    delivery.accepted_at = None
+    await session.flush()
+    return delivery
+
+
 async def list_deliveries(
     session: AsyncSession,
     *,

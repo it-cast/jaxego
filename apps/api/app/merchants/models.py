@@ -244,7 +244,10 @@ class MerchantCourierBlock(Base, AreaScopedMixin, TimestampMixin):
 # - "reversal": devolve um "consumption" quando a entrega é CANCELADA (sempre
 #   positivo — desfaz o desconto que não chegou a valer, já que o PIX correspondente
 #   também é estornado integralmente).
-MERCHANT_CREDIT_KINDS = ("reconciliation", "consumption", "reversal")
+# - "topup": recarga de saldo paga via PIX pela própria loja (sempre positivo — só o
+#   valor pedido, sem taxa_pix/taxa_servico, que ficam de receita da plataforma;
+#   CORRECAO-260).
+MERCHANT_CREDIT_KINDS = ("reconciliation", "consumption", "reversal", "topup")
 
 
 class MerchantCreditLedger(Base, AreaScopedMixin, TimestampMixin):
@@ -270,14 +273,17 @@ class MerchantCreditLedger(Base, AreaScopedMixin, TimestampMixin):
         index=True,
     )
     # Entrega que originou o lançamento (a que gerou sobra/falta, ou a nova entrega
-    # onde o saldo foi usado como desconto). Nullable por segurança, mas sempre setado
-    # na prática — todo lançamento nasce de uma entrega.
+    # onde o saldo foi usado como desconto). Null pra lançamentos de "topup" (recarga
+    # de saldo), que não nascem de uma entrega — nasce de uma platform_charges (abaixo).
     delivery_id: Mapped[int | None] = mapped_column(
         BIG_ID,
         ForeignKey("deliveries.id", ondelete="RESTRICT", onupdate="RESTRICT"),
         nullable=True,
         index=True,
     )
+    # Cobrança PIX que originou um lançamento "topup" — chave de idempotência (uma
+    # cobrança credita o saldo no máximo uma vez, mesmo se o webhook reenviar).
+    charge_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True, index=True)
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     # Positivo = crédito pra loja; negativo = débito/consumo. Nunca zero (não gravamos
     # lançamento quando a diferença apurada é 0).

@@ -46,14 +46,13 @@
       />
     </label>
     <label class="jx-plat-people__field">
-      <span class="jx-sr-only">Filtrar por área (id)</span>
-      <input
-        class="jx-plat-people__input jx-plat-people__input--num"
-        type="number"
-        inputmode="numeric"
-        placeholder="Área (id)"
-        formControlName="areaId"
-      />
+      <span class="jx-sr-only">Filtrar por área</span>
+      <select class="jx-plat-people__input" formControlName="areaId">
+        <option [ngValue]="null">Todas as áreas</option>
+        @for (a of areas(); track a.id) {
+          <option [ngValue]="a.id">{{ a.name }}</option>
+        }
+      </select>
     </label>
     <button type="submit" class="jx-plat-people__cta">Buscar</button>
   </form>
@@ -73,16 +72,7 @@
       (retry)="search()"
     >
       <ng-template #row let-item>
-        <td>
-          <button
-            type="button"
-            class="jx-plat-people__rowbtn"
-            (click)="openBreakdown(item)"
-            [attr.aria-label]="'Ver score de ' + item.full_name"
-          >
-            {{ item.full_name }}
-          </button>
-        </td>
+        <td>{{ item.full_name }}</td>
         <td>{{ item.area_name }}</td>
         <td>{{ statusLabel(item.status) }}</td>
         <td>

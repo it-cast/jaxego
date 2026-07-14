@@ -190,4 +190,22 @@ async def _process_event(session: AsyncSession, transaction_id: str, event_statu
                     transaction_id=transaction_id,
                 )
                 return
+        if charge.kind == "topup" and charge.merchant_id is not None:
+            from app.merchants import credit as credit_mod
+
+            await credit_mod.record_topup(
+                session,
+                area_id=charge.area_id,
+                merchant_id=charge.merchant_id,
+                charge_id=charge.id,
+                amount_cents=charge.net_amount_cents or 0,
+            )
+            await session.commit()
+            logger.info(
+                "payments.credit_topup_confirmed",
+                merchant_id=charge.merchant_id,
+                charge_id=charge.id,
+                transaction_id=transaction_id,
+            )
+            return
     await session.commit()

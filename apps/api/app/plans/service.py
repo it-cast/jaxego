@@ -16,7 +16,9 @@ from app.plans.models import SubscriptionPlan
 
 # [ASSUMIDO] seed values (DRV-009) — editable seed data, never hardcoded in UI.
 # price_monthly_cents / price_annual_cents / fee_cents are integer cents.
-# Free is immutable (is_free=True). Annual = monthly × 10 (2 months free).
+# `is_free` só marca qual plano é a base gratuita/padrão pra _pick_active_plan
+# (merchants/service.py) — não bloqueia mais edição/remoção (CORRECAO-257).
+# Annual = monthly × 10 (2 months free).
 # taxa_pix_cents: taxa por operação PIX; taxa_servico_cents: taxa de serviço por entrega.
 PLAN_SEEDS: tuple[dict[str, object], ...] = (
     {
@@ -131,8 +133,6 @@ async def update_plan(
     sort_order: int | None = None,
 ) -> SubscriptionPlan:
     plan = await get_plan_by_id(session, plan_id)
-    if plan.is_free:
-        raise ValidationAppError("O plano Básico é imutável e não pode ser editado.")
     if name is not None:
         plan.name = name
     if price_monthly_cents is not None:
@@ -159,8 +159,6 @@ async def update_plan(
 
 async def delete_plan(session: AsyncSession, plan_id: int) -> None:
     plan = await get_plan_by_id(session, plan_id)
-    if plan.is_free:
-        raise ValidationAppError("O plano Free não pode ser removido.")
     plan.is_active = False
     await session.flush()
 

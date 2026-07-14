@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { GovernancaService } from './governanca/governanca.service';
-import { AdminKycService } from './kyc/kyc.service';
 
 interface Queue {
   label: string;
@@ -16,9 +15,12 @@ interface Queue {
 }
 
 /**
- * Painel do admin da área (tela tpl-a-dash). "Filas que precisam de você": KYC
- * pendente, disputas, recursos de suspensão — contadores reais e clicáveis. Os
- * endpoints são area-scoped pelo token (TH-09). Tokens only.
+ * Painel do admin da área (tela tpl-a-dash). "Filas que precisam de você":
+ * disputas, recursos de suspensão — contadores reais e clicáveis. KYC de
+ * entregador saiu daqui (CORRECAO-255) — quem aprova/reprova é o admin do
+ * time agora, não o admin da área; o link apontava pra uma rota que não
+ * existe mais em /admin. Os endpoints são area-scoped pelo token (TH-09).
+ * Tokens only.
  */
 @Component({
   selector: 'jx-admin-inicio',
@@ -94,28 +96,20 @@ interface Queue {
   ],
 })
 export class AdminInicioPage implements OnInit {
-  private readonly kyc = inject(AdminKycService);
   private readonly governanca = inject(GovernancaService);
   private readonly router = inject(Router);
 
   protected readonly queues = signal<Queue[]>([
-    { label: 'Validações de entregador aguardando', count: 0, route: '/admin/entregadores' },
     { label: 'Disputas de pagamento direto', count: 0, route: '/admin/disputas' },
     { label: 'Recursos de suspensão', count: 0, route: '/admin/disputas' },
   ]);
 
   async ngOnInit(): Promise<void> {
-    const [kycPage, disputes, appeals] = await Promise.all([
-      this.kyc.listCouriers('pending_kyc'),
+    const [disputes, appeals] = await Promise.all([
       this.governanca.listDisputes().catch(() => []),
       this.governanca.listAppeals(true).catch(() => []),
     ]);
     this.queues.set([
-      {
-        label: 'Validações de entregador aguardando',
-        count: kycPage.total,
-        route: '/admin/entregadores',
-      },
       {
         label: 'Disputas de pagamento direto',
         count: disputes.length,
