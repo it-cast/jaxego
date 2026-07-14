@@ -33,9 +33,9 @@ from app.workers.lifecycle import (
     delete_ephemeral,
     expire_online_couriers,
     finalize_deliveries,
-    purge_locations,
 )
 from app.workers.payout import payout_courier_task
+from app.workers.refund import refund_delivery_task
 from app.workers.revalidate import revalidate_receita
 from app.workers.tasks import (
     charge_pix_subscriptions_daily,
@@ -101,14 +101,14 @@ class WorkerSettings:
         reconcile_finance_daily,
         # Repasse ao entregador na finalização (enfileirado, idempotente).
         payout_courier_task,
+        # Estorno do PIX ao cancelar entrega platform_pix (enfileirado, idempotente).
+        refund_delivery_task,
     ]
 
     # Phase 9 cron jobs (idempotent; failure does not derail the worker).
     cron_jobs = [
         # FINALIZADA 24h after ENTREGUE with no open dispute (D-06) — every 5 min.
         cron(finalize_deliveries, minute=set(range(0, 60, 5))),
-        # Purge delivery_locations of terminal deliveries >24h (LGPD) — hourly.
-        cron(purge_locations, minute={7}),
         # "ausente" >10min → enable return (D-07 E2) — every minute.
         cron(absent_timeout, minute=set(range(0, 60))),
         # Expire couriers whose online_until has passed — every minute.

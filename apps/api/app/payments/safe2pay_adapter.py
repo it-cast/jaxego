@@ -138,6 +138,46 @@ class Safe2PayHttpAdapter:
             raise PaymentGatewayError(f"Safe2Pay erro {code}", code=code)
         return data.get("ResponseDetail", data)
 
+    async def _delete_v2(self, url: str) -> dict:
+        """DELETE a Safe2Pay v2 endpoint; raise on HasError (same wrapper as POST v2)."""
+        assert_safe_url(url, allowlist=self._allowlist)  # A10 SSRF (before connect)
+        try:
+            async with build_client(timeout=httpx.Timeout(30.0)) as client:
+                resp = await client.delete(url, headers=self._headers())
+                if resp.status_code >= 400:
+                    raw = resp.content.decode("utf-8", errors="replace")
+                    try:
+                        err_body = resp.json()
+                        err_msg = (
+                            err_body.get("Error")
+                            or err_body.get("Message")
+                            or raw[:500]
+                        )
+                        err_code = str(err_body.get("ErrorCode", ""))
+                    except Exception:
+                        err_msg, err_code = raw[:500], ""
+                    logger.error(
+                        "safe2pay_http_error",
+                        status=resp.status_code,
+                        s2p_error=err_msg,
+                        s2p_code=err_code,
+                    )
+                    raise PaymentGatewayError(f"Safe2Pay HTTP {resp.status_code}")
+                resp.raise_for_status()
+        except PaymentGatewayError:
+            raise
+        except httpx.RequestError as exc:
+            logger.error("safe2pay_network_error")  # no payload/PII
+            raise PaymentGatewayError("Safe2Pay inacessível") from exc
+
+        data = resp.json()
+        if data.get("HasError"):  # ⚠ ignores HTTP status
+            code = str(data.get("ErrorCode", "unknown"))
+            msg = str(data.get("Error") or data.get("Message") or "")  # no PII in these fields
+            logger.error("safe2pay_business_error", error_code=code, s2p_message=msg)
+            raise PaymentGatewayError(f"Safe2Pay erro {code}", code=code)
+        return data.get("ResponseDetail", data)
+
     async def _post_v3(self, url: str, payload: dict) -> dict:
         """POST to a Safe2Pay v3 endpoint (REST conventions — no HasError wrapper)."""
         assert_safe_url(url, allowlist=self._allowlist)
@@ -471,14 +511,18 @@ class Safe2PayHttpAdapter:
             return "ERRO"
 
     async def refund(self, *, transaction_id: str, amount_cents: int, method: str) -> None:
-        # [ASSUMIDO A9] distinct route Pix vs Card — confirm at T-13.
-        route = (
-            f"{self._api_url}/v2/Transaction/Refund"
-            if method == "pix"
-            else f"{self._api_url}/v2/CreditCard/Reverse"
-        )
+        if method == "pix":
+            # Contrato confirmado com a Safe2Pay: `DELETE {api_url}/v2/pix/cancel/{idTransaction}`
+            # — estorno total do Pix, sem campo de valor (não suporta parcial). Token
+            # normal da conta (self._api_key, ITCAST filha — quem perde o dinheiro),
+            # não o marketplace. Não é síncrono: o status final chega pelo webhook
+            # (event_status "6" — já tratado em payments/webhooks_router.py).
+            await self._delete_v2(f"{self._api_url}/v2/pix/cancel/{transaction_id}")
+            return
+        # [ASSUMIDO A9] estorno de cartão — não confirmado, confirmar quando necessário.
         await self._call_safe2pay(
-            route, {"IdTransaction": transaction_id, "Amount": amount_cents / 100}
+            f"{self._api_url}/v2/CreditCard/Reverse",
+            {"IdTransaction": transaction_id, "Amount": amount_cents / 100},
         )
 
     async def register_subaccount(

@@ -2,9 +2,6 @@
 
 - `finalize_deliveries`: ENTREGUE for >24h with NO open payment dispute → FINALIZADA
   (via `transition()` — append-only, D-06). Idempotent: only ENTREGUE rows move.
-- `purge_locations`: HARD-delete `delivery_locations` of TERMINAL deliveries whose last
-  sample is >24h old (retention/LGPD — TH-4 / Pitfall 3). Idempotent: re-running finds
-  nothing new.
 - `absent_timeout`: a delivery marked "ausente" (a refusal-reason marker) for >10min
   → flag it as eligible to "retornar" (D-07 E2). Idempotent (a flag, not a transition).
 - `anonymize_inactive` (Phase 14 — D-01/D-02 / REQ-048 / LGPD): entities (couriers,
@@ -40,12 +37,10 @@ from app.deliveries.service import transition
 from app.payments.models import EscrowLedger
 from app.payments_direct.models import DirectPaymentConfirmation, PaymentDispute
 from app.payments_direct.service import has_open_dispute
-from app.tracking.models import DeliveryLocation
 
 logger = structlog.get_logger("workers.lifecycle")
 
 FINALIZE_AFTER = timedelta(hours=24)
-PURGE_AFTER = timedelta(hours=24)
 ABSENT_AFTER = timedelta(minutes=10)
 # LGPD retention windows (D-01). 12 months ≈ 365 days; 30 days for ephemeral data.
 ANONYMIZE_AFTER = timedelta(days=365)
@@ -55,9 +50,6 @@ EPHEMERAL_AFTER = timedelta(days=30)
 # (raw or hash) becomes a constant so it can never be reversed to the original.
 _PII_NAME = "[anonimizado]"
 _PII_TOMBSTONE = "anonymized"
-
-_TERMINAL_STATES = ("FINALIZADA", "CANCELADA", "RECUSADA_NO_DESTINO")
-
 
 async def finalize_deliveries(ctx: dict[str, Any]) -> int:
     """ENTREGUE >24h with no open dispute → FINALIZADA (D-06). Returns count."""
@@ -85,6 +77,9 @@ async def finalize_deliveries(ctx: dict[str, Any]) -> int:
                 actor_id=None,
                 reason="auto_finalize_24h",
             )
+            from app.merchants.credit import reconcile_delivery_credit
+
+            await reconcile_delivery_credit(session, delivery=delivery)
             finalized_ids.append(delivery.id)
             count += 1
         await session.commit()
@@ -96,37 +91,6 @@ async def finalize_deliveries(ctx: dict[str, Any]) -> int:
     logger.info(
         "lifecycle.finalize_deliveries",
         finalized=count,
-        duration_ms=int((datetime.now(UTC) - started).total_seconds() * 1000),
-    )
-    return count
-
-
-async def purge_locations(ctx: dict[str, Any]) -> int:
-    """Hard-delete delivery_locations of terminal deliveries >24h old (LGPD)."""
-    started = datetime.now(UTC)
-    cutoff = started - PURGE_AFTER
-    session_factory = ctx["session_factory"]
-    async with session_factory() as session:
-        # Terminal deliveries only; samples older than the retention window.
-        terminal_ids = (
-            (await session.execute(select(Delivery.id).where(Delivery.state.in_(_TERMINAL_STATES))))
-            .scalars()
-            .all()
-        )
-        if not terminal_ids:
-            logger.info("lifecycle.purge_locations", purged=0)
-            return 0
-        result = await session.execute(
-            delete(DeliveryLocation).where(
-                DeliveryLocation.delivery_id.in_(terminal_ids),
-                DeliveryLocation.recorded_at < cutoff,
-            )
-        )
-        await session.commit()
-    count = result.rowcount or 0
-    logger.info(
-        "lifecycle.purge_locations",
-        purged=count,
         duration_ms=int((datetime.now(UTC) - started).total_seconds() * 1000),
     )
     return count

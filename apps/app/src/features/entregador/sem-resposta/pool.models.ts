@@ -20,4 +20,4 @@ export interface PoolAcceptResponse {
 }
 
 /** Terminal results of a self-assign attempt — same shape as an offer accept. */
-export type PoolAcceptResult = 'won' | 'lost' | 'error';
+export type PoolAcceptResult = 'won' | 'lost' | 'error' | 'gps_missing';

@@ -180,9 +180,16 @@ export class EntregadorService {
     );
   }
 
-  async finalizeNoProof(courierId: number, deliveryId: number): Promise<void> {
+  async finalizeNoProof(courierId: number, deliveryId: number, lat: number, lng: number): Promise<void> {
     await firstValueFrom(
-      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/finalize-no-proof`, {}),
+      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/finalize-no-proof`, { lat, lng }),
+    );
+  }
+
+  /** Log 'chegou ao destino' — audit only, no state change (CORRECAO-252). */
+  async markArrived(courierId: number, deliveryId: number, lat: number, lng: number): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/arrived`, { lat, lng }),
     );
   }
 
@@ -195,13 +202,13 @@ export class EntregadorService {
     } catch { return null; }
   }
 
-  async markCollected(courierId: number, deliveryId: number): Promise<void> {
+  async markCollected(courierId: number, deliveryId: number, lat: number, lng: number): Promise<void> {
     await firstValueFrom(
-      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/collect`, {}),
+      this.http.post(`/v1/couriers/${courierId}/deliveries/${deliveryId}/collect`, { lat, lng }),
     );
   }
 
-  async updateProfile(courierId: number, data: { full_name?: string; password?: string; current_password?: string; team_id?: number | null }): Promise<boolean> {
+  async updateProfile(courierId: number, data: { full_name?: string; password?: string; current_password?: string }): Promise<boolean> {
     try {
       await firstValueFrom(this.http.patch(`/v1/couriers/${courierId}/profile`, data));
       return true;

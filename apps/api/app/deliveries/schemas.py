@@ -103,6 +103,19 @@ class CreateDeliveryBody(BaseModel):
     # price the store confirmed (displayed from teams_for_address). ---
     platform_pix: bool = False
     pix_amount_cents: int | None = Field(default=None, ge=1)
+    # Parte de `pix_amount_cents` que é só o preço do entregador mais caro elegível
+    # (sem taxa PIX / taxa de sistema) — o mesmo `maxPriceCents` que o front já
+    # mostra no resumo, calculado por zona (teams-for-address). Reclampado no
+    # servidor contra `pix_amount_cents` (nunca pode exceder o total cobrado nem
+    # ser negativo) — usado só como base pra apuração de sobra/falta na
+    # finalização (app/merchants/credit.py::reconcile_delivery_credit). NÃO usar
+    # `eligible_online_prices_cents` aqui: é o sistema de preço antigo (bairro/km),
+    # não o de zonas — daria base errada (TD registrado no CORRECAO-246).
+    pix_courier_price_cents: int | None = Field(default=None, ge=0)
+    # Saldo/crédito que a LOJA escolheu usar como desconto nesta cobrança (opt-in —
+    # nunca aplicado sozinho). Reclampado no servidor contra o saldo real e contra
+    # `pix_amount_cents` (ver app/merchants/credit.py::preview_credit_cents).
+    credit_applied_cents: int | None = Field(default=None, ge=0)
 
     # --- Scheduled dispatch (Inngest). NULL = dispatch immediately (CRIADA). ---
     # Must be at least 5 minutes in the future (prevents near-instant scheduling
@@ -244,6 +257,10 @@ class CreateDeliveryResponse(BaseModel):
     # Populated when platform_pix=True (AGUARDANDO_PAGAMENTO state).
     pix_qr_code: str | None = None
     pix_qr_code_base64: str | None = None
+    # Quanto de saldo foi de fato aplicado (pode ser menor que o pedido, se o
+    # saldo real era menor) e o valor final cobrado no PIX após o desconto.
+    credit_applied_cents: int = 0
+    final_pix_amount_cents: int | None = None
 
 
 class CourierDeliveryOut(BaseModel):

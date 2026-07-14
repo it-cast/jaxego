@@ -9,12 +9,16 @@ ADR (D-03).
 
 Transition set confirmed against fluxos.md F-03 (create) / F-05 (dispatch+accept) /
 F-06 (delivery+refusal):
-  - CRIADA → ACEITA (Phase 8 accept) | CANCELADA (store cancels pre-acceptance, RN-004 zero cost)
+  - CRIADA → ACEITA (Phase 8 accept) | CANCELADA (store cancels pre-acceptance, zero cost)
     | SEM_RESPOSTA (cascade exhausted — every eligible courier declined or hit the
     timeout cap, `app/workers/dispatch.py`)
   - SEM_RESPOSTA → ACEITA (a courier self-assigns from the unanswered pool) | CANCELADA
-  - ACEITA → COLETADA (Phase 9 pickup) | CANCELADA (post-acceptance cancel, RN-004 50%)
-  - COLETADA → ENTREGUE | RECUSADA_NO_DESTINO (F-06 refusal) | CANCELADA
+  - ACEITA → COLETADA (Phase 9 pickup) — no CANCELADA (CORRECAO-249/250): once a
+    courier has accepted, the store can no longer cancel in-app. The RN-004
+    50%/100% post-acceptance cost was never wired to a real charge/payout, so
+    allowing it left PIX money stuck with no one compensated — pull it back
+    out when Phase 11 (invoicing) defines a real post-acceptance cost.
+  - COLETADA → ENTREGUE | RECUSADA_NO_DESTINO (F-06 refusal) — no CANCELADA, same reason.
   - ENTREGUE → FINALIZADA (Phase 9 settle job)
   - RECUSADA_NO_DESTINO → FINALIZADA (settle with refusal)
   - CANCELADA / FINALIZADA → terminal (no exits)
@@ -50,8 +54,8 @@ DELIVERY_TRANSITIONS: dict[str, set[str]] = {
     "AGUARDANDO_PAGAMENTO": {"CRIADA", "CANCELADA"},  # CRIADA = PIX confirmed; CANCELADA = timeout/cancel
     "CRIADA": {"ACEITA", "CANCELADA", "SEM_RESPOSTA"},
     "SEM_RESPOSTA": {"ACEITA", "CANCELADA"},  # self-assign from the pool, or store cancels
-    "ACEITA": {"COLETADA", "CANCELADA"},
-    "COLETADA": {"ENTREGUE", "RECUSADA_NO_DESTINO", "CANCELADA"},
+    "ACEITA": {"COLETADA"},  # no CANCELADA post-acceptance (CORRECAO-249/250)
+    "COLETADA": {"ENTREGUE", "RECUSADA_NO_DESTINO"},  # no CANCELADA post-acceptance
     "ENTREGUE": {"FINALIZADA"},
     "RECUSADA_NO_DESTINO": {"FINALIZADA"},
     "CANCELADA": set(),  # terminal

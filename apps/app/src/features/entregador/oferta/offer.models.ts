@@ -28,4 +28,4 @@ export interface AcceptResponse {
 }
 
 /** Terminal results of an accept attempt (UI-SPEC §3.5). */
-export type OfferResult = 'won' | 'lost' | 'expired' | 'error';
+export type OfferResult = 'won' | 'lost' | 'expired' | 'error' | 'gps_missing';

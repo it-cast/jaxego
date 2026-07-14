@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { AcceptResponse, OfferOut, OfferResult } from './offer.models';
+import { currentPosition } from '../geolocation.util';
 
 /**
  * OfferService — the courier's offer client (Phase 8). `active()` polls the
@@ -29,11 +30,14 @@ export class OfferService {
     }
   }
 
-  /** Accept an offer. Maps the server outcome to a terminal result (UI-SPEC §3.5). */
+  /** Accept an offer. Maps the server outcome to a terminal result (UI-SPEC §3.5).
+   * Requires device GPS (audit log, CORRECAO-252) — 'gps_missing' if unavailable. */
   async accept(deliveryId: number): Promise<OfferResult> {
+    const pos = await currentPosition();
+    if (pos === null) return 'gps_missing';
     try {
       await firstValueFrom(
-        this.http.post<AcceptResponse>(`/v1/offers/${deliveryId}/accept`, {}),
+        this.http.post<AcceptResponse>(`/v1/offers/${deliveryId}/accept`, pos),
       );
       return 'won';
     } catch (err) {

@@ -114,6 +114,13 @@ export const lojaRoutes: Routes = [
           ),
       },
       {
+        path: 'saldo',
+        loadComponent: () =>
+          import('../features/loja/financeiro/saldo.page').then(
+            (m) => m.LojaSaldoPage,
+          ),
+      },
+      {
         path: 'entregas/:id/recibo',
         loadComponent: () =>
           import('../features/loja/financeiro/recibo.page').then(

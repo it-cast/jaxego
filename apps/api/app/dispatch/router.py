@@ -21,7 +21,13 @@ from app.deliveries.models import Delivery
 from app.dispatch import offer_state, service
 from app.dispatch.dependencies import CourierScopeDep
 from app.dispatch.exceptions import NotOfferTargetError
-from app.dispatch.schemas import AcceptResponse, DeclineResponse, OfferOut, PoolItemOut
+from app.dispatch.schemas import (
+    AcceptOfferBody,
+    AcceptResponse,
+    DeclineResponse,
+    OfferOut,
+    PoolItemOut,
+)
 
 router = APIRouter(prefix="/offers", tags=["dispatch"])
 
@@ -56,6 +62,7 @@ async def get_active_offer(
 @router.post("/{delivery_id}/accept", response_model=AcceptResponse)
 async def accept_offer(
     delivery_id: int,
+    body: AcceptOfferBody,
     request: Request,
     scope: CourierScopeDep,
     session: SessionDep,
@@ -70,6 +77,8 @@ async def accept_offer(
         courier_id=scope.courier_id,
         actor_user_id=scope.user_id,
         ip=_client_ip(request),
+        lat=body.lat,
+        lng=body.lng,
     )
     await session.commit()
     # Notify the store + recipient on the queue (never synchronous — skill push).
@@ -119,6 +128,7 @@ async def list_pool(
 @router.post("/pool/{delivery_id}/accept", response_model=AcceptResponse)
 async def accept_pool_delivery(
     delivery_id: int,
+    body: AcceptOfferBody,
     request: Request,
     scope: CourierScopeDep,
     session: SessionDep,
@@ -133,6 +143,8 @@ async def accept_pool_delivery(
         courier_id=scope.courier_id,
         actor_user_id=scope.user_id,
         ip=_client_ip(request),
+        lat=body.lat,
+        lng=body.lng,
     )
     await session.commit()
     from app.dispatch import cascade

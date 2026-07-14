@@ -1,0 +1,53 @@
+<section class="jx-saldo" aria-labelledby="saldo-heading">
+  <header class="jx-saldo__head">
+    <h1 id="saldo-heading" class="jx-saldo__title">Meu saldo</h1>
+    <p class="jx-saldo__subtitle">
+      Sobras e faltas apuradas quando o entregador cobra diferente do valor pago
+      no PIX, e o desconto usado em entregas novas.
+    </p>
+  </header>
+
+  @if (balanceState() === 'loading') {
+    <p class="jx-saldo__loading" role="status" aria-busy="true">Carregando saldo…</p>
+  } @else if (balanceState() === 'error') {
+    <jx-error-state message="Não conseguimos carregar seu saldo agora." retryLabel="Tentar de novo" (retry)="load()" />
+  } @else {
+    <div class="jx-saldo__balance-card">
+      <span class="jx-saldo__balance-label">Saldo disponível</span>
+      <jx-money [cents]="balanceCents()" variant="display" [sign]="balanceCents() !== 0 ? balanceSign : 'none'" label="Saldo disponível" />
+      @if (balanceCents() < 0) {
+        <p class="jx-saldo__balance-hint">
+          O saldo negativo é compensado automaticamente na próxima sobra — não bloqueia novas entregas.
+        </p>
+      }
+    </div>
+  }
+
+  <section class="jx-saldo__extrato" aria-labelledby="extrato-heading">
+    <h2 id="extrato-heading" class="jx-saldo__extrato-title">Extrato</h2>
+    <jx-data-table
+      caption="Extrato de saldo"
+      [columns]="columns"
+      [rows]="entries()"
+      [state]="tableState()"
+      [trackBy]="trackEntry"
+      emptyIcon="◌"
+      emptyTitle="Nenhum movimento ainda"
+      emptyMessage="Sobras, faltas e descontos usados aparecem aqui."
+      (retry)="load()"
+    >
+      <ng-template #row let-entry>
+        <td>{{ formatDate(entry.created_at) }}</td>
+        <td>
+          {{ kindLabel(entry.kind) }}
+          @if (entry.reason) {
+            <span class="jx-saldo__reason">{{ entry.reason }}</span>
+          }
+        </td>
+        <td class="jx-saldo__num">
+          <jx-money [cents]="entryAbsCents(entry)" [sign]="entrySign(entry)" />
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </section>
+</section>

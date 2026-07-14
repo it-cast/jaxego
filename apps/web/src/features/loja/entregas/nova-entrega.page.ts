@@ -219,6 +219,59 @@ export class NovaEntregaPage {
     () => this.maxPriceCents() + this.planTaxaPixCents() + this.planTaxaServicoCents()
   );
 
+  // ── Saldo/crédito da loja (opt-in — a loja escolhe se e quanto usar) ───────
+  protected readonly availableCreditCents = signal(0);
+  protected readonly creditToUseCents = signal(0);
+  protected readonly creditInput = signal('');
+
+  /** Teto do que dá pra usar: nunca mais que o saldo, nem mais que o total. */
+  protected readonly maxCreditUsableCents = computed(() =>
+    Math.max(0, Math.min(this.availableCreditCents(), this.totalPixCents()))
+  );
+
+  /** Reclampado sempre que lido — protege contra saldo/total mudarem depois
+   * do valor já digitado (ex.: loja troca de equipe selecionada). */
+  protected readonly effectiveCreditCents = computed(() =>
+    Math.max(0, Math.min(this.creditToUseCents(), this.maxCreditUsableCents()))
+  );
+
+  /** O que efetivamente vai ser cobrado no PIX, após o desconto escolhido. */
+  protected readonly finalTotalCents = computed(() =>
+    Math.max(0, this.totalPixCents() - this.effectiveCreditCents())
+  );
+
+  /** Guarda o valor digitado sem clampar aqui — `maxCreditUsableCents()` pode
+   * ainda estar 0 (saldo não carregou) no momento da digitação, o que travaria
+   * o campo em 0 mesmo com saldo disponível. `effectiveCreditCents` já
+   * reclampa contra o teto atual sempre que lido (totais, payload de envio). */
+  protected onCreditInput(raw: string): void {
+    const masked = maskBrl(raw);
+    this.creditInput.set(masked);
+    this.creditToUseCents.set(Math.max(0, Math.round(parseBrl(masked) * 100)));
+  }
+
+  protected useMaxCredit(): void {
+    const max = this.maxCreditUsableCents();
+    this.creditToUseCents.set(max);
+    this.creditInput.set(max > 0 ? this.formatBrl(max) : '');
+  }
+
+  protected clearCredit(): void {
+    this.creditToUseCents.set(0);
+    this.creditInput.set('');
+  }
+
+  private async loadCreditBalance(): Promise<void> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ balance_cents: number }>('/v1/merchants/credit-balance')
+      );
+      this.availableCreditCents.set(Math.max(0, res.balance_cents));
+    } catch {
+      this.availableCreditCents.set(0);
+    }
+  }
+
   protected readonly allTeamsEmpty = computed(() =>
     this.teamsOnline().length === 0 ||
     this.teamsOnline().every(t => t.couriers.length === 0)
@@ -318,6 +371,9 @@ export class NovaEntregaPage {
       this.teamsOnline.set(res.teams);
       this.planTaxaPixCents.set(res.plan_taxa_pix_cents ?? 0);
       this.planTaxaServicoCents.set(res.plan_taxa_servico_cents ?? 0);
+      this.creditToUseCents.set(0);
+      this.creditInput.set('');
+      void this.loadCreditBalance();
       this.step.set(2);
     } catch {
       this.resolveError.set('Não foi possível verificar a cobertura do endereço. Tente de novo.');
@@ -532,6 +588,8 @@ export class NovaEntregaPage {
         : null,
       platform_pix: platformPix || undefined,
       pix_amount_cents: platformPix ? this.totalPixCents() : undefined,
+      pix_courier_price_cents: platformPix ? this.maxPriceCents() : undefined,
+      credit_applied_cents: platformPix ? this.effectiveCreditCents() : undefined,
     };
 
     const result = await this.service.create(req);

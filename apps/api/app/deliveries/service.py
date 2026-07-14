@@ -357,9 +357,42 @@ async def create_delivery(
     # Immediate delivery without PIX stays CRIADA (current path).
     scheduled_at = getattr(body, "scheduled_at", None)
     platform_pix = getattr(body, "platform_pix", False) and pix_payment_port is not None
+
+    # Saldo/crédito da loja (opt-in): a loja escolhe quanto usar de desconto —
+    # reclampado aqui contra o saldo real ANTES de decidir o estado inicial
+    # (se o saldo cobrir 100% da cobrança, a entrega nasce CRIADA direto, sem
+    # esperar PIX). O lançamento no extrato só é gravado depois que a entrega
+    # tem id (mais abaixo) — a trava do saldo (FOR UPDATE) fica de pé até lá.
+    credit_applied_cents = 0
+    final_pix_amount_cents: int | None = None
+    # Base pra apuração de sobra/falta na finalização (reconcile_delivery_credit).
+    # Vem do FRONT (já zone-aware, mesmo `maxPriceCents` mostrado no resumo) —
+    # nunca do `eligible_online_prices_cents` acima, que é o sistema de preço
+    # antigo (bairro/km) e não bate com o preço real cobrado por zona (ver
+    # CORRECAO-246 anexo: dava base 0 pra entregadores só com cobertura por
+    # zona, gerando falta falsa igual ao preço cheio em toda finalização).
+    # Reclampado no servidor — nunca confia no número do cliente.
+    pix_courier_price_cents: int | None = None
+    if platform_pix:
+        requested_pix_amount = getattr(body, "pix_amount_cents", None) or 0
+        requested_credit = getattr(body, "credit_applied_cents", None) or 0
+        if requested_credit > 0:
+            from app.merchants import credit as credit_mod
+
+            credit_applied_cents = await credit_mod.preview_credit_cents(
+                session,
+                area_id=area_id,
+                merchant_id=merchant_id,
+                requested_cents=requested_credit,
+                charge_cents=requested_pix_amount,
+            )
+        final_pix_amount_cents = requested_pix_amount - credit_applied_cents
+        submitted_courier_price = getattr(body, "pix_courier_price_cents", None) or 0
+        pix_courier_price_cents = max(0, min(submitted_courier_price, requested_pix_amount))
+
     if scheduled_at is not None:
         initial_state = "AGENDADA"
-    elif platform_pix:
+    elif platform_pix and (final_pix_amount_cents or 0) > 0:
         initial_state = "AGUARDANDO_PAGAMENTO"
     else:
         initial_state = "CRIADA"
@@ -400,9 +433,22 @@ async def create_delivery(
         public_token=_new_public_token(),
         origin="manual",
         scheduled_at=scheduled_at,
+        pix_courier_price_cents=pix_courier_price_cents,
+        credit_applied_cents=credit_applied_cents,
     )
     session.add(delivery)
     await session.flush()
+
+    if credit_applied_cents > 0:
+        from app.merchants import credit as credit_mod
+
+        await credit_mod.record_consumption(
+            session,
+            area_id=area_id,
+            merchant_id=merchant_id,
+            delivery_id=delivery.id,
+            amount_cents=credit_applied_cents,
+        )
 
     # Find zone from dropoff coordinates (point-in-polygon).
     # Prefer explicit lat/lng from body; fall back to geocoding the address.
@@ -433,14 +479,16 @@ async def create_delivery(
 
     # Platform PIX delivery (Phase 12): generate PIX QR directed to itcast subconta.
     # The delivery stays in AGUARDANDO_PAGAMENTO until the webhook confirms payment.
+    # Sem PIX quando o saldo da loja cobriu 100% da cobrança (final_pix_amount_cents
+    # <= 0) — a entrega já nasceu CRIADA acima, nada a cobrar.
     pix_qr_code: str | None = None
     pix_qr_code_base64: str | None = None
-    if platform_pix:
+    if platform_pix and (final_pix_amount_cents or 0) > 0:
         from app.core.config import get_settings
         from app.merchants.models import Merchant
         from app.payments.port import Customer
 
-        pix_amount = getattr(body, "pix_amount_cents", None) or 0
+        pix_amount = final_pix_amount_cents or 0
         merchant = await session.get(Merchant, merchant_id)
         pix_customer = Customer(
             name=merchant.trade_name if merchant else "Loja",
@@ -551,6 +599,8 @@ async def create_delivery(
         scheduled_at=scheduled_at_iso,
         pix_qr_code=pix_qr_code,
         pix_qr_code_base64=pix_qr_code_base64,
+        credit_applied_cents=credit_applied_cents,
+        final_pix_amount_cents=final_pix_amount_cents,
     )
 
 
@@ -585,25 +635,17 @@ def dropoff_revealed(state: str) -> bool:
 
 
 def cancellation_cost_cents(delivery: Delivery, *, return_pct: int) -> int:
-    """RN-004 cost (cents) for cancelling NOW, by the delivery's current state.
+    """Cost (cents) for cancelling NOW — always 0 (CORRECAO-249/250).
 
-    - CRIADA (pre-acceptance): 0 (the store may free-cancel before a courier accepts).
-    - SEM_RESPOSTA (cascade exhausted, no courier accepted yet): 0, same as CRIADA.
-    - ACEITA (accepted, not collected): 50% of the estimate.
-    - COLETADA (collected): 100% of the estimate + the area's return policy %.
-
-    The price base is `price_cents` (or 0 if not yet accepted). This is only
-    RECORDED on the delivery; the effective charge is the Phase 11 invoice.
+    Cancelling is only possible pre-acceptance (AGENDADA/AGUARDANDO_PAGAMENTO/
+    CRIADA/SEM_RESPOSTA — enforced by `state_machine.DELIVERY_TRANSITIONS`,
+    which no longer allows CANCELADA from ACEITA/COLETADA). The previous
+    50%/100% post-acceptance cost was never wired to a real charge or courier
+    payout, so keeping the state open just left PIX money stuck. `return_pct`
+    is kept in the signature for when Phase 11 (invoicing) reintroduces a real
+    post-acceptance cost.
     """
-    base = delivery.price_cents or 0
-    state = delivery.state
-    if state in ("AGENDADA", "AGUARDANDO_PAGAMENTO", "CRIADA", "SEM_RESPOSTA"):
-        return 0
-    if state == "ACEITA":
-        return base // 2
-    if state == "COLETADA":
-        return base + (base * max(return_pct, 0)) // 100
-    # Terminal states are not cancellable (the transition will 422); cost 0.
+    del return_pct  # unused until Phase 11 defines a real post-acceptance cost
     return 0
 
 
@@ -631,7 +673,29 @@ async def cancel_delivery(
         reason=reason,
         ip=ip,
     )
-    delivery.cancel_cost_cents = cost  # recorded (charge is Phase 11)
+    delivery.cancel_cost_cents = cost  # recorded (charge is Phase 11) — não é uma
+    # cobrança real hoje (nada lê esse campo pra debitar a loja ou pagar o
+    # entregador); é só um número guardado pra uma fatura futura (Phase 11).
+    # Por isso o estorno do PIX + devolução do saldo abaixo NÃO ficam
+    # condicionados a `cost == 0` (CORRECAO-249: a versão anterior só
+    # devolvia no cancelamento pré-aceite, mas a tela de detalhe permite
+    # cancelar em ACEITA/COLETADA também — resultado: PIX ficava preso, sem
+    # estornar e sem ninguém realmente "ficar" com os 50%/100%, porque essa
+    # cobrança nunca foi implementada).
+
+    # Devolve o saldo usado (se houver). O estorno do PIX (externo, Safe2Pay)
+    # é disparado pelo router depois do commit — ver `enqueue_refund`.
+    if delivery.credit_applied_cents > 0:
+        from app.merchants import credit as credit_mod
+
+        await credit_mod.reverse_consumption(
+            session,
+            area_id=area_id,
+            merchant_id=merchant_id,
+            delivery_id=delivery.id,
+            amount_cents=delivery.credit_applied_cents,
+        )
+
     await session.flush()
     return delivery
 

@@ -13,7 +13,7 @@ source of truth — so the app's cosmetic countdown can re-sync to the server.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class OfferOut(BaseModel):
@@ -46,6 +46,15 @@ class OfferOut(BaseModel):
     # Timer — Redis TTL is the source of truth (ADR-104).
     ttl_total_s: int
     ttl_remaining_s: int
+
+
+class AcceptOfferBody(BaseModel):
+    """Device GPS at the moment of accept — required (audit log, CORRECAO-252)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    lat: float = Field(ge=-90, le=90)
+    lng: float = Field(ge=-180, le=180)
 
 
 class AcceptResponse(BaseModel):

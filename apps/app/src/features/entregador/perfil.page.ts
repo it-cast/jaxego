@@ -35,6 +35,7 @@ import {
   EntregadorService,
 } from './entregador.service';
 import { CourierCadastroService } from './cadastro/cadastro.service';
+import { CourierLocationService } from './courier-location.service';
 
 
 const REASON_LABELS: Record<string, string> = {
@@ -236,6 +237,7 @@ export class EntregadorPerfilPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly svc = inject(EntregadorService);
   private readonly cadastroSvc = inject(CourierCadastroService);
+  private readonly locationSvc = inject(CourierLocationService);
 
   private readonly router = inject(Router);
   protected readonly faRotateRight = faRotateRight;
@@ -272,6 +274,7 @@ export class EntregadorPerfilPage implements OnInit {
   }
 
   protected async logout(): Promise<void> {
+    this.locationSvc.stop();
     await this.auth.logout();
     void this.router.navigate(['/entrar']);
   }

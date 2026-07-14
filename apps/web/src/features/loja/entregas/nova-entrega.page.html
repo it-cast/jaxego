@@ -327,6 +327,40 @@
           <span>Total a pagar via PIX</span>
           <strong>R$ {{ formatBrl(totalPixCents()) }}</strong>
         </div>
+
+        @if (availableCreditCents() > 0) {
+          <div class="jx-nova__credit">
+            <div class="jx-nova__credit-head">
+              <span>Saldo disponível: <strong>R$ {{ formatBrl(availableCreditCents()) }}</strong></span>
+              <button type="button" class="jx-nova__credit-use" (click)="useMaxCredit()">Usar tudo</button>
+            </div>
+            <label class="jx-nova__credit-label" for="credit-input">Quer usar saldo como desconto?</label>
+            <div class="jx-nova__credit-input-wrap">
+              <input
+                id="credit-input"
+                class="jx-nova__credit-input"
+                inputmode="decimal"
+                placeholder="R$ 0,00"
+                [value]="creditInput()"
+                (input)="onCreditInput($any($event.target).value)"
+              />
+              @if (effectiveCreditCents() > 0) {
+                <button type="button" class="jx-nova__credit-clear" (click)="clearCredit()">Limpar</button>
+              }
+            </div>
+            @if (effectiveCreditCents() > 0) {
+              <div class="jx-nova__max-price-row jx-nova__max-price-row--credit">
+                <span>Desconto do saldo</span>
+                <span>− R$ {{ formatBrl(effectiveCreditCents()) }}</span>
+              </div>
+              <div class="jx-nova__max-price-row jx-nova__max-price-row--total">
+                <span>Total após desconto</span>
+                <strong>R$ {{ formatBrl(finalTotalCents()) }}</strong>
+              </div>
+            }
+          </div>
+        }
+
         <span class="jx-nova__max-price-hint">Se a entrega sair mais barata, a corrida será menor.</span>
       </div>
     }
@@ -387,9 +421,19 @@
               <td class="jx-nova__breakdown-val">R$ {{ formatBrl(planTaxaServicoCents()) }}</td>
             </tr>
           }
+          @if (effectiveCreditCents() > 0) {
+            <tr>
+              <td>Subtotal</td>
+              <td class="jx-nova__breakdown-val">R$ {{ formatBrl(totalPixCents()) }}</td>
+            </tr>
+            <tr>
+              <td>Desconto do saldo</td>
+              <td class="jx-nova__breakdown-val">− R$ {{ formatBrl(effectiveCreditCents()) }}</td>
+            </tr>
+          }
           <tr class="jx-nova__breakdown-total">
             <td><strong>Total</strong></td>
-            <td class="jx-nova__breakdown-val"><strong>R$ {{ formatBrl(totalPixCents()) }}</strong></td>
+            <td class="jx-nova__breakdown-val"><strong>R$ {{ formatBrl(finalTotalCents()) }}</strong></td>
           </tr>
         </tbody>
       </table>

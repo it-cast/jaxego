@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { PoolAcceptResponse, PoolAcceptResult, PoolItemOut } from './pool.models';
+import { currentPosition } from '../geolocation.util';
 
 /**
  * PoolService — the courier's unanswered-pool client. `list()` browses
@@ -26,9 +27,11 @@ export class PoolService {
   }
 
   async accept(deliveryId: number): Promise<PoolAcceptResult> {
+    const pos = await currentPosition();
+    if (pos === null) return 'gps_missing';
     try {
       await firstValueFrom(
-        this.http.post<PoolAcceptResponse>(`/v1/offers/pool/${deliveryId}/accept`, {}),
+        this.http.post<PoolAcceptResponse>(`/v1/offers/pool/${deliveryId}/accept`, pos),
       );
       return 'won';
     } catch (err) {

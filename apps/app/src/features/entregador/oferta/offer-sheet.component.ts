@@ -119,6 +119,12 @@ import type { OfferOut, OfferResult } from './offer.models';
             retryLabel="Tentar de novo"
             (retry)="onAccept()"
           />
+        } @else if (resultState() === 'gps_missing') {
+          <jx-error-state
+            message="Precisamos da sua localização pra aceitar a entrega. Ative o GPS e tente de novo."
+            retryLabel="Tentar de novo"
+            (retry)="onAccept()"
+          />
         }
     </div>
     </div>

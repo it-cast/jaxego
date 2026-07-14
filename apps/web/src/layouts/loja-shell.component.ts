@@ -16,6 +16,7 @@ import {
   faGear,
   faBars,
   faXmark,
+  faWallet,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 
@@ -241,6 +242,7 @@ export class LojaShellComponent {
     { path: '/loja/entregas', label: 'Entregas', icon: faTruckFast },
     { path: '/loja/favoritos', label: 'Favoritos/Bloqueados', icon: faStar },
     { path: '/loja/faturas', label: 'Faturas', icon: faFileInvoiceDollar },
+    { path: '/loja/saldo', label: 'Meu saldo', icon: faWallet },
     { path: '/loja/plano', label: 'Plano', icon: faCreditCard },
     { path: '/loja/config', label: 'Configurações', icon: faGear },
   ];

@@ -143,6 +143,56 @@ async def update_profile(
     )
 
 
+@router.get("/credit-balance")
+async def get_credit_balance(session: SessionDep, user: CurrentUser) -> dict:
+    """Saldo/crédito disponível da loja (pode ser negativo — não bloqueia nada)."""
+    from app.core.exceptions import NotFoundError
+    from app.merchants import credit
+
+    if user.type != "merchant" or user.area_id is None:
+        raise NotFoundError("Loja nao encontrada.")
+    balance = await credit.available_credit_cents(
+        session, area_id=user.area_id, merchant_id=user.id
+    )
+    await session.commit()  # libera o FOR UPDATE (leitura, nada a persistir)
+    return {"balance_cents": balance}
+
+
+@router.get("/credit-ledger")
+async def get_credit_ledger(
+    session: SessionDep,
+    user: CurrentUser,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict:
+    """Extrato de créditos/débitos da loja — mais recentes primeiro."""
+    from app.core.exceptions import NotFoundError
+    from app.merchants import credit
+
+    if user.type != "merchant" or user.area_id is None:
+        raise NotFoundError("Loja nao encontrada.")
+    entries = await credit.list_ledger(
+        session,
+        area_id=user.area_id,
+        merchant_id=user.id,
+        limit=min(limit, 100),
+        offset=max(offset, 0),
+    )
+    return {
+        "items": [
+            {
+                "id": e.id,
+                "delivery_id": e.delivery_id,
+                "kind": e.kind,
+                "amount_cents": e.amount_cents,
+                "reason": e.reason,
+                "created_at": e.created_at.isoformat() if e.created_at else None,
+            }
+            for e in entries
+        ]
+    }
+
+
 def _client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
 

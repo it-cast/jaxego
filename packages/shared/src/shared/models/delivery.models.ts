@@ -42,6 +42,10 @@ export interface CreateDeliveryRequest {
   platform_pix?: boolean;
   /** Valor máximo confirmado pelo usuário para o PIX (centavos). */
   pix_amount_cents?: number | null;
+  /** Preço do entregador mais caro elegível (zona), sem taxas — base pra apuração de sobra/falta na finalização. */
+  pix_courier_price_cents?: number | null;
+  /** Saldo/crédito que a loja escolheu usar como desconto (opt-in). */
+  credit_applied_cents?: number | null;
 }
 
 export interface CreateDeliveryResponse {
@@ -57,6 +61,10 @@ export interface CreateDeliveryResponse {
   pix_qr_code?: string | null;
   /** PIX QR code em base64 para exibição como imagem (quando platform_pix=true). */
   pix_qr_code_base64?: string | null;
+  /** Quanto de saldo foi de fato aplicado (pode ser menor que o pedido). */
+  credit_applied_cents?: number;
+  /** Valor final cobrado no PIX após o desconto (null se totalmente coberto). */
+  final_pix_amount_cents?: number | null;
 }
 
 export interface DeliveryListItem {

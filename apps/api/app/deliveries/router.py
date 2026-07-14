@@ -743,6 +743,14 @@ async def cancel_delivery(
     from app.dispatch import service as dispatch_service
 
     await dispatch_service.cancel_pending_offers(get_redis_client(), delivery_id=delivery_id)
+    # Estorno do PIX (se pago via platform_pix), qualquer estado cancelável
+    # (CORRECAO-249 — o custo RN-004 nunca virou cobrança real, então reter o
+    # estorno pra "não brigar" com ele só deixava o dinheiro preso). Enfileirado
+    # (externo, Safe2Pay — não síncrono do lado deles); nunca bloqueia a
+    # resposta do cancelamento.
+    from app.workers.refund import enqueue_refund
+
+    await enqueue_refund(delivery.id)
     recipient = None
     if delivery.recipient_id is not None:
         from app.deliveries.models import Recipient

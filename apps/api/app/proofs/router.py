@@ -105,6 +105,9 @@ async def submit_proof(
             session, delivery=delivery, to_state="FINALIZADA",
             actor_id=scope.user_id, reason="immediate_finalize", ip=_client_ip(request),
         )
+        from app.merchants.credit import reconcile_delivery_credit
+
+        await reconcile_delivery_credit(session, delivery=delivery)
         just_finalized = True
     await session.commit()
     if just_finalized:
@@ -145,6 +148,8 @@ async def submit_reference(
         actor_user_id=scope.user_id,
         reference_number=body.reference_number,
         ip=_client_ip(request),
+        lat=body.lat,
+        lng=body.lng,
     )
     just_finalized = False
     if result.state == "ENTREGUE":
@@ -154,6 +159,9 @@ async def submit_reference(
             session, delivery=delivery, to_state="FINALIZADA",
             actor_id=scope.user_id, reason="immediate_finalize", ip=_client_ip(request),
         )
+        from app.merchants.credit import reconcile_delivery_credit
+
+        await reconcile_delivery_credit(session, delivery=delivery)
         just_finalized = True
         result = ProofResponse(
             delivery_id=delivery.id, state=delivery.state,

@@ -22,6 +22,7 @@ import {
   LoadingSkeletonComponent,
 } from '@jaxego/shared/state';
 import { CourierDelivery, EntregadorService } from '../entregador.service';
+import { currentPosition } from '../geolocation.util';
 
 /**
  * Entrega ativa (tela 05/tpl-c-active, F-06). The in-progress delivery the
@@ -175,6 +176,10 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
             <button type="button" class="jx-active__secondary" (click)="askRefusal()">
               Destinatario ausente / recusou
             </button>
+          }
+
+          @if (actionError(); as err) {
+            <p class="jx-active__action-error" role="alert">{{ err }}</p>
           }
 
           @if (showPhoneModal()) {
@@ -390,6 +395,13 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
         border: 2px solid var(--brand, #e8722a);
         border-radius: 999px;
       }
+      .jx-active__action-error {
+        margin: 8px 0 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--error, #d32f2f);
+        text-align: center;
+      }
       .jx-active__overlay {
         position: fixed;
         inset: 0;
@@ -507,6 +519,7 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly showPhoneModal = signal(false);
   protected readonly productImageUrl = signal<string | null>(null);
   protected readonly showLightbox = signal(false);
+  protected readonly actionError = signal<string | null>(null);
 
   protected readonly confirmDialog = signal<{
     title: string;
@@ -674,7 +687,13 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     const d = this.delivery();
     const courierId = this.auth.me()?.courier_id;
     if (!d || !courierId) return;
-    await this.svc.markCollected(courierId, d.id);
+    const pos = await currentPosition();
+    if (pos === null) {
+      this.actionError.set('Precisamos da sua localização pra confirmar a coleta. Ative o GPS e tente de novo.');
+      return;
+    }
+    this.actionError.set(null);
+    await this.svc.markCollected(courierId, d.id, pos.lat, pos.lng);
     await this.reload();
   }
 
@@ -682,8 +701,15 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     const d = this.delivery();
     const courierId = this.auth.me()?.courier_id;
     if (!d || !courierId) return;
+    const pos = await currentPosition();
+    if (pos === null) {
+      this.actionError.set('Precisamos da sua localização pra confirmar a chegada. Ative o GPS e tente de novo.');
+      return;
+    }
+    this.actionError.set(null);
+    await this.svc.markArrived(courierId, d.id, pos.lat, pos.lng);
     if (d.proof_method === 'none') {
-      await this.svc.finalizeNoProof(courierId, d.id);
+      await this.svc.finalizeNoProof(courierId, d.id, pos.lat, pos.lng);
       void this.router.navigate(['/entregador/entrega', d.id, 'concluida']);
     } else {
       void this.router.navigate(['/entregador/entrega', d.id, 'comprovar', 'delivery']);

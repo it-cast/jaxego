@@ -136,6 +136,8 @@ async def accept_offer(
     courier_id: int,
     actor_user_id: int | None,
     ip: str | None,
+    lat: float,
+    lng: float,
 ) -> Delivery:
     """Accept an offer — single winner via Lock + FOR UPDATE + state machine (D-05).
 
@@ -201,6 +203,18 @@ async def accept_offer(
             )
         except InvalidTransitionError as exc:
             raise OfferAlreadyTakenError() from exc
+
+        from app.tracking.service import ACTION_ACEITOU, log_courier_action
+
+        await log_courier_action(
+            session,
+            area_id=area_id,
+            delivery_id=locked.id,
+            courier_id=courier_id,
+            action=ACTION_ACEITOU,
+            lat=lat,
+            lng=lng,
+        )
 
         # Close the offer + cancel the rest of the cascade (queue + reverse index).
         await offer_state.close_offer(r, delivery_id)
@@ -363,6 +377,8 @@ async def self_assign_pool_delivery(
     courier_id: int,
     actor_user_id: int | None,
     ip: str | None,
+    lat: float,
+    lng: float,
 ) -> Delivery:
     """A courier claims a SEM_RESPOSTA delivery from the pool (D-05 pattern).
 
@@ -419,6 +435,18 @@ async def self_assign_pool_delivery(
             )
         except InvalidTransitionError as exc:
             raise OfferAlreadyTakenError() from exc
+
+        from app.tracking.service import ACTION_ACEITOU, log_courier_action
+
+        await log_courier_action(
+            session,
+            area_id=area_id,
+            delivery_id=locked.id,
+            courier_id=courier_id,
+            action=ACTION_ACEITOU,
+            lat=lat,
+            lng=lng,
+        )
 
         # Defensive cleanup — the pool delivery should have no live Redis state
         # (the cascade clears it before pooling), but never leave a stray key.

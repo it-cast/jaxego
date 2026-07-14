@@ -221,6 +221,28 @@ async def submit_photo_proof(
         refusal_reason=refusal_reason,
         ip=ip,
     )
+
+    from app.tracking.service import (
+        ACTION_COLETOU,
+        ACTION_ENTREGOU,
+        ACTION_RECUSOU_ENTREGA,
+        log_courier_action,
+    )
+
+    audit_action = {
+        "pickup": ACTION_COLETOU,
+        "delivery": ACTION_ENTREGOU,
+        "refusal": ACTION_RECUSOU_ENTREGA,
+    }[proof_kind]
+    await log_courier_action(
+        session,
+        area_id=delivery.area_id,
+        delivery_id=delivery.id,
+        courier_id=delivery.courier_id,
+        action=audit_action,
+        lat=gps[0] if gps else None,
+        lng=gps[1] if gps else None,
+    )
     logger.info(
         "proof.submitted",
         area_id=delivery.area_id,

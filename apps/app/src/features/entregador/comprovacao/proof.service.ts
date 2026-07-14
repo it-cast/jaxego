@@ -60,10 +60,17 @@ export class ProofService {
     );
   }
 
-  async submitReference(deliveryId: number, reference: string): Promise<ProofResult> {
+  async submitReference(
+    deliveryId: number,
+    reference: string,
+    lat: number | null = null,
+    lng: number | null = null,
+  ): Promise<ProofResult> {
     return firstValueFrom(
       this.http.post<ProofResult>(`/v1/deliveries/${deliveryId}/proof/reference`, {
         reference_number: reference,
+        lat,
+        lng,
       }),
     );
   }

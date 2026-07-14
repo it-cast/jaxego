@@ -46,6 +46,10 @@ class SubmitReferenceRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     reference_number: str = Field(min_length=1, max_length=64)
+    # Optional (this path is itself a fallback for GPS-difficult spots — CORRECAO-252
+    # does not make it mandatory like the other action logs).
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lng: float | None = Field(default=None, ge=-180, le=180)
 
 
 class ProofResponse(BaseModel):

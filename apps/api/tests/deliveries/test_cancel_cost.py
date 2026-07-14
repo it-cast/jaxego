@@ -1,8 +1,9 @@
-"""RN-004 cancellation cost by state (T-04) — recorded, not charged here.
+"""Cancellation cost by state (T-04) — CORRECAO-249/250.
 
-`cancellation_cost_cents` is a pure function: 0 pre-acceptance, 50% accepted, 100% +
-return% after pickup. The charge itself is the Phase 11 invoice — here we pin the
-computation and that `cancel_delivery` records it on the delivery.
+`cancellation_cost_cents` is always 0: cancelling is only possible pre-acceptance
+(the state machine no longer allows CANCELADA from ACEITA/COLETADA — the old
+50%/100% RN-004 cost was never wired to a real charge or courier payout, so
+allowing it just left PIX money stuck with nobody compensated).
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from app.deliveries.models import Delivery
 from app.deliveries.service import cancellation_cost_cents
 
 
-def _delivery(state: str, estimate: int = 1000) -> Delivery:
+def _delivery(state: str, price: int = 1000) -> Delivery:
     return Delivery(
         area_id=1,
         merchant_id=1,
@@ -20,7 +21,7 @@ def _delivery(state: str, estimate: int = 1000) -> Delivery:
         state=state,
         pickup_address="a",
         dropoff_address="b",
-        estimate_max_cents=estimate,
+        price_cents=price,
         fee_cents=0,
         items_quantity=1,
         public_token="X" * 26,
@@ -28,32 +29,23 @@ def _delivery(state: str, estimate: int = 1000) -> Delivery:
     )
 
 
-def test_criada_costs_zero() -> None:
-    assert cancellation_cost_cents(_delivery("CRIADA"), return_pct=20) == 0
-
-
-def test_aceita_costs_50pct() -> None:
-    assert cancellation_cost_cents(_delivery("ACEITA", 1000), return_pct=20) == 500
-
-
-def test_coletada_costs_100pct_plus_return() -> None:
-    # 1000 + 20% return = 1200.
-    assert cancellation_cost_cents(_delivery("COLETADA", 1000), return_pct=20) == 1200
-
-
-def test_coletada_zero_return() -> None:
-    assert cancellation_cost_cents(_delivery("COLETADA", 1000), return_pct=0) == 1000
-
-
-def test_unpriced_estimate_costs_zero() -> None:
-    d = _delivery("ACEITA")
-    d.estimate_max_cents = None
-    assert cancellation_cost_cents(d, return_pct=20) == 0
-
-
-def test_terminal_states_cost_zero() -> None:
-    for state in ("ENTREGUE", "FINALIZADA", "CANCELADA", "RECUSADA_NO_DESTINO"):
-        assert cancellation_cost_cents(_delivery(state, 1000), return_pct=50) == 0
+@pytest.mark.parametrize(
+    "state",
+    [
+        "AGENDADA",
+        "AGUARDANDO_PAGAMENTO",
+        "CRIADA",
+        "SEM_RESPOSTA",
+        "ACEITA",
+        "COLETADA",
+        "ENTREGUE",
+        "FINALIZADA",
+        "CANCELADA",
+        "RECUSADA_NO_DESTINO",
+    ],
+)
+def test_cancellation_is_always_free(state: str) -> None:
+    assert cancellation_cost_cents(_delivery(state, 1000), return_pct=20) == 0
 
 
 @pytest.mark.asyncio
@@ -92,4 +84,4 @@ async def test_cancel_records_cost_on_delivery(session_factory, delivery_seed) -
         )
         await s.commit()
         assert cancelled.state == "CANCELADA"
-        assert cancelled.cancel_cost_cents == 0  # CRIADA → free (RN-004)
+        assert cancelled.cancel_cost_cents == 0

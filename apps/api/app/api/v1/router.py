@@ -59,11 +59,9 @@ api_router.include_router(merchants_dispatch_router)
 from app.notifications.router import router as push_subscriptions_router  # noqa: E402
 from app.payments_direct.router import router as payments_direct_router  # noqa: E402
 from app.proofs.router import router as proofs_router  # noqa: E402
-from app.tracking.locations import router as locations_router  # noqa: E402
 from app.tracking.public import router as public_tracking_router  # noqa: E402
 
 api_router.include_router(public_tracking_router)
-api_router.include_router(locations_router)
 api_router.include_router(proofs_router)
 api_router.include_router(push_subscriptions_router)
 api_router.include_router(payments_direct_router)

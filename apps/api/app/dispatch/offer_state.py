@@ -156,7 +156,7 @@ async def clear_declined(r: aioredis.Redis, delivery_id: int) -> None:
 # gets up to MAX_TIMEOUTS_PER_COURIER chances before being excluded the same
 # way an active decline excludes them (merged into the declined set below).
 # ---------------------------------------------------------------------------
-MAX_TIMEOUTS_PER_COURIER = 2
+MAX_TIMEOUTS_PER_COURIER = 10
 
 
 def _timeouts_key(delivery_id: int) -> str:

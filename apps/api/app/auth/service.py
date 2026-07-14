@@ -323,9 +323,25 @@ async def rotate_refresh(session: AsyncSession, raw: str) -> TokenPair:
 
 
 async def logout(session: AsyncSession, raw: str) -> None:
-    """Revoke the presented refresh token (best-effort; idempotent)."""
+    """Revoke the presented refresh token (best-effort; idempotent).
+
+    A courier logging out is taken offline server-side (CORRECAO-253) — the
+    app can't be trusted to always call "ficar offline" itself (killed,
+    crashed, connection lost), so this is the one choke point every logout
+    goes through regardless of client.
+    """
     token = await _find_refresh(session, raw)
     if token is not None and token.revoked_at is None:
         token.revoked_at = datetime.now(UTC)
         await session.flush()
         logger.info("logout", actor_id=token.actor_id)
+        if token.actor_type == "courier":
+            from app.core.exceptions import NotFoundError
+            from app.couriers.availability import set_availability
+
+            try:
+                await set_availability(
+                    session, area_id=None, courier_id=token.actor_id, online=False
+                )
+            except NotFoundError:
+                pass  # revocation above already succeeded; going offline is best-effort

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { haversineMeters } from './entrega-ativa/location-polling.service';
+import { currentPosition, haversineMeters } from './geolocation.util';
 
 /**
  * CourierLocationService — posts courier position while online (dispatch ranking).
@@ -50,7 +50,7 @@ export class CourierLocationService {
 
   async tick(): Promise<void> {
     if (this.courierId === null) return;
-    const pos = await this.currentPosition();
+    const pos = await currentPosition();
     if (pos === null) return;
     if (
       this.lastSent &&
@@ -70,19 +70,5 @@ export class CourierLocationService {
     } catch {
       // Network blip — next tick will retry.
     }
-  }
-
-  private currentPosition(): Promise<{ lat: number; lng: number } | null> {
-    return new Promise((resolve) => {
-      if (typeof navigator === 'undefined' || !navigator.geolocation) {
-        resolve(null);
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
-        () => resolve(null),
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
-    });
   }
 }

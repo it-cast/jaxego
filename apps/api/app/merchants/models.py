@@ -232,3 +232,54 @@ class MerchantCourierBlock(Base, AreaScopedMixin, TimestampMixin):
     )
     # Private store-only note (RN-014) — NEVER exposed to the courier.
     reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+# Kinds of merchant credit ledger entry:
+# - "reconciliation": sobra (positivo) ou falta (negativo) apurada na FINALIZAÇÃO da
+#   entrega — diferença entre o que a loja pagou no PIX (preço do entregador mais caro
+#   elegível, `Delivery.pix_courier_price_cents`) e o que o entregador que aceitou
+#   realmente cobrou (`Delivery.price_cents`).
+# - "consumption": saldo usado pela loja pra abater o PIX de uma entrega nova (sempre
+#   negativo — a loja escolhe quanto usar, nunca é automático).
+# - "reversal": devolve um "consumption" quando a entrega é CANCELADA (sempre
+#   positivo — desfaz o desconto que não chegou a valer, já que o PIX correspondente
+#   também é estornado integralmente).
+MERCHANT_CREDIT_KINDS = ("reconciliation", "consumption", "reversal")
+
+
+class MerchantCreditLedger(Base, AreaScopedMixin, TimestampMixin):
+    """Extrato de saldo da loja (append-only, espelha EscrowLedger/Withdrawal).
+
+    Saldo disponível = SOMA de `amount_cents` (positivo = crédito, negativo = débito),
+    calculada sob `FOR UPDATE` no momento do uso (mesmo padrão de
+    `withdrawals/repo.py::available_balance_cents`) — nunca um campo de saldo solto,
+    pra evitar corrida entre duas entregas mexendo no saldo ao mesmo tempo.
+    """
+
+    __tablename__ = "merchant_credit_ledger"
+    __table_args__ = (
+        Index("ix_merchant_credit_ledger_merchant_id", "merchant_id"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    merchant_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("merchants.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    # Entrega que originou o lançamento (a que gerou sobra/falta, ou a nova entrega
+    # onde o saldo foi usado como desconto). Nullable por segurança, mas sempre setado
+    # na prática — todo lançamento nasce de uma entrega.
+    delivery_id: Mapped[int | None] = mapped_column(
+        BIG_ID,
+        ForeignKey("deliveries.id", ondelete="RESTRICT", onupdate="RESTRICT"),
+        nullable=True,
+        index=True,
+    )
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    # Positivo = crédito pra loja; negativo = débito/consumo. Nunca zero (não gravamos
+    # lançamento quando a diferença apurada é 0).
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -76,6 +76,8 @@ async def submit_reference_proof(
     actor_user_id: int | None,
     reference_number: str,
     ip: str | None,
+    lat: float | None = None,
+    lng: float | None = None,
 ) -> ProofResponse:
     """Validate the reference number → ENTREGUE, or count the failure (E4)."""
     from datetime import UTC, datetime
@@ -107,6 +109,17 @@ async def submit_reference_proof(
             actor_id=actor_user_id,
             reason="photo_reference",
             ip=ip,
+        )
+        from app.tracking.service import ACTION_ENTREGOU, log_courier_action
+
+        await log_courier_action(
+            session,
+            area_id=delivery.area_id,
+            delivery_id=delivery.id,
+            courier_id=delivery.courier_id,
+            action=ACTION_ENTREGOU,
+            lat=lat,
+            lng=lng,
         )
         logger.info("reference.matched", area_id=delivery.area_id, delivery_id=delivery.id)
         return ProofResponse(

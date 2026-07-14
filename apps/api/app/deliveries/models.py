@@ -216,6 +216,16 @@ class Delivery(Base, AreaScopedMixin, TimestampMixin):
     # ver app/deliveries/payout.py. Idempotência: setado uma vez, nunca repete.
     courier_payout_transaction_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
+    # Parte do PIX antecipado que era só o preço do entregador mais caro elegível
+    # (SEM taxa PIX / taxa de sistema) — calculado pelo servidor na criação, nunca
+    # confiado do cliente. Usado só na finalização, pra apurar sobra/falta de saldo
+    # da loja (ver app/merchants/credit.py::reconcile_delivery_credit).
+    pix_courier_price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Crédito da loja aplicado nesta entrega na criação (desconto que ELA escolheu
+    # usar, nunca automático). Guardado aqui pra idempotência/auditoria — nunca
+    # aplicado duas vezes na mesma entrega.
+    credit_applied_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
 
 class DeliveryStateTransition(Base, AreaScopedMixin):
     """Append-only history of state transitions (D-04 / RN-012 / TH-02).

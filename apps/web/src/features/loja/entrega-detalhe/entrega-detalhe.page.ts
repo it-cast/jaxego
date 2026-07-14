@@ -25,10 +25,11 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
 /**
  * Store delivery detail (tela 13). Reuses jx-tracking-timeline + jx-state-badge.
  *
- * Responsive 2-column ≥760px collapses to 1 (responsive-breakpoint-strategy). The
- * cancel button DECLARES the cost in its label (RN-004 — "Cancelar (cobra 100% +
- * retorno)") so the store sees the consequence before acting. The recipient phone is
- * already masked by the backend (RN-022 / TH-04). The public tracking link /r/{token}
+ * Responsive 2-column ≥760px collapses to 1 (responsive-breakpoint-strategy).
+ * Cancel is only offered pre-acceptance (CORRECAO-249/250 — the backend state
+ * machine no longer allows CANCELADA from ACEITA/COLETADA, so the button
+ * simply disappears once a courier accepts). The recipient phone is already
+ * masked by the backend (RN-022 / TH-04). The public tracking link /r/{token}
  * is shown for sharing.
  */
 @Component({
@@ -659,17 +660,14 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
       : null;
   }
 
+  /** Só pré-aceite (CORRECAO-249/250) — o backend rejeita CANCELADA a partir
+   * de ACEITA/COLETADA, então o botão nem aparece depois que um entregador aceita. */
   protected canCancel(d: DeliveryListItem): boolean {
-    return ['AGENDADA', 'CRIADA', 'SEM_RESPOSTA', 'ACEITA', 'COLETADA'].includes(d.state);
+    return ['AGENDADA', 'CRIADA', 'SEM_RESPOSTA'].includes(d.state);
   }
 
-  /** RN-004 cost declared IN the label (br/ux-copywriting-ptbr). */
-  protected cancelLabel(d: DeliveryListItem): string {
-    if (d.state === 'AGENDADA') return 'Cancelar (sem custo)';
-    if (d.state === 'CRIADA') return 'Cancelar (sem custo)';
-    if (d.state === 'SEM_RESPOSTA') return 'Cancelar (sem custo)';
-    if (d.state === 'ACEITA') return 'Cancelar (cobra 50%)';
-    return 'Cancelar (cobra 100% + retorno)';
+  protected cancelLabel(_d: DeliveryListItem): string {
+    return 'Cancelar (sem custo)';
   }
 
   protected fmtScheduled(iso: string | null | undefined): string {

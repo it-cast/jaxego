@@ -6,7 +6,6 @@ import { faLock, faEye, faEyeSlash, faXmark } from '@fortawesome/free-solid-svg-
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { PageHeaderComponent, DotsLoaderComponent } from '@jaxego/shared/components';
 import { CourierProfile, EntregadorService } from '../entregador.service';
-import { CourierCadastroService } from '../cadastro/cadastro.service';
 
 @Component({
   selector: 'jx-editar-dados',
@@ -42,11 +41,7 @@ import { CourierCadastroService } from '../cadastro/cadastro.service';
 
           <label class="jx-edit__field">
             <span class="jx-edit__label">Equipe</span>
-            <select class="jx-edit__input" [(ngModel)]="selectedTeamId" required>
-              @for (t of teams(); track t.id) {
-                <option [ngValue]="t.id">{{ t.name }}</option>
-              }
-            </select>
+            <input class="jx-edit__input" [value]="profile()?.team_name ?? 'Sem equipe'" disabled />
           </label>
 
           <button class="jx-edit__pwd-btn" (click)="showPwdModal.set(true)">
@@ -160,15 +155,12 @@ export class EditarDadosPage implements OnInit {
 
   private readonly auth = inject(AuthService);
   private readonly svc = inject(EntregadorService);
-  private readonly cadastroSvc = inject(CourierCadastroService);
 
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly profile = signal<CourierProfile | null>(null);
   protected readonly msg = signal<{ text: string; tone: 'ok' | 'err' } | null>(null);
-  protected readonly teams = signal<{ id: number; name: string }[]>([]);
   protected name = '';
-  protected selectedTeamId: number | null = null;
 
   protected readonly showPwdModal = signal(false);
   protected readonly savingPwd = signal(false);
@@ -182,16 +174,10 @@ export class EditarDadosPage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     const id = this.auth.me()?.courier_id;
-    const areaId = this.auth.me()?.area_id;
     if (!id) return;
-    const [p, teamsList] = await Promise.all([
-      this.svc.profile(id),
-      areaId ? this.cadastroSvc.listTeams(areaId) : Promise.resolve([]),
-    ]);
+    const p = await this.svc.profile(id);
     this.profile.set(p);
     this.name = p?.full_name ?? '';
-    this.selectedTeamId = p?.team_id ?? null;
-    this.teams.set(teamsList);
     this.loading.set(false);
   }
 
@@ -202,7 +188,6 @@ export class EditarDadosPage implements OnInit {
     this.msg.set(null);
     const data: Record<string, any> = {};
     if (this.name.trim()) data['full_name'] = this.name.trim();
-    data['team_id'] = this.selectedTeamId;
     const ok = await this.svc.updateProfile(id, data);
     this.saving.set(false);
     this.msg.set(ok ? { text: 'Dados atualizados!', tone: 'ok' } : { text: 'Erro ao salvar.', tone: 'err' });

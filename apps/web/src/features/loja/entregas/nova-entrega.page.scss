@@ -732,6 +732,76 @@
   color: var(--text-muted);
 }
 
+// ── Saldo/crédito da loja (opt-in) ──────────────────────────────────────────
+.jx-nova__credit {
+  margin-top: var(--jx-space-3);
+  padding-top: var(--jx-space-3);
+  border-top: 1px dashed var(--border);
+}
+
+.jx-nova__credit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  color: var(--text-primary);
+
+  strong { color: var(--brand, #e8722a); }
+}
+
+.jx-nova__credit-use {
+  border: 1px solid var(--brand, #e8722a);
+  background: transparent;
+  color: var(--brand, #e8722a);
+  border-radius: var(--jx-radius-full, 999px);
+  padding: 4px 12px;
+  font-size: var(--jx-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jx-nova__credit-label {
+  display: block;
+  margin-top: var(--jx-space-2);
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-nova__credit-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  margin-top: 4px;
+}
+
+.jx-nova__credit-input {
+  min-height: 40px;
+  flex: 1;
+  padding: 0 var(--jx-space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  background: var(--surface, #fff);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--jx-text-sm);
+}
+
+.jx-nova__credit-clear {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--jx-text-xs);
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jx-nova__max-price-row--credit {
+  color: var(--brand, #e8722a);
+}
+
 // ── PIX modal backdrop + card ───────────────────────────────────────────────
 .jx-nova__modal-backdrop {
   position: fixed;

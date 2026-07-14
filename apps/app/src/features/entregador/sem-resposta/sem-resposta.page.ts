@@ -213,8 +213,17 @@ export class EntregadorSemRespostaPage implements OnInit {
       this.lostMessage.set('Lamentamos, mas essa entrega já foi aceita por outro entregador.');
       if (this.lostTimer) clearTimeout(this.lostTimer);
       this.lostTimer = setTimeout(() => this.lostMessage.set(null), 6000);
+      // Card is stale now — refresh the list.
+      await this.reload();
+      return;
     }
-    // Either way the card is stale now — refresh the list.
+    if (result === 'gps_missing') {
+      this.lostMessage.set('Precisamos da sua localização pra aceitar. Ative o GPS e tente de novo.');
+      if (this.lostTimer) clearTimeout(this.lostTimer);
+      this.lostTimer = setTimeout(() => this.lostMessage.set(null), 6000);
+      return; // no reload — the card is still valid, nothing was consumed.
+    }
+    // 'error' — card may still be stale (server-side failure); refresh either way.
     await this.reload();
   }
 

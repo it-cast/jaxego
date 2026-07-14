@@ -576,21 +576,63 @@ async def get_courier_delivery_image(
     return {"url": presign.url, "expires_in": 180}
 
 
+@router.post("/{courier_id}/deliveries/{delivery_id}/arrived")
+async def mark_arrived(
+    courier_id: int,
+    delivery_id: int,
+    body: CourierLocationBody,
+    user: CurrentUser,
+    scope: AreaScopeDep,
+    session: SessionDep,
+) -> dict:
+    """Log 'chegou ao destino' — audit only, no state transition (RN-005:
+    states advance via proofs, not this tap). CORRECAO-252."""
+    from app.tracking.service import ACTION_CHEGOU_DESTINO, log_courier_action
+
+    courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
+    delivery, _ = await delivery_service.get_courier_delivery(
+        session, courier_id=courier.id, delivery_id=delivery_id
+    )
+    await log_courier_action(
+        session,
+        area_id=delivery.area_id,
+        delivery_id=delivery.id,
+        courier_id=courier.id,
+        action=ACTION_CHEGOU_DESTINO,
+        lat=body.lat,
+        lng=body.lng,
+    )
+    await session.commit()
+    return {"ok": True}
+
+
 @router.post("/{courier_id}/deliveries/{delivery_id}/collect")
 async def mark_collected(
     courier_id: int,
     delivery_id: int,
+    body: CourierLocationBody,
     user: CurrentUser,
     scope: AreaScopeDep,
     session: SessionDep,
 ) -> dict:
     """Mark a delivery as collected (ACEITA → COLETADA) without photo proof."""
     from app.deliveries.service import transition
+    from app.tracking.service import ACTION_COLETOU, log_courier_action
+
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     delivery, _ = await delivery_service.get_courier_delivery(
         session, courier_id=courier.id, delivery_id=delivery_id
     )
     await transition(session, delivery=delivery, to_state="COLETADA", actor_id=user.id, actor_type="courier", ip=None)
+    await log_courier_action(
+        session,
+        area_id=delivery.area_id,
+        delivery_id=delivery.id,
+        courier_id=courier.id,
+        action=ACTION_COLETOU,
+        lat=body.lat,
+        lng=body.lng,
+    )
     await session.commit()
     return {"ok": True, "state": "COLETADA"}
 
@@ -599,6 +641,7 @@ async def mark_collected(
 async def finalize_no_proof(
     courier_id: int,
     delivery_id: int,
+    body: CourierLocationBody,
     user: CurrentUser,
     scope: AreaScopeDep,
     session: SessionDep,
@@ -614,6 +657,21 @@ async def finalize_no_proof(
         raise HTTPException(status_code=400, detail="Esta entrega exige comprovação.")
     await transition(session, delivery=delivery, to_state="ENTREGUE", actor_id=user.id, actor_type="courier", ip=None)
     await transition(session, delivery=delivery, to_state="FINALIZADA", actor_id=user.id, actor_type="courier", ip=None)
+
+    from app.tracking.service import ACTION_ENTREGOU, log_courier_action
+    await log_courier_action(
+        session,
+        area_id=delivery.area_id,
+        delivery_id=delivery.id,
+        courier_id=courier.id,
+        action=ACTION_ENTREGOU,
+        lat=body.lat,
+        lng=body.lng,
+    )
+
+    from app.merchants.credit import reconcile_delivery_credit
+    await reconcile_delivery_credit(session, delivery=delivery)
+
     await session.commit()
 
     from app.workers.payout import enqueue_payout
@@ -672,8 +730,8 @@ async def update_courier_profile(
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     if "full_name" in body and body["full_name"]:
         courier.full_name = body["full_name"]
-    if "team_id" in body:
-        courier.team_id = body["team_id"] if body["team_id"] else None
+    # team_id não é auto-editável (bloqueado a pedido do usuário) — só é
+    # definido no cadastro; mudança de equipe fica reservada pra admin.
     if "password" in body and body["password"]:
         from app.core.security import hash_password, verify_password
         current = body.get("current_password", "")

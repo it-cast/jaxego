@@ -1,0 +1,78 @@
+// Tela — Meu saldo (extrato de crédito/débito da loja). Tokens semânticos; zero hex.
+
+.jx-saldo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-saldo__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-1);
+}
+
+.jx-saldo__title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-bold);
+  color: var(--text);
+}
+
+.jx-saldo__subtitle {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-saldo__loading {
+  margin: 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-saldo__balance-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-5);
+  background: var(--surface-elevated, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+}
+
+.jx-saldo__balance-label {
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-saldo__balance-hint {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-saldo__extrato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-3);
+}
+
+.jx-saldo__extrato-title {
+  margin: 0;
+  font-family: var(--jx-font-display);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+}
+
+.jx-saldo__reason {
+  display: block;
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-saldo__num {
+  text-align: right;
+}
