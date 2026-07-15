@@ -22,9 +22,6 @@ interface CreditLedgerEntry {
 interface CreditTopupResponse {
   charge_id: number;
   amount_cents: number;
-  taxa_pix_cents: number;
-  taxa_servico_cents: number;
-  total_cents: number;
   qr_code: string | null;
   qr_code_base64: string | null;
 }
@@ -79,19 +76,13 @@ export class LojaSaldoPage implements OnDestroy {
   protected readonly topupQrImage = signal<string | null>(null);
   protected readonly topupQrCode = signal<string | null>(null);
   protected readonly topupCopied = signal(false);
-  protected readonly topupTaxaPixCents = signal(0);
-  protected readonly topupTaxaServicoCents = signal(0);
-  protected readonly topupTotalCents = signal(0);
 
+  /** Sem taxa nenhuma (CORRECAO-265): o que a loja digita é o que paga via PIX
+   * e o que vira saldo — os três valores são sempre o mesmo. */
   protected readonly topupAmountCents = computed(() =>
     Math.round(parseBrl(this.topupInput()) * 100)
   );
   protected readonly topupValid = computed(() => this.topupAmountCents() >= TOPUP_MIN_CENTS);
-  /** Prévia do total (recarga + taxas do plano, já conhecidas antes de confirmar) —
-   * o servidor recalcula do zero ao gerar o PIX; isso é só o resumo pra loja decidir. */
-  protected readonly topupExpectedTotalCents = computed(
-    () => this.topupAmountCents() + this.topupTaxaPixCents() + this.topupTaxaServicoCents()
-  );
 
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private topupChargeId: number | null = null;
@@ -178,22 +169,6 @@ export class LojaSaldoPage implements OnDestroy {
     this.topupQrImage.set(null);
     this.topupQrCode.set(null);
     this.topupChargeId = null;
-    void this.loadPlanTaxas();
-  }
-
-  private async loadPlanTaxas(): Promise<void> {
-    try {
-      const res = await firstValueFrom(
-        this.http.get<{ taxa_pix_cents: number; taxa_servico_cents: number }>(
-          '/v1/merchants/plan-taxas'
-        )
-      );
-      this.topupTaxaPixCents.set(res.taxa_pix_cents);
-      this.topupTaxaServicoCents.set(res.taxa_servico_cents);
-    } catch {
-      this.topupTaxaPixCents.set(0);
-      this.topupTaxaServicoCents.set(0);
-    }
   }
 
   protected closeTopupModal(): void {
@@ -222,9 +197,6 @@ export class LojaSaldoPage implements OnDestroy {
         })
       );
       this.topupChargeId = res.charge_id;
-      this.topupTaxaPixCents.set(res.taxa_pix_cents);
-      this.topupTaxaServicoCents.set(res.taxa_servico_cents);
-      this.topupTotalCents.set(res.total_cents);
       this.topupQrImage.set(res.qr_code_base64);
       this.topupQrCode.set(res.qr_code);
       this.topupPending.set(true);

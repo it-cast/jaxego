@@ -10,7 +10,6 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import {
   faHouse,
   faMap,
-  faMoneyBill,
   faBoxOpen,
   faUser,
 } from '@fortawesome/free-solid-svg-icons';
@@ -36,10 +35,6 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
       <a routerLink="/entregador/inicio" routerLinkActive="jx-tab--active" class="jx-tab">
         <fa-icon [icon]="iconInicio" aria-hidden="true" />
         <span>Início</span>
-      </a>
-      <a routerLink="/entregador/saldo" routerLinkActive="jx-tab--active" class="jx-tab">
-        <fa-icon [icon]="iconGanhos" aria-hidden="true" />
-        <span>Ganhos</span>
       </a>
       <a routerLink="/entregador/entregas" routerLinkActive="jx-tab--active" class="jx-tab">
         <fa-icon [icon]="iconEntregas" aria-hidden="true" />
@@ -123,7 +118,6 @@ export class EntregadorShellComponent implements OnInit, OnDestroy {
   protected readonly monitor = inject(OfferMonitorService);
 
   protected readonly iconInicio = faHouse;
-  protected readonly iconGanhos = faMoneyBill;
   protected readonly iconEntregas = faBoxOpen;
   protected readonly iconBairros = faMap;
   protected readonly iconPerfil = faUser;

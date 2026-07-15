@@ -114,25 +114,9 @@
 
             @if (topupValid()) {
               <div class="jx-saldo__topup-breakdown">
-                <div class="jx-saldo__topup-row jx-saldo__topup-row--sub">
-                  <span>Recarga (vira saldo)</span>
-                  <span>{{ formatBrl(topupAmountCents()) }}</span>
-                </div>
-                @if (topupTaxaPixCents() > 0) {
-                  <div class="jx-saldo__topup-row jx-saldo__topup-row--sub">
-                    <span>Taxa PIX</span>
-                    <span>{{ formatBrl(topupTaxaPixCents()) }}</span>
-                  </div>
-                }
-                @if (topupTaxaServicoCents() > 0) {
-                  <div class="jx-saldo__topup-row jx-saldo__topup-row--sub">
-                    <span>Taxa de serviço</span>
-                    <span>{{ formatBrl(topupTaxaServicoCents()) }}</span>
-                  </div>
-                }
                 <div class="jx-saldo__topup-row jx-saldo__topup-row--total">
                   <span>Total a pagar via PIX</span>
-                  <strong>{{ formatBrl(topupExpectedTotalCents()) }}</strong>
+                  <strong>{{ formatBrl(topupAmountCents()) }}</strong>
                 </div>
               </div>
             }

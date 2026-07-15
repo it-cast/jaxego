@@ -196,57 +196,16 @@ async def get_credit_ledger(
     }
 
 
-async def _active_plan_taxas(session: SessionDep, *, area_id: int, merchant_id: int) -> tuple[int, int]:
-    """Taxa_pix/taxa_servico do plano ativo da loja (0/0 se não houver assinatura ativa).
-
-    Mesmo lookup usado em `deliveries/router.py::teams_for_address` (corrida) e aqui
-    (recarga de saldo) — os dois pontos onde o front precisa mostrar o custo real de
-    uma cobrança PIX antes da loja confirmar.
-    """
-    from app.merchants.models import MerchantSubscription
-    from app.plans.models import SubscriptionPlan
-    from sqlalchemy import select as _select
-
-    active_plan = (
-        await session.execute(
-            _select(SubscriptionPlan)
-            .join(MerchantSubscription, MerchantSubscription.plan_id == SubscriptionPlan.id)
-            .where(
-                MerchantSubscription.merchant_id == merchant_id,
-                MerchantSubscription.area_id == area_id,
-                MerchantSubscription.status == "active",
-            )
-        )
-    ).scalars().first()
-    if active_plan is None:
-        return 0, 0
-    return active_plan.taxa_pix_cents, active_plan.taxa_servico_cents
-
-
-@router.get("/plan-taxas")
-async def get_plan_taxas(session: SessionDep, user: CurrentUser) -> dict:
-    """Taxa_pix/taxa_servico do plano ativo — pro front mostrar o resumo ANTES de
-    confirmar uma recarga de saldo (mesmo valor que o servidor vai cobrar de fato)."""
-    from app.core.exceptions import NotFoundError
-
-    if user.type != "merchant" or user.area_id is None:
-        raise NotFoundError("Loja nao encontrada.")
-    taxa_pix_cents, taxa_servico_cents = await _active_plan_taxas(
-        session, area_id=user.area_id, merchant_id=user.id
-    )
-    return {"taxa_pix_cents": taxa_pix_cents, "taxa_servico_cents": taxa_servico_cents}
-
-
 @router.post("/credit-topup", response_model=CreditTopupResponse)
 async def create_credit_topup(
     body: CreditTopupBody, session: SessionDep, user: CurrentUser
 ) -> CreditTopupResponse:
-    """Cria um PIX pra recarregar o saldo da loja (CORRECAO-260).
+    """Cria um PIX pra recarregar o saldo da loja (CORRECAO-260, CORRECAO-265).
 
-    O total cobrado é `amount_cents` (o que vira saldo) + taxa_pix + taxa_servico do
-    plano ativo — o servidor resolve as taxas, nunca confia num total do cliente. O
-    saldo só é creditado quando o webhook confirmar o pagamento (ver
-    `payments/webhooks_router.py` — kind="topup").
+    Sem taxa nenhuma: `amount_cents` é o que a loja digita, o que o PIX cobra e
+    o que vira saldo — os três são o mesmo valor. O saldo só é creditado quando
+    o webhook confirmar o pagamento (ver `payments/webhooks_router.py` —
+    kind="topup").
     """
     from datetime import UTC, datetime
 
@@ -259,10 +218,7 @@ async def create_credit_topup(
     if user.type != "merchant" or user.area_id is None:
         raise NotFoundError("Loja nao encontrada.")
 
-    taxa_pix_cents, taxa_servico_cents = await _active_plan_taxas(
-        session, area_id=user.area_id, merchant_id=user.id
-    )
-    total_cents = body.amount_cents + taxa_pix_cents + taxa_servico_cents
+    total_cents = body.amount_cents
 
     merchant = await session.get(Merchant, user.id)
     customer = Customer(
@@ -294,15 +250,12 @@ async def create_credit_topup(
         status="open",
     )
     charge.merchant_id = user.id
-    charge.net_amount_cents = body.amount_cents
+    charge.net_amount_cents = total_cents
     await session.commit()
 
     return CreditTopupResponse(
         charge_id=charge.id,
-        amount_cents=body.amount_cents,
-        taxa_pix_cents=taxa_pix_cents,
-        taxa_servico_cents=taxa_servico_cents,
-        total_cents=total_cents,
+        amount_cents=total_cents,
         qr_code=pix_result.qr_code,
         qr_code_base64=pix_result.qr_code_base64,
     )

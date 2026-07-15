@@ -129,7 +129,6 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
                 <span class="jx-home-earnings__balance">
                   Saldo: <jx-money [cents]="balance()?.balance_cents ?? 0" />
                 </span>
-                <button type="button" class="jx-home-link" (click)="goSaldo()">Ver extrato <fa-icon [icon]="iconChevron" aria-hidden="true" /></button>
               </div>
             </article>
 
@@ -551,9 +550,6 @@ export class EntregadorInicioPage implements OnInit {
     return map[method] ?? method;
   }
 
-  protected goSaldo(): void {
-    void this.router.navigate(['/entregador/saldo']);
-  }
   protected goProfile(): void {
     void this.router.navigate(['/entregador/perfil']);
   }

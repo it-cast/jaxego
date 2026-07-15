@@ -104,13 +104,6 @@ const entregadorRoutes: Routes = [
             (m) => m.EntregadorConcluidaPage
           ),
       },
-      {
-        path: 'saldo',
-        loadComponent: () =>
-          import('../features/entregador/saldo/saldo.page').then(
-            (m) => m.EntregadorSaldoPage
-          ),
-      },
     ],
   },
   {
