@@ -221,10 +221,16 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
               }
             </div>
 
-            <!-- Mapa quadrado -->
+            <!-- Card de mapa (redesign v3 §7) -->
             @if (coords(d); as c) {
-              <div class="jx-detail__map-wrap">
-                <jx-live-map [lat]="c.lat" [lng]="c.lng" ariaLabel="Mapa do destino da entrega" />
+              <div class="jx-detail__map-card">
+                <jx-live-map
+                  [lat]="c.lat"
+                  [lng]="c.lng"
+                  kind="destination"
+                  [label]="d.dropoff_neighborhood_name ? 'Destino · ' + d.dropoff_neighborhood_name : 'Destino da entrega'"
+                  ariaLabel="Mapa do destino da entrega"
+                />
               </div>
             }
           </section>
@@ -411,7 +417,7 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
       }
       .jx-detail__htl-step--done {
         color: var(--text);
-        .jx-detail__htl-dot { color: var(--success, #16a34a); }
+        .jx-detail__htl-dot { color: var(--success); }
       }
       .jx-detail__htl-step--current {
         color: var(--text);
@@ -429,7 +435,7 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
         margin-top: 0.5em;
         flex-shrink: 0;
       }
-      .jx-detail__htl-line--done { background: var(--success, #16a34a); }
+      .jx-detail__htl-line--done { background: var(--success); }
       /* Cards */
       .jx-detail__card {
         background: var(--surface-elevated, var(--surface));
@@ -471,26 +477,16 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
         color: var(--brand);
         margin-right: 2px;
       }
-      /* Map — square */
-      .jx-detail__map-wrap {
-        width: 20vw;
-        aspect-ratio: 1 / 1;
-        border-radius: var(--jx-radius-lg);
-        overflow: hidden;
-        border: 1px solid var(--border);
-        --jx-map-height: 100%;
-      }
-      .jx-detail__map-wrap jx-live-map {
-        display: block;
-        width: 100%;
-        height: 100%;
+      /* Map card — full column width, responsive height (redesign v3 §7) */
+      .jx-detail__map-card {
+        --jx-map-height: clamp(240px, 38vh, 380px);
       }
       /* PIX payment screen */
       .jx-detail__pix-badge {
         display: inline-block;
         padding: 2px var(--jx-space-2);
         border-radius: var(--jx-radius-sm);
-        background: var(--brand-wash, #fff7ed);
+        background: var(--brand-wash);
         color: var(--brand);
         font-size: var(--jx-text-xs);
         font-weight: var(--jx-weight-semibold);
@@ -518,7 +514,7 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
         border: 1px solid var(--border);
         border-radius: var(--jx-radius-md);
         padding: .5em 1em 1em;
-        background: #fff;
+        background: var(--qr-surface); /* QR sempre em fundo branco (leitura) */
       }
       .jx-detail__pix-copy-row {
         display: flex;
@@ -551,7 +547,7 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
       }
       .jx-detail__pix-copied-msg {
         font-size: var(--jx-text-xs);
-        color: var(--success, #16a34a);
+        color: var(--success);
         margin: 0;
       }
       .jx-detail__pix-waiting {

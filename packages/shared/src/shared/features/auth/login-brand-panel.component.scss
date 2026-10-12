@@ -1,0 +1,269 @@
+// Login brand panel — redesign v3 §6.3. Decorative. Tokens only (Gate 2).
+
+:host {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Right: brand panel — azul-noite → tangerina, animated mini map
+// ---------------------------------------------------------------------------
+.jx-login-visual {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--jx-space-3);
+  border-radius: var(--jx-radius-2xl);
+  background: var(--hero-gradient);
+  color: var(--jx-neutral-50);
+  overflow: hidden;
+  isolation: isolate;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: var(--jx-radius-full);
+    z-index: -1;
+  }
+
+  &::before {
+    width: 520px;
+    height: 520px;
+    right: -180px;
+    top: -200px;
+    background: radial-gradient(closest-side, var(--jx-brand-500), transparent);
+    opacity: 0.45;
+  }
+
+  &::after {
+    width: 420px;
+    height: 420px;
+    left: -160px;
+    bottom: -180px;
+    background: radial-gradient(closest-side, var(--jx-map-zone-2), transparent);
+    opacity: 0.3;
+  }
+}
+
+.jx-login-visual__inner {
+  width: min(520px, 100%);
+  padding: var(--jx-space-7) var(--jx-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-5);
+}
+
+.jx-login-visual__eyebrow {
+  margin: 0;
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--jx-brand-300);
+}
+
+.jx-login-visual__headline {
+  margin: 0;
+  font-size: clamp(30px, 3.2vw, 44px);
+  font-weight: var(--jx-weight-extrabold);
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: var(--jx-neutral-0);
+
+  em {
+    font-family: var(--jx-font-serif-accent);
+    font-style: italic;
+    font-weight: var(--jx-weight-medium);
+    color: var(--jx-brand-300);
+  }
+}
+
+// Mini map card
+.jx-login-visual__map {
+  position: relative;
+  border-radius: var(--jx-radius-xl);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: jx-login-float 6s ease-in-out infinite;
+}
+
+.jx-login-visual__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 360 / 220;
+}
+
+.jx-lv-streets path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 10;
+}
+
+.jx-lv-streets .jx-lv-streets--minor {
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 5;
+}
+
+.jx-lv-block {
+  fill: rgba(255, 255, 255, 0.06);
+}
+
+.jx-lv-block--zone {
+  fill: rgba(242, 107, 29, 0.16);
+  stroke: var(--jx-brand-400);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+}
+
+.jx-lv-route {
+  fill: none;
+  stroke: var(--jx-brand-400);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 8 8;
+  animation: jx-lv-dash 1.2s linear infinite;
+}
+
+.jx-lv-store {
+  fill: var(--jx-neutral-0);
+  stroke: var(--jx-map-zone-2);
+  stroke-width: 4;
+}
+
+.jx-lv-dest__dot {
+  fill: var(--jx-brand-500);
+  stroke: var(--jx-neutral-0);
+  stroke-width: 3;
+}
+
+.jx-lv-dest__pulse {
+  fill: var(--jx-brand-500);
+  opacity: 0.5;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: jx-lv-pulse 1.8s ease-out infinite;
+}
+
+.jx-lv-courier {
+  fill: var(--jx-highlight);
+  stroke: var(--jx-neutral-950);
+  stroke-width: 3;
+  offset-path: path('M60 180 H150 V110 H250 V40');
+  offset-rotate: 0deg;
+  animation: jx-lv-ride 5s var(--jx-motion-easing-out) infinite;
+}
+
+.jx-login-visual__eta {
+  position: absolute;
+  left: var(--jx-space-3);
+  bottom: var(--jx-space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: 6px 12px;
+  border-radius: var(--jx-radius-full);
+  background: var(--jx-neutral-0);
+  color: var(--jx-neutral-800);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+  box-shadow: var(--shadow-md);
+
+  strong {
+    font-family: var(--jx-font-mono);
+    color: var(--jx-brand-600);
+  }
+}
+
+.jx-login-visual__eta-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--jx-radius-full);
+  background: var(--jx-success);
+  animation: jx-lv-blink 1.6s ease-in-out infinite;
+}
+
+.jx-login-visual__props {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--jx-space-2);
+
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: var(--jx-space-2);
+    font-size: var(--jx-text-md);
+    color: var(--jx-neutral-200);
+  }
+}
+
+.jx-login-visual__num {
+  font-family: var(--jx-font-mono);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--jx-neutral-0);
+}
+
+// ---------------------------------------------------------------------------
+// Motion
+// ---------------------------------------------------------------------------
+@keyframes jx-login-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes jx-lv-dash {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+@keyframes jx-lv-pulse {
+  from {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes jx-lv-ride {
+  0% {
+    offset-distance: 0%;
+  }
+  85%,
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes jx-lv-blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-login-visual__map,
+  .jx-lv-route,
+  .jx-lv-dest__pulse,
+  .jx-lv-courier,
+  .jx-login-visual__eta-dot {
+    animation: none;
+  }
+
+  .jx-lv-courier {
+    offset-distance: 60%;
+  }
+}

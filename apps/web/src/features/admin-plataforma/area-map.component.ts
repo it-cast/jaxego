@@ -11,8 +11,18 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { loadLeaflet, loadLeafletDraw } from '@jaxego/core/map/leaflet-loader';
+import { MAP_DEFAULT_CENTER } from '@jaxego/core/map/map-tiles';
+import {
+  activeZoneStyle,
+  brandTileLayer,
+  onThemeChange,
+  readMapPalette,
+  referenceZoneStyle,
+} from '@jaxego/core/map/map-theme';
 
-declare const L: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let L: any;
 
 export interface AreaMapDraft {
   id: string;
@@ -33,14 +43,58 @@ export interface AreaMapDraft {
  *   referência, fora do featureGroup editável do leaflet-draw.
  *   `(draftBoundaryChange)` emite `{id, boundary}` toda vez que o polígono do
  *   draft ativo muda.
+ *
+ * Redesign v3 (REDESIGN-v3.md §7): cores lidas dos tokens (`--map-*`) em
+ * runtime, tiles temáticos, legenda sobreposta, altura responsiva; o desenho é
+ * re-estilizado quando o tema muda.
  */
 @Component({
   selector: 'jx-area-map',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div #mapEl class="jx-area-map"></div>`,
+  template: `
+    <div class="jx-area-map-frame">
+      <div #mapEl class="jx-area-map" role="application" aria-label="Mapa de zonas — desenhe o polígono com a ferramenta de desenho"></div>
+      <div class="jx-area-map__legend" aria-hidden="true">
+        @if (readonly) {
+          @for (d of drafts; track d.id) {
+            <span class="jx-area-map__legend-item">
+              <span class="jx-area-map__swatch" [style.border-color]="d.color"></span>{{ d.name || '(sem nome)' }}
+            </span>
+          }
+        } @else if (multiMode) {
+          <span class="jx-area-map__legend-item"><span class="jx-area-map__swatch jx-area-map__swatch--active"></span>Em edição</span>
+          <span class="jx-area-map__legend-item"><span class="jx-area-map__swatch jx-area-map__swatch--ref"></span>Demais zonas</span>
+        } @else {
+          <span class="jx-area-map__legend-item"><span class="jx-area-map__swatch jx-area-map__swatch--active"></span>Zona</span>
+        }
+      </div>
+    </div>
+  `,
   styles: [`
-    .jx-area-map { width: 100%; height: 400px; border-radius: 12px; border: 1px solid var(--border, #ddd); }
+    :host { display: block; }
+    .jx-area-map-frame {
+      position: relative;
+      border-radius: var(--jx-radius-xl);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      background: var(--surface-sunken);
+      isolation: isolate;
+    }
+    .jx-area-map { width: 100%; height: var(--jx-area-map-height, clamp(360px, 58vh, 620px)); }
+    .jx-area-map__legend {
+      position: absolute; left: var(--jx-space-3); bottom: var(--jx-space-3); z-index: 500;
+      display: flex; flex-wrap: wrap; gap: var(--jx-space-1) var(--jx-space-3);
+      max-width: calc(100% - 80px);
+      padding: 6px 12px; border-radius: var(--jx-radius-full);
+      background: var(--topbar-bg); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); box-shadow: var(--shadow-md);
+      font-size: var(--jx-text-xs); font-weight: var(--jx-weight-semibold); color: var(--text);
+    }
+    .jx-area-map__legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .jx-area-map__swatch { width: 14px; height: 10px; border-radius: 3px; border: 2px solid var(--map-zone); background: var(--brand-wash); }
+    .jx-area-map__swatch--ref { border-style: dashed; border-color: var(--map-zone-ref); background: transparent; }
   `],
 })
 export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
@@ -56,16 +110,25 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() activeDraftId: string | null = null;
   @Output() draftBoundaryChange = new EventEmitter<{ id: string; boundary: any }>();
 
+  /** Visão geral somente leitura (redesign v3): todos os `drafts` coloridos, sem ferramenta de desenho. Implica multiMode. */
+  @Input() readonly = false;
+
   private map: any = null;
   /** Camada editável pelo leaflet-draw — o polígono único (single) ou só o draft ativo (multi). */
   private drawnItems: any = null;
   /** Multi mode apenas: zonas existentes + drafts inativos, só visuais, sem interação. */
   private referenceItems: any = null;
   private loaded = false;
+  private destroyed = false;
+  private unwatchTheme: (() => void) | null = null;
 
   async ngAfterViewInit(): Promise<void> {
-    await this.loadLeaflet();
+    if (this.readonly) this.multiMode = true;
+    L = this.readonly ? await loadLeaflet() : await loadLeafletDraw();
+    if (this.destroyed) return;
     this.initMap();
+    // Polygons carry inline colors — repaint them when the theme flips.
+    this.unwatchTheme = onThemeChange(() => this.redraw(false));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -80,18 +143,15 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    this.unwatchTheme?.();
     if (this.map) this.map.remove();
   }
 
-  private async loadLeaflet(): Promise<void> {
-    if (!(window as any).L) {
-      await this.loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-      await this.loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
-    }
-    if (!(window as any).L?.Control?.Draw) {
-      await this.loadCss('https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css');
-      await this.loadScript('https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js');
-    }
+  private redraw(fit: boolean): void {
+    if (!this.loaded) return;
+    if (this.multiMode) this.redrawMulti(fit);
+    else this.drawSingle(fit);
   }
 
   private initMap(): void {
@@ -100,22 +160,25 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
       : this.boundary;
     const center = firstBoundary?.coordinates?.[0]?.[0]
       ? [firstBoundary.coordinates[0][0][1], firstBoundary.coordinates[0][0][0]]
-      : [-21.54, -42.05];
+      : MAP_DEFAULT_CENTER;
 
-    this.map = L.map(this.mapEl.nativeElement).setView(center, 13);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 19,
-    }).addTo(this.map);
+    this.map = L.map(this.mapEl.nativeElement, { scrollWheelZoom: true }).setView(center, 13);
+    brandTileLayer(L).addTo(this.map);
 
     this.drawnItems = new L.FeatureGroup();
     this.map.addLayer(this.drawnItems);
     this.referenceItems = new L.FeatureGroup();
     this.map.addLayer(this.referenceItems);
 
+    this.loaded = true;
+    if (this.readonly) {
+      this.redraw(true);
+      return;
+    }
+
     const drawControl = new L.Control.Draw({
       draw: {
-        polygon: { shapeOptions: { color: '#e8722a', weight: 3, fillOpacity: 0.15 } },
+        polygon: { shapeOptions: activeZoneStyle(readMapPalette().zone), showArea: false },
         polyline: false,
         rectangle: false,
         circle: false,
@@ -135,9 +198,7 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     this.map.on(L.Draw.Event.EDITED, () => this.emitBoundary());
     this.map.on(L.Draw.Event.DELETED, () => this.emitBoundary());
 
-    this.loaded = true;
-    if (this.multiMode) this.redrawMulti();
-    else this.drawSingle();
+    this.redraw(true);
   }
 
   private emitBoundary(): void {
@@ -162,15 +223,15 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
     return L.polygon(coords, style);
   }
 
-  private drawSingle(): void {
+  private drawSingle(fit = true): void {
     if (!this.drawnItems || !this.boundary?.coordinates) return;
     this.drawnItems.clearLayers();
-    const polygon = this.geoJsonToLayer(this.boundary, { color: '#e8722a', weight: 3, fillOpacity: 0.15 });
+    const polygon = this.geoJsonToLayer(this.boundary, activeZoneStyle(readMapPalette().zone));
     this.drawnItems.addLayer(polygon);
-    this.map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
+    if (fit) this.map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
   }
 
-  private redrawMulti(): void {
+  private redrawMulti(fit = true): void {
     if (!this.referenceItems || !this.drawnItems) return;
     this.referenceItems.clearLayers();
     this.drawnItems.clearLayers();
@@ -181,37 +242,20 @@ export class AreaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
 
     for (const d of this.drafts) {
       if (!d.boundary?.coordinates) continue;
-      const isActive = d.id === this.activeDraftId;
-      const layer = this.geoJsonToLayer(d.boundary, {
-        color: d.color,
-        weight: 3,
-        fillOpacity: isActive ? 0.25 : 0.12,
+      const isActive = this.readonly || d.id === this.activeDraftId;
+      const layer = this.geoJsonToLayer(
+        d.boundary,
+        isActive ? { ...activeZoneStyle(d.color), fillOpacity: this.readonly ? 0.2 : 0.26 } : referenceZoneStyle(d.color)
+      );
+      layer.bindTooltip(d.name || '(sem nome)', {
+        direction: 'center',
+        className: 'jx-map-tooltip',
+        permanent: this.readonly,
       });
-      layer.bindTooltip(d.name || '(sem nome)', { direction: 'center' });
       (isActive ? this.drawnItems : this.referenceItems).addLayer(layer);
       extend(layer.getBounds());
     }
 
-    if (combined) this.map.fitBounds(combined, { padding: [30, 30] });
-  }
-
-  private loadScript(url: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = url;
-      s.onload = () => resolve();
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-
-  private loadCss(url: string): Promise<void> {
-    return new Promise((resolve) => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = url;
-      link.onload = () => resolve();
-      document.head.appendChild(link);
-    });
+    if (combined && fit) this.map.fitBounds(combined, { padding: [30, 30] });
   }
 }

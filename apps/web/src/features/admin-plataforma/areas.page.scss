@@ -40,7 +40,7 @@
 }
 
 .jx-areas__msg--err {
-  background: var(--error-wash, hsl(0 70% 95%));
+  background: var(--error-wash);
   color: var(--error);
 }
 
@@ -216,8 +216,8 @@
 }
 
 .jx-areas__badge--completa {
-  background: var(--warning-wash, hsl(40 80% 92%));
-  color: var(--warning, hsl(40 80% 35%));
+  background: var(--warning-wash);
+  color: var(--warning);
 }
 
 .jx-areas__actions {

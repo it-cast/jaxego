@@ -27,12 +27,18 @@ import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
   `,
   styles: [`
     .jx-page-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
       display: flex;
       align-items: center;
       min-height: 56px;
       padding: 0 var(--jx-space-3);
-      background: #fff;
-      border-bottom: 1px solid var(--border, hsl(0 0% 90%));
+      padding-top: env(safe-area-inset-top, 0px);
+      background: var(--topbar-bg);
+      backdrop-filter: saturate(1.4) blur(14px);
+      -webkit-backdrop-filter: saturate(1.4) blur(14px);
+      border-bottom: 1px solid var(--border);
     }
     .jx-page-header__back {
       display: flex;
@@ -40,6 +46,8 @@ import { faChevronLeft } from '@fortawesome/free-solid-svg-icons';
       justify-content: center;
       width: 40px;
       height: 40px;
+      border-radius: var(--jx-radius-full);
+      background: var(--surface-sunken);
       color: var(--brand);
       text-decoration: none;
       font-size: var(--jx-text-lg);

@@ -25,17 +25,17 @@
   gap: var(--jx-space-2);
   padding: var(--jx-space-2) var(--jx-space-4);
   border-radius: var(--jx-radius-md);
-  border: 1px solid var(--brand-primary, #4f46e5);
+  border: 1px solid var(--brand-primary);
   background: transparent;
-  color: var(--brand-primary, #4f46e5);
+  color: var(--brand-primary);
   font-size: var(--jx-text-sm);
   font-weight: 500;
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
 
   &:hover {
-    background: var(--brand-primary, #4f46e5);
-    color: #fff;
+    background: var(--brand-primary);
+    color: var(--brand-contrast);
   }
 }
 
@@ -52,7 +52,7 @@
 }
 
 .jx-modal {
-  background: var(--surface-base, #fff);
+  background: var(--surface-base);
   border-radius: var(--jx-radius-xl);
   box-shadow: 0 20px 60px rgba(0 0 0 / 0.25);
   width: 100%;
@@ -146,8 +146,8 @@
   padding: var(--jx-space-3) var(--jx-space-4);
   border: none;
   border-radius: var(--jx-radius-lg);
-  background: var(--color-brand, #2563eb);
-  color: #fff;
+  background: var(--color-brand);
+  color: var(--brand-contrast);
   font-size: var(--jx-text-base);
   font-weight: 600;
   cursor: pointer;
@@ -225,8 +225,8 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--jx-color-success, #22c55e);
-  color: #fff;
+  background: var(--jx-color-success);
+  color: var(--on-color);
   font-size: 2rem;
   display: flex;
   align-items: center;
@@ -262,6 +262,6 @@
 
 @media (prefers-color-scheme: dark) {
   .jx-modal {
-    background: var(--surface-base, #1c1c1e);
+    background: var(--surface-base);
   }
 }

@@ -55,6 +55,12 @@ if (tokens.color?.semantic) {
     vars.push([`--jx-${key.replace(/_/g, '-')}`, value]);
   }
 }
+// dark-theme semantic hues (luminance-lifted for AA on dark surfaces)
+if (tokens.color?.semantic_dark) {
+  for (const [key, value] of Object.entries(tokens.color.semantic_dark)) {
+    vars.push([`--jx-dark-${key.replace(/_/g, '-')}`, value]);
+  }
+}
 // delivery_state and score_level kept namespaced (used by later phases)
 if (tokens.color?.delivery_state) {
   for (const [key, value] of Object.entries(tokens.color.delivery_state)) {
@@ -69,6 +75,13 @@ if (tokens.color?.score_level) {
 if (tokens.color?.payment) {
   for (const [key, value] of Object.entries(tokens.color.payment)) {
     vars.push([`--jx-payment-${key.replace(/_/g, '-')}`, value]);
+  }
+}
+
+if (tokens.color?.map) {
+  // categorical zone palette for maps (zone_1 -> --jx-map-zone-1)
+  for (const [key, value] of Object.entries(tokens.color.map)) {
+    vars.push([`--jx-map-${key.replace(/_/g, '-')}`, value]);
   }
 }
 

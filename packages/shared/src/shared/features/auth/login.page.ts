@@ -16,6 +16,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faEye, faEyeSlash, faEnvelope, faLock, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
+import { LoginBrandPanelComponent } from './login-brand-panel.component';
 import {
   ErrorStateComponent,
   LoadingSkeletonComponent,
@@ -25,7 +26,14 @@ import {
   selector: 'jx-login',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, ErrorStateComponent, LoadingSkeletonComponent, FaIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    ErrorStateComponent,
+    LoadingSkeletonComponent,
+    FaIconComponent,
+    LoginBrandPanelComponent,
+  ],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })
@@ -53,6 +61,15 @@ export class LoginPage implements AfterViewInit {
     equipe: 'Painel da Equipe',
     admin: 'Admin da Cidade',
     plataforma: 'Admin da Plataforma',
+  }[this.profile];
+
+  /** Selo do perfil ao lado da marca. */
+  protected readonly profileBadge = {
+    entregador: 'Entregador',
+    loja: 'Loja',
+    equipe: 'Equipe',
+    admin: 'Admin',
+    plataforma: 'Plataforma',
   }[this.profile];
 
   protected readonly profileSubtitle = {

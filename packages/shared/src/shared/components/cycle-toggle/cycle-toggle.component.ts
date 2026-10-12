@@ -45,7 +45,7 @@ export type BillingCycle = 'mensal' | 'anual';
       border: 1px solid var(--brand);
       border-radius: 8px;
       overflow: hidden;
-      background: var(--surface-elevated, #f3f4f6);
+      background: var(--surface-elevated);
     }
     .jx-cycle__btn {
       display: flex;
@@ -62,14 +62,14 @@ export type BillingCycle = 'mensal' | 'anual';
     }
     .jx-cycle__btn--active {
       background: var(--brand);
-      color: var(--brand-contrast, #fff);
+      color: var(--brand-contrast);
       border-radius: 6px;
     }
     .jx-cycle__badge {
       font-size: 0.7rem;
       font-weight: 600;
-      background: var(--success, #16a34a);
-      color: #fff;
+      background: var(--success);
+      color: var(--on-color);
       border-radius: 999px;
       padding: 1px 7px;
     }

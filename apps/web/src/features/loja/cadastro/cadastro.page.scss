@@ -172,7 +172,7 @@
 .jx-cadastro__consent-error {
   margin: var(--jx-space-1) 0 0;
   font-size: var(--jx-text-xs);
-  color: var(--error, #d32f2f);
+  color: var(--error);
   font-weight: 500;
 }
 
@@ -195,15 +195,15 @@
   min-height: 44px;
   padding: var(--jx-space-4);
   background: transparent;
-  color: var(--text, #1a1a1a);
-  border: 1px solid var(--border, #ddd);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: var(--jx-radius-lg);
   font-family: var(--jx-font-display);
   font-size: var(--jx-text-md);
   font-weight: var(--jx-weight-semibold);
   cursor: pointer;
 
-  &:hover { background: var(--bg-hover, #f5f5f5); }
+  &:hover { background: var(--bg-hover); }
 }
 
 .jx-cadastro__submit {
@@ -246,9 +246,9 @@
   padding: 10px 14px;
   font-size: var(--jx-text-xs, 13px);
   font-weight: 500;
-  color: #856404;
-  background: #fff3cd;
-  border: 1px solid #ffc107;
+  color: var(--text);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning);
   border-radius: var(--jx-radius-md, 8px);
 }
 
@@ -259,10 +259,10 @@
   gap: 8px;
   width: 100%;
   min-height: 44px;
-  border: 1px dashed var(--brand, #e8722a);
+  border: 1px dashed var(--brand);
   border-radius: var(--jx-radius-md, 8px);
   background: transparent;
-  color: var(--brand, #e8722a);
+  color: var(--brand);
   font-size: var(--jx-text-sm);
   font-weight: 600;
   cursor: pointer;

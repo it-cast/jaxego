@@ -38,7 +38,7 @@
 }
 
 .jx-availability__switch--on .jx-availability__track {
-  background: var(--brand, #e8722a);
+  background: var(--brand);
 }
 
 .jx-availability__thumb {
@@ -83,15 +83,15 @@
   margin: 0 var(--jx-space-4);
   margin-top: var(--jx-space-3);
   padding: var(--jx-space-3);
-  background: var(--warning-wash, hsl(40 80% 92%));
-  border: 1px solid var(--warning, hsl(40 80% 50%));
+  background: var(--warning-wash);
+  border: 1px solid var(--warning);
   border-radius: 12px;
 }
 
 .jx-availability__kyc-msg {
   font-size: 13px;
   font-weight: 600;
-  color: var(--warning-text, #856404);
+  color: var(--warning-text);
 }
 
 .jx-availability__kyc-btn {
@@ -100,8 +100,8 @@
   padding: 0 var(--jx-space-3);
   border: 0;
   border-radius: 999px;
-  background: var(--warning, hsl(40 80% 50%));
-  color: #fff;
+  background: var(--warning);
+  color: var(--on-color);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;

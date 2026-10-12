@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -21,6 +22,7 @@ import {
   ErrorStateComponent,
   LoadingSkeletonComponent,
 } from '@jaxego/shared/state';
+import { RouteMapComponent, type LatLng } from '@jaxego/shared/components/route-map/route-map.component';
 import { CourierDelivery, EntregadorService } from '../entregador.service';
 import { currentPosition } from '../geolocation.util';
 
@@ -33,6 +35,10 @@ import { currentPosition } from '../geolocation.util';
  * Destination address/recipient appear only AFTER pickup (RN-013) — the backend
  * already omits them pre-COLETADA, so we render what we get.
  */
+function sameLatLng(a: LatLng | null, b: LatLng | null): boolean {
+  return a === b || (!!a && !!b && a.lat === b.lat && a.lng === b.lng);
+}
+
 @Component({
   selector: 'jx-entregador-entrega-ativa',
   standalone: true,
@@ -46,6 +52,7 @@ import { currentPosition } from '../geolocation.util';
     FaIconComponent,
     PageHeaderComponent,
     ConfirmDialogComponent,
+    RouteMapComponent,
   ],
   template: `
     <ion-content>
@@ -65,6 +72,14 @@ import { currentPosition } from '../geolocation.util';
       } @else {
         <jx-page-header title="Entrega ativa" backLink="/entregador/inicio" />
         <div class="jx-active">
+          @if (pickupPoint() || dropoffPoint()) {
+            <jx-route-map
+              class="jx-active__map"
+              [from]="pickupPoint()"
+              [to]="dropoffPoint()"
+              [label]="delivery()!.state === 'COLETADA' ? 'A caminho do destino' : 'Indo para a coleta'"
+            />
+          }
           <section class="jx-active__card">
             <div class="jx-active__card-row">
               <fa-icon [icon]="iconStore" class="jx-active__card-icon" aria-hidden="true" />
@@ -221,6 +236,9 @@ import { currentPosition } from '../geolocation.util';
   `,
   styles: [
     `
+      .jx-active__map {
+        --jx-map-height: clamp(200px, 30vh, 280px);
+      }
       .jx-active {
         padding: var(--jx-space-4);
         display: flex;
@@ -266,7 +284,7 @@ import { currentPosition } from '../geolocation.util';
       .jx-active__product-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--jx-radius-md); }
       .jx-active__lightbox { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; }
       .jx-active__lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; cursor: default; }
-      .jx-active__lightbox-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: 0; border-radius: 50%; color: #fff; font-size: 20px; cursor: pointer; display: grid; place-items: center; }
+      .jx-active__lightbox-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); border: 0; border-radius: 50%; color: var(--on-media); font-size: 20px; cursor: pointer; display: grid; place-items: center; }
       .jx-active__card + .jx-active__card {
         margin-top: 2em;
       }
@@ -342,14 +360,14 @@ import { currentPosition } from '../geolocation.util';
       }
       .jx-active__map-link {
         display: inline-flex; align-items: center; gap: var(--jx-space-1);
-        color: var(--brand, #e8722a); font-size: var(--jx-text-sm);
+        color: var(--brand); font-size: var(--jx-text-sm);
         font-weight: 600; text-decoration: none; margin-top: var(--jx-space-1);
       }
       .jx-active__route-btn {
         display: flex; align-items: center; justify-content: center; gap: var(--jx-space-2);
         min-height: 48px; width: 100%;
-        background: #fff; border: 2px solid var(--brand, #e8722a);
-        border-radius: 999px; color: var(--brand, #e8722a);
+        background: var(--surface-elevated); border: 2px solid var(--brand);
+        border-radius: 999px; color: var(--brand);
         font-size: var(--jx-text-sm); font-weight: 700;
         text-decoration: none; cursor: pointer;
       }
@@ -360,49 +378,49 @@ import { currentPosition } from '../geolocation.util';
         display: flex; align-items: center; gap: var(--jx-space-2);
       }
       .jx-active__card-icon {
-        font-size: 18px; color: var(--brand, #e8722a); margin-top: 2px; flex-shrink: 0;
+        font-size: 18px; color: var(--brand); margin-top: 2px; flex-shrink: 0;
       }
       .jx-active__card-icon--dest {
-        color: var(--jx-color-brand-600, #c2410c);
+        color: var(--jx-color-brand-600);
       }
       .jx-active__info-line {
         display: flex; align-items: center; gap: var(--jx-space-2);
-        font-size: var(--jx-text-sm); color: var(--text-muted, #888);
+        font-size: var(--jx-text-sm); color: var(--text-muted);
         padding-left: 26px;
       }
       .jx-active__info-line--notes {
-        color: var(--brand, #e8722a); font-weight: 600; font-style: italic;
+        color: var(--brand); font-weight: 600; font-style: italic;
       }
       .jx-active__info-icon {
-        font-size: 14px; color: var(--text-muted, #888); flex-shrink: 0;
+        font-size: 14px; color: var(--text-muted); flex-shrink: 0;
       }
       .jx-active__info-line--notes .jx-active__info-icon {
-        color: var(--brand, #e8722a);
+        color: var(--brand);
       }
       .jx-active__payment-info {
         display: flex; flex-direction: column; gap: var(--jx-space-1);
         margin-bottom: 2em;
       }
       .jx-active__receipt-line {
-        margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted, #888);
+        margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted);
       }
       .jx-active__receipt-line strong { color: var(--text); }
       .jx-active__primary {
-        background: var(--brand, #e8722a);
-        color: #fff;
+        background: var(--brand);
+        color: var(--brand-contrast);
         border-radius: 999px;
       }
       .jx-active__secondary {
         background: transparent;
-        color: var(--brand, #e8722a);
-        border: 2px solid var(--brand, #e8722a);
+        color: var(--brand);
+        border: 2px solid var(--brand);
         border-radius: 999px;
       }
       .jx-active__action-error {
         margin: 8px 0 0;
         font-size: 13px;
         font-weight: 600;
-        color: var(--error, #d32f2f);
+        color: var(--error);
         text-align: center;
       }
       .jx-active__overlay {
@@ -421,7 +439,7 @@ import { currentPosition } from '../geolocation.util';
       .jx-active__modal {
         width: 100%;
         max-width: 420px;
-        background: var(--jx-color-surface, #fff);
+        background: var(--jx-color-surface);
         border-radius: 20px 20px 0 0;
         padding: var(--jx-space-5);
         display: flex;
@@ -445,18 +463,18 @@ import { currentPosition } from '../geolocation.util';
         align-items: center;
         gap: var(--jx-space-1);
         padding: var(--jx-space-4);
-        background: #fff;
-        border: 2px solid #e8722a69;
+        background: var(--surface-elevated);
+        border: 2px solid var(--brand-wash-border);
         border-radius: var(--jx-radius-lg);
         cursor: pointer;
         font: inherit;
         text-align: center;
       }
       .jx-active__modal-opt:hover {
-        background: var(--brand-wash, hsl(24 80% 95%));
+        background: var(--brand-wash);
       }
       .jx-active__modal-fa {
-        font-size: 24px; color: var(--brand, #e8722a);
+        font-size: 24px; color: var(--brand);
       }
       .jx-active__modal-label {
         font-weight: 700;
@@ -485,19 +503,19 @@ import { currentPosition } from '../geolocation.util';
         padding: 0;
         font: inherit;
         font-size: var(--jx-text-sm);
-        color: var(--brand, #e8722a);
+        color: var(--brand);
         font-weight: 600;
         cursor: pointer;
         text-align: left;
       }
       .jx-active__modal-opt--whatsapp {
-        border-color: #25d36669;
+        border-color: var(--success);
       }
       .jx-active__modal-opt--whatsapp:hover {
-        background: #f0fdf4;
+        background: var(--success-bg);
       }
       .jx-active__modal-fa--whatsapp {
-        color: #25d366 !important;
+        color: var(--success) !important;
       }
     `,
   ],
@@ -517,6 +535,26 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected readonly iconWhatsApp = faCommentDots;
 
   protected readonly delivery = signal<CourierDelivery | null>(null);
+
+  /** Pontos do mapa da rota (redesign v3 §7). Igualdade por coordenada: um
+   * reload com os mesmos pontos não redesenha/reenquadra o mapa. */
+  protected readonly pickupPoint = computed<LatLng | null>(
+    () => {
+      const d = this.delivery();
+      return d?.pickup_lat != null && d.pickup_lng != null ? { lat: d.pickup_lat, lng: d.pickup_lng } : null;
+    },
+    { equal: sameLatLng }
+  );
+  /** Destino só depois da coleta (RN-013): exige o endereço liberado pelo backend. */
+  protected readonly dropoffPoint = computed<LatLng | null>(
+    () => {
+      const d = this.delivery();
+      return d?.dropoff_address && d.dropoff_lat != null && d.dropoff_lng != null
+        ? { lat: d.dropoff_lat, lng: d.dropoff_lng }
+        : null;
+    },
+    { equal: sameLatLng }
+  );
   protected readonly loading = signal(true);
   protected readonly error = signal(false);
   protected readonly showPhoneModal = signal(false);

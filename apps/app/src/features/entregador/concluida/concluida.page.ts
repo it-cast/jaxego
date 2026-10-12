@@ -90,8 +90,8 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     }
     .jx-done__check {
       width: 72px; height: 72px; border-radius: 50%;
-      background: var(--brand-wash, hsl(24 80% 95%));
-      color: var(--brand, #e8722a);
+      background: var(--brand-wash);
+      color: var(--brand);
       display: grid; place-items: center; font-size: 32px;
     }
     .jx-done__title {
@@ -100,24 +100,24 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     }
     .jx-done__accent {
       font-family: var(--jx-font-serif-accent);
-      font-style: italic; color: var(--brand, #e8722a);
+      font-style: italic; color: var(--brand);
     }
     .jx-done__sub {
-      margin: 0; color: var(--text-muted, #888); font-size: var(--jx-text-sm);
+      margin: 0; color: var(--text-muted); font-size: var(--jx-text-sm);
     }
 
     /* Cards */
     .jx-done__card {
       width: 100%; text-align: left;
       display: flex; flex-direction: column; gap: var(--jx-space-1);
-      border-bottom: 1px solid var(--border, #eee);
+      border-bottom: 1px solid var(--border);
       padding-bottom: var(--jx-space-3);
     }
     .jx-done__card-row {
       display: flex; align-items: center; gap: var(--jx-space-2);
     }
     .jx-done__card-icon {
-      font-size: 16px; color: var(--brand, #e8722a);
+      font-size: 16px; color: var(--brand);
     }
     .jx-done__card-icon--dest {
       color: hsl(0 70% 55%);
@@ -125,22 +125,22 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     .jx-done__card-label {
       font-size: var(--jx-text-xs); font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.06em;
-      color: var(--text-muted, #888);
+      color: var(--text-muted);
     }
     .jx-done__muted {
-      margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted, #888);
+      margin: 0; font-size: var(--jx-text-sm); color: var(--text-muted);
     }
 
     /* Summary */
     .jx-done__summary {
       width: 100%; text-align: left;
       display: flex; flex-direction: column; gap: var(--jx-space-2);
-      background: #fff; border: 1px solid var(--border, #eee);
+      background: var(--surface-elevated); border: 1px solid var(--border);
       border-radius: 12px; padding: var(--jx-space-3);
     }
     .jx-done__summary-row {
       display: flex; align-items: center; justify-content: space-between;
-      font-size: var(--jx-text-sm); color: var(--text-muted, #888);
+      font-size: var(--jx-text-sm); color: var(--text-muted);
     }
     .jx-done__summary-row strong { color: var(--text); }
 
@@ -148,7 +148,7 @@ import { CourierDelivery, EntregadorService } from '../entregador.service';
     .jx-done__primary {
       width: 100%; min-height: 50px; margin-top: var(--jx-space-2);
       border: 0; border-radius: 999px;
-      background: var(--brand, #e8722a); color: #fff;
+      background: var(--brand); color: var(--brand-contrast);
       font-size: var(--jx-text-md); font-weight: 700; cursor: pointer;
     }
   `],

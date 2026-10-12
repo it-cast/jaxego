@@ -45,8 +45,8 @@
 }
 
 .jx-zonas__item {
-  background: var(--surface-elevated, #fff);
-  border: 1px solid var(--border, #e5e5e5);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--jx-radius-lg);
   padding: var(--jx-space-4);
   display: flex;
@@ -57,8 +57,8 @@
 
 .jx-zonas__item--inactive {
   opacity: 0.55;
-  border-color: var(--border, #e5e5e5);
-  background: var(--surface-sunken, #f8f8f8);
+  border-color: var(--border);
+  background: var(--surface-sunken);
 }
 
 .jx-zonas__item-header {
@@ -90,10 +90,10 @@
 .jx-zonas__map-btn {
   width: 36px;
   height: 36px;
-  border: 1px solid var(--border, #ddd);
+  border: 1px solid var(--border);
   border-radius: var(--jx-radius-md);
   background: transparent;
-  color: var(--brand, #e8722a);
+  color: var(--brand);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -135,7 +135,7 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
   width: $toggle-width;
   height: $toggle-height;
   border-radius: $toggle-height * 0.5;
-  background: var(--border, #ccc);
+  background: var(--border);
   transition: background 0.2s ease;
   flex-shrink: 0;
 }
@@ -147,13 +147,13 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
   width: $thumb-size;
   height: $thumb-size;
   border-radius: 50%;
-  background: #fff;
+  background: var(--on-media);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease;
 }
 
 .jx-toggle__input:checked ~ .jx-toggle__track {
-  background: var(--brand, #e8722a);
+  background: var(--brand);
 }
 
 .jx-toggle__input:checked ~ .jx-toggle__track .jx-toggle__thumb {
@@ -205,13 +205,13 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
 }
 
 .jx-zonas__badge--none {
-  background: var(--surface-sunken, #f0f0f0);
+  background: var(--surface-sunken);
   color: var(--text-muted);
 }
 
 .jx-zonas__saved {
   font-size: var(--jx-text-xs);
-  color: var(--success, hsl(140 60% 30%));
+  color: var(--success);
   font-weight: var(--jx-weight-semibold);
 }
 
@@ -225,10 +225,10 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
 .jx-zonas__edit-btn {
   min-height: 36px;
   padding: 0 var(--jx-space-3);
-  border: 1px solid var(--brand, #e8722a);
+  border: 1px solid var(--brand);
   border-radius: var(--jx-radius-md);
   background: transparent;
-  color: var(--brand, #e8722a);
+  color: var(--brand);
   font-size: var(--jx-text-sm);
   font-weight: var(--jx-weight-semibold);
   cursor: pointer;
@@ -248,7 +248,7 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
   flex-direction: column;
   gap: var(--jx-space-1);
   padding-top: var(--jx-space-2);
-  border-top: 1px solid var(--border, #eee);
+  border-top: 1px solid var(--border);
   margin-top: var(--jx-space-1);
 }
 
@@ -271,7 +271,7 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
   min-width: 0;
   min-height: 44px;
   padding: 0 var(--jx-space-3);
-  border: 1px solid var(--brand, #e8722a);
+  border: 1px solid var(--brand);
   border-radius: var(--jx-radius-md);
   background: var(--surface);
   color: var(--text);
@@ -288,8 +288,8 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
   padding: 0 var(--jx-space-3);
   border: 0;
   border-radius: var(--jx-radius-md);
-  background: var(--brand, #e8722a);
-  color: var(--brand-contrast, #fff);
+  background: var(--brand);
+  color: var(--brand-contrast);
   font-size: var(--jx-text-sm);
   font-weight: var(--jx-weight-semibold);
   cursor: pointer;
@@ -312,42 +312,118 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
   cursor: pointer;
 }
 
-// ── Overlay do mapa ────────────────────────────────────────────────────────
+// ── Visão geral no mapa (redesign v3 §7) ────────────────────────────────────
+
+.jx-zonas__overview {
+  position: relative;
+  --jx-zona-map-min: 0;
+  height: 220px;
+  margin-bottom: var(--jx-space-4);
+  border-radius: var(--jx-radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  isolation: isolate;
+}
+
+.jx-zonas__overview-legend {
+  position: absolute;
+  left: var(--jx-space-2);
+  top: var(--jx-space-2);
+  z-index: 500;
+  display: flex;
+  gap: var(--jx-space-3);
+  padding: 6px 12px;
+  border-radius: var(--jx-radius-full);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text);
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.jx-zonas__swatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  border: 2px dashed var(--map-zone-ref);
+}
+
+.jx-zonas__swatch--on {
+  border: 2px solid var(--map-zone);
+  background: var(--brand-wash);
+}
+
+// ── Overlay do mapa (redesign v3 §7) ────────────────────────────────────────
+// Mapa em tela cheia; cabeçalho flutuante em vidro sobre o mapa.
 
 .jx-map-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: var(--surface, #fff);
-  display: flex;
-  flex-direction: column;
+  background: var(--surface-sunken);
+  animation: jx-map-overlay-in var(--jx-motion-normal) var(--jx-motion-easing-out);
 }
 
 .jx-map-overlay__header {
+  position: absolute;
+  z-index: 1000; // above Leaflet panes/controls
+  top: max(var(--jx-space-3), env(safe-area-inset-top));
+  left: var(--jx-space-3);
+  right: var(--jx-space-3);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--jx-space-4);
-  padding-top: max(var(--jx-space-4), env(safe-area-inset-top));
-  border-bottom: 1px solid var(--border, #eee);
-  flex-shrink: 0;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-2) var(--jx-space-2) var(--jx-space-2) var(--jx-space-4);
+  background: var(--topbar-bg);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-xl);
+  box-shadow: var(--shadow-lg);
 }
 
 .jx-map-overlay__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  min-width: 0;
   font-family: var(--jx-font-display);
-  font-size: var(--jx-text-lg);
+  font-size: var(--jx-text-md);
   font-weight: var(--jx-weight-bold);
   color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &::before {
+    content: '';
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: var(--jx-radius-full);
+    background: var(--map-zone);
+    box-shadow: 0 0 0 4px var(--brand-wash);
+  }
 }
 
 .jx-map-overlay__close {
-  width: 40px;
-  height: 40px;
+  flex: none;
+  width: 44px;
+  height: 44px;
   border: 0;
-  border-radius: var(--jx-radius-md);
-  background: var(--surface-sunken, #f5f5f5);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-sunken);
   color: var(--text);
-  font-size: 18px;
+  font-size: var(--jx-text-lg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -355,11 +431,25 @@ $thumb-offset: ($toggle-height - $thumb-size) * 0.5;
 }
 
 .jx-map-overlay__close:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .jx-map-overlay__body {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
+}
+
+@keyframes jx-map-overlay-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-map-overlay {
+    animation: none;
+  }
 }
