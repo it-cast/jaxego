@@ -1,5 +1,7 @@
 # Design System — Jaxegô (MASTER)
 
+> ⚠️ **Valores de cor desta página são da v2 (histórico).** Desde 2026-10-12 a identidade canônica é a **v3** — ver `docs/identidade-visual/REDESIGN-v3.md` e `tokens.json` v3-jaxego (ADR-015). Componentes e regras de uso abaixo continuam válidos; os hex foram substituídos.
+
 > Gerado por `gsd-project-ingestor` em 2026-06-10 consolidando `projeto/identidade-visual/tokens.json` (v2-jaxego — **canônico**, não sugestão), `brand.md` e a análise estrutural dos 26 wireframes HTML.
 > Identidade: **editorial-técnica** — informação manda, com calor tipográfico. Anti-referências: laranja neon do Rappi, saturação da 99.
 
