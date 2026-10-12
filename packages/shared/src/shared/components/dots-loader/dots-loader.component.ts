@@ -21,7 +21,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     .jx-dots { display: flex; gap: 6px; }
     .jx-dot {
       width: 8px; height: 8px; border-radius: 50%;
-      background: var(--brand, #e8722a);
+      background: var(--brand);
       animation: jx-bounce 1.2s ease-in-out infinite;
     }
     .jx-dot:nth-child(2) { animation-delay: 0.2s; }

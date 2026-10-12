@@ -37,7 +37,7 @@
   flex-direction: column;
   gap: var(--jx-space-2);
   padding: var(--jx-space-5);
-  background: var(--surface-elevated, #fff);
+  background: var(--surface-elevated);
   border: 1px solid var(--border);
   border-radius: var(--jx-radius-lg);
 }
@@ -93,8 +93,8 @@
   padding: 0 var(--jx-space-4);
   border: 0;
   border-radius: var(--jx-radius-lg);
-  background: var(--brand, #e8722a);
-  color: var(--brand-contrast, #fff);
+  background: var(--brand);
+  color: var(--brand-contrast);
   font-size: var(--jx-text-sm);
   font-weight: var(--jx-weight-semibold);
   cursor: pointer;
@@ -114,7 +114,7 @@
 }
 
 .jx-modal {
-  background: var(--surface-elevated, #fff);
+  background: var(--surface-elevated);
   border-radius: var(--jx-radius-xl);
   box-shadow: 0 20px 60px rgba(0 0 0 / 0.25);
   width: 100%;
@@ -186,8 +186,8 @@
 }
 
 .jx-saldo__topup-preset:hover {
-  border-color: var(--brand, #e8722a);
-  color: var(--brand, #e8722a);
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .jx-saldo__topup-field {
@@ -213,13 +213,13 @@
 
 .jx-saldo__topup-input:focus {
   outline: none;
-  border-color: var(--brand, #e8722a);
+  border-color: var(--brand);
 }
 
 .jx-saldo__topup-err {
   margin: 0;
   font-size: var(--jx-text-xs);
-  color: var(--error, #d32f2f);
+  color: var(--error);
   font-weight: var(--jx-weight-semibold);
 }
 
@@ -260,8 +260,8 @@
   width: 100%;
   border: 0;
   border-radius: var(--jx-radius-lg);
-  background: var(--brand, #e8722a);
-  color: var(--brand-contrast, #fff);
+  background: var(--brand);
+  color: var(--brand-contrast);
   font-size: var(--jx-text-md);
   font-weight: var(--jx-weight-bold);
   cursor: pointer;
@@ -336,8 +336,8 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--success, #2e7d32);
-  color: #fff;
+  background: var(--success);
+  color: var(--on-color);
   font-size: 2rem;
   display: flex;
   align-items: center;

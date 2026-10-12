@@ -197,14 +197,14 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
       flex-direction: column;
       gap: 2px;
       font-size: var(--jx-text-xs);
-      color: var(--text-muted, #888);
+      color: var(--text-muted);
       flex: 1;
     }
     .jx-entregas__filter-input {
       min-height: 40px;
       padding: 0 var(--jx-space-3);
-      background: #fff;
-      border: 1px solid var(--border, hsl(0 0% 90%));
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
       border-radius: var(--jx-radius-lg, 12px);
       color: var(--text);
       font-size: var(--jx-text-sm);
@@ -213,9 +213,9 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
       min-height: 40px;
       padding: 0 var(--jx-space-3);
       background: transparent;
-      border: 1px solid var(--border, hsl(0 0% 90%));
+      border: 1px solid var(--border);
       border-radius: var(--jx-radius-lg, 12px);
-      color: var(--text-muted, #888);
+      color: var(--text-muted);
       font-size: var(--jx-text-xs);
       cursor: pointer;
     }
@@ -224,7 +224,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
       display: flex; flex-direction: column; gap: var(--jx-space-3);
     }
     .jx-entregas__card {
-      background: #fff; border: 1px solid var(--border, #eee);
+      background: var(--surface-elevated); border: 1px solid var(--border);
       border-radius: 16px; padding: var(--jx-space-3);
       display: flex; flex-direction: column; gap: var(--jx-space-3);
       cursor: pointer;
@@ -235,7 +235,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
     .jx-entregas__card-icon {
       width: 40px; height: 40px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px; color: var(--text-muted, #888); flex-shrink: 0;
+      font-size: 16px; color: var(--text-muted); flex-shrink: 0;
     }
     .jx-entregas__card-title {
       flex: 1; font-size: var(--jx-text-sm); font-weight: 600; color: var(--text);
@@ -244,10 +244,10 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
       padding: 4px 12px; border-radius: 999px;
       font-size: 10px; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.04em;
-      background: var(--surface-sunken, #f0f0f0); color: var(--text-muted, #888);
+      background: var(--surface-sunken); color: var(--text-muted);
     }
     .jx-entregas__badge--ok { background: hsl(120 40% 93%); color: hsl(120 50% 35%); }
-    .jx-entregas__badge--active { background: var(--brand-wash, hsl(24 80% 95%)); color: var(--brand, #e8722a); }
+    .jx-entregas__badge--active { background: var(--brand-wash); color: var(--brand); }
     .jx-entregas__badge--cancel { background: hsl(0 70% 95%); color: hsl(0 60% 45%); }
     .jx-entregas__timeline {
       display: flex; flex-direction: column; padding-left: var(--jx-space-2);
@@ -256,11 +256,11 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
       display: flex; align-items: flex-start; gap: var(--jx-space-2);
     }
     .jx-entregas__tl-dot { font-size: 10px; margin-top: 4px; flex-shrink: 0; }
-    .jx-entregas__tl-dot--pickup { color: var(--brand, #e8722a); }
+    .jx-entregas__tl-dot--pickup { color: var(--brand); }
     .jx-entregas__tl-dot--drop { color: hsl(0 70% 55%); }
     .jx-entregas__tl-label { font-size: var(--jx-text-sm); color: var(--text); }
-    .jx-entregas__tl-sub { margin: 0; font-size: var(--jx-text-xs); color: var(--text-muted, #888); }
-    .jx-entregas__tl-line { width: 1px; height: 16px; background: var(--border, #ddd); margin-left: 4px; }
+    .jx-entregas__tl-sub { margin: 0; font-size: var(--jx-text-xs); color: var(--text-muted); }
+    .jx-entregas__tl-line { width: 1px; height: 16px; background: var(--border); margin-left: 4px; }
 
     /* Detail bottom-sheet */
     .jx-detail-backdrop {
@@ -273,7 +273,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
     }
     .jx-detail-modal {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 70;
-      background: #fff;
+      background: var(--surface-elevated);
       border-radius: 20px 20px 0 0;
       padding: var(--jx-space-4);
       padding-bottom: max(var(--jx-space-5), env(safe-area-inset-bottom));
@@ -287,7 +287,7 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
     }
     .jx-detail-modal__handle {
       width: 40px; height: 4px; border-radius: 2px;
-      background: var(--border, #ddd); align-self: center;
+      background: var(--border); align-self: center;
     }
     .jx-detail-modal__title {
       margin: 0; font-size: var(--jx-text-lg, 18px); font-weight: 700; text-align: center;
@@ -295,31 +295,31 @@ import { CourierDelivery, CourierDeliveryListItem, EntregadorService } from './e
     .jx-detail-modal__status {
       text-align: center; font-size: var(--jx-text-xs, 12px);
       font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
-      color: var(--brand, #e8722a);
+      color: var(--brand);
     }
-    .jx-detail-modal__status--done { color: var(--success, #2e7d32); }
+    .jx-detail-modal__status--done { color: var(--success); }
     .jx-detail-modal__section {
       display: flex; flex-direction: column; gap: 2px;
     }
     .jx-detail-modal__label {
       font-size: var(--jx-text-2xs, 10px); font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.06em;
-      color: var(--text-muted, #888);
+      color: var(--text-muted);
     }
     .jx-detail-modal__value {
-      margin: 0; font-size: var(--jx-text-sm, 14px); color: var(--text, #222);
+      margin: 0; font-size: var(--jx-text-sm, 14px); color: var(--text);
     }
     .jx-detail-modal__value--mono { font-family: var(--jx-font-mono); }
     .jx-detail-modal__sub {
-      margin: 0; font-size: var(--jx-text-xs, 12px); color: var(--text-muted, #888);
+      margin: 0; font-size: var(--jx-text-xs, 12px); color: var(--text-muted);
     }
     .jx-detail-modal__row {
       display: grid; grid-template-columns: 1fr 1fr; gap: var(--jx-space-3);
     }
     .jx-detail-modal__close {
       width: 100%; min-height: 50px;
-      background: var(--brand, #e8722a); border: 0;
-      border-radius: 999px; color: #fff;
+      background: var(--brand); border: 0;
+      border-radius: 999px; color: var(--brand-contrast);
       font-size: var(--jx-text-md, 16px); font-weight: 700;
       cursor: pointer;
     }

@@ -1,0 +1,117 @@
+<div class="jx-shell" [class.jx-shell--collapsed]="collapsed()" [class.jx-shell--open]="menuOpen()">
+  <!-- Mobile topbar -->
+  <header class="jx-shell__topbar">
+    <button
+      type="button"
+      class="jx-shell__icon-btn"
+      aria-label="Abrir menu"
+      [attr.aria-expanded]="menuOpen()"
+      (click)="menuOpen.set(true)"
+    >
+      <fa-icon [icon]="iconBars" aria-hidden="true" />
+    </button>
+    <span class="jx-shell__topbar-brand">
+      <span class="jx-shell__logo jx-shell__logo--sm" aria-hidden="true">J</span>
+      Jaxegô
+    </span>
+    <span class="jx-shell__topbar-tag">{{ surfaceLabel() }}</span>
+  </header>
+
+  @if (menuOpen()) {
+    <div class="jx-shell__overlay" (click)="closeMenu()" aria-hidden="true"></div>
+  }
+
+  <!-- Sidebar -->
+  <aside class="jx-shell__sidebar">
+    <div class="jx-shell__brand-row">
+      <a class="jx-shell__brand" [routerLink]="nav()[0]?.path ?? '/'" (click)="closeMenu()">
+        <span class="jx-shell__logo" aria-hidden="true">J</span>
+        <span class="jx-shell__brand-text">
+          <span class="jx-shell__wordmark">Jaxegô</span>
+          <span class="jx-shell__surface">{{ surfaceLabel() }}</span>
+        </span>
+      </a>
+      <button
+        type="button"
+        class="jx-shell__icon-btn jx-shell__close"
+        aria-label="Fechar menu"
+        (click)="closeMenu()"
+      >
+        <fa-icon [icon]="iconClose" aria-hidden="true" />
+      </button>
+    </div>
+
+    @if (contextTitle()) {
+      <div class="jx-shell__context" [attr.title]="contextTitle()">
+        <span class="jx-shell__avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="jx-shell__context-text">
+          <span class="jx-shell__context-title">{{ contextTitle() }}</span>
+          @if (contextSubtitle()) {
+            <span class="jx-shell__context-sub">{{ contextSubtitle() }}</span>
+          }
+        </span>
+      </div>
+    }
+
+    <nav class="jx-shell__nav" [attr.aria-label]="navAriaLabel()">
+      @for (item of nav(); track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="jx-shell__link--on"
+          #rla="routerLinkActive"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
+          class="jx-shell__link"
+          [attr.title]="collapsed() ? item.label : null"
+          (click)="closeMenu()"
+        >
+          <span class="jx-shell__link-icon">
+            <fa-icon [icon]="item.icon" [fixedWidth]="true" aria-hidden="true" />
+          </span>
+          <span class="jx-shell__link-label">{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="jx-shell__footer">
+      <button
+        type="button"
+        class="jx-shell__foot-btn"
+        [attr.aria-pressed]="isDark()"
+        [attr.aria-label]="isDark() ? 'Desativar tema escuro' : 'Ativar tema escuro'"
+        [attr.title]="collapsed() ? (isDark() ? 'Tema claro' : 'Tema escuro') : null"
+        (click)="toggleTheme()"
+      >
+        <span class="jx-shell__link-icon">
+          <fa-icon [icon]="isDark() ? iconSun : iconMoon" [fixedWidth]="true" aria-hidden="true" />
+        </span>
+        <span class="jx-shell__link-label">{{ isDark() ? 'Tema claro' : 'Tema escuro' }}</span>
+      </button>
+      <button
+        type="button"
+        class="jx-shell__foot-btn jx-shell__foot-btn--danger"
+        [attr.title]="collapsed() ? 'Sair da conta' : null"
+        (click)="logout.emit()"
+      >
+        <span class="jx-shell__link-icon">
+          <fa-icon [icon]="iconLogout" [fixedWidth]="true" aria-hidden="true" />
+        </span>
+        <span class="jx-shell__link-label">Sair da conta</span>
+      </button>
+      <button
+        type="button"
+        class="jx-shell__collapse"
+        [attr.aria-label]="collapsed() ? 'Expandir menu lateral' : 'Recolher menu lateral'"
+        [attr.aria-expanded]="!collapsed()"
+        (click)="toggleCollapsed()"
+      >
+        <fa-icon [icon]="collapsed() ? iconExpand : iconCollapse" aria-hidden="true" />
+      </button>
+    </div>
+  </aside>
+
+  <main class="jx-shell__main">
+    <div class="jx-shell__content">
+      <router-outlet />
+    </div>
+  </main>
+</div>

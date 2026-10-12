@@ -41,7 +41,7 @@
 }
 
 .jx-planos__msg--err {
-  background: var(--error-wash, hsl(0 70% 95%));
+  background: var(--error-wash);
   color: var(--error);
 }
 
@@ -262,7 +262,7 @@
 }
 
 .jx-planos__badge--inactive {
-  background: var(--error-wash, hsl(0 70% 95%));
+  background: var(--error-wash);
   color: var(--error);
 }
 

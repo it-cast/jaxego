@@ -12,7 +12,7 @@
   align-items: center;
   justify-content: center;
   min-height: 220px;
-  background: var(--brand-wash, hsl(24 80% 95%));
+  background: var(--brand-wash);
   border-radius: 0 0 var(--jx-radius-2xl, 24px) var(--jx-radius-2xl, 24px);
   overflow: hidden;
 }
@@ -42,8 +42,9 @@
 .jx-login__welcome {
   margin: 0;
   font-family: var(--jx-font-display);
-  font-size: var(--jx-text-2xl);
+  font-size: var(--jx-text-3xl);
   font-weight: var(--jx-weight-extrabold);
+  letter-spacing: -0.035em;
   color: var(--text);
 }
 
@@ -75,10 +76,11 @@
 .jx-input {
   width: 100%;
   padding: var(--jx-space-3) var(--jx-space-4);
-  min-height: 50px;
+  min-height: 52px;
   background: var(--surface-elevated);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
+  transition: border-color var(--jx-motion-fast), box-shadow var(--jx-motion-fast);
   border-radius: var(--jx-radius-full, 999px);
   font-family: var(--jx-font-display);
   font-size: var(--jx-text-base);
@@ -140,10 +142,11 @@
 // --- Submit button ---
 .jx-login__submit {
   width: 100%;
-  min-height: 50px;
+  min-height: 54px;
   margin-top: var(--jx-space-2);
   padding: var(--jx-space-3) var(--jx-space-4);
-  background: var(--brand);
+  background: var(--brand-gradient);
+  box-shadow: var(--shadow-glow);
   color: var(--brand-contrast);
   border: 0;
   border-radius: var(--jx-radius-full, 999px);
@@ -154,7 +157,11 @@
 }
 
 .jx-login__submit:hover:not(:disabled) {
-  background: var(--brand-hover);
+  filter: brightness(1.05);
+}
+
+.jx-login__submit:active:not(:disabled) {
+  transform: scale(0.99);
 }
 
 .jx-login__submit:disabled {

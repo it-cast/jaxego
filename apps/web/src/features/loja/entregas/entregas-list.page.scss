@@ -141,7 +141,7 @@
   width: min(420px, calc(100vw - 2rem));
   height: max-content;
   margin: 0;
-  background: var(--surface-elevated, #fff);
+  background: var(--surface-elevated);
   border-radius: var(--jx-radius-xl);
   padding: var(--jx-space-6);
   display: flex;
@@ -207,14 +207,14 @@
   }
 
   &--secondary {
-    background: var(--surface-sunken, #f0f0f0);
+    background: var(--surface-sunken);
     color: var(--text);
     border: 1px solid var(--border);
   }
 
   &--danger {
-    background: hsl(0 72% 51%);
-    color: #fff;
+    background: var(--error);
+    color: var(--on-color);
 
     &:hover:not(:disabled) {
       background: hsl(0 72% 44%);

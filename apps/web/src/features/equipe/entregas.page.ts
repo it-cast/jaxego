@@ -100,15 +100,15 @@ const PAGE_SIZE = 20;
   styles: [`
     .jx-eq-del__title { margin: 0 0 var(--jx-space-4); font-family: var(--jx-font-display); font-size: 24px; font-weight: 800; color: var(--text); }
     .jx-eq-del__filters { display: flex; gap: var(--jx-space-2); flex-wrap: wrap; margin-bottom: var(--jx-space-3); }
-    .jx-eq-del__input { min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); background: var(--surface, #fff); min-width: 200px; }
+    .jx-eq-del__input { min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); background: var(--surface); min-width: 200px; }
     .jx-eq-del__input--date { min-width: 160px; }
-    .jx-eq-del__select { min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); background: var(--surface, #fff); }
+    .jx-eq-del__select { min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); background: var(--surface); }
     .jx-eq-del__clear { min-height: 40px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
     .jx-eq-del__clear:hover { color: var(--error); border-color: var(--error); }
     .jx-eq-del__empty { color: var(--text-muted); }
     .jx-eq-del__table { width: 100%; border-collapse: collapse; font-size: 14px; }
     .jx-eq-del__table th { text-align: left; padding: var(--jx-space-2) var(--jx-space-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); border-bottom: 2px solid var(--border); }
-    .jx-eq-del__table td { padding: var(--jx-space-2) var(--jx-space-3); border-bottom: 1px solid var(--border, #eee); color: var(--text); }
+    .jx-eq-del__table td { padding: var(--jx-space-2) var(--jx-space-3); border-bottom: 1px solid var(--border); color: var(--text); }
     .jx-eq-del__mono { font-family: var(--jx-font-mono, monospace); font-size: 13px; }
     .jx-eq-del__state { font-size: 12px; font-weight: 600; }
     .jx-eq-del__pagination { display: flex; align-items: center; justify-content: center; gap: var(--jx-space-3); padding: var(--jx-space-2) 0; }

@@ -50,13 +50,13 @@ interface DashboardData {
   styles: [`
     .jx-eq-dash__title { margin: 0 0 var(--jx-space-4); font-family: var(--jx-font-display); font-size: 24px; font-weight: 800; color: var(--text); }
     .jx-eq-dash__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--jx-space-3); }
-    .jx-eq-dash__card { background: var(--surface-elevated, #fff); border: 1px solid var(--border, #eee); border-radius: 12px; padding: var(--jx-space-4); display: flex; flex-direction: column; align-items: center; gap: var(--jx-space-2); }
-    .jx-eq-dash__icon { font-size: 28px; color: var(--text-muted, #888); }
-    .jx-eq-dash__icon--green { color: #2e7d32; }
-    .jx-eq-dash__icon--warn { color: #e8722a; }
-    .jx-eq-dash__icon--brand { color: var(--brand, #e8722a); }
+    .jx-eq-dash__card { background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; padding: var(--jx-space-4); display: flex; flex-direction: column; align-items: center; gap: var(--jx-space-2); }
+    .jx-eq-dash__icon { font-size: 28px; color: var(--text-muted); }
+    .jx-eq-dash__icon--green { color: var(--success); }
+    .jx-eq-dash__icon--warn { color: var(--brand); }
+    .jx-eq-dash__icon--brand { color: var(--brand); }
     .jx-eq-dash__value { font-size: 32px; font-weight: 800; color: var(--text); }
-    .jx-eq-dash__label { font-size: 13px; color: var(--text-muted, #888); text-align: center; }
+    .jx-eq-dash__label { font-size: 13px; color: var(--text-muted); text-align: center; }
   `],
 })
 export class EquipeDashboardPage implements OnInit {

@@ -127,7 +127,7 @@ const REASON_LABELS: Record<string, string> = {
     }
     .jx-perfil__avatar {
       width: 88px; height: 88px; border-radius: 50%;
-      background: var(--brand-wash, hsl(24 80% 95%));
+      background: var(--brand-wash);
       display: grid; place-items: center; position: relative;
     }
     .jx-perfil__avatar-icon { font-size: 36px; color: var(--brand); }
@@ -148,11 +148,11 @@ const REASON_LABELS: Record<string, string> = {
     .jx-perfil__item {
       display: flex; align-items: center; justify-content: space-between;
       min-height: 48px; padding: var(--jx-space-3) 0;
-      border-bottom: 1px solid var(--border, hsl(0 0% 90%));
+      border-bottom: 1px solid var(--border);
       font-size: var(--jx-text-sm); color: var(--text);
     }
     .jx-perfil__item-left { display: flex; align-items: center; gap: 12px; }
-    .jx-perfil__item-icon { font-size: 18px; color: var(--brand, #e8722a); width: 24px; text-align: center; }
+    .jx-perfil__item-icon { font-size: 18px; color: var(--brand); width: 24px; text-align: center; }
     .jx-perfil__item-value {
       font-size: var(--jx-text-xs); color: var(--text-muted); text-align: right; max-width: 60%;
     }
@@ -168,33 +168,33 @@ const REASON_LABELS: Record<string, string> = {
       background: var(--surface-sunken); color: var(--text-muted);
     }
     .jx-perfil__status-pill--ok {
-      background: var(--success-wash, hsl(120 40% 93%)); color: var(--success, hsl(120 40% 35%));
+      background: var(--success-wash); color: var(--success);
     }
     .jx-perfil__status-pill--err {
-      background: var(--error-wash, hsl(0 70% 95%)); color: var(--error, #d32f2f);
+      background: var(--error-wash); color: var(--error);
     }
     .jx-perfil__status-pill--pending {
-      background: var(--warning-wash, hsl(40 80% 92%)); color: var(--warning, hsl(40 80% 35%));
+      background: var(--warning-wash); color: var(--warning);
     }
 
     .jx-perfil__chevron {
-      font-size: 20px; color: var(--text-muted, #ccc); font-weight: 300;
+      font-size: 20px; color: var(--text-muted); font-weight: 300;
     }
     .jx-perfil__avg-stars {
-      font-size: var(--jx-text-sm); font-weight: 600; color: var(--brand, #e8722a);
+      font-size: var(--jx-text-sm); font-weight: 600; color: var(--brand);
     }
     .jx-perfil__avg-stars small {
-      font-weight: 400; color: var(--text-muted, #888); font-size: var(--jx-text-xs);
+      font-weight: 400; color: var(--text-muted); font-size: var(--jx-text-xs);
     }
     .jx-perfil__resend-btn {
       width: 32px; height: 32px; display: grid; place-items: center;
-      background: var(--brand); color: var(--brand-contrast, #fff);
+      background: var(--brand); color: var(--brand-contrast);
       border: none; border-radius: 50%; cursor: pointer; font-size: 14px;
     }
 
     /* Score card */
     .jx-perfil__score-card {
-      background: var(--surface-elevated, #fff); border: 1px solid var(--border, hsl(0 0% 90%));
+      background: var(--surface-elevated); border: 1px solid var(--border);
       border-radius: var(--jx-radius-lg); padding: var(--jx-space-3);
       display: flex; flex-direction: column; gap: var(--jx-space-2);
     }
@@ -206,9 +206,9 @@ const REASON_LABELS: Record<string, string> = {
     .jx-perfil__logout {
       width: 100%; min-height: 48px; display: flex; align-items: center;
       justify-content: center; gap: var(--jx-space-2);
-      background: none; border: 1px solid var(--error, #d32f2f);
+      background: none; border: 1px solid var(--error);
       border-radius: var(--jx-radius-full, 999px);
-      color: var(--error, #d32f2f); font-size: var(--jx-text-sm);
+      color: var(--error); font-size: var(--jx-text-sm);
       font-weight: var(--jx-weight-semibold); cursor: pointer; margin-top: var(--jx-space-3);
     }
 
@@ -216,7 +216,7 @@ const REASON_LABELS: Record<string, string> = {
     .jx-resend-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.5); }
     .jx-resend-modal {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 70;
-      background: var(--surface, #fff); border-radius: var(--jx-radius-xl) var(--jx-radius-xl) 0 0;
+      background: var(--surface); border-radius: var(--jx-radius-xl) var(--jx-radius-xl) 0 0;
       padding: var(--jx-space-4); padding-bottom: max(var(--jx-space-5), env(safe-area-inset-bottom));
       display: flex; flex-direction: column; gap: var(--jx-space-3); max-height: 85vh; overflow-y: auto;
     }
@@ -227,10 +227,10 @@ const REASON_LABELS: Record<string, string> = {
     .jx-resend-modal__actions { display: flex; gap: var(--jx-space-2); }
     .jx-resend-modal__btn { flex: 1; min-height: 44px; border-radius: var(--jx-radius-md); font-weight: var(--jx-weight-semibold); cursor: pointer; border: none; }
     .jx-resend-modal__btn--cancel { background: var(--surface-sunken); color: var(--text); }
-    .jx-resend-modal__btn--send { background: var(--brand); color: var(--brand-contrast, #fff); }
+    .jx-resend-modal__btn--send { background: var(--brand); color: var(--brand-contrast); }
     .jx-resend-modal__btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .jx-resend-modal__doc-wrap { position: relative; }
-    .jx-resend-modal__remove-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; background: var(--error, #d32f2f); color: #fff; border: none; border-radius: 50%; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .jx-resend-modal__remove-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; background: var(--error); color: var(--on-media); border: none; border-radius: 50%; font-size: 14px; font-weight: 700; cursor: pointer; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
   `],
 })
 export class EntregadorPerfilPage implements OnInit {
