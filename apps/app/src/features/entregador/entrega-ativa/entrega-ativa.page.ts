@@ -35,6 +35,9 @@ import { currentPosition } from '../geolocation.util';
  * Destination address/recipient appear only AFTER pickup (RN-013) — the backend
  * already omits them pre-COLETADA, so we render what we get.
  */
+/** Estados em que o destino exato pode aparecer para o entregador (RN-013). */
+const DROPOFF_REVEALED = new Set(['COLETADA', 'ENTREGUE', 'RECUSADA_NO_DESTINO', 'FINALIZADA']);
+
 function sameLatLng(a: LatLng | null, b: LatLng | null): boolean {
   return a === b || (!!a && !!b && a.lat === b.lat && a.lng === b.lng);
 }
@@ -545,11 +548,13 @@ export class EntregadorEntregaAtivaPage implements OnInit {
     },
     { equal: sameLatLng }
   );
-  /** Destino só depois da coleta (RN-013): exige o endereço liberado pelo backend. */
+  /** Destino só depois da coleta (RN-013). Gate pelo ESTADO, não pela presença
+   * dos campos: hoje a API do entregador devolve as coordenadas também antes da
+   * coleta (TD-V3-05), então o mapa não pode confiar nela. */
   protected readonly dropoffPoint = computed<LatLng | null>(
     () => {
       const d = this.delivery();
-      return d?.dropoff_address && d.dropoff_lat != null && d.dropoff_lng != null
+      return d && DROPOFF_REVEALED.has(d.state) && d.dropoff_lat != null && d.dropoff_lng != null
         ? { lat: d.dropoff_lat, lng: d.dropoff_lng }
         : null;
     },
