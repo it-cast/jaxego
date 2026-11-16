@@ -38,33 +38,57 @@ import { PublicTracking, PublicTrackingService } from './public-tracking.service
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main class="jx-track-page">
-      <header class="jx-track-page__brand">
-        <span class="jx-track-page__wordmark">rapidinho.</span>
+      <header class="jx-track-page__hero">
+        <div class="jx-track-page__brand">
+          <span class="jx-track-page__logo" aria-hidden="true">J</span>
+          <span class="jx-track-page__name">Jaxegô</span>
+          <span class="jx-track-page__wordmark">rapidinho.</span>
+        </div>
+        <p class="jx-track-page__lead">Acompanhe sua entrega em tempo real</p>
       </header>
 
-      @if (notFound()) {
-        <jx-error-state
-          message="Link de rastreio expirado ou entrega não encontrada. Confira com a loja."
-        />
-      } @else {
-        @if (data(); as d) {
-          <jx-tracking-banner [state]="state(d)" [etaSeconds]="d.eta_seconds" />
-
-          @if (showMap(d)) {
-            <jx-live-map [lat]="d.courier_position!.lat" [lng]="d.courier_position!.lng" />
-          }
-
-          <jx-tracking-timeline [state]="state(d)" [entries]="d.timeline" />
-
-          <footer class="jx-track-page__footer">
-            Acompanhamento em tempo real • dados mínimos • © OpenStreetMap
-          </footer>
+      <div class="jx-track-page__body">
+        @if (notFound()) {
+          <section class="jx-track-page__card">
+            <jx-error-state
+              message="Link de rastreio expirado ou entrega não encontrada. Confira com a loja."
+            />
+          </section>
         } @else {
-          <p class="jx-track-page__loading" role="status" aria-live="polite">
-            Carregando o acompanhamento…
-          </p>
+          @if (data(); as d) {
+            <section class="jx-track-page__card jx-track-page__card--status">
+              <jx-tracking-banner [state]="state(d)" [etaSeconds]="d.eta_seconds" />
+            </section>
+
+            @if (showMap(d)) {
+              <section class="jx-track-page__map">
+                <jx-live-map
+                  [lat]="d.courier_position!.lat"
+                  [lng]="d.courier_position!.lng"
+                  kind="courier"
+                  label="Entregador · ao vivo"
+                  [live]="true"
+                  ariaLabel="Posição aproximada do entregador no mapa"
+                />
+              </section>
+            }
+
+            <section class="jx-track-page__card">
+              <jx-tracking-timeline [state]="state(d)" [entries]="d.timeline" />
+            </section>
+          } @else {
+            <section class="jx-track-page__card">
+              <p class="jx-track-page__loading" role="status" aria-live="polite">
+                Carregando o acompanhamento…
+              </p>
+            </section>
+          }
         }
-      }
+
+        <footer class="jx-track-page__footer">
+          Acompanhamento em tempo real • dados mínimos • © OpenStreetMap
+        </footer>
+      </div>
     </main>
   `,
   styleUrl: './public-tracking.page.scss',

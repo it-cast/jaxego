@@ -1,42 +1,71 @@
 // ============================================================================
-// Semantic token layer (UI-SPEC §1.3 / §1.4).
+// Semantic token layer — Redesign v3 (ADR-015, docs/identidade-visual/REDESIGN-v3.md).
 // Hand-written, but consumes ONLY primitives from _tokens.scss (--jx-*).
 // NEVER put a literal hex here — that is the whole point of the layer.
 //
-// 21 semantic vars per theme:
 //   :root                     -> light (default)
 //   :root[data-theme="dark"]  -> dark overrides
 //   @media (prefers-color-scheme: dark) -> dark when no explicit data-theme
 //
-// Dark mode (DEC-001): persimmon shifts to brand.400 for luminance; semantic
-// _bg pastels are replaced by a single dark surface + vivid colored text/border
-// (dark-mode-theming pattern); warm shadows (rgba(24,20,16,…)) preserved.
+// v3 color psychology: tangerina = energia/ação (10%), azul-noite = confiança
+// (30% — texto + navegação), neutros frios = respiro (60%). Verde/âmbar/coral só
+// carregam SIGNIFICADO, nunca decoração. Surfaces: page #F6F7FB, cards white,
+// sunken #EDEFF5 (v2 had elevated darker than the page — fixed here).
 // ============================================================================
 
 // ---------------------------------------------------------------------------
 // LIGHT (default)
 // ---------------------------------------------------------------------------
 :root {
+  color-scheme: light;
+
   // surfaces
   --surface: var(--jx-neutral-50);
-  --surface-elevated: var(--jx-neutral-100);
-  --surface-sunken: var(--jx-neutral-200);
+  --surface-elevated: var(--jx-neutral-0);
+  --surface-sunken: var(--jx-neutral-100);
+  --surface-hover: var(--jx-neutral-100);
+  --surface-overlay: rgba(10, 14, 28, 0.5);
+  // soft ambient glow behind page content (brand + info washes, very subtle)
+  --surface-page-glow:
+    radial-gradient(1200px 600px at 100% -10%, var(--jx-brand-50), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, var(--jx-neutral-100), transparent 60%);
 
   // text
   --text: var(--jx-neutral-800);
   --text-muted: var(--jx-neutral-500);
   --text-subtle: var(--jx-neutral-400);
+  --text-inverse: var(--jx-neutral-0);
 
   // borders
   --border: var(--jx-neutral-200);
   --border-strong: var(--jx-neutral-300);
 
-  // brand
-  --brand: var(--jx-brand-500);
-  --brand-hover: var(--jx-brand-600);
-  --brand-contrast: var(--jx-neutral-50);
+  // brand (fill = brand.600 so white text hits AA 4.6:1; vivid 500 lives in gradients/pins)
+  --brand: var(--jx-brand-600);
+  --brand-hover: var(--jx-brand-700);
+  --brand-vivid: var(--jx-brand-500);
+  --brand-contrast: var(--jx-neutral-0);
   --brand-wash: var(--jx-brand-50);
   --brand-wash-border: var(--jx-brand-100);
+  --brand-gradient: linear-gradient(135deg, var(--jx-brand-500) 0%, var(--jx-brand-600) 100%);
+  --hero-gradient: linear-gradient(
+    150deg,
+    var(--jx-neutral-950) 0%,
+    var(--jx-neutral-800) 55%,
+    var(--jx-brand-700) 130%
+  );
+  --accent: var(--jx-highlight);
+  --accent-wash: var(--jx-payment-direct);
+  --accent-ink: var(--jx-payment-direct-ink);
+  // text/glyph on saturated semantic fills (success/error/warning chips & dots)
+  --on-color: var(--jx-neutral-0);
+  // text/glyph over photos / dark scrims (lightbox, document preview)
+  --on-media: var(--jx-neutral-0);
+  // QR codes must stay on a white surface in both themes (scanner contrast)
+  --qr-surface: var(--jx-neutral-0);
+  // money / earnings (conquista): deep emerald so white text stays AA (≥ 4.4:1)
+  --money-gradient: linear-gradient(135deg, var(--jx-success) 0%, var(--jx-delivery-finalizada) 100%);
+  --on-money: var(--jx-neutral-0);
 
   // semantic — success / warning / error / info
   --success: var(--jx-success);
@@ -48,16 +77,43 @@
   --info: var(--jx-info);
   --info-bg: var(--jx-info-bg);
 
-  // shadows + focus (warm, same in both themes — §1.4)
+  // shadows + focus
   --shadow-sm: var(--jx-shadow-sm);
   --shadow-md: var(--jx-shadow-md);
   --shadow-lg: var(--jx-shadow-lg);
+  --shadow-glow: var(--jx-shadow-glow);
   --focus-ring: var(--jx-shadow-focus);
 
-  // delivery state colors (Phase 7 — RN-019). Derived mechanically from the
-  // `color.delivery_state.*` primitives (--jx-delivery-*); used as VIVID text +
-  // border over a NEUTRAL badge surface (--surface-sunken), the dark-mode pattern
-  // — so the same 7 vars work in light AND dark with zero `_bg` tokens.
+  // navigation chrome (sidebar is azul-noite in BOTH themes — anchors the UI)
+  --nav-bg: linear-gradient(180deg, var(--jx-neutral-950) 0%, var(--jx-neutral-900) 100%);
+  --nav-surface: rgba(255, 255, 255, 0.06);
+  --nav-surface-hover: rgba(255, 255, 255, 0.09);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --nav-text: var(--jx-neutral-100);
+  --nav-text-muted: var(--jx-neutral-300);
+  --nav-active-bg: var(--brand-gradient);
+  --nav-active-text: var(--jx-neutral-0);
+  --topbar-bg: rgba(255, 255, 255, 0.82);
+
+  // maps (consumed by map-theme.ts at runtime + _map.scss)
+  --map-zone: var(--jx-brand-500);
+  --map-zone-ref: var(--jx-neutral-400);
+  --map-route: var(--jx-neutral-800);
+  --map-pin: var(--jx-brand-500);
+  --map-pin-courier: var(--jx-neutral-800);
+  --map-pin-ring: var(--jx-brand-500);
+  --map-tiles-filter: saturate(0.82) contrast(1.02) brightness(1.02);
+  --map-zone-1: var(--jx-map-zone-1);
+  --map-zone-2: var(--jx-map-zone-2);
+  --map-zone-3: var(--jx-map-zone-3);
+  --map-zone-4: var(--jx-map-zone-4);
+  --map-zone-5: var(--jx-map-zone-5);
+  --map-zone-6: var(--jx-map-zone-6);
+  --map-zone-7: var(--jx-map-zone-7);
+  --map-zone-8: var(--jx-map-zone-8);
+
+  // delivery state colors (RN-019) — vivid text + border over a NEUTRAL badge
+  // surface (--surface-sunken), so the same vars work in light and dark.
   --state-agendada: var(--jx-delivery-aceita);
   --state-criada: var(--jx-delivery-criada);
   --state-aceita: var(--jx-delivery-aceita);
@@ -67,12 +123,7 @@
   --state-cancelada: var(--jx-delivery-cancelada);
   --state-finalizada: var(--jx-delivery-finalizada);
 
-  // score level colors (Phase 8 — ADR-013, UI-SPEC §7.1). Derived MECHANICALLY
-  // from the `color.score_level.*` primitives (--jx-score-*), exactly like the
-  // --state-* above were derived from `color.delivery_state.*`. Used as VIVID
-  // text/glyph over a NEUTRAL chip surface (--surface-sunken). Score is exhibited
-  // only (no financial weight in M1 — ADR-013); the chip is never color-only
-  // (text label + mono value always present).
+  // score level colors (ADR-013) — exhibited only, chip never color-only.
   --score-probation: var(--jx-score-probation);
   --score-bronze: var(--jx-score-bronze);
   --score-prata: var(--jx-score-prata);
@@ -81,66 +132,84 @@
 }
 
 // ---------------------------------------------------------------------------
-// DARK overrides (shared mixin via placeholder to keep explicit + media in sync)
+// DARK overrides
 // ---------------------------------------------------------------------------
 @mixin jx-dark-theme {
-  // surfaces
-  --surface: var(--jx-neutral-900);
-  --surface-elevated: var(--jx-neutral-800);
-  --surface-sunken: var(--jx-neutral-700);
+  color-scheme: dark;
+
+  // surfaces — azul-noite profundo (v2 was brown-black)
+  --surface: var(--jx-neutral-950);
+  --surface-elevated: var(--jx-neutral-900);
+  --surface-sunken: var(--jx-neutral-800);
+  --surface-hover: var(--jx-neutral-800);
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+  --surface-page-glow:
+    radial-gradient(1200px 600px at 100% -10%, rgba(242, 107, 29, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(47, 98, 230, 0.08), transparent 60%);
 
   // text
   --text: var(--jx-neutral-50);
   --text-muted: var(--jx-neutral-300);
   --text-subtle: var(--jx-neutral-400);
+  --text-inverse: var(--jx-neutral-900);
 
   // borders
   --border: var(--jx-neutral-700);
   --border-strong: var(--jx-neutral-600);
 
-  // brand (luminance-boosted persimmon)
+  // brand (luminance-boosted tangerina; dark ink on top = 7.7:1)
   --brand: var(--jx-brand-400);
   --brand-hover: var(--jx-brand-300);
-  --brand-contrast: var(--jx-neutral-900);
-  --brand-wash: var(--jx-brand-900);
-  --brand-wash-border: var(--jx-brand-800);
+  --brand-vivid: var(--jx-brand-400);
+  --brand-contrast: var(--jx-neutral-950);
+  --brand-wash: rgba(242, 107, 29, 0.14);
+  --brand-wash-border: rgba(242, 107, 29, 0.32);
+  --brand-gradient: linear-gradient(135deg, var(--jx-brand-400) 0%, var(--jx-brand-500) 100%);
+  --accent-wash: rgba(255, 200, 61, 0.14);
+  --accent-ink: var(--jx-highlight);
+  --on-color: var(--jx-neutral-950);
+  --hero-gradient: linear-gradient(
+    150deg,
+    var(--jx-neutral-950) 0%,
+    var(--jx-neutral-900) 55%,
+    var(--jx-brand-800) 130%
+  );
 
-  // semantic — vivid text/border over a single dark elevated surface.
-  // The light pastel _bg hexes do not work in dark, so _bg maps to the dark
-  // elevated surface; the colored text/border carries the meaning (§1.3 notes).
-  --success: var(--jx-success);
-  --success-bg: var(--jx-neutral-800);
-  --warning: var(--jx-warning);
-  --warning-bg: var(--jx-neutral-800);
-  --error: var(--jx-error);
-  --error-bg: var(--jx-neutral-800);
-  --info: var(--jx-info);
-  --info-bg: var(--jx-neutral-800);
+  // semantic — luminance-lifted hues (semantic_dark) over tinted dark washes
+  --success: var(--jx-dark-success);
+  --success-bg: rgba(52, 211, 153, 0.12);
+  --warning: var(--jx-dark-warning);
+  --warning-bg: rgba(251, 191, 36, 0.12);
+  --error: var(--jx-dark-error);
+  --error-bg: rgba(255, 122, 127, 0.12);
+  --info: var(--jx-dark-info);
+  --info-bg: rgba(125, 162, 255, 0.12);
 
-  // shadows + focus unchanged (warm preserved)
-  --shadow-sm: var(--jx-shadow-sm);
-  --shadow-md: var(--jx-shadow-md);
-  --shadow-lg: var(--jx-shadow-lg);
-  --focus-ring: var(--jx-shadow-focus);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 20px -6px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.65);
 
-  // delivery state colors (Phase 7). Most state hues read AA over the dark badge
-  // surface unchanged; the two MUTED browns (criada/cancelada) are luminance-
-  // lifted to lighter neutrals so the badge text stays AA in dark (the vivid
-  // hues already pass — the badge surface is --surface-elevated in dark).
-  --state-agendada: var(--jx-delivery-aceita);
+  --nav-bg: linear-gradient(180deg, var(--jx-neutral-950) 0%, var(--jx-neutral-950) 100%);
+  --topbar-bg: rgba(10, 14, 28, 0.82);
+
+  // maps — night style
+  --map-zone: var(--jx-brand-400);
+  --map-route: var(--jx-neutral-100);
+  --map-pin: var(--jx-brand-400);
+  --map-pin-courier: var(--jx-neutral-50);
+  --map-pin-ring: var(--jx-brand-400);
+  --map-tiles-filter: invert(1) hue-rotate(200deg) brightness(0.9) contrast(0.9) saturate(0.55);
+
+  // delivery state colors — muted greys lifted; vivid ones use dark variants
+  --state-agendada: var(--jx-dark-info);
   --state-criada: var(--jx-neutral-300);
-  --state-aceita: var(--jx-delivery-aceita);
-  --state-coletada: var(--jx-delivery-coletada);
-  --state-entregue: var(--jx-delivery-entregue);
-  --state-recusada: var(--jx-delivery-recusada-no-destino);
+  --state-aceita: var(--jx-dark-info);
+  --state-coletada: var(--jx-dark-warning);
+  --state-entregue: var(--jx-dark-success);
+  --state-recusada: var(--jx-brand-400);
   --state-cancelada: var(--jx-neutral-400);
-  --state-finalizada: var(--jx-delivery-finalizada);
+  --state-finalizada: var(--jx-dark-success);
 
-  // score level colors (Phase 8 — DEC-001 dark). The two MUTED neutrals
-  // (prata #7E7B73 / probation #9D8E7A) are luminance-lifted to lighter neutrals
-  // so the chip text stays AA over the dark chip surface (--surface-sunken). The
-  // vivid hues (bronze/ouro/diamante) already read AA in dark unchanged — same
-  // treatment as --state-criada/--state-cancelada above.
   --score-probation: var(--jx-neutral-400);
   --score-bronze: var(--jx-score-bronze);
   --score-prata: var(--jx-neutral-300);
@@ -158,4 +227,50 @@
   :root:not([data-theme='light']):not([data-theme='dark']) {
     @include jx-dark-theme;
   }
+}
+
+// ---------------------------------------------------------------------------
+// LEGACY ALIASES — variables that ~40 screens reference but v2 never defined
+// (they silently fell back to hardcoded light hex, breaking dark mode). Mapping
+// them here makes those screens theme-aware without touching each one.
+// Declared on :root but resolved lazily, so they follow the active theme.
+// ---------------------------------------------------------------------------
+:root {
+  --bg: var(--surface);
+  --bg-card: var(--surface-elevated);
+  --bg-hover: var(--surface-hover);
+  --bg-subtle: var(--surface-sunken);
+  --bg-muted: var(--surface-sunken);
+  --surface-base: var(--surface);
+  --text-primary: var(--text);
+  --text-base: var(--text);
+  --border-subtle: var(--border);
+  --brand-primary: var(--brand);
+  --primary: var(--brand);
+  --color-brand: var(--brand);
+  --color-error: var(--error);
+  --success-wash: var(--success-bg);
+  --warning-wash: var(--warning-bg);
+  --warning-text: var(--warning);
+  --error-wash: var(--error-bg);
+  --info-wash: var(--info-bg);
+
+  --jx-font-serif: var(--jx-font-serif-accent);
+  --jx-weight-normal: var(--jx-weight-regular);
+  --jx-motion-easing: var(--jx-motion-easing-out);
+
+  --jx-color-brand-50: var(--brand-wash);
+  --jx-color-brand-100: var(--brand-wash-border);
+  --jx-color-brand-500: var(--brand);
+  --jx-color-brand-600: var(--brand-hover);
+  --jx-color-brand-700: var(--brand-hover);
+  --jx-color-surface: var(--surface-elevated);
+  --jx-color-success: var(--success);
+  --jx-color-semantic-success: var(--success);
+  --jx-color-error: var(--error);
+  --jx-color-neutral-200: var(--border);
+  --jx-color-neutral-500: var(--text-muted);
+  --jx-color-neutral-600: var(--text-muted);
+  --jx-color-neutral-800: var(--text);
+  --jx-color-neutral-900: var(--text);
 }

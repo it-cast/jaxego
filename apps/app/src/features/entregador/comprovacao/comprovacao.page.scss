@@ -8,7 +8,7 @@
   margin: 0 auto;
   padding: 0 var(--jx-space-4) var(--jx-space-5);
   min-height: 100dvh;
-  background: #fff;
+  background: var(--surface-elevated);
   color: var(--text);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .jx-proof-page__ref-msg--err {
-  color: var(--error, #d32f2f);
+  color: var(--error);
 }
 
 .jx-proof-page__spinner {

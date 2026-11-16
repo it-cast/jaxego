@@ -28,6 +28,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [{ "glob": "**/*", "input": "public" }],
             "styles": [
+              "../../node_modules/leaflet/dist/leaflet.css",
               "../../node_modules/@fontsource/inter-tight/400.css",
               "../../node_modules/@fontsource/inter-tight/500.css",
               "../../node_modules/@fontsource/inter-tight/600.css",

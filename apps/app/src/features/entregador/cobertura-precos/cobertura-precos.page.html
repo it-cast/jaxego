@@ -19,6 +19,16 @@
           Ative as zonas que você atende. Zonas inativas não recebem ofertas.
         </p>
 
+        @if (overviewZones().length) {
+          <section class="jx-zonas__overview" aria-label="Mapa das suas zonas">
+            <jx-zona-map [zones]="overviewZones()" ariaLabel="Mapa das suas zonas de cobertura" />
+            <div class="jx-zonas__overview-legend" aria-hidden="true">
+              <span><i class="jx-zonas__swatch jx-zonas__swatch--on"></i>Atendo</span>
+              <span><i class="jx-zonas__swatch"></i>Não atendo</span>
+            </div>
+          </section>
+        }
+
         <ul class="jx-zonas__list" role="list">
           @for (z of zones(); track z.zona_id) {
             <li class="jx-zonas__item" [class.jx-zonas__item--inactive]="!z.ativo">

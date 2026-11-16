@@ -24,12 +24,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { AdminZonasService, Zona } from './zonas.service';
 import { AreaMapComponent, AreaMapDraft } from '../../admin-plataforma/area-map.component';
+import { zoneColor } from '@jaxego/core/map/map-theme';
 
 type ViewMode = 'list' | 'mass-add';
 
-/** Cores cicladas pros rascunhos de zona no modo de adicionar em massa — precisam
- * ser visualmente distintas entre si e da cor cinza das zonas existentes (#9aa0a6). */
-const DRAFT_COLORS = ['#e8722a', '#2563eb', '#16a34a', '#c026d3', '#dc2626', '#0891b2', '#ca8a04', '#7c3aed'];
+/** Cores cicladas pros rascunhos de zona no modo de adicionar em massa — vêm da
+ * paleta categórica de mapa dos tokens (`--map-zone-1..8`, redesign v3), distintas
+ * entre si e do cinza das zonas de referência. */
 let draftSeq = 0;
 
 interface ZoneDraftRow extends AreaMapDraft {
@@ -48,7 +49,7 @@ function newDraftRow(): ZoneDraftRow {
     boundary: null,
     originalName: '',
     originalBoundary: null,
-    color: DRAFT_COLORS[(draftSeq - 1) % DRAFT_COLORS.length],
+    color: zoneColor(draftSeq - 1),
   };
 }
 
@@ -61,7 +62,7 @@ function rowFromExisting(z: Zona): ZoneDraftRow {
     boundary: z.boundary,
     originalName: z.name,
     originalBoundary: z.boundary,
-    color: DRAFT_COLORS[(draftSeq - 1) % DRAFT_COLORS.length],
+    color: zoneColor(draftSeq - 1),
   };
 }
 
@@ -177,6 +178,11 @@ function rowChanged(d: ZoneDraftRow): boolean {
       }
 
       @if (mode() === 'list') {
+        @if (overview().length) {
+          <section class="jx-zonas__overview" aria-label="Mapa de cobertura da área">
+            <jx-area-map [readonly]="true" [drafts]="overview()" />
+          </section>
+        }
         <div class="jx-zonas__search">
           <input
             class="jx-zonas__input"
@@ -244,13 +250,14 @@ function rowChanged(d: ZoneDraftRow): boolean {
   styles: [`
     .jx-zonas { display: flex; flex-direction: column; gap: var(--jx-space-4); }
     .jx-zonas__header { display: flex; align-items: center; justify-content: space-between; }
+    .jx-zonas__overview { --jx-area-map-height: clamp(260px, 40vh, 420px); margin-bottom: var(--jx-space-4); }
     .jx-zonas__title { margin: 0; font-family: var(--jx-font-display); font-size: var(--jx-text-2xl); font-weight: var(--jx-weight-bold); color: var(--text); }
-    .jx-zonas__cta { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 0; border-radius: var(--jx-radius-lg); background: var(--brand); color: var(--brand-contrast, #fff); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
+    .jx-zonas__cta { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 0; border-radius: var(--jx-radius-lg); background: var(--brand); color: var(--brand-contrast); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
     .jx-zonas__cta:disabled { opacity: 0.6; cursor: default; }
     .jx-zonas__btn-secondary { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 1px solid var(--border); border-radius: var(--jx-radius-lg); background: transparent; color: var(--text); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; align-self: flex-start; }
     .jx-zonas__msg { padding: var(--jx-space-3) var(--jx-space-4); border-radius: var(--jx-radius-lg); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); }
     .jx-zonas__msg--ok { background: var(--success-wash, var(--brand-wash)); color: var(--success, var(--brand)); }
-    .jx-zonas__msg--err { background: var(--error-wash, hsl(0 70% 95%)); color: var(--error); }
+    .jx-zonas__msg--err { background: var(--error-wash); color: var(--error); }
     .jx-zonas__form-card { background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--jx-radius-xl); padding: var(--jx-space-5); display: flex; flex-direction: column; gap: var(--jx-space-4); }
     .jx-zonas__form-title { margin: 0; font-family: var(--jx-font-display); font-size: var(--jx-text-lg); font-weight: var(--jx-weight-bold); color: var(--text); }
     .jx-zonas__form { display: flex; flex-direction: column; gap: var(--jx-space-3); }
@@ -263,7 +270,7 @@ function rowChanged(d: ZoneDraftRow): boolean {
     .jx-zonas__form-actions { display: flex; gap: var(--jx-space-2); }
     .jx-zonas__num { font-size: var(--jx-text-sm); color: var(--text-muted); font-variant-numeric: tabular-nums; }
     .jx-zonas__badge { font-size: var(--jx-text-xs); font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-    .jx-zonas__badge--yes { background: var(--brand-wash, hsl(24 80% 95%)); color: var(--brand, #e8722a); }
+    .jx-zonas__badge--yes { background: var(--brand-wash); color: var(--brand); }
     .jx-zonas__badge--no { background: var(--surface-sunken); color: var(--text-muted); }
     .jx-zonas__actions { display: flex; gap: var(--jx-space-1); }
     .jx-zonas__action-btn { min-width: 36px; min-height: 36px; display: grid; place-items: center; border: 0; border-radius: var(--jx-radius-md); background: var(--surface-sunken); color: var(--text-muted); cursor: pointer; font-size: 14px; }
@@ -279,12 +286,12 @@ function rowChanged(d: ZoneDraftRow): boolean {
 
     .jx-zonas__draft-list { display: flex; flex-direction: column; gap: var(--jx-space-2); }
     .jx-zonas__draft-row { display: flex; align-items: center; gap: var(--jx-space-2); padding: var(--jx-space-2); border: 1px solid var(--border); border-radius: var(--jx-radius-md); }
-    .jx-zonas__draft-row--active { border-color: var(--brand); background: var(--brand-wash, hsl(24 80% 97%)); }
+    .jx-zonas__draft-row--active { border-color: var(--brand); background: var(--brand-wash); }
     .jx-zonas__draft-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
     .jx-zonas__draft-input { flex: 1; min-height: 40px; }
     .jx-zonas__draft-draw-btn { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 var(--jx-space-3); border: 1px solid var(--border-strong, var(--border)); border-radius: var(--jx-radius-md); background: var(--surface); color: var(--text); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; white-space: nowrap; }
-    .jx-zonas__draft-draw-btn--active { background: var(--brand); border-color: var(--brand); color: var(--brand-contrast, #fff); }
-    .jx-zonas__draft-badge { font-size: var(--jx-text-xs); font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--brand-wash, hsl(24 80% 95%)); color: var(--brand, #e8722a); white-space: nowrap; }
+    .jx-zonas__draft-draw-btn--active { background: var(--brand); border-color: var(--brand); color: var(--brand-contrast); }
+    .jx-zonas__draft-badge { font-size: var(--jx-text-xs); font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--brand-wash); color: var(--brand); white-space: nowrap; }
     .jx-zonas__draft-badge--existing { background: var(--surface-sunken); color: var(--text-muted); }
     .jx-zonas__draft-badge--changed { background: hsl(45 90% 92%); color: hsl(35 80% 35%); }
   `],
@@ -310,6 +317,8 @@ export class ZonasPage implements OnInit {
   private allRows: Zona[] = [];
   protected readonly filteredRows = signal<Zona[]>([]);
   protected readonly tableState = signal<DataTableState>('loading');
+  /** Visão geral de cobertura (redesign v3 §7): zonas com polígono, cor categórica dos tokens. */
+  protected readonly overview = signal<AreaMapDraft[]>([]);
   protected readonly mode = signal<ViewMode>('list');
   protected readonly msg = signal<{ text: string; tone: 'ok' | 'err' } | null>(null);
   protected readonly saving = signal(false);
@@ -338,6 +347,11 @@ export class ZonasPage implements OnInit {
     try {
       const list = await this.service.list();
       this.allRows = list;
+      this.overview.set(
+        list
+          .filter((z) => z.boundary)
+          .map((z, i) => ({ id: `zona-${z.id}`, name: z.name, boundary: z.boundary, color: zoneColor(i) }))
+      );
       this.applyFilter();
       this.tableState.set(list.length === 0 ? 'empty' : 'ready');
     } catch {

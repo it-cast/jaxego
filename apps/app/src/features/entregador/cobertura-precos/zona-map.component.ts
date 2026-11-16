@@ -9,96 +9,129 @@ import {
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
+import { loadLeaflet } from '@jaxego/core/map/leaflet-loader';
+import { MAP_DEFAULT_CENTER } from '@jaxego/core/map/map-tiles';
+import {
+  activeZoneStyle,
+  brandTileLayer,
+  onThemeChange,
+  readMapPalette,
+  referenceZoneStyle,
+} from '@jaxego/core/map/map-theme';
 
-declare const L: any;
+/** Zona para a visão geral (várias zonas no mesmo mapa). */
+export interface ZonaMapItem {
+  name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  boundary: any;
+  active: boolean;
+}
 
+/**
+ * Mapa da zona de cobertura do entregador (somente leitura). Redesign v3
+ * (REDESIGN-v3.md §7): polígono tangerina com preenchimento suave lido dos
+ * tokens, tiles temáticos, controles grandes para toque; repinta ao trocar tema.
+ * Com `[zones]`, desenha a visão geral: ativas em tangerina, inativas tracejadas.
+ */
 @Component({
   selector: 'jx-zona-map',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div #mapEl class="jx-zona-map"></div>`,
+  template: `<div #mapEl class="jx-zona-map" role="img" [attr.aria-label]="ariaLabel"></div>`,
   styles: [`
+    :host { display: block; height: 100%; }
     .jx-zona-map {
       width: 100%;
       height: 100%;
-      min-height: 300px;
+      min-height: var(--jx-zona-map-min, 300px);
+    }
+    :host ::ng-deep .leaflet-bar a {
+      width: 44px !important;
+      height: 44px !important;
+      line-height: 44px !important;
     }
   `],
 })
 export class ZonaMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('mapEl') mapEl!: ElementRef<HTMLDivElement>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   @Input() boundary: any = null;
+  /** Visão geral: várias zonas (substitui `boundary` quando preenchido). */
+  @Input() zones: ZonaMapItem[] | null = null;
+  @Input() ariaLabel = 'Mapa da zona de cobertura';
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private L: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private map: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private layer: any = null;
   private loaded = false;
+  private destroyed = false;
+  private unwatchTheme: (() => void) | null = null;
 
   async ngAfterViewInit(): Promise<void> {
-    await this.loadLeaflet();
+    this.L = await loadLeaflet();
+    if (this.destroyed) return;
     this.initMap();
+    this.unwatchTheme = onThemeChange(() => this.drawBoundary(false));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['boundary'] && this.loaded && this.map) {
-      this.drawBoundary();
+    if ((changes['boundary'] || changes['zones']) && this.loaded && this.map) {
+      // overview keeps the user's viewport when only the active flags change
+      this.drawBoundary(!changes['zones'] || changes['zones'].firstChange);
     }
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    this.unwatchTheme?.();
     if (this.map) {
       this.map.remove();
       this.map = null;
     }
   }
 
-  private async loadLeaflet(): Promise<void> {
-    if ((window as any).L) return;
-    await this.loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-    await this.loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
-  }
-
   private initMap(): void {
-    const center = this.boundary?.coordinates?.[0]?.[0]
-      ? [this.boundary.coordinates[0][0][1], this.boundary.coordinates[0][0][0]]
-      : [-21.54, -42.05];
+    const L = this.L;
+    const first = this.boundary ?? this.zones?.find((z) => z.boundary)?.boundary;
+    const center = first?.coordinates?.[0]?.[0]
+      ? [first.coordinates[0][0][1], first.coordinates[0][0][0]]
+      : MAP_DEFAULT_CENTER;
 
     this.map = L.map(this.mapEl.nativeElement, { zoomControl: true }).setView(center, 13);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-      maxZoom: 19,
-    }).addTo(this.map);
+    this.map.zoomControl.setPosition('bottomright');
+    brandTileLayer(L).addTo(this.map);
 
     this.loaded = true;
-    this.drawBoundary();
+    this.drawBoundary(true);
   }
 
-  private drawBoundary(): void {
-    if (!this.boundary?.coordinates) return;
-    const coords = this.boundary.coordinates[0].map((c: number[]) => [c[1], c[0]]);
-    const polygon = L.polygon(coords, {
-      color: '#e8722a',
-      weight: 3,
-      fillOpacity: 0.15,
-    }).addTo(this.map);
-    this.map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
-  }
-
-  private loadScript(url: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = url;
-      s.onload = () => resolve();
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  }
-
-  private loadCss(url: string): Promise<void> {
-    return new Promise((resolve) => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = url;
-      link.onload = () => resolve();
-      document.head.appendChild(link);
-    });
+  private drawBoundary(fit: boolean): void {
+    if (!this.map) return;
+    const L = this.L;
+    const palette = readMapPalette();
+    const items: ZonaMapItem[] = this.zones?.length
+      ? this.zones
+      : this.boundary
+        ? [{ name: '', boundary: this.boundary, active: true }]
+        : [];
+    this.layer?.remove();
+    this.layer = L.featureGroup();
+    for (const z of items) {
+      if (!z.boundary?.coordinates) continue;
+      const coords = z.boundary.coordinates[0].map((c: number[]) => [c[1], c[0]]);
+      const poly = L.polygon(
+        coords,
+        z.active ? activeZoneStyle(palette.zone) : referenceZoneStyle(palette.zoneRef)
+      );
+      if (z.name) poly.bindTooltip(z.name, { direction: 'center', className: 'jx-map-tooltip' });
+      this.layer.addLayer(poly);
+    }
+    this.layer.addTo(this.map);
+    if (fit && this.layer.getLayers().length) {
+      this.map.fitBounds(this.layer.getBounds(), { padding: [40, 40] });
+    }
   }
 }

@@ -1,0 +1,285 @@
+// ============================================================================
+// Map visual kit — redesign v3 (REDESIGN-v3.md §7). Global because Leaflet
+// injects its DOM outside component encapsulation. Tokens only (Gate 2).
+// Applies to EVERY map: jx-live-map, jx-area-map, jx-zona-map, tracking.
+// ============================================================================
+
+// --- Tiles: one source, themed by CSS filter --------------------------------
+.leaflet-container {
+  font-family: var(--jx-font-body);
+  background: var(--surface-sunken);
+  outline: none;
+}
+
+.jx-map-tiles {
+  filter: var(--map-tiles-filter);
+  transition: filter var(--jx-motion-normal) var(--jx-motion-easing-out);
+}
+
+// --- Controls ---------------------------------------------------------------
+.leaflet-bar,
+.leaflet-touch .leaflet-bar {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--jx-radius-md) !important;
+  box-shadow: var(--shadow-md) !important;
+  overflow: hidden;
+  background-color: var(--surface-elevated);
+}
+
+.leaflet-bar a,
+.leaflet-touch .leaflet-bar a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  background-color: var(--surface-elevated) !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid var(--border) !important;
+  font-size: var(--jx-text-lg) !important;
+  font-weight: var(--jx-weight-semibold);
+  transition: background var(--jx-motion-fast);
+
+  &:last-child {
+    border-bottom: 0 !important;
+  }
+
+  &:hover {
+    background-color: var(--brand-wash) !important;
+    color: var(--brand) !important;
+  }
+
+  &.leaflet-disabled {
+    color: var(--text-subtle) !important;
+    background-color: var(--surface-sunken) !important;
+  }
+}
+
+.leaflet-control-attribution {
+  background: var(--topbar-bg) !important;
+  backdrop-filter: blur(6px);
+  color: var(--text-muted) !important;
+  font-size: var(--jx-text-2xs) !important;
+  border-radius: var(--jx-radius-sm) 0 0 0;
+  padding: 1px 8px !important;
+
+  a {
+    color: var(--text-muted) !important;
+  }
+}
+
+// --- Popups ------------------------------------------------------------------
+.leaflet-popup-content-wrapper {
+  background: var(--surface-elevated);
+  color: var(--text);
+  border-radius: var(--jx-radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+}
+
+.leaflet-popup-content {
+  margin: var(--jx-space-3) var(--jx-space-4);
+  font-size: var(--jx-text-sm);
+  line-height: 1.45;
+}
+
+.leaflet-popup-tip {
+  background: var(--surface-elevated);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-muted);
+}
+
+// --- leaflet-draw toolbar (zone editor) -------------------------------------
+.leaflet-draw-toolbar a {
+  background-color: var(--surface-elevated) !important;
+}
+
+.leaflet-draw-actions a {
+  background-color: var(--jx-neutral-800) !important;
+  color: var(--jx-neutral-0) !important;
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-xs) !important;
+  font-weight: var(--jx-weight-semibold);
+  border-color: var(--jx-neutral-700) !important;
+
+  &:hover {
+    background-color: var(--brand) !important;
+  }
+}
+
+.leaflet-draw-tooltip {
+  background: var(--jx-neutral-900) !important;
+  color: var(--jx-neutral-50) !important;
+  border: 0 !important;
+  border-radius: var(--jx-radius-sm) !important;
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-xs) !important;
+  box-shadow: var(--shadow-md);
+
+  &::before {
+    border-right-color: var(--jx-neutral-900) !important;
+  }
+}
+
+.leaflet-editing-icon {
+  border-radius: var(--jx-radius-full) !important;
+  border: 2px solid var(--map-zone) !important;
+  background: var(--surface-elevated) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+// sprite glyphs are dark — lift them in the dark theme
+:root[data-theme='dark'] .leaflet-draw-toolbar a {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: var(--jx-neutral-100) !important;
+}
+
+// --- Brand pin (divIcon from map-theme.ts) ----------------------------------
+.jx-pin-host {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.jx-pin {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 52px;
+  filter: drop-shadow(0 6px 8px rgba(10, 14, 28, 0.35));
+  animation: jx-pin-drop var(--jx-motion-slow) var(--jx-motion-spring) both;
+}
+
+.jx-pin__shape {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.jx-pin__body {
+  fill: var(--map-pin);
+  stroke: var(--jx-neutral-0);
+  stroke-width: 2.5;
+}
+
+.jx-pin__glyph {
+  color: var(--jx-neutral-0);
+}
+
+.jx-pin--courier .jx-pin__body {
+  fill: var(--map-pin-courier);
+}
+
+.jx-pin--courier .jx-pin__glyph {
+  color: var(--map-pin-ring);
+}
+
+.jx-pin--store .jx-pin__body {
+  fill: var(--info);
+}
+
+// pulsing halo at the pin tip — "está vivo"
+.jx-pin__pulse {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  border-radius: var(--jx-radius-full);
+  background: var(--map-pin-ring);
+  opacity: 0.45;
+  animation: jx-pin-pulse 1.8s var(--jx-motion-easing-out) infinite;
+}
+
+.jx-pin--destination .jx-pin__pulse {
+  animation-duration: 2.4s;
+}
+
+@keyframes jx-pin-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+@keyframes jx-pin-drop {
+  from {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// --- Overlay chips used on top of maps --------------------------------------
+.jx-map-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  padding: 6px 12px;
+  border-radius: var(--jx-radius-full);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+  white-space: nowrap;
+}
+
+.jx-map-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--jx-radius-full);
+  background: var(--map-pin);
+  box-shadow: 0 0 0 3px var(--brand-wash);
+}
+
+.jx-map-chip__dot--live {
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-bg);
+  animation: jx-live-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes jx-live-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-pin,
+  .jx-pin__pulse,
+  .jx-map-chip__dot--live {
+    animation: none;
+  }
+
+  .jx-pin__pulse {
+    display: none;
+  }
+}
+
+// Zone name tooltips (jx-area-map)
+.leaflet-tooltip.jx-map-tooltip {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--jx-radius-full);
+  background: var(--jx-neutral-900);
+  color: var(--jx-neutral-0);
+  font-family: var(--jx-font-body);
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+  box-shadow: var(--shadow-md);
+
+  &::before {
+    display: none;
+  }
+}

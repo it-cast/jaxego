@@ -111,7 +111,7 @@
 
 .jx-cad__progress-bar {
   height: 100%;
-  background: var(--primary, #f97316);
+  background: var(--primary);
   border-radius: 2px;
   transition: width 0.3s ease;
 }
@@ -217,8 +217,8 @@
   height: 28px;
   display: grid;
   place-items: center;
-  background: var(--error, #d32f2f);
-  color: #fff;
+  background: var(--error);
+  color: var(--on-color);
   border: none;
   border-radius: var(--jx-radius-full);
   font-size: 14px;
@@ -248,7 +248,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid var(--border);
-  border-top-color: var(--brand, #f97316);
+  border-top-color: var(--brand);
   border-radius: 50%;
   animation: jx-cad-spin 0.8s linear infinite;
 }

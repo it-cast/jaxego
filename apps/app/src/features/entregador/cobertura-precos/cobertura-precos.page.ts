@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { IonContent } from '@ionic/angular/standalone';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
@@ -6,7 +6,7 @@ import { faCircleExclamation, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { PageHeaderComponent, DotsLoaderComponent } from '@jaxego/shared/components';
 import { CoberturaPrecosService, ZonaItem } from './cobertura-precos.service';
-import { ZonaMapComponent } from './zona-map.component';
+import { ZonaMapComponent, type ZonaMapItem } from './zona-map.component';
 
 interface ZonaRow extends ZonaItem {
   editing: boolean;
@@ -39,6 +39,12 @@ export class CoberturaPrecosPage implements OnInit {
   protected readonly error = signal(false);
   protected readonly zones = signal<ZonaRow[]>([]);
   protected readonly mapZona = signal<ZonaRow | null>(null);
+  /** Visão geral no mapa (redesign v3 §7): ativas em tangerina, inativas tracejadas. */
+  protected readonly overviewZones = computed<ZonaMapItem[]>(() =>
+    this.zones()
+      .filter((z) => z.boundary)
+      .map((z) => ({ name: z.zona_nome, boundary: z.boundary, active: z.ativo }))
+  );
 
   async ngOnInit(): Promise<void> {
     await this.load();

@@ -100,21 +100,21 @@ import { CourierScore, EntregadorService, RatingItem } from '../entregador.servi
     }
     .jx-aval__summary-main { display: flex; align-items: baseline; gap: 4px; }
     .jx-aval__avg { font-size: 48px; font-weight: 800; color: var(--text); }
-    .jx-aval__avg-star { font-size: 28px; color: var(--brand, #e8722a); }
-    .jx-aval__count { font-size: 14px; color: var(--text-muted, #888); }
+    .jx-aval__avg-star { font-size: 28px; color: var(--brand); }
+    .jx-aval__count { font-size: 14px; color: var(--text-muted); }
     .jx-aval__filter { display: flex; }
-    .jx-aval__filter-label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted, #888); flex: 1; }
-    .jx-aval__select { min-height: 40px; padding: 0 12px; border: 1px solid var(--border, #ddd); border-radius: 12px; font-size: 14px; color: var(--text); background: #fff; }
-    .jx-aval__empty-text { text-align: center; color: var(--text-muted, #888); font-size: 14px; margin: 0; }
+    .jx-aval__filter-label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-muted); flex: 1; }
+    .jx-aval__select { min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; color: var(--text); background: var(--surface-elevated); }
+    .jx-aval__empty-text { text-align: center; color: var(--text-muted); font-size: 14px; margin: 0; }
     .jx-aval__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-    .jx-aval__item { padding: var(--jx-space-3) 0; border-bottom: 1px solid var(--border, #eee); }
+    .jx-aval__item { padding: var(--jx-space-3) 0; border-bottom: 1px solid var(--border); }
     .jx-aval__merchant { font-size: 14px; font-weight: 600; color: var(--text); display: block; margin-bottom: 2px; }
     .jx-aval__item-head { display: flex; align-items: center; justify-content: space-between; }
     .jx-aval__item-stars { display: flex; gap: 2px; font-size: 16px; }
-    .jx-aval__star-on { color: var(--brand, #e8722a); }
-    .jx-aval__star-off { color: var(--border, #ddd); }
-    .jx-aval__item-date { font-size: 12px; color: var(--text-muted, #888); }
-    .jx-aval__item-comment { margin: 4px 0 0; font-size: 14px; color: var(--text-muted, #888); font-style: italic; }
+    .jx-aval__star-on { color: var(--brand); }
+    .jx-aval__star-off { color: var(--border); }
+    .jx-aval__item-date { font-size: 12px; color: var(--text-muted); }
+    .jx-aval__item-comment { margin: 4px 0 0; font-size: 14px; color: var(--text-muted); font-style: italic; }
   `],
 })
 export class AvaliacoesPage implements OnInit {

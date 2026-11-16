@@ -121,26 +121,26 @@ import { CourierProfile, EntregadorService } from '../entregador.service';
   styles: [`
     .jx-edit { padding: var(--jx-space-4); display: flex; flex-direction: column; gap: var(--jx-space-3); }
     .jx-edit__field { display: flex; flex-direction: column; gap: 4px; }
-    .jx-edit__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted, #888); }
-    .jx-edit__input { min-height: 44px; padding: 0 12px; border: 1px solid var(--border, #ddd); border-radius: 12px; font-size: 15px; color: var(--text); background: #fff; }
-    .jx-edit__input:focus { outline: none; border-color: var(--brand, #e8722a); }
+    .jx-edit__label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+    .jx-edit__input { min-height: 44px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 15px; color: var(--text); background: var(--surface-elevated); }
+    .jx-edit__input:focus { outline: none; border-color: var(--brand); }
     .jx-edit__input-wrap { position: relative; display: flex; align-items: center; }
     .jx-edit__input--full { width: 100%; padding-right: 44px; }
-    .jx-edit__eye { position: absolute; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--text-muted, #888); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .jx-edit__input:disabled { background: var(--bg-muted, #f5f5f5); color: var(--text-muted, #888); opacity: 1; -webkit-text-fill-color: var(--text-muted, #888); }
-    .jx-edit__btn { min-height: 50px; border: 0; border-radius: 999px; background: var(--brand, #e8722a); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .jx-edit__eye { position: absolute; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--text-muted); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .jx-edit__input:disabled { background: var(--bg-muted); color: var(--text-muted); opacity: 1; -webkit-text-fill-color: var(--text-muted); }
+    .jx-edit__btn { min-height: 50px; border: 0; border-radius: 999px; background: var(--brand); color: var(--brand-contrast); font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
     .jx-edit__btn:disabled { opacity: 0.5; }
-    .jx-edit__pwd-btn { min-height: 44px; border: 1px solid var(--border, #ddd); border-radius: 12px; background: #fff; color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .jx-edit__pwd-btn:active { background: var(--bg-hover, #f5f5f5); }
+    .jx-edit__pwd-btn { min-height: 44px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-elevated); color: var(--text); font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .jx-edit__pwd-btn:active { background: var(--bg-hover); }
     .jx-edit__msg { margin: 0; font-size: 14px; font-weight: 600; }
-    .jx-edit__msg--ok { color: var(--success, #2e7d32); }
-    .jx-edit__msg--err { color: var(--error, #d32f2f); }
+    .jx-edit__msg--ok { color: var(--success); }
+    .jx-edit__msg--err { color: var(--error); }
 
     .jx-modal-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; justify-content: center; animation: fadeIn .2s ease; }
-    .jx-modal { width: 100%; max-width: 500px; background: #fff; border-radius: 20px 20px 0 0; padding: var(--jx-space-4); display: flex; flex-direction: column; gap: var(--jx-space-3); animation: slideUp .25s ease; }
+    .jx-modal { width: 100%; max-width: 500px; background: var(--surface-elevated); border-radius: 20px 20px 0 0; padding: var(--jx-space-4); display: flex; flex-direction: column; gap: var(--jx-space-3); animation: slideUp .25s ease; }
     .jx-modal__header { display: flex; align-items: center; justify-content: space-between; }
     .jx-modal__title { margin: 0; font-size: 18px; font-weight: 700; color: var(--text); }
-    .jx-modal__close { width: 36px; height: 36px; border: 0; background: transparent; color: var(--text-muted, #888); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .jx-modal__close { width: 36px; height: 36px; border: 0; background: transparent; color: var(--text-muted); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .jx-modal__body { display: flex; flex-direction: column; gap: var(--jx-space-3); }
 
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

@@ -47,7 +47,7 @@ import { EmptyStateComponent, WarnBannerComponent } from '@jaxego/shared/state';
         line-height: 48px;
         padding: 0 var(--jx-space-5);
         background: var(--brand);
-        color: var(--brand-contrast, #fff);
+        color: var(--brand-contrast);
         border-radius: var(--jx-radius-md);
         font-weight: var(--jx-weight-semibold);
         text-decoration: none;

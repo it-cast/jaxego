@@ -1,43 +1,118 @@
-// Public tracking page (tela 26) — mobile-first, max-width ~480px. Tokens only (Gate 2).
+// Public tracking page (tela 26) — redesign v3 §6.3/§7. Mobile-first (≤ 560px
+// column), dark hero header + cards that overlap it, map as the page hero.
+// Tokens only (Gate 2).
+
+:host {
+  display: block;
+}
 
 .jx-track-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--jx-space-4);
-  max-width: 480px;
-  margin: 0 auto;
-  padding: var(--jx-space-5) var(--jx-space-4);
   min-height: 100dvh;
-  background: var(--surface);
   color: var(--text);
 }
 
-.jx-track-page__brand {
-  display: flex;
-  justify-content: center;
+.jx-track-page__hero {
+  padding: var(--jx-space-6) var(--jx-space-4) var(--jx-space-9);
+  background: var(--hero-gradient);
+  color: var(--jx-neutral-0);
+  text-align: center;
+  border-radius: 0 0 var(--jx-radius-2xl) var(--jx-radius-2xl);
 }
 
-// Fraunces italic "rapidinho." — the one expressive moment of the header (ui-ux-pro-max).
+.jx-track-page__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+}
+
+.jx-track-page__logo {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--jx-radius-md);
+  background: var(--brand-gradient);
+  color: var(--jx-neutral-0);
+  font-weight: var(--jx-weight-extrabold);
+  box-shadow: var(--shadow-glow);
+}
+
+.jx-track-page__name {
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-extrabold);
+  letter-spacing: -0.02em;
+}
+
+// Fraunces italic "rapidinho." — the one expressive moment of the header.
 .jx-track-page__wordmark {
-  font-family: var(--jx-font-serif);
+  font-family: var(--jx-font-serif-accent);
   font-style: italic;
-  font-size: var(--jx-text-2xl);
-  font-weight: var(--jx-weight-semibold);
-  color: var(--brand);
+  font-size: var(--jx-text-lg);
+  font-weight: var(--jx-weight-medium);
+  color: var(--jx-brand-300);
+}
+
+.jx-track-page__lead {
+  margin: var(--jx-space-2) 0 0;
+  font-size: var(--jx-text-sm);
+  color: var(--jx-neutral-200);
+}
+
+.jx-track-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  max-width: 560px;
+  margin: calc(var(--jx-space-8) * -1) auto 0;
+  padding: 0 var(--jx-space-4) var(--jx-space-6);
+}
+
+.jx-track-page__card {
+  padding: var(--jx-space-4);
+  border-radius: var(--jx-radius-xl);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: jx-track-in var(--jx-motion-slow) var(--jx-motion-easing-out) backwards;
+}
+
+.jx-track-page__card--status {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.jx-track-page__map {
+  --jx-map-height: clamp(260px, 42vh, 420px);
+  border-radius: var(--jx-radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: jx-track-in var(--jx-motion-slow) var(--jx-motion-easing-out) 60ms backwards;
 }
 
 .jx-track-page__footer {
-  margin-top: auto;
-  padding-top: var(--jx-space-4);
-  font-family: var(--jx-font-body);
+  padding-top: var(--jx-space-2);
   font-size: var(--jx-text-2xs);
-  color: var(--text-subtle);
+  color: var(--text-muted);
   text-align: center;
 }
 
 .jx-track-page__loading {
-  font-family: var(--jx-font-body);
+  margin: 0;
   font-size: var(--jx-text-sm);
   color: var(--text-muted);
   text-align: center;
+}
+
+@keyframes jx-track-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-track-page__card,
+  .jx-track-page__map {
+    animation: none;
+  }
 }

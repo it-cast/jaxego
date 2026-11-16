@@ -78,25 +78,25 @@ import { CourierCadastroService } from '../cadastro/cadastro.service';
   styles: [`
     .jx-docs { padding: var(--jx-space-4); }
     .jx-docs__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-    .jx-docs__item { padding: var(--jx-space-3) 0; border-bottom: 1px solid var(--border, #eee); }
+    .jx-docs__item { padding: var(--jx-space-3) 0; border-bottom: 1px solid var(--border); }
     .jx-docs__row { display: flex; align-items: center; justify-content: space-between; }
     .jx-docs__kind { font-size: 15px; color: var(--text); }
     .jx-docs__right { display: flex; align-items: center; gap: 8px; }
-    .jx-docs__status { font-size: 11px; font-weight: 600; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--surface-sunken, #f0f0f0); color: var(--text-muted, #888); }
+    .jx-docs__status { font-size: 11px; font-weight: 600; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--surface-sunken); color: var(--text-muted); }
     .jx-docs__status--ok { background: hsl(120 40% 93%); color: hsl(120 50% 35%); }
     .jx-docs__status--err { background: hsl(0 70% 95%); color: hsl(0 60% 45%); }
     .jx-docs__status--pending { background: hsl(40 80% 92%); color: hsl(40 80% 35%); }
-    .jx-docs__resend { width: 32px; height: 32px; display: grid; place-items: center; background: var(--brand, #e8722a); color: #fff; border: 0; border-radius: 50%; cursor: pointer; font-size: 14px; }
-    .jx-docs__reason { margin: 4px 0 0; font-size: 12px; color: var(--error, #d32f2f); }
+    .jx-docs__resend { width: 32px; height: 32px; display: grid; place-items: center; background: var(--brand); color: var(--brand-contrast); border: 0; border-radius: 50%; cursor: pointer; font-size: 14px; }
+    .jx-docs__reason { margin: 4px 0 0; font-size: 12px; color: var(--error); }
     .jx-docs__backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.5); }
-    .jx-docs__modal { position: fixed; bottom: 0; left: 0; right: 0; z-index: 70; background: #fff; border-radius: 20px 20px 0 0; padding: var(--jx-space-4); display: flex; flex-direction: column; gap: var(--jx-space-3); max-height: 85vh; overflow-y: auto; animation: jx-slide-up 0.3s ease; }
+    .jx-docs__modal { position: fixed; bottom: 0; left: 0; right: 0; z-index: 70; background: var(--surface-elevated); border-radius: 20px 20px 0 0; padding: var(--jx-space-4); display: flex; flex-direction: column; gap: var(--jx-space-3); max-height: 85vh; overflow-y: auto; animation: jx-slide-up 0.3s ease; }
     @keyframes jx-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .jx-docs__modal-title { margin: 0; font-size: 18px; font-weight: 700; text-align: center; }
-    .jx-docs__err { margin: 0; font-size: 12px; color: var(--error, #d32f2f); }
+    .jx-docs__err { margin: 0; font-size: 12px; color: var(--error); }
     .jx-docs__modal-actions { display: flex; gap: 8px; }
     .jx-docs__btn-cancel, .jx-docs__btn-send { flex: 1; min-height: 44px; border-radius: 12px; font-weight: 600; cursor: pointer; border: 0; }
-    .jx-docs__btn-cancel { background: var(--surface-sunken, #f0f0f0); color: var(--text); }
-    .jx-docs__btn-send { background: var(--brand, #e8722a); color: #fff; }
+    .jx-docs__btn-cancel { background: var(--surface-sunken); color: var(--text); }
+    .jx-docs__btn-send { background: var(--brand); color: var(--brand-contrast); }
     .jx-docs__btn-send:disabled, .jx-docs__btn-cancel:disabled { opacity: 0.5; }
   `],
 })

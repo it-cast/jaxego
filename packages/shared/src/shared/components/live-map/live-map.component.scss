@@ -1,35 +1,98 @@
-// jx-live-map — reserved-height host + skeleton (no CLS). Dark mode via raster filter.
+// jx-live-map — reserved-height host + skeleton (no CLS). Redesign v3 §7.
+// Tile theming + pins + chip styles live in styles/_map.scss (Leaflet DOM is global).
 // Tokens only — no hex (Gate 2).
+
+:host {
+  display: block;
+}
 
 .jx-live-map {
   position: relative;
   width: 100%;
-  height: var(--jx-map-height, 240px); // reserved height — skeleton fills it so the map mount has no CLS
-  border-radius: var(--jx-radius-lg);
+  height: var(--jx-map-height, 260px); // reserved height — skeleton fills it so the map mount has no CLS
+  border-radius: var(--jx-map-radius, var(--jx-radius-xl));
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--surface-sunken);
-
-  // Dark mode (DEC-001): invert+hue the raster tiles so OSM reads in the dark theme.
-  &--dark .jx-live-map__host {
-    filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
-  }
+  box-shadow: var(--shadow-sm);
+  isolation: isolate;
 }
 
 .jx-live-map__host {
   position: absolute;
   inset: 0;
+  z-index: 0;
 }
 
+// Skeleton: soft "street grid" + a ghost pin, shimmering until tiles arrive
 .jx-live-map__skeleton {
   position: absolute;
   inset: 0;
-  background: var(--surface-sunken);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(90deg, transparent 0 48%, var(--border) 48% 52%, transparent 52%) 0 0 / 120px 120px,
+    linear-gradient(0deg, transparent 0 48%, var(--border) 48% 52%, transparent 52%) 0 0 / 120px 120px,
+    var(--surface-sunken);
+  animation: jx-map-shimmer 1.4s ease-in-out infinite;
 }
 
-// MapLibre injects its own canvas/controls; keep the attribution legible in both
-// themes (it sits above the filtered tiles, unaffected by the host filter).
-:host ::ng-deep .maplibregl-ctrl-attrib {
-  font-family: var(--jx-font-body);
-  font-size: var(--jx-text-2xs);
+.jx-live-map__skeleton-pin {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--jx-radius-full) var(--jx-radius-full) var(--jx-radius-full) 0;
+  transform: rotate(-45deg);
+  background: var(--brand-wash-border);
+}
+
+@keyframes jx-map-shimmer {
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.jx-live-map__chip {
+  position: absolute;
+  top: var(--jx-space-3);
+  left: var(--jx-space-3);
+  z-index: 500; // above Leaflet panes (400)
+  max-width: calc(100% - 80px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jx-live-map__recenter {
+  position: absolute;
+  top: var(--jx-space-3);
+  right: var(--jx-space-3);
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-full);
+  background: var(--surface-elevated);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  transition:
+    transform var(--jx-motion-fast) var(--jx-motion-easing-out),
+    color var(--jx-motion-fast);
+
+  &:hover {
+    color: var(--brand);
+    transform: scale(1.06);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-live-map__skeleton {
+    animation: none;
+  }
 }

@@ -1,0 +1,453 @@
+// jx-app-shell — redesign v3 §6.1. Tokens only (Gate 2).
+// Breakpoint: drawer below 960px, fixed sidebar at/above.
+
+$bp: 960px;
+$w-open: 264px;
+$w-collapsed: 80px;
+$topbar-h: 60px;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.jx-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+// ---------------------------------------------------------------------------
+// Mobile topbar
+// ---------------------------------------------------------------------------
+.jx-shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  height: $topbar-h;
+  padding: 0 var(--jx-space-3);
+  background: var(--topbar-bg);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--border);
+
+  @media (min-width: $bp) {
+    display: none;
+  }
+}
+
+.jx-shell__topbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  font-weight: var(--jx-weight-extrabold);
+  font-size: var(--jx-text-lg);
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.jx-shell__topbar-tag {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: var(--jx-radius-full);
+  background: var(--brand-wash);
+  color: var(--brand);
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.jx-shell__icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: inherit;
+  font-size: var(--jx-text-lg);
+  transition: background var(--jx-motion-fast);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Logo mark
+// ---------------------------------------------------------------------------
+.jx-shell__logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--jx-radius-md);
+  background: var(--brand-gradient);
+  color: var(--jx-neutral-0);
+  font-weight: var(--jx-weight-extrabold);
+  font-size: var(--jx-text-xl);
+  letter-spacing: -0.04em;
+  box-shadow: var(--shadow-glow);
+}
+
+.jx-shell__logo--sm {
+  width: 30px;
+  height: 30px;
+  font-size: var(--jx-text-md);
+  border-radius: var(--jx-radius-sm);
+  box-shadow: none;
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar (azul-noite in both themes)
+// ---------------------------------------------------------------------------
+.jx-shell__sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 100;
+  width: min(86vw, $w-open);
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-2);
+  padding: var(--jx-space-4) var(--jx-space-3);
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  border-right: 1px solid var(--nav-border);
+  transform: translateX(-102%);
+  transition:
+    transform var(--jx-motion-normal) var(--jx-motion-easing-out),
+    width var(--jx-motion-normal) var(--jx-motion-easing-out);
+  overflow: hidden;
+
+  // decorative tangerine glow at the top — warmth over the trust color
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -120px -80px auto auto;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(closest-side, var(--brand-vivid), transparent);
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  .jx-shell--open & {
+    transform: none;
+    box-shadow: var(--shadow-lg);
+  }
+
+  @media (min-width: $bp) {
+    transform: none;
+    width: $w-open;
+
+    .jx-shell--collapsed & {
+      width: $w-collapsed;
+    }
+  }
+}
+
+.jx-shell__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--surface-overlay);
+  backdrop-filter: blur(2px);
+  animation: jx-fade-in var(--jx-motion-normal) var(--jx-motion-easing-out);
+
+  @media (min-width: $bp) {
+    display: none;
+  }
+}
+
+.jx-shell__brand-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--jx-space-1) var(--jx-space-3);
+}
+
+.jx-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.jx-shell__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.jx-shell__wordmark {
+  font-size: var(--jx-text-xl);
+  font-weight: var(--jx-weight-extrabold);
+  letter-spacing: -0.03em;
+  color: var(--jx-neutral-0);
+}
+
+.jx-shell__surface {
+  font-size: var(--jx-text-2xs);
+  font-weight: var(--jx-weight-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--jx-brand-300);
+}
+
+.jx-shell__close {
+  color: var(--nav-text-muted);
+
+  &:hover {
+    background: var(--nav-surface-hover);
+  }
+
+  @media (min-width: $bp) {
+    display: none;
+  }
+}
+
+// Context card (loja / área)
+.jx-shell__context {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  padding: var(--jx-space-3);
+  border-radius: var(--jx-radius-lg);
+  background: var(--nav-surface);
+  border: 1px solid var(--nav-border);
+  min-width: 0;
+}
+
+.jx-shell__avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--jx-radius-full);
+  background: var(--jx-neutral-0);
+  color: var(--jx-neutral-900);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-extrabold);
+}
+
+.jx-shell__context-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.jx-shell__context-title {
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--jx-neutral-0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jx-shell__context-sub {
+  font-size: var(--jx-text-xs);
+  color: var(--nav-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Nav links
+.jx-shell__nav {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--jx-space-3);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-color: var(--nav-surface-hover) transparent;
+}
+
+.jx-shell__link,
+.jx-shell__foot-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--jx-space-3);
+  min-height: 44px;
+  width: 100%;
+  padding: 0 var(--jx-space-3);
+  border: 0;
+  border-radius: var(--jx-radius-md);
+  background: transparent;
+  color: var(--nav-text-muted);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-medium);
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--jx-motion-fast) var(--jx-motion-easing-out),
+    color var(--jx-motion-fast) var(--jx-motion-easing-out),
+    transform var(--jx-motion-fast) var(--jx-motion-easing-out);
+
+  &:hover {
+    background: var(--nav-surface-hover);
+    color: var(--jx-neutral-0);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-shell__link-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  font-size: var(--jx-text-md);
+}
+
+.jx-shell__link-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jx-shell__link--on {
+  background: var(--nav-active-bg);
+  color: var(--nav-active-text);
+  font-weight: var(--jx-weight-semibold);
+  box-shadow: var(--shadow-glow);
+
+  &:hover {
+    background: var(--nav-active-bg);
+    color: var(--nav-active-text);
+  }
+}
+
+// Footer
+.jx-shell__footer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--jx-space-3);
+  border-top: 1px solid var(--nav-border);
+}
+
+.jx-shell__foot-btn--danger:hover {
+  background: var(--nav-surface-hover);
+  color: var(--jx-dark-error);
+}
+
+.jx-shell__collapse {
+  display: none;
+  align-self: flex-end;
+  margin-top: var(--jx-space-1);
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--nav-border);
+  border-radius: var(--jx-radius-full);
+  background: var(--nav-surface);
+  color: var(--nav-text-muted);
+  transition: background var(--jx-motion-fast);
+
+  &:hover {
+    background: var(--nav-surface-hover);
+    color: var(--jx-neutral-0);
+  }
+
+  @media (min-width: $bp) {
+    display: inline-grid;
+    place-items: center;
+  }
+}
+
+// Collapsed rail (desktop only)
+@media (min-width: $bp) {
+  .jx-shell--collapsed {
+    .jx-shell__brand-text,
+    .jx-shell__link-label,
+    .jx-shell__context-text {
+      display: none;
+    }
+
+    .jx-shell__brand-row {
+      justify-content: center;
+    }
+
+    .jx-shell__context {
+      justify-content: center;
+      padding: var(--jx-space-2);
+      background: transparent;
+      border-color: transparent;
+    }
+
+    .jx-shell__link,
+    .jx-shell__foot-btn {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .jx-shell__collapse {
+      align-self: center;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+.jx-shell__main {
+  min-width: 0;
+  transition: margin-left var(--jx-motion-normal) var(--jx-motion-easing-out);
+
+  @media (min-width: $bp) {
+    margin-left: $w-open;
+
+    .jx-shell--collapsed & {
+      margin-left: $w-collapsed;
+    }
+  }
+}
+
+.jx-shell__content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--jx-space-5) var(--jx-space-4) var(--jx-space-7);
+
+  @media (min-width: $bp) {
+    padding: var(--jx-space-6) var(--jx-space-6) var(--jx-space-7);
+  }
+}
+
+@keyframes jx-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-shell__sidebar,
+  .jx-shell__main,
+  .jx-shell__overlay {
+    transition: none;
+    animation: none;
+  }
+}

@@ -31,23 +31,19 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
     <main class="jx-shell__content">
       <router-outlet />
     </main>
-    <nav class="jx-shell__tabbar">
-      <a routerLink="/entregador/inicio" routerLinkActive="jx-tab--active" class="jx-tab">
-        <fa-icon [icon]="iconInicio" aria-hidden="true" />
-        <span>Início</span>
-      </a>
-      <a routerLink="/entregador/entregas" routerLinkActive="jx-tab--active" class="jx-tab">
-        <fa-icon [icon]="iconEntregas" aria-hidden="true" />
-        <span>Entregas</span>
-      </a>
-      <a routerLink="/entregador/cobertura" routerLinkActive="jx-tab--active" class="jx-tab">
-        <fa-icon [icon]="iconBairros" aria-hidden="true" />
-        <span>Zonas</span>
-      </a>
-      <a routerLink="/entregador/perfil" routerLinkActive="jx-tab--active" class="jx-tab">
-        <fa-icon [icon]="iconPerfil" aria-hidden="true" />
-        <span>Perfil</span>
-      </a>
+    <nav class="jx-shell__tabbar" aria-label="Navegação do entregador">
+      @for (tab of tabs; track tab.path) {
+        <a
+          [routerLink]="tab.path"
+          routerLinkActive="jx-tab--active"
+          #rla="routerLinkActive"
+          [attr.aria-current]="rla.isActive ? 'page' : null"
+          class="jx-tab"
+        >
+          <span class="jx-tab__icon"><fa-icon [icon]="tab.icon" aria-hidden="true" /></span>
+          <span class="jx-tab__label">{{ tab.label }}</span>
+        </a>
+      }
     </nav>
 
     <!-- Modal global de oferta — sobrepõe qualquer tela do app -->
@@ -62,11 +58,15 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
   `,
   styles: [
     `
+      /* Redesign v3 §6.2 — tab bar flutuante (pílula elevada, blur), alvos 56px,
+         indicador ativo tangerina. Tokens only (Gate 2). */
       :host {
         display: flex;
         flex-direction: column;
         height: 100vh;
         height: 100dvh;
+        background-color: var(--surface);
+        background-image: var(--surface-page-glow);
       }
       .jx-shell__content {
         flex: 1;
@@ -74,14 +74,18 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
         -webkit-overflow-scrolling: touch;
       }
       .jx-shell__tabbar {
+        flex-shrink: 0;
         display: flex;
         align-items: stretch;
-        background: var(--surface-elevated, #fff);
-        border-top: 1px solid var(--border, #e5e0d8);
-        padding-bottom: env(safe-area-inset-bottom, 0);
-        flex-shrink: 0;
-        border-radius: 2em 2em 0 0;
-        padding: .5em;
+        gap: var(--jx-space-1);
+        margin: 0 var(--jx-space-3) calc(var(--jx-space-3) + env(safe-area-inset-bottom, 0px));
+        padding: var(--jx-space-1);
+        background: var(--topbar-bg);
+        backdrop-filter: saturate(1.4) blur(16px);
+        -webkit-backdrop-filter: saturate(1.4) blur(16px);
+        border: 1px solid var(--border);
+        border-radius: var(--jx-radius-2xl);
+        box-shadow: var(--shadow-lg);
       }
       .jx-tab {
         flex: 1;
@@ -90,26 +94,55 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
         align-items: center;
         justify-content: center;
         gap: 2px;
-        padding: 6px 0 4px;
-        background: none;
-        border: none;
-        color: var(--text-muted, #8c8279);
-        font-size: 10px;
-        font-weight: 600;
+        min-height: 56px;
+        border-radius: var(--jx-radius-xl);
+        color: var(--text-muted);
+        font-size: var(--jx-text-2xs);
+        font-weight: var(--jx-weight-semibold);
+        letter-spacing: 0.01em;
         text-decoration: none;
-        cursor: pointer;
-        transition: color 0.15s;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+          color var(--jx-motion-fast) var(--jx-motion-easing-out),
+          background var(--jx-motion-fast) var(--jx-motion-easing-out);
       }
-      .jx-tab fa-icon {
-        font-size: 20px;
+      .jx-tab__icon {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 28px;
+        border-radius: var(--jx-radius-full);
+        font-size: var(--jx-text-lg);
+        transition:
+          background var(--jx-motion-normal) var(--jx-motion-spring),
+          transform var(--jx-motion-normal) var(--jx-motion-spring);
+      }
+      .jx-tab:active .jx-tab__icon {
+        transform: scale(0.9);
       }
       .jx-tab--active {
-        color: var(--brand, #e8722a);
+        color: var(--brand);
+      }
+      .jx-tab--active .jx-tab__icon {
+        background: var(--brand-gradient);
+        color: var(--brand-contrast);
+        box-shadow: var(--shadow-glow);
+      }
+      .jx-tab:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
       }
 
       /* O jx-offer-sheet já é position:fixed — este host apenas o instancia. */
       .jx-shell__offer-overlay {
         display: contents;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .jx-tab,
+        .jx-tab__icon {
+          transition: none;
+        }
       }
     `,
   ],
@@ -117,10 +150,12 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
 export class EntregadorShellComponent implements OnInit, OnDestroy {
   protected readonly monitor = inject(OfferMonitorService);
 
-  protected readonly iconInicio = faHouse;
-  protected readonly iconEntregas = faBoxOpen;
-  protected readonly iconBairros = faMap;
-  protected readonly iconPerfil = faUser;
+  protected readonly tabs = [
+    { path: '/entregador/inicio', label: 'Início', icon: faHouse },
+    { path: '/entregador/entregas', label: 'Entregas', icon: faBoxOpen },
+    { path: '/entregador/cobertura', label: 'Zonas', icon: faMap },
+    { path: '/entregador/perfil', label: 'Perfil', icon: faUser },
+  ];
 
   ngOnInit(): void {
     this.monitor.startMonitoring();

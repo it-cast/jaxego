@@ -37,7 +37,7 @@
 }
 
 .jx-nbhd__msg--err {
-  background: var(--error-wash, hsl(0 70% 95%));
+  background: var(--error-wash);
   color: var(--error);
 }
 
@@ -52,7 +52,7 @@
   border: 0;
   border-radius: var(--jx-radius-lg);
   background: var(--brand);
-  color: var(--brand-contrast, #fff);
+  color: var(--brand-contrast);
   font-size: var(--jx-text-sm);
   font-weight: var(--jx-weight-semibold);
   cursor: pointer;

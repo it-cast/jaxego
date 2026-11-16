@@ -19,7 +19,7 @@
 .jx-confirm {
   width: 100%;
   max-width: 420px;
-  background: var(--surface-elevated, #fff);
+  background: var(--surface-elevated);
   border-radius: var(--jx-radius-xl, 20px) var(--jx-radius-xl, 20px) 0 0;
   padding: var(--jx-space-5);
   padding-bottom: max(var(--jx-space-5), env(safe-area-inset-bottom));
@@ -50,7 +50,7 @@
 .jx-confirm__message {
   margin: 0;
   font-size: var(--jx-text-sm);
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -72,14 +72,14 @@
 }
 
 .jx-confirm__confirm {
-  background: var(--brand, #e8722a);
-  color: var(--brand-contrast, #fff);
+  background: var(--brand);
+  color: var(--brand-contrast);
   border: none;
 }
 
 .jx-confirm__cancel {
   background: transparent;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   border: none;
 }
 

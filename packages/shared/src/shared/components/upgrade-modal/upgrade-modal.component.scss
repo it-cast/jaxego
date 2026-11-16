@@ -74,8 +74,8 @@
   align-items: center;
   min-height: 44px;
   padding: 0 var(--jx-space-5);
-  background: var(--brand, #2563eb);
-  color: #fff;
+  background: var(--brand);
+  color: var(--brand-contrast);
   border-radius: var(--jx-radius-lg);
   font-size: var(--jx-text-base);
   font-weight: var(--jx-weight-semibold);

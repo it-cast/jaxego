@@ -189,12 +189,12 @@ type ViewMode = 'list' | 'create' | 'edit';
     .jx-equipes { display: flex; flex-direction: column; gap: var(--jx-space-4); }
     .jx-equipes__header { display: flex; align-items: center; justify-content: space-between; }
     .jx-equipes__title { margin: 0; font-family: var(--jx-font-display); font-size: var(--jx-text-2xl); font-weight: var(--jx-weight-bold); color: var(--text); }
-    .jx-equipes__cta { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 0; border-radius: var(--jx-radius-lg); background: var(--brand); color: var(--brand-contrast, #fff); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
+    .jx-equipes__cta { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 0; border-radius: var(--jx-radius-lg); background: var(--brand); color: var(--brand-contrast); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
     .jx-equipes__cta:disabled { opacity: 0.6; }
     .jx-equipes__btn-secondary { display: flex; align-items: center; gap: var(--jx-space-1); min-height: 44px; padding: 0 var(--jx-space-3); border: 1px solid var(--border); border-radius: var(--jx-radius-lg); background: transparent; color: var(--text); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); cursor: pointer; }
     .jx-equipes__msg { padding: var(--jx-space-3) var(--jx-space-4); border-radius: var(--jx-radius-lg); font-size: var(--jx-text-sm); font-weight: var(--jx-weight-semibold); }
     .jx-equipes__msg--ok { background: var(--success-wash, var(--brand-wash)); color: var(--success, var(--brand)); }
-    .jx-equipes__msg--err { background: var(--error-wash, hsl(0 70% 95%)); color: var(--error); }
+    .jx-equipes__msg--err { background: var(--error-wash); color: var(--error); }
     .jx-equipes__form-card { background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--jx-radius-xl); padding: var(--jx-space-5); display: flex; flex-direction: column; gap: var(--jx-space-4); }
     .jx-equipes__form-title { margin: 0; font-family: var(--jx-font-display); font-size: var(--jx-text-lg); font-weight: var(--jx-weight-bold); color: var(--text); }
     .jx-equipes__form { display: flex; flex-direction: column; gap: var(--jx-space-3); }
@@ -204,7 +204,7 @@ type ViewMode = 'list' | 'create' | 'edit';
     .jx-equipes__input:focus { outline: none; border-color: var(--brand); }
     .jx-equipes__input-wrap { position: relative; display: flex; align-items: center; }
     .jx-equipes__input--full { width: 100%; padding-right: 44px; }
-    .jx-equipes__eye { position: absolute; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--text-muted, #888); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .jx-equipes__eye { position: absolute; right: 4px; width: 36px; height: 36px; border: 0; background: transparent; color: var(--text-muted); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .jx-equipes__form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--jx-space-3); }
     .jx-equipes__form-actions { display: flex; gap: var(--jx-space-2); }
     .jx-equipes__actions { display: flex; gap: var(--jx-space-1); }
@@ -218,7 +218,7 @@ type ViewMode = 'list' | 'create' | 'edit';
     .jx-equipes__page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .jx-equipes__page-info { font-size: var(--jx-text-sm); color: var(--text-muted); font-weight: 600; }
     .jx-equipes__search { margin-bottom: 0; }
-    .jx-equipes__form-err { margin: 0; font-size: var(--jx-text-sm); color: var(--error, #d32f2f); font-weight: 600; }
+    .jx-equipes__form-err { margin: 0; font-size: var(--jx-text-sm); color: var(--error); font-weight: 600; }
     .jx-equipes__back { border: 0; background: transparent; color: var(--text-muted); font-size: var(--jx-text-sm); font-weight: 600; cursor: pointer; padding: 0; }
     .jx-equipes__back:hover { color: var(--text); }
   `],

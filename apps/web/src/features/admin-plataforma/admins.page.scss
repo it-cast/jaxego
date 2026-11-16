@@ -40,7 +40,7 @@
 }
 
 .jx-admins__msg--err {
-  background: var(--error-wash, hsl(0 70% 95%));
+  background: var(--error-wash);
   color: var(--error);
 }
 
@@ -199,7 +199,7 @@
 }
 
 .jx-admins__badge--owner {
-  background: var(--error-wash, hsl(0 70% 95%));
+  background: var(--error-wash);
   color: var(--error);
 }
 
