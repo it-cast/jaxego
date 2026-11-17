@@ -55,6 +55,7 @@ async def test_cancel_records_cost_on_delivery(session_factory, delivery_seed) -
     from app.deliveries.schemas import CreateDeliveryBody, PaymentMethod
 
     body = CreateDeliveryBody(
+        team_ids=[1],  # equipe da área (CreateDeliveryBody.team_ids é obrigatório)
         pickup_address="Rua do Comércio, 100",
         dropoff_neighborhood_id=delivery_seed.dropoff_nbhd_id,
         dropoff_address="Rua das Flores, 200",

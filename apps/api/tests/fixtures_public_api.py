@@ -16,15 +16,16 @@ from decimal import Decimal
 import pytest_asyncio
 from app.api_keys import service as api_key_service
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier, CourierCoverageArea, CourierPricingTable
-from app.merchants.models import Merchant, MerchantSubscription, MerchantUser
+from app.merchants.models import Merchant, MerchantSubscription
 from app.neighborhoods.models import Neighborhood
 from app.plans.models import SubscriptionPlan
 from app.plans.service import seed_plans_if_missing
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 PASSWORD = "correct-horse-staple-10"
 
@@ -60,11 +61,12 @@ async def _make_neighborhood(s: AsyncSession, *, area_id: int, name: str) -> Nei
 
 
 async def _make_courier_online(
-    s: AsyncSession, *, area_id: int, user_id: int, dropoff_id: int, price: Decimal
+    s: AsyncSession, *, area_id: int, dropoff_id: int, price: Decimal
 ) -> Courier:
     courier = Courier(
         area_id=area_id,
-        user_id=user_id,
+        team_id=(await make_team(s, area_id=area_id)).id,
+        password_hash=hash_password("correct-horse-staple-10"),
         cpf="39053344705",
         full_name="João Entregador",
         phone_e164="+5522999990000",
@@ -104,14 +106,6 @@ async def _make_store(
     phone: str,
     external_ref: str,
 ) -> Merchant:
-    owner = User(
-        email=email,
-        name="Dona da Loja",
-        password_hash=hash_password(PASSWORD),
-        platform_role="user",
-    )
-    s.add(owner)
-    await s.flush()
     merchant = Merchant(
         area_id=area_id,
         account_type="cnpj",
@@ -120,6 +114,7 @@ async def _make_store(
         category="restaurante",
         phone_e164=phone,
         email=email,
+        password_hash=hash_password("correct-horse-staple-10"),
         status="active",
         external_ref=external_ref,
     )
@@ -127,7 +122,6 @@ async def _make_store(
     await s.flush()
     s.add_all(
         [
-            MerchantUser(merchant_id=merchant.id, user_id=owner.id, role="owner"),
             MerchantSubscription(
                 area_id=area_id, merchant_id=merchant.id, plan_id=plan_id, status="active"
             ),
@@ -178,18 +172,9 @@ async def public_api_seed(
         )
 
         dropoff = await _make_neighborhood(s, area_id=area_a.id, name="Aldeia")
-        courier_user_a = User(
-            email="cuser.a@example.com",
-            name="C",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add(courier_user_a)
-        await s.flush()
         await _make_courier_online(
             s,
             area_id=area_a.id,
-            user_id=courier_user_a.id,
             dropoff_id=dropoff.id,
             price=Decimal("10.00"),
         )
@@ -205,30 +190,26 @@ async def public_api_seed(
         from app.areas.models import AreaAdmin
         from app.core.security import encode_access
 
-        admin_a = User(
-            email="admin.a@example.com",
+        # Desde dd23333 o admin da área é a própria conta (e-mail/senha em area_admins)
+        admin_a = AreaAdmin(
+            area_id=area_a.id,
             name="Admin A",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
+            email="admin.a@example.com",
+            password_hash=hash_password("correct-horse-staple-10"),
+            role="owner",
         )
-        admin_b = User(
-            email="admin.b@example.com",
+        admin_b = AreaAdmin(
+            area_id=area_b.id,
             name="Admin B",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
+            email="admin.b@example.com",
+            password_hash=hash_password("correct-horse-staple-10"),
+            role="owner",
         )
         s.add_all([admin_a, admin_b])
-        await s.flush()
-        s.add_all(
-            [
-                AreaAdmin(area_id=area_a.id, user_id=admin_a.id, role="owner"),
-                AreaAdmin(area_id=area_b.id, user_id=admin_b.id, role="owner"),
-            ]
-        )
         await s.commit()
 
-        admin_a_jwt = encode_access(admin_a.id, area_a.id, "admin_area")
-        admin_b_jwt = encode_access(admin_b.id, area_b.id, "admin_area")
+        admin_a_jwt = encode_access(admin_a.id, "area_admin", area_a.id, "admin_area:owner")
+        admin_b_jwt = encode_access(admin_b.id, "area_admin", area_b.id, "admin_area:owner")
 
         return PublicApiSeed(
             area_a_id=area_a.id,

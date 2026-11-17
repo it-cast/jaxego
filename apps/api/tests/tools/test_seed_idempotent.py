@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from app.areas.models import Area
-from app.auth.models import User
+from app.areas.models import Area, AreaAdmin
+from app.auth.models import PlatformAdmin
 from app.plans.models import SubscriptionPlan
 from sqlalchemy import func, select
 
@@ -33,12 +33,12 @@ async def test_seed_is_idempotent(db_session) -> None:
     assert plans == 4
 
     # Platform admin + area admin de-duplicated by email.
-    plat = (
-        await db_session.execute(
-            select(func.count()).select_from(User).where(User.platform_role == "admin_plataforma")
-        )
-    ).scalar_one()
+    plat = (await db_session.execute(select(func.count()).select_from(PlatformAdmin))).scalar_one()
     assert plat == 1
+    area_admins = (
+        await db_session.execute(select(func.count()).select_from(AreaAdmin))
+    ).scalar_one()
+    assert area_admins == 1
 
 
 @pytest.mark.asyncio
@@ -49,7 +49,7 @@ async def test_seed_creates_free_plan_immutable_flag(db_session) -> None:
         await db_session.execute(select(SubscriptionPlan).where(SubscriptionPlan.code == "free"))
     ).scalar_one()
     assert free.is_free is True
-    assert free.price_cents == 0
+    assert free.price_monthly_cents == 0
 
 
 @pytest.mark.asyncio

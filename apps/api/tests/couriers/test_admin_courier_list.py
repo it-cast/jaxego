@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import pytest
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.couriers.service import list_area_couriers
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 pytestmark = pytest.mark.asyncio
 
@@ -20,18 +21,11 @@ _CPFS = ["39053344705", "11144477735", "15350946056", "40443692050"]
 
 
 async def _courier(s: AsyncSession, area_id: int, idx: int, status: str) -> Courier:
-    user = User(
-        email=f"c{idx}@example.com",
-        name="Entregador",
-        phone="+5522999990000",
-        password_hash=hash_password("correct-horse-staple-10"),
-        platform_role="user",
-    )
-    s.add(user)
-    await s.flush()
+    team = await make_team(s, area_id=area_id)
     courier = Courier(
         area_id=area_id,
-        user_id=user.id,
+        team_id=team.id,
+        password_hash=hash_password("correct-horse-staple-10"),
         cpf=_CPFS[idx],
         full_name=f"Entregador {idx}",
         phone_e164="+5522999990000",

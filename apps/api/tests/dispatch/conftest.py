@@ -20,7 +20,6 @@ from decimal import Decimal
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier, CourierCoverageArea, CourierPricingTable
 from app.deliveries.models import Delivery, Recipient
@@ -28,10 +27,11 @@ from app.merchants.models import (
     Merchant,
     MerchantCourierBlock,
     MerchantCourierFavorite,
-    MerchantUser,
 )
 from app.neighborhoods.models import Neighborhood
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 PASSWORD = "correct-horse-staple-10"
 
@@ -70,7 +70,7 @@ async def _courier(
     s: AsyncSession,
     *,
     area_id: int,
-    user_id: int,
+    user_id: int | None = None,
     cpf: str,
     name: str,
     phone: str,
@@ -79,7 +79,8 @@ async def _courier(
 ) -> Courier:
     courier = Courier(
         area_id=area_id,
-        user_id=user_id,
+        team_id=(await make_team(s, area_id=area_id)).id,
+        password_hash=hash_password(PASSWORD),
         cpf=cpf,
         full_name=name,
         phone_e164=phone,
@@ -132,39 +133,7 @@ async def dispatch_seed(
         s.add(area)
         await s.flush()
 
-        owner = User(
-            email="loja@example.com",
-            name="Loja",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        u_fav = User(
-            email="fav@example.com",
-            name="Favorito",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        u_plain = User(
-            email="plain@example.com",
-            name="Plain",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        u_blocked = User(
-            email="blocked@example.com",
-            name="Blocked",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        u_unc = User(
-            email="unc@example.com",
-            name="Uncovered",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add_all([owner, u_fav, u_plain, u_blocked, u_unc])
-        await s.flush()
-
+        # Desde dd23333 não há `users`: loja e entregadores são as próprias contas
         merchant = Merchant(
             area_id=area.id,
             account_type="cnpj",
@@ -173,11 +142,11 @@ async def dispatch_seed(
             category="restaurante",
             phone_e164="+5522999991111",
             email="loja@example.com",
+            password_hash=hash_password(PASSWORD),
             status="active",
         )
         s.add(merchant)
         await s.flush()
-        s.add(MerchantUser(merchant_id=merchant.id, user_id=owner.id, role="owner"))
 
         pickup = Neighborhood(area_id=area.id, name="Centro", is_informal=False)
         dropoff = Neighborhood(area_id=area.id, name="Vila Nova", is_informal=False)
@@ -187,7 +156,6 @@ async def dispatch_seed(
         fav = await _courier(
             s,
             area_id=area.id,
-            user_id=u_fav.id,
             cpf="39053344705",
             name="Ana Favorita",
             phone="+5522999990001",
@@ -196,7 +164,6 @@ async def dispatch_seed(
         plain = await _courier(
             s,
             area_id=area.id,
-            user_id=u_plain.id,
             cpf="11144477735",
             name="Beto Comum",
             phone="+5522999990002",
@@ -205,7 +172,6 @@ async def dispatch_seed(
         blocked = await _courier(
             s,
             area_id=area.id,
-            user_id=u_blocked.id,
             cpf="52998224725",
             name="Caio Bloqueado",
             phone="+5522999990003",
@@ -214,7 +180,6 @@ async def dispatch_seed(
         uncovered = await _courier(
             s,
             area_id=area.id,
-            user_id=u_unc.id,
             cpf="15350946056",
             name="Davi Fora",
             phone="+5522999990004",
@@ -278,8 +243,6 @@ async def dispatch_seed(
             dropoff_complement="ap 2",
             dropoff_neighborhood_id=dropoff.id,
             distance_m=2800,
-            estimate_min_cents=1000,
-            estimate_max_cents=1000,
             fee_cents=0,
             items_quantity=1,
             public_token="TESTTOKEN0000000000000000A",
@@ -293,7 +256,7 @@ async def dispatch_seed(
         return DispatchSeed(
             area_id=area.id,
             merchant_id=merchant.id,
-            owner_user_id=owner.id,
+            owner_user_id=merchant.id,
             pickup_nbhd_id=pickup.id,
             dropoff_nbhd_id=dropoff.id,
             delivery_id=delivery_id,
@@ -301,8 +264,8 @@ async def dispatch_seed(
             plain_courier_id=plain.id,
             blocked_courier_id=blocked.id,
             uncovered_courier_id=uncovered.id,
-            favorite_user_id=u_fav.id,
-            plain_user_id=u_plain.id,
+            favorite_user_id=fav.id,
+            plain_user_id=plain.id,
         )
 
 

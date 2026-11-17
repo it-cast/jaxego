@@ -13,7 +13,6 @@ from datetime import UTC, datetime
 
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery, DeliveryStateTransition
@@ -21,6 +20,8 @@ from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
 from app.tracking.models import DeliveryLocation
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 _counter = {"n": 0}
 
@@ -39,17 +40,11 @@ async def _base_world(s: AsyncSession) -> tuple[int, int, int]:
     nbhd = Neighborhood(area_id=area.id, name="Centro", is_informal=False)
     s.add(nbhd)
     await s.flush()
-    user = User(
-        email=f"courier-{n}@example.com",
-        name="João Entregador",
-        password_hash=hash_password("correct-horse-staple-10"),
-        platform_role="user",
-    )
-    s.add(user)
-    await s.flush()
+    team = await make_team(s, area_id=area.id)
     courier = Courier(
         area_id=area.id,
-        user_id=user.id,
+        team_id=team.id,
+        password_hash=hash_password("correct-horse-staple-10"),
         cpf=f"{n:011d}",
         full_name="João Entregador",  # would leak if serializer emitted courier name
         phone_e164="+5522999990000",  # would leak if serializer emitted courier phone

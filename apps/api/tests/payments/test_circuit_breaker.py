@@ -40,6 +40,7 @@ async def test_direct_delivery_unaffected_by_gateway(payments_seed, session_fact
 
     async with session_factory() as s:
         body = CreateDeliveryBody(
+            team_ids=[1],  # equipe da área (CreateDeliveryBody.team_ids é obrigatório)
             payment_method="direct",
             proof_method="photo",
             pickup_address="Rua A, 1",

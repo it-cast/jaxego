@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 from app.areas.models import Area, AreaAdmin
 from app.areas.service import AdminUserNotFoundError, assign_area_admin
-from app.auth.models import User
 from app.core.security import hash_password
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -20,12 +19,14 @@ async def _area(s: AsyncSession) -> Area:
     return a
 
 
-async def _user(s: AsyncSession, email: str) -> User:
-    u = User(
-        email=email,
+async def _user(s: AsyncSession, email: str, area_id: int) -> AreaAdmin:
+    """Conta de admin (desde dd23333 não há `users`): assign_area_admin move a conta para a área."""
+    u = AreaAdmin(
+        area_id=area_id,
         name="Gestor",
+        email=email,
         password_hash=hash_password("correct-horse-staple-10"),
-        platform_role="user",
+        role="viewer",
     )
     s.add(u)
     await s.flush()
@@ -37,7 +38,7 @@ async def test_assign_creates_then_updates_role(
 ) -> None:
     async with session_factory() as s:
         area = await _area(s)
-        await _user(s, "gestor@example.com")
+        await _user(s, "gestor@example.com", area.id)
         await s.commit()
 
         membership, email = await assign_area_admin(

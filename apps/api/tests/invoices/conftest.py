@@ -17,10 +17,9 @@ from itertools import count
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.deliveries.models import Delivery
-from app.merchants.models import Merchant, MerchantSubscription, MerchantUser
+from app.merchants.models import Merchant, MerchantSubscription
 from app.neighborhoods.models import Neighborhood
 from app.plans.models import SubscriptionPlan
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -54,15 +53,6 @@ async def invoice_seed(session_factory: async_sessionmaker[AsyncSession]) -> Inv
         s.add(area)
         await s.flush()
 
-        owner = User(
-            email="loja@example.com",
-            name="Loja Dona",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add(owner)
-        await s.flush()
-
         merchant = Merchant(
             area_id=area.id,
             account_type="cnpj",
@@ -71,16 +61,16 @@ async def invoice_seed(session_factory: async_sessionmaker[AsyncSession]) -> Inv
             category="alimentacao",
             phone_e164="+5522999990001",
             email="loja@example.com",
+            password_hash=hash_password("correct-horse-staple-10"),
             status="active",
         )
         s.add(merchant)
         await s.flush()
-        s.add(MerchantUser(merchant_id=merchant.id, user_id=owner.id, role="owner"))
 
         plan = SubscriptionPlan(
             code="free",
             name="Free",
-            price_cents=0,
+            price_monthly_cents=0,
             deliveries_per_month=30,
             fee_cents=200,
             is_free=True,
@@ -106,7 +96,7 @@ async def invoice_seed(session_factory: async_sessionmaker[AsyncSession]) -> Inv
         return InvoiceSeed(
             area_id=area.id,
             merchant_id=merchant.id,
-            owner_user_id=owner.id,
+            owner_user_id=merchant.id,
             plan_fee_cents=plan.fee_cents,
             dropoff_nbhd_id=dropoff.id,
         )
@@ -136,8 +126,6 @@ async def make_direct_delivery(
         dropoff_address="Rua B, 2",
         dropoff_neighborhood_id=dropoff_nbhd_id,
         distance_m=1000,
-        estimate_min_cents=1000,
-        estimate_max_cents=1000,
         fee_cents=fee_cents,
         items_quantity=1,
         public_token=f"tok{next(_token_seq)}",

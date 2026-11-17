@@ -13,7 +13,6 @@ from dataclasses import dataclass
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery
@@ -23,6 +22,8 @@ from app.payments_direct.models import DirectPaymentConfirmation, PaymentDispute
 from app.payments_direct.service import confirm_direct_payment, has_open_dispute
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 
 @dataclass
@@ -40,17 +41,10 @@ async def pay_seed(session_factory: async_sessionmaker[AsyncSession]) -> PaySeed
         nbhd = Neighborhood(area_id=area.id, name="Centro", is_informal=False)
         s.add(nbhd)
         await s.flush()
-        user = User(
-            email="c@example.com",
-            name="C",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        s.add(user)
-        await s.flush()
         courier = Courier(
             area_id=area.id,
-            user_id=user.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="39053344705",
             full_name="C",
             phone_e164="+5522999990000",

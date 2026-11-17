@@ -17,7 +17,6 @@ from datetime import UTC, datetime, timedelta
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery
@@ -26,6 +25,8 @@ from app.neighborhoods.models import Neighborhood
 from app.payments_direct.models import DisputeBlock, PaymentDispute
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 
 @dataclass
@@ -53,23 +54,10 @@ async def dispute_seed(session_factory: async_sessionmaker[AsyncSession]) -> Dis
         nbhd = Neighborhood(area_id=area.id, name="Centro", is_informal=False)
         s.add(nbhd)
         await s.flush()
-        user = User(
-            email="c@example.com",
-            name="C",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        admin = User(
-            email="adm@example.com",
-            name="Adm",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="admin_plataforma",
-        )
-        s.add_all([user, admin])
-        await s.flush()
         courier = Courier(
             area_id=area.id,
-            user_id=user.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="39053344705",
             full_name="C",
             phone_e164="+5522999990000",
@@ -92,6 +80,18 @@ async def dispute_seed(session_factory: async_sessionmaker[AsyncSession]) -> Dis
             status="active",
         )
         s.add(merchant)
+        await s.flush()
+        # Admin da área (conta própria desde dd23333)
+        from app.areas.models import AreaAdmin
+
+        admin = AreaAdmin(
+            area_id=area.id,
+            name="Admin",
+            email="admin@example.com",
+            password_hash=hash_password("correct-horse-staple-10"),
+            role="owner",
+        )
+        s.add(admin)
         await s.flush()
         await s.commit()
         return DisputeSeed(

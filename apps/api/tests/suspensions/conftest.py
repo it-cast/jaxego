@@ -8,7 +8,7 @@ import pytest_asyncio
 from app.couriers.models import Courier
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tests.helpers import Seed
+from tests.helpers import Seed, make_team
 
 
 @dataclass
@@ -22,7 +22,8 @@ class SuspensionWorld:
 async def suspension_world(db_session: AsyncSession, seed: Seed) -> SuspensionWorld:
     courier = Courier(
         area_id=seed.area_a.id,
-        user_id=seed.admin_a.id,
+        team_id=(await make_team(db_session, area_id=seed.area_a.id)).id,
+        password_hash="hash-sintetico",
         cpf="39053344705",
         full_name="João Entregador",
         phone_e164="+5522999990000",

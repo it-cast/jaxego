@@ -18,6 +18,7 @@ def _payload(seed) -> dict:
         "pickup_address": "Rua A, 100",
         "pickup_neighborhood": "Centro",
         "dropoff_neighborhood_id": seed.dropoff_nbhd_id,
+        "team_ids": [1],
         "dropoff_address": "Rua B, 200",
         "dropoff_number": "200",
         "recipient_name": "Maria Cliente",

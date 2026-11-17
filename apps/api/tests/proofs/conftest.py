@@ -20,7 +20,6 @@ import piexif
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery
@@ -29,6 +28,8 @@ from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
 from PIL import Image
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 # Known Pádua-ish target. Near = ~55 m (inside 80 m); Far = ~1.1 km (outside).
 TARGET_LAT, TARGET_LNG = -21.5400, -42.1800
@@ -108,24 +109,10 @@ async def proof_seed(session_factory: async_sessionmaker[AsyncSession]) -> Proof
         s.add(merchant)
         await s.flush()
 
-        courier_user = User(
-            email="entregador@example.com",
-            name="João Entregador",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        other_user = User(
-            email="maria@example.com",
-            name="Maria Entregadora",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        s.add_all([courier_user, other_user])
-        await s.flush()
-
         courier = Courier(
             area_id=area.id,
-            user_id=courier_user.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="39053344705",
             full_name="João Entregador",
             phone_e164="+5522999990000",
@@ -137,7 +124,8 @@ async def proof_seed(session_factory: async_sessionmaker[AsyncSession]) -> Proof
         )
         other_courier = Courier(
             area_id=area.id,
-            user_id=other_user.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="52998224725",
             full_name="Maria Entregadora",
             phone_e164="+5522999990001",
@@ -179,6 +167,6 @@ async def proof_seed(session_factory: async_sessionmaker[AsyncSession]) -> Proof
             area_id=area.id,
             delivery_id=delivery.id,
             courier_id=courier.id,
-            courier_user_id=courier_user.id,
+            courier_user_id=courier.id,  # o entregador é a conta (ator) desde dd23333
             other_courier_id=other_courier.id,
         )

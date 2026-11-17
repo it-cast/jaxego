@@ -4,13 +4,15 @@ All data is SYNTHETIC (factories below) — never real PII. The 12m/30d windows 
 exercised with a CONTROLLED clock (rows are stamped at explicit `updated_at`/`expires_at`
 offsets), so the test does not depend on wall time beyond `datetime.now(UTC)`.
 
+Desde dd23333 não há tabela `users`: a PII de conta vive na tabela de cada tipo (o entregador é a
+própria conta) e não existem mais "cadastros abandonados" globais para apagar.
+
 Coverage:
-- inactive 12m courier/recipient/user → anonymised (PII tombstoned, anonymized_at set);
+- inactive 12m courier/recipient → anonymised (PII tombstoned, conta desativada, anonymized_at set);
 - recently-active entity → untouched;
-- a courier/user under LEGAL retention (financial trail) → preserved;
+- a courier under LEGAL retention (financial trail) → preserved;
 - idempotency: a second run anonymises nothing new;
-- abandoned signup >30d (inactive, no attachments) → hard-deleted;
-- an attached/active user is NOT deleted; expired refresh token swept.
+- expired refresh token swept; live token kept.
 """
 
 from __future__ import annotations
@@ -18,8 +20,8 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from app.areas.models import Area, AreaAdmin
-from app.auth.models import RefreshToken, User
+from app.areas.models import Area
+from app.auth.models import RefreshToken
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery, Recipient
 from app.merchants.models import Merchant
@@ -34,6 +36,8 @@ from app.workers.lifecycle import (
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from tests.helpers import make_team
+
 _OLD = timedelta(days=400)  # > 12 months
 _RECENT = timedelta(days=10)
 
@@ -45,35 +49,17 @@ async def _area(s: AsyncSession) -> Area:
     return area
 
 
-async def _user(s: AsyncSession, *, email: str, age: timedelta, active: bool = True) -> User:
-    u = User(
-        email=email,
-        name="Fulano Sintético",
-        phone="+5522999990000",
-        cpf=None,
-        password_hash="x",
-        platform_role="user",
-        is_active=active,
-    )
-    s.add(u)
-    await s.flush()
-    stamp = datetime.now(UTC) - age
-    u.created_at = stamp
-    u.updated_at = stamp
-    await s.flush()
-    return u
-
-
 async def _courier(
-    s: AsyncSession, *, area_id: int, user_id: int, age: timedelta, cpf: str
+    s: AsyncSession, *, area_id: int, age: timedelta, cpf: str, email: str
 ) -> Courier:
     c = Courier(
         area_id=area_id,
-        user_id=user_id,
+        team_id=(await make_team(s, area_id=area_id)).id,
+        password_hash="hash-sintetico",
         cpf=cpf,
         full_name="Entregador Sintético",
         phone_e164="+5522988887777",
-        email="courier@example.test",
+        email=email,
         status="active",
     )
     s.add(c)
@@ -110,20 +96,25 @@ async def test_anonymizes_inactive_12m(
 ) -> None:
     async with session_factory() as s:
         area = await _area(s)
-        u = await _user(s, email="old@example.test", age=_OLD)
-        courier = await _courier(s, area_id=area.id, user_id=u.id, age=_OLD, cpf="11122233344")
+        courier = await _courier(
+            s, area_id=area.id, age=_OLD, cpf="11122233344", email="old@example.test"
+        )
         recipient = await _recipient(s, area_id=area.id, age=_OLD)
         await s.commit()
-        cid, rid, uid = courier.id, recipient.id, u.id
+        cid, rid = courier.id, recipient.id
 
     n = await anonymize_inactive({"session_factory": session_factory})
-    assert n == 3
+    assert n == 2
 
     async with session_factory() as s:
         c = await s.get(Courier, cid)
         assert c.full_name == _PII_NAME
-        assert c.cpf == _PII_TOMBSTONE
+        assert c.cpf is None
         assert c.phone_e164 == _PII_TOMBSTONE
+        assert c.email == f"{_PII_TOMBSTONE}+{cid}@anonymized.invalid"
+        # A conta do entregador não loga mais
+        assert c.password_hash is None
+        assert c.is_active is False
         assert c.anonymized_at is not None
         r = await s.get(Recipient, rid)
         assert r.name == _PII_NAME
@@ -132,11 +123,6 @@ async def test_anonymizes_inactive_12m(
         assert r.anonymized_at is not None
         # Statistical aggregate preserved.
         assert r.deliveries_count == 3
-        loaded_user = await s.get(User, uid)
-        assert loaded_user.name == _PII_NAME
-        assert loaded_user.phone is None
-        assert loaded_user.is_active is False
-        assert loaded_user.anonymized_at is not None
         # An audit row was appended per entity.
         from app.audit.models import AuditLog
 
@@ -145,7 +131,7 @@ async def test_anonymizes_inactive_12m(
             .scalars()
             .all()
         )
-        assert len(audits) == 3
+        assert len(audits) == 2
 
 
 @pytest.mark.asyncio
@@ -154,8 +140,9 @@ async def test_recent_entity_untouched(
 ) -> None:
     async with session_factory() as s:
         area = await _area(s)
-        u = await _user(s, email="fresh@example.test", age=_RECENT)
-        courier = await _courier(s, area_id=area.id, user_id=u.id, age=_RECENT, cpf="55566677788")
+        courier = await _courier(
+            s, area_id=area.id, age=_RECENT, cpf="55566677788", email="fresh@example.test"
+        )
         await s.commit()
         cid = courier.id
 
@@ -175,10 +162,10 @@ async def test_legal_retention_preserved(
     """A courier with a financial trail is NEVER anonymised, even if old (D-02)."""
     async with session_factory() as s:
         area = await _area(s)
-        u = await _user(s, email="paid@example.test", age=_OLD)
-        courier = await _courier(s, area_id=area.id, user_id=u.id, age=_OLD, cpf="99988877766")
+        courier = await _courier(
+            s, area_id=area.id, age=_OLD, cpf="99988877766", email="paid@example.test"
+        )
         nbhd = Neighborhood(area_id=area.id, name="Centro", is_informal=False)
-        s.add(nbhd)
         merchant = Merchant(
             area_id=area.id,
             account_type="cnpj",
@@ -220,7 +207,7 @@ async def test_legal_retention_preserved(
             )
         )
         await s.commit()
-        cid, uid = courier.id, u.id
+        cid = courier.id
 
     n = await anonymize_inactive({"session_factory": session_factory})
     assert n == 0
@@ -229,9 +216,7 @@ async def test_legal_retention_preserved(
         c = await s.get(Courier, cid)
         assert c.full_name == "Entregador Sintético"
         assert c.anonymized_at is None
-        # The user owning the financially-retained courier is preserved too.
-        loaded_user = await s.get(User, uid)
-        assert loaded_user.anonymized_at is None
+        assert c.is_active is True
 
 
 @pytest.mark.asyncio
@@ -240,60 +225,13 @@ async def test_anonymize_idempotent(
 ) -> None:
     async with session_factory() as s:
         area = await _area(s)
-        u = await _user(s, email="idem@example.test", age=_OLD)
-        await _courier(s, area_id=area.id, user_id=u.id, age=_OLD, cpf="12312312312")
+        await _courier(s, area_id=area.id, age=_OLD, cpf="12312312312", email="idem@example.test")
         await _recipient(s, area_id=area.id, age=_OLD)
         await s.commit()
 
-    assert await anonymize_inactive({"session_factory": session_factory}) == 3
+    assert await anonymize_inactive({"session_factory": session_factory}) == 2
     # A second run finds nothing new — anonymised rows are skipped.
     assert await anonymize_inactive({"session_factory": session_factory}) == 0
-
-
-@pytest.mark.asyncio
-async def test_delete_ephemeral_abandoned_signup(
-    session_factory: async_sessionmaker[AsyncSession],
-) -> None:
-    """An inactive signup with no attachments older than 30 days is hard-deleted."""
-    async with session_factory() as s:
-        abandoned = await _user(
-            s, email="abandoned@example.test", age=timedelta(days=45), active=False
-        )
-        await s.commit()
-        aid = abandoned.id
-
-    n = await delete_ephemeral({"session_factory": session_factory})
-    assert n >= 1
-
-    async with session_factory() as s:
-        assert await s.get(User, aid) is None
-
-
-@pytest.mark.asyncio
-async def test_delete_ephemeral_keeps_attached_and_recent(
-    session_factory: async_sessionmaker[AsyncSession],
-) -> None:
-    async with session_factory() as s:
-        area = await _area(s)
-        # Active user — not ephemeral.
-        active = await _user(s, email="active@example.test", age=timedelta(days=60), active=True)
-        # Attached (area admin) inactive user — must survive.
-        attached = await _user(
-            s, email="attached@example.test", age=timedelta(days=60), active=False
-        )
-        s.add(AreaAdmin(area_id=area.id, user_id=attached.id, role="owner"))
-        # Recent inactive signup — under the 30d window, survives.
-        recent = await _user(
-            s, email="recentsignup@example.test", age=timedelta(days=5), active=False
-        )
-        await s.commit()
-        ids = (active.id, attached.id, recent.id)
-
-    await delete_ephemeral({"session_factory": session_factory})
-
-    async with session_factory() as s:
-        for uid in ids:
-            assert await s.get(User, uid) is not None
 
 
 @pytest.mark.asyncio
@@ -301,10 +239,10 @@ async def test_delete_ephemeral_expired_refresh_token(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
     async with session_factory() as s:
-        u = await _user(s, email="tokens@example.test", age=timedelta(days=1))
         s.add(
             RefreshToken(
-                user_id=u.id,
+                actor_type="courier",
+                actor_id=1,
                 family_id="fam-1",
                 token_hash="a" * 64,
                 expires_at=datetime.now(UTC) - timedelta(days=40),
@@ -312,7 +250,8 @@ async def test_delete_ephemeral_expired_refresh_token(
         )
         s.add(
             RefreshToken(
-                user_id=u.id,
+                actor_type="courier",
+                actor_id=1,
                 family_id="fam-2",
                 token_hash="b" * 64,
                 expires_at=datetime.now(UTC) + timedelta(days=10),
@@ -320,7 +259,7 @@ async def test_delete_ephemeral_expired_refresh_token(
         )
         await s.commit()
 
-    await delete_ephemeral({"session_factory": session_factory})
+    assert await delete_ephemeral({"session_factory": session_factory}) == 1
 
     async with session_factory() as s:
         remaining = (await s.execute(select(func.count()).select_from(RefreshToken))).scalar_one()

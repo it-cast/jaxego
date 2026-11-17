@@ -1,6 +1,6 @@
 """Idempotent bootstrap seed (D-09): área Pádua + 4 planos + admins.
 
-Upserts by NATURAL KEY (area by `codename`, plan by `code`, user by `email`) so
+Upserts by NATURAL KEY (area by `codename`, plan by `code`, admin by `email`) so
 running it twice never duplicates (Pitfall 4 / REQ-009). Plan VALUES come from
 `app.plans.service.PLAN_SEEDS` (DRV-009 — editable seed data, never hardcoded in
 a serving code path). Admin passwords are argon2id (`auth/`).
@@ -15,11 +15,10 @@ import asyncio
 
 import structlog
 from app.areas.models import Area, AreaAdmin
-from app.auth.models import User
+from app.auth.models import PlatformAdmin
 from app.core.security import hash_password
 from app.db.session import async_session_factory
 from app.plans.service import seed_plans_if_missing
-from app.scores.service import seed_weights_if_missing
 from app.suspensions.service import seed_revenue_share_if_missing
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,49 +53,49 @@ async def _upsert_area(session: AsyncSession) -> Area:
     return area
 
 
-async def _upsert_user(session: AsyncSession, *, email: str, name: str, platform_role: str) -> User:
-    existing = (await session.execute(select(User).where(User.email == email))).scalar_one_or_none()
+# Desde dd23333 não há tabela `users`: o admin da plataforma e o da área são contas próprias
+# (platform_admins / area_admins), com e-mail e senha nelas.
+async def _upsert_platform_admin(session: AsyncSession, *, email: str, name: str) -> PlatformAdmin:
+    existing = (
+        await session.execute(select(PlatformAdmin).where(PlatformAdmin.email == email))
+    ).scalar_one_or_none()
     if existing is not None:
         return existing
-    user = User(
+    admin = PlatformAdmin(email=email, name=name, password_hash=hash_password(_BOOTSTRAP_PASSWORD))
+    session.add(admin)
+    await session.flush()
+    return admin
+
+
+async def _upsert_area_admin(
+    session: AsyncSession, *, area: Area, email: str, name: str
+) -> AreaAdmin:
+    existing = (
+        await session.execute(select(AreaAdmin).where(AreaAdmin.email == email))
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    admin = AreaAdmin(
+        area_id=area.id,
         email=email,
         name=name,
         password_hash=hash_password(_BOOTSTRAP_PASSWORD),
-        platform_role=platform_role,
+        role="owner",
     )
-    session.add(user)
+    session.add(admin)
     await session.flush()
-    return user
-
-
-async def _upsert_area_admin(session: AsyncSession, *, area: Area, user: User) -> None:
-    existing = (
-        await session.execute(
-            select(AreaAdmin).where(AreaAdmin.area_id == area.id, AreaAdmin.user_id == user.id)
-        )
-    ).scalar_one_or_none()
-    if existing is None:
-        session.add(AreaAdmin(area_id=area.id, user_id=user.id, role="owner"))
-        await session.flush()
+    return admin
 
 
 async def run_seed(session: AsyncSession) -> None:
     """Idempotent seed: Pádua + 4 plans + platform admin + area admin."""
     area = await _upsert_area(session)
     await seed_plans_if_missing(session)
-    # Phase 13 — parametrised score weights (DRV-009) + [ASSUMIDO] revenue share %.
-    await seed_weights_if_missing(session)
+    # Revenue share % da área ([ASSUMIDO]). Os pesos do score saíram: o score virou a média das
+    # avaliações em tempo real (CORRECAO-100/101/102, tabelas apagadas na migração 0018).
     await seed_revenue_share_if_missing(session, area_id=area.id)
-    await _upsert_user(
-        session,
-        email=PLATFORM_ADMIN_EMAIL,
-        name="Admin Plataforma",
-        platform_role="admin_plataforma",
-    )
-    area_admin = await _upsert_user(
-        session, email=AREA_ADMIN_EMAIL, name="Admin Pádua", platform_role="user"
-    )
-    await _upsert_area_admin(session, area=area, user=area_admin)
+    await _upsert_platform_admin(session, email=PLATFORM_ADMIN_EMAIL, name="Admin Plataforma")
+    await _upsert_area_admin(session, area=area, email=AREA_ADMIN_EMAIL, name="Admin Pádua")
     logger.info("seed_done", area=PADUA_CODENAME)
 
 

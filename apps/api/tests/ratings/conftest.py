@@ -11,13 +11,14 @@ from dataclasses import dataclass
 
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.deliveries.models import Delivery
 from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 PASSWORD = "correct-horse-staple-10"
 
@@ -67,21 +68,7 @@ async def rating_world(
         s.add_all([area_a, area_b])
         await s.flush()
 
-        owner = User(
-            email="loja@example.com",
-            name="Loja",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        courier_user = User(
-            email="courier@example.com",
-            name="Courier",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add_all([owner, courier_user])
-        await s.flush()
-
+        # Desde dd23333: loja e entregador são as próprias contas (sem `users`)
         merchant = Merchant(
             area_id=area_a.id,
             account_type="cnpj",
@@ -90,6 +77,7 @@ async def rating_world(
             category="restaurante",
             phone_e164="+5522999991111",
             email="loja@example.com",
+            password_hash=hash_password(PASSWORD),
             status="active",
         )
         other_merchant = Merchant(
@@ -107,7 +95,8 @@ async def rating_world(
 
         courier = Courier(
             area_id=area_a.id,
-            user_id=courier_user.id,
+            team_id=(await make_team(s, area_id=area_a.id)).id,
+            password_hash=hash_password(PASSWORD),
             cpf="39053344705",
             full_name="João Entregador",
             phone_e164="+5522999990000",

@@ -48,6 +48,7 @@ async def test_transition_enqueues_when_endpoint_subscribed(
             merchant_id=public_api_seed.merchant_id,
             actor_user_id=None,
             body=CreateDeliveryBody(
+                team_ids=[1],  # equipe da área (CreateDeliveryBody.team_ids é obrigatório)
                 pickup_address="Rua A, 1",
                 dropoff_neighborhood_id=public_api_seed.dropoff_nbhd_id,
                 dropoff_address="Rua B, 2",
@@ -78,6 +79,7 @@ async def test_no_endpoint_means_no_enqueue(public_api_seed, session_factory) ->
             merchant_id=public_api_seed.merchant_id,
             actor_user_id=None,
             body=CreateDeliveryBody(
+                team_ids=[1],  # equipe da área (CreateDeliveryBody.team_ids é obrigatório)
                 pickup_address="Rua A, 1",
                 dropoff_neighborhood_id=public_api_seed.dropoff_nbhd_id,
                 dropoff_address="Rua B, 2",

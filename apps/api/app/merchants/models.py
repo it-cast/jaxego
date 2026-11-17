@@ -260,10 +260,10 @@ class MerchantCreditLedger(Base, AreaScopedMixin, TimestampMixin):
     """
 
     __tablename__ = "merchant_credit_ledger"
-    __table_args__ = (
-        Index("ix_merchant_credit_ledger_merchant_id", "merchant_id"),
-        Base.__table_args__,
-    )
+    # O índice de merchant_id vem do `index=True` da coluna (mesmo nome pela convenção,
+    # ix_merchant_credit_ledger_merchant_id). Declarar também aqui criava o índice duas
+    # vezes no create_all dos testes. O banco real segue a migração (um índice só).
+    __table_args__ = (Base.__table_args__,)
 
     id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
     merchant_id: Mapped[int] = mapped_column(

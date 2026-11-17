@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 import pytest_asyncio
 from app.audit.models import AuditLog
-from app.auth.models import User
+from app.auth.models import PlatformAdmin
 from app.core.security import encode_access
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -27,16 +27,16 @@ async def enrolled_admin_token(
 ) -> str:
     """Mark the platform admin TOTP-enrolled and mint a cross-area access token."""
     async with session_factory() as s:
-        admin = await s.get(User, seed.platform_admin.id)
+        admin = await s.get(PlatformAdmin, seed.platform_admin.id)
         admin.totp_enrolled = True
         await s.commit()
-    return encode_access(seed.platform_admin.id, area_scope=None, role="admin_plataforma")
+    return encode_access(seed.platform_admin.id, "platform_admin", None, "admin_plataforma")
 
 
 @pytest.mark.asyncio
 async def test_platform_admin_without_totp_is_blocked(auth_client: AsyncClient, seed: Seed) -> None:
     """A platform admin not yet TOTP-enrolled cannot reach platform routes (TH-01)."""
-    token = encode_access(seed.platform_admin.id, area_scope=None, role="admin_plataforma")
+    token = encode_access(seed.platform_admin.id, "platform_admin", None, "admin_plataforma")
     resp = await auth_client.get("/v1/platform/overview", headers=bearer(token))
     assert resp.status_code == 403
     assert resp.json()["error"]["code"] == "totp_enrollment_required"
@@ -45,7 +45,7 @@ async def test_platform_admin_without_totp_is_blocked(auth_client: AsyncClient, 
 @pytest.mark.asyncio
 async def test_non_platform_admin_forbidden(auth_client: AsyncClient, seed: Seed) -> None:
     """An area admin cannot reach platform routes (TH-04 — privilege escalation)."""
-    token = encode_access(seed.admin_a.id, area_scope=seed.area_a.id, role="admin_area")
+    token = encode_access(seed.admin_a.id, "area_admin", seed.area_a.id, "admin_area:owner")
     resp = await auth_client.get("/v1/platform/overview", headers=bearer(token))
     assert resp.status_code == 403
 

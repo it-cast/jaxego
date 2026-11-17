@@ -15,8 +15,7 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
-from app.areas.models import Area
-from app.auth.models import User
+from app.areas.models import Area, AreaAdmin
 from app.core.security import hash_password
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -68,11 +67,12 @@ async def neighborhood_seed(
         area_b = Area(codename="itaocara", name="Itaocara", config={})
         s.add_all([area_a, area_b])
         await s.flush()
-        admin = User(
+        admin = AreaAdmin(
+            area_id=area_a.id,
             email="admin.area@example.com",
             name="Admin Área",
             password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
+            role="owner",
         )
         s.add(admin)
         await s.commit()

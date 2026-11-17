@@ -22,6 +22,7 @@ def _body(**over) -> CreateDeliveryBody:
         "pickup_address": "Rua A, 100",
         "pickup_neighborhood": "Centro",
         "dropoff_neighborhood_id": None,  # filled per-test
+        "team_ids": [1],
         "dropoff_address": "Rua B, 200",
         "dropoff_number": "200",
         "dropoff_complement": None,

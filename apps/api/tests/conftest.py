@@ -14,81 +14,35 @@ and skipped here; it runs against MySQL 8 in CI.
 
 from __future__ import annotations
 
+# Import every model so Base.metadata is complete before create_all.
+import importlib
+import pkgutil
 from collections.abc import AsyncIterator
 
+import app as _app_pkg
 import pytest
 import pytest_asyncio
-
-# Import every model so Base.metadata is complete before create_all.
-from app.ai.models import AiUsageLog  # noqa: F401 (registers mapper — Phase 14)
-from app.api_keys.models import (  # noqa: F401 (registers mappers — Phase 12)
-    ApiIdempotencyKey,
-    ApiKey,
-)
 from app.areas.models import Area, AreaAdmin
-from app.audit.models import AuditLog  # noqa: F401 (registers mapper)
-from app.auth.models import RefreshToken, User  # noqa: F401
+from app.auth.models import PlatformAdmin, RefreshToken  # noqa: F401
 from app.core.security import hash_password
-from app.couriers.models import (  # noqa: F401 (registers mappers — Phase 5/6)
-    Courier,
-    CourierCoverageArea,
-    CourierDocument,
-    CourierPricingTable,
-)
 from app.db.base import Base
 from app.db.session import get_session
-from app.deliveries.models import (  # noqa: F401 (registers mappers — Phase 7)
-    Delivery,
-    DeliveryStateTransition,
-    Recipient,
-)
-from app.invoices.models import (  # noqa: F401 (Phase 15 mappers)
-    InvoiceLineItem,
-    PlatformInvoice,
-)
-from app.merchants.models import (  # noqa: F401 (registers mappers — Phase 4)
-    Merchant,
-    MerchantSubscription,
-    MerchantUser,
-)
-from app.neighborhoods.models import Neighborhood  # noqa: F401 (Phase 6 mapper)
-from app.notifications.models import (  # noqa: F401 (Phase 9 mappers)
-    Notification,
-    PushSubscription,
-)
-from app.payments.models import (  # noqa: F401 (Phase 10 mappers)
-    EscrowLedger,
-    PaymentWebhookEvent,
-    PlatformCharge,
-)
-from app.payments_direct.models import (  # noqa: F401 (Phase 9/15 mappers)
-    DirectPaymentConfirmation,
-    DisputeBlock,
-    PaymentDispute,
-)
-from app.plans.models import SubscriptionPlan  # noqa: F401
-from app.proofs.models import DeliveryProof  # noqa: F401 (Phase 9 mapper)
-from app.ratings.models import CourierRating  # noqa: F401 (Phase 13 mapper)
-from app.scores.models import (  # noqa: F401 (Phase 13 mappers)
-    CourierScoreSnapshot,
-    ScoreWeight,
-)
-from app.suspensions.models import (  # noqa: F401 (Phase 13 mappers)
-    AreaRevenueShare,
-    SuspensionAppeal,
-)
-from app.tracking.models import DeliveryLocation  # noqa: F401 (Phase 9 mapper)
-from app.webhooks.models import (  # noqa: F401 (registers mappers — Phase 12)
-    WebhookDelivery,
-    WebhookEndpoint,
-)
-from app.withdrawals.models import Withdrawal  # noqa: F401 (Phase 15 mapper)
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from tests.helpers import Seed
+
+# Registra TODOS os mappers (app/<módulo>/models.py) antes do create_all: importar por nome
+# quebrava a cada modelo removido/renomeado (ex.: User e MerchantUser saíram em dd23333).
+for _mod in (m for m in pkgutil.iter_modules(_app_pkg.__path__) if m.ispkg):
+    _nome = f"app.{_mod.name}.models"
+    try:
+        importlib.import_module(_nome)
+    except ModuleNotFoundError as _e:
+        if _e.name != _nome:
+            raise
 
 
 # --- Layer 1: real app + ASGI client (health tests) ---
@@ -150,33 +104,26 @@ async def seed(session_factory) -> Seed:
         s.add_all([area_a, area_b])
         await s.flush()
 
-        admin_a = User(
-            email="admin.a@example.com",
+        # Desde dd23333 não há tabela `users`: cada ator tem a sua conta
+        # (aqui, admin da área e admin da plataforma)
+        admin_a = AreaAdmin(
+            area_id=area_a.id,
             name="Admin A",
+            email="admin.a@example.com",
             password_hash=pwd_hash,
-            platform_role="user",
+            role="owner",
         )
-        admin_b = User(
-            email="admin.b@example.com",
+        admin_b = AreaAdmin(
+            area_id=area_b.id,
             name="Admin B",
+            email="admin.b@example.com",
             password_hash=pwd_hash,
-            platform_role="user",
+            role="owner",
         )
-        platform_admin = User(
-            email="platform@example.com",
-            name="Platform",
-            password_hash=pwd_hash,
-            platform_role="admin_plataforma",
+        platform_admin = PlatformAdmin(
+            email="platform@example.com", name="Platform", password_hash=pwd_hash
         )
         s.add_all([admin_a, admin_b, platform_admin])
-        await s.flush()
-
-        s.add_all(
-            [
-                AreaAdmin(area_id=area_a.id, user_id=admin_a.id, role="owner"),
-                AreaAdmin(area_id=area_b.id, user_id=admin_b.id, role="owner"),
-            ]
-        )
         await s.commit()
 
         for obj in (area_a, area_b, admin_a, admin_b, platform_admin):

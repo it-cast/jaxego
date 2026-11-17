@@ -20,6 +20,8 @@ from app.payments_direct.models import PaymentDispute
 from app.workers.lifecycle import finalize_deliveries
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from tests.helpers import make_team
+
 
 @dataclass
 class FinSeed:
@@ -78,20 +80,12 @@ async def fin_seed(session_factory: async_sessionmaker[AsyncSession]) -> FinSeed
         nbhd = Neighborhood(area_id=area.id, name="Centro", is_informal=False)
         s.add(nbhd)
         await s.flush()
-        from app.auth.models import User
         from app.core.security import hash_password
 
-        u = User(
-            email="c@e.com",
-            name="C",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        s.add(u)
-        await s.flush()
         courier = Courier(
             area_id=area.id,
-            user_id=u.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="39053344705",
             full_name="C",
             phone_e164="+5522999990000",

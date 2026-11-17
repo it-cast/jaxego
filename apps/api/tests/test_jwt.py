@@ -22,18 +22,19 @@ from app.core.security import (
 
 
 def test_access_token_roundtrip() -> None:
-    token = encode_access(user_id=42, area_scope=7, role="admin_area")
+    token = encode_access(42, "area_admin", 7, "admin_area:owner")
     claims = decode_access(token)
     assert claims["sub"] == "42"
     assert claims["area_scope"] == 7
-    assert claims["role"] == "admin_area"
+    assert claims["role"] == "admin_area:owner"
+    assert claims["typ"] == "area_admin"
     assert claims["iss"] == settings.jwt_issuer
     assert claims["aud"] == settings.jwt_audience
     assert "jti" in claims
 
 
 def test_platform_admin_area_scope_none() -> None:
-    token = encode_access(user_id=1, area_scope=None, role="admin_plataforma")
+    token = encode_access(1, "platform_admin", None, "admin_plataforma")
     claims = decode_access(token)
     assert claims["area_scope"] is None
 

@@ -29,10 +29,9 @@ from decimal import Decimal
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier, CourierCoverageArea, CourierPricingTable
-from app.merchants.models import Merchant, MerchantSubscription, MerchantUser
+from app.merchants.models import Merchant, MerchantSubscription
 from app.neighborhoods.models import Neighborhood
 from app.payments.models import (  # noqa: F401 (registers Phase 10 mappers)
     EscrowLedger,
@@ -43,6 +42,8 @@ from app.plans.models import SubscriptionPlan
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 PASSWORD = "correct-horse-staple-10"
 
@@ -179,15 +180,6 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
         s.add_all([area_a, area_b])
         await s.flush()
 
-        owner = User(
-            email="loja@example.com",
-            name="Loja Dona",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add(owner)
-        await s.flush()
-
         merchant = Merchant(
             area_id=area_a.id,
             account_type="cnpj",
@@ -196,16 +188,16 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
             category="alimentacao",
             phone_e164="+5522999990001",
             email="loja@example.com",
+            password_hash=hash_password("correct-horse-staple-10"),
             status="active",
         )
         s.add(merchant)
         await s.flush()
-        s.add(MerchantUser(merchant_id=merchant.id, user_id=owner.id, role="owner"))
 
         free = SubscriptionPlan(
             code="free",
             name="Free",
-            price_cents=0,
+            price_monthly_cents=0,
             deliveries_per_month=30,
             fee_cents=200,
             is_free=True,
@@ -215,7 +207,7 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
         pro = SubscriptionPlan(
             code="pro",
             name="Profissional",
-            price_cents=9990,
+            price_monthly_cents=9990,
             deliveries_per_month=300,
             fee_cents=150,
             is_free=False,
@@ -241,24 +233,10 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
         s.add_all([pickup, dropoff])
         await s.flush()
 
-        courier_user = User(
-            email="entregador@example.com",
-            name="João Entregador",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        courier_user2 = User(
-            email="semmei@example.com",
-            name="Pedro Sem MEI",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add_all([courier_user, courier_user2])
-        await s.flush()
-
         courier = Courier(
             area_id=area_a.id,
-            user_id=courier_user.id,
+            team_id=(await make_team(s, area_id=area_a.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="39053344705",
             full_name="João Entregador",
             phone_e164="+5522999990002",
@@ -273,7 +251,8 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
         )
         courier_no_mei = Courier(
             area_id=area_a.id,
-            user_id=courier_user2.id,
+            team_id=(await make_team(s, area_id=area_a.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf="11144477735",
             full_name="Pedro Sem MEI",
             phone_e164="+5522999990003",
@@ -313,7 +292,7 @@ async def payments_seed(session_factory: async_sessionmaker[AsyncSession]) -> Pa
         return PaymentsSeed(
             area_a_id=area_a.id,
             area_b_id=area_b.id,
-            owner_user_id=owner.id,
+            owner_user_id=merchant.id,
             merchant_id=merchant.id,
             free_plan_id=free.id,
             pro_plan_id=pro.id,

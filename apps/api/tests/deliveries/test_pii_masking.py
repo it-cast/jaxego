@@ -23,6 +23,7 @@ def _body(seed, **over) -> CreateDeliveryBody:
         "pickup_address": "Rua A, 100",
         "pickup_neighborhood": "Centro",
         "dropoff_neighborhood_id": seed.dropoff_nbhd_id,
+        "team_ids": [1],
         "dropoff_address": "Rua das Flores, 200",
         "dropoff_number": "200",
         "dropoff_complement": "ap 12",

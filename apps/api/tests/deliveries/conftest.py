@@ -19,14 +19,15 @@ from decimal import Decimal
 
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier, CourierCoverageArea, CourierPricingTable
-from app.merchants.models import Merchant, MerchantSubscription, MerchantUser
+from app.merchants.models import Merchant, MerchantSubscription
 from app.neighborhoods.models import Neighborhood
 from app.plans.service import seed_plans_if_missing
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 PASSWORD = "correct-horse-staple-10"
 
@@ -61,15 +62,16 @@ async def _make_courier_online(
     s: AsyncSession,
     *,
     area_id: int,
-    user_id: int,
     pickup_id: int,
     dropoff_id: int,
     price: Decimal,
 ) -> Courier:
     """An ONLINE, active courier covering pickup+dropoff with a per-neighborhood price."""
+    team = await make_team(s, area_id=area_id)
     courier = Courier(
         area_id=area_id,
-        user_id=user_id,
+        team_id=team.id,
+        password_hash=hash_password(PASSWORD),
         cpf="39053344705",
         full_name="João Entregador",
         phone_e164="+5522999990000",
@@ -119,27 +121,7 @@ async def delivery_seed(
         s.add_all([area_a, area_b])
         await s.flush()
 
-        owner = User(
-            email="loja@example.com",
-            name="Dona da Loja",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        other_owner = User(
-            email="loja.b@example.com",
-            name="Outra Loja",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        courier_user = User(
-            email="entregador@example.com",
-            name="João Entregador",
-            password_hash=hash_password(PASSWORD),
-            platform_role="user",
-        )
-        s.add_all([owner, other_owner, courier_user])
-        await s.flush()
-
+        # Desde dd23333 não há `users`: a loja e o entregador são as próprias contas
         merchant = Merchant(
             area_id=area_a.id,
             account_type="cnpj",
@@ -148,6 +130,7 @@ async def delivery_seed(
             category="restaurante",
             phone_e164="+5522999991111",
             email="loja@example.com",
+            password_hash=hash_password(PASSWORD),
             status="active",
         )
         other_merchant = Merchant(
@@ -158,6 +141,7 @@ async def delivery_seed(
             category="restaurante",
             phone_e164="+5522999992222",
             email="loja.b@example.com",
+            password_hash=hash_password(PASSWORD),
             status="active",
         )
         s.add_all([merchant, other_merchant])
@@ -165,8 +149,6 @@ async def delivery_seed(
 
         s.add_all(
             [
-                MerchantUser(merchant_id=merchant.id, user_id=owner.id, role="owner"),
-                MerchantUser(merchant_id=other_merchant.id, user_id=other_owner.id, role="owner"),
                 MerchantSubscription(
                     area_id=area_a.id,
                     merchant_id=merchant.id,
@@ -187,7 +169,6 @@ async def delivery_seed(
         courier = await _make_courier_online(
             s,
             area_id=area_a.id,
-            user_id=courier_user.id,
             pickup_id=pickup.id,
             dropoff_id=dropoff.id,
             price=Decimal("10.00"),
@@ -197,11 +178,11 @@ async def delivery_seed(
         return DeliverySeed(
             area_a_id=area_a.id,
             area_b_id=area_b.id,
-            owner_user_id=owner.id,
-            owner_email=owner.email,
+            owner_user_id=merchant.id,
+            owner_email=merchant.email,
             merchant_id=merchant.id,
-            other_owner_user_id=other_owner.id,
-            other_owner_email=other_owner.email,
+            other_owner_user_id=other_merchant.id,
+            other_owner_email=other_merchant.email,
             other_merchant_id=other_merchant.id,
             pickup_nbhd_id=pickup.id,
             dropoff_nbhd_id=dropoff.id,

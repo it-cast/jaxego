@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import pytest
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.exceptions import NotFoundError
 from app.core.security import hash_password
 from app.couriers.models import Courier
@@ -24,22 +23,17 @@ from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from tests.helpers import make_team
+
 pytestmark = pytest.mark.asyncio
 
 
 async def _courier(s: AsyncSession, area_id: int, email: str, cpf: str) -> Courier:
-    user = User(
-        email=email,
-        name="Entregador",
-        phone="+5522999990000",
-        password_hash=hash_password("correct-horse-staple-10"),
-        platform_role="user",
-    )
-    s.add(user)
-    await s.flush()
+    team = await make_team(s, area_id=area_id)
     courier = Courier(
         area_id=area_id,
-        user_id=user.id,
+        team_id=team.id,
+        password_hash=hash_password("correct-horse-staple-10"),
         cpf=cpf,
         full_name="Entregador",
         phone_e164="+5522999990000",
@@ -81,8 +75,6 @@ async def _delivery(
         dropoff_complement="ap 2",
         dropoff_neighborhood_id=nbhd_id,
         distance_m=2800,
-        estimate_min_cents=1000,
-        estimate_max_cents=1000,
         fee_cents=0,
         items_quantity=1,
         public_token=token,

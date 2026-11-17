@@ -13,11 +13,12 @@ from dataclasses import dataclass
 import pytest
 import pytest_asyncio
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.security import hash_password
 from app.couriers.models import Courier
 from app.payments.models import EscrowLedger
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from tests.helpers import make_team
 
 PASSWORD = "correct-horse-staple-10"
 
@@ -45,17 +46,11 @@ def payout_failing_stub():
 
 
 async def _courier(s: AsyncSession, *, area_id: int, email: str, cpf: str) -> Courier:
-    user = User(
-        email=email,
-        name="Courier",
-        password_hash=hash_password(PASSWORD),
-        platform_role="user",
-    )
-    s.add(user)
-    await s.flush()
+    team = await make_team(s, area_id=area_id)
     courier = Courier(
         area_id=area_id,
-        user_id=user.id,
+        team_id=team.id,
+        password_hash=hash_password(PASSWORD),
         cpf=cpf,
         full_name="Courier",
         phone_e164=f"+55229999{cpf[:5]}",

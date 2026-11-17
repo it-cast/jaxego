@@ -15,6 +15,7 @@ from app.deliveries.schemas import CreateDeliveryBody
 
 def _body(seed) -> CreateDeliveryBody:
     return CreateDeliveryBody(
+        team_ids=[1],  # equipe da área (CreateDeliveryBody.team_ids é obrigatório)
         pickup_address="Rua A, 100",
         pickup_neighborhood="Centro",
         dropoff_neighborhood_id=seed.dropoff_nbhd_id,

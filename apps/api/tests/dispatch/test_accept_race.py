@@ -37,7 +37,6 @@ import pytest
 import pytest_asyncio
 import redis.asyncio as aioredis
 from app.areas.models import Area
-from app.auth.models import User
 from app.core.config import settings
 from app.core.security import hash_password
 from app.couriers.models import Courier
@@ -50,6 +49,8 @@ from app.merchants.models import Merchant
 from app.neighborhoods.models import Neighborhood
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+
+from tests.helpers import make_team
 
 pytestmark = pytest.mark.mysql
 
@@ -86,20 +87,6 @@ async def _seed(engine: AsyncEngine) -> tuple[int, int, int, int]:
         await s.flush()
 
         suffix = uuid.uuid4().int % 10_000_000
-        u1 = User(
-            email=f"c1-{suffix}@example.com",
-            name="C1",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        u2 = User(
-            email=f"c2-{suffix}@example.com",
-            name="C2",
-            password_hash=hash_password("correct-horse-staple-10"),
-            platform_role="user",
-        )
-        s.add_all([u1, u2])
-        await s.flush()
 
         merchant = Merchant(
             area_id=area.id,
@@ -120,7 +107,8 @@ async def _seed(engine: AsyncEngine) -> tuple[int, int, int, int]:
 
         c1 = Courier(
             area_id=area.id,
-            user_id=u1.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf=f"{suffix:011d}",
             full_name="C1",
             phone_e164=f"+5522{suffix:09d}",
@@ -132,7 +120,8 @@ async def _seed(engine: AsyncEngine) -> tuple[int, int, int, int]:
         )
         c2 = Courier(
             area_id=area.id,
-            user_id=u2.id,
+            team_id=(await make_team(s, area_id=area.id)).id,
+            password_hash=hash_password("correct-horse-staple-10"),
             cpf=f"{(suffix + 1):011d}",
             full_name="C2",
             phone_e164=f"+5523{suffix:09d}",
