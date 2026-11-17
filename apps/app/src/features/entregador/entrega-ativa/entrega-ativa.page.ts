@@ -279,6 +279,7 @@ function sameLatLng(a: LatLng | null, b: LatLng | null): boolean {
         background: var(--jx-color-surface);
         border: 1px solid var(--jx-color-neutral-200);
         border-radius: var(--jx-radius-lg);
+        padding: var(--jx-space-4);
         display: flex;
         flex-direction: column;
         gap: var(--jx-space-1);
@@ -642,12 +643,16 @@ export class EntregadorEntregaAtivaPage implements OnInit {
   protected steps(): { key: string; label: string; done: boolean; current: boolean }[] {
     const state = this.delivery()?.state;
     const collected = state === 'COLETADA';
-    return [
+    const steps = [
       { key: 'aceita', label: 'Aceita', done: true, current: false },
       { key: 'coleta', label: 'Coletar', done: collected, current: !collected },
       { key: 'entrega', label: 'Entregar no destino', done: false, current: collected },
-      { key: 'comprovar', label: 'Comprovar entrega', done: false, current: false },
     ];
+    // Sem comprovação a entrega finaliza direto ao chegar (advance → finalizeNoProof): não há etapa de comprovar
+    if (this.delivery()?.proof_method !== 'none') {
+      steps.push({ key: 'comprovar', label: 'Comprovar entrega', done: false, current: false });
+    }
+    return steps;
   }
 
   protected receiptLabel(): string {

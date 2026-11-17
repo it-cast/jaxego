@@ -394,7 +394,8 @@ export class EntregadorInicioPage implements OnInit {
   protected readonly online = signal(false);
   protected readonly onlineUntil = signal<Date | null>(null);
   protected readonly showOnlineModal = signal(false);
-  protected readonly onlineUntilTime = signal('00:00');
+  // 23:59 = até o fim do dia (o entregador pode mudar no campo)
+  protected readonly onlineUntilTime = signal('23:59');
   private onlineTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly firstName = signal('');
   protected readonly balance = signal<Balance | null>(null);

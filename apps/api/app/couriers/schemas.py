@@ -16,6 +16,13 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from validate_docbr import CPF
 
 from app.auth.schemas import PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
+from app.db.mixins import ensure_aware_utc
+
+
+def _utc_ou_none(v: datetime | None) -> datetime | None:
+    """O MySQL devolve o DATETIME sem fuso; o valor gravado é UTC. Sem o fuso, o app lia
+    "2026-11-18T02:59:00" como hora local e mostrava "Online até 02:59" em vez de 23:59."""
+    return ensure_aware_utc(v) if v is not None else None
 
 _CPF = CPF()
 
@@ -266,6 +273,11 @@ class AvailabilityResponse(BaseModel):
     busy: bool
     online_until: datetime | None = None
 
+    @field_validator("online_until", mode="after")
+    @classmethod
+    def _online_until_utc(cls, v: datetime | None) -> datetime | None:
+        return _utc_ou_none(v)
+
 
 def mask_cpf_display(cpf: str) -> str:
     """Mask a CPF for admin display: keep first 3 + last 2 (123.***.***-09)."""
@@ -364,3 +376,8 @@ class CourierProfileOut(BaseModel):
     team_id: int
     team_name: str | None = None
     documents: list[CourierDocumentItem]
+
+    @field_validator("online_until", mode="after")
+    @classmethod
+    def _online_until_utc(cls, v: datetime | None) -> datetime | None:
+        return _utc_ou_none(v)

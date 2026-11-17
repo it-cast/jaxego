@@ -58,15 +58,14 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
   `,
   styles: [
     `
-      /* Redesign v3 §6.2 — tab bar flutuante (pílula elevada, blur), alvos 56px,
-         indicador ativo tangerina. Tokens only (Gate 2). */
+      /* Menu de baixo como antes do redesign v3 (pedido do Roger, 17/11/2026): barra branca reta de ponta a ponta,
+         presa no rodapé, sem curva (a curva deixava o cinza da página aparecer nos cantos); o ativo muda só a cor. Sem pílula flutuante (a margem
+         deixava uma faixa cinza e a altura maior escondia o fim das telas). */
       :host {
         display: flex;
         flex-direction: column;
         height: 100vh;
         height: 100dvh;
-        background-color: var(--surface);
-        background-image: var(--surface-page-glow);
       }
       .jx-shell__content {
         flex: 1;
@@ -77,15 +76,9 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
         flex-shrink: 0;
         display: flex;
         align-items: stretch;
-        gap: var(--jx-space-1);
-        margin: 0 var(--jx-space-3) calc(var(--jx-space-3) + env(safe-area-inset-bottom, 0px));
-        padding: var(--jx-space-1);
-        background: var(--topbar-bg);
-        backdrop-filter: saturate(1.4) blur(16px);
-        -webkit-backdrop-filter: saturate(1.4) blur(16px);
-        border: 1px solid var(--border);
-        border-radius: var(--jx-radius-2xl);
-        box-shadow: var(--shadow-lg);
+        background: var(--surface-elevated, #fff);
+        border-top: 1px solid var(--border, #e5e0d8);
+        padding: 0.5em 0.5em calc(0.5em + env(safe-area-inset-bottom, 0px));
       }
       .jx-tab {
         flex: 1;
@@ -94,43 +87,26 @@ import { OfferSheetComponent } from '../features/entregador/oferta/offer-sheet.c
         align-items: center;
         justify-content: center;
         gap: 2px;
-        min-height: 56px;
-        border-radius: var(--jx-radius-xl);
-        color: var(--text-muted);
-        font-size: var(--jx-text-2xs);
-        font-weight: var(--jx-weight-semibold);
-        letter-spacing: 0.01em;
+        padding: 6px 0 4px;
+        color: var(--text-muted, #8c8279);
+        font-size: 10px;
+        font-weight: 600;
         text-decoration: none;
+        cursor: pointer;
         -webkit-tap-highlight-color: transparent;
-        transition:
-          color var(--jx-motion-fast) var(--jx-motion-easing-out),
-          background var(--jx-motion-fast) var(--jx-motion-easing-out);
+        transition: color 0.15s;
       }
       .jx-tab__icon {
-        display: grid;
-        place-items: center;
-        width: 44px;
-        height: 28px;
-        border-radius: var(--jx-radius-full);
-        font-size: var(--jx-text-lg);
-        transition:
-          background var(--jx-motion-normal) var(--jx-motion-spring),
-          transform var(--jx-motion-normal) var(--jx-motion-spring);
-      }
-      .jx-tab:active .jx-tab__icon {
-        transform: scale(0.9);
+        font-size: 20px;
+        line-height: 1;
       }
       .jx-tab--active {
-        color: var(--brand);
-      }
-      .jx-tab--active .jx-tab__icon {
-        background: var(--brand-gradient);
-        color: var(--brand-contrast);
-        box-shadow: var(--shadow-glow);
+        color: var(--brand, #e8722a);
       }
       .jx-tab:focus-visible {
         outline: none;
         box-shadow: var(--focus-ring);
+        border-radius: var(--jx-radius-xl);
       }
 
       /* O jx-offer-sheet já é position:fixed — este host apenas o instancia. */
