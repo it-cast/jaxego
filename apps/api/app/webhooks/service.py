@@ -96,6 +96,7 @@ async def enqueue_event(
         event_type=event_type,
         occurred_at=now.isoformat(),
         public_token=delivery.public_token,
+        delivery_id=delivery.id,
         reference_number=delivery.reference_number,
         state=state,
         dropoff_neighborhood_id=delivery.dropoff_neighborhood_id,

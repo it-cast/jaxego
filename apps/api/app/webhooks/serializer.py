@@ -38,6 +38,7 @@ def serialize_webhook(
     event_type: str,
     occurred_at: str,
     public_token: str,
+    delivery_id: int | None = None,
     reference_number: str | None,
     state: str,
     dropoff_neighborhood_id: int,
@@ -47,6 +48,8 @@ def serialize_webhook(
 ) -> dict[str, object]:
     """Minimised webhook payload (RN-013 / TH-09). NEVER recipient phone/CPF."""
     data: dict[str, object] = {
+        # id da entrega: o integrador consulta GET /v1/public/deliveries/{id} com ele
+        "delivery_id": delivery_id,
         "public_token": public_token,
         "reference_number": reference_number,
         "state": state,

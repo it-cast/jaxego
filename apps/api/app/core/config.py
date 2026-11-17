@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Environment / release metadata
     environment: Literal["dev", "staging", "production", "test"] = Field(default="dev")
     app_version: str = Field(default="0.1.0")
+    # Base pública do painel web (ex.: https://app.jaxego.com.br): monta o link de
+    # acompanhamento `<base>/r/<public_token>` devolvido pela API pública. Vazio = sem link.
+    public_web_base_url: str | None = Field(default=None)
 
     # Datastores
     database_url: str = Field(

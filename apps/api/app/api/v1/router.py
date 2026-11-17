@@ -78,8 +78,10 @@ api_router.include_router(payments_webhooks_router)
 # - api_keys.admin_router: /v1/admin/areas/{area_id}/api-keys + /webhook (area admin).
 from app.api_keys.admin_router import router as api_keys_admin_router  # noqa: E402
 from app.api_public.router import router as public_deliveries_router  # noqa: E402
+from app.api_public.router import extras_router as public_extras_router  # noqa: E402
 
 api_router.include_router(public_deliveries_router, prefix="/public")
+api_router.include_router(public_extras_router, prefix="/public")
 api_router.include_router(api_keys_admin_router)
 
 # Phase 13 domain sub-routers (governança — score, avaliações, suspensão/recurso,

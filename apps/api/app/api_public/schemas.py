@@ -26,11 +26,19 @@ class PublicCreateDeliveryBody(BaseModel):
     pickup_address: str = Field(min_length=3, max_length=255)
     pickup_neighborhood: str | None = Field(default=None, max_length=120)
 
-    # --- Dropoff ---
-    dropoff_neighborhood_id: int
+    pickup_lat: float | None = Field(default=None, ge=-90, le=90)
+    pickup_lng: float | None = Field(default=None, ge=-180, le=180)
+
+    # --- Dropoff (bairro pelo id do catálogo OU pelo nome, casado sem acento/caixa) ---
+    dropoff_neighborhood_id: int | None = Field(default=None, ge=1)
+    dropoff_neighborhood_name: str | None = Field(default=None, min_length=2, max_length=120)
     dropoff_address: str = Field(min_length=3, max_length=255)
     dropoff_number: str | None = Field(default=None, max_length=20)
     dropoff_complement: str | None = Field(default=None, max_length=120)
+    dropoff_reference: str | None = Field(default=None, max_length=255)
+    cep: str | None = Field(default=None, max_length=9)
+    dropoff_lat: float | None = Field(default=None, ge=-90, le=90)
+    dropoff_lng: float | None = Field(default=None, ge=-180, le=180)
     distance_m: int | None = Field(default=None, ge=0)
 
     # --- Recipient (name + phone mandatory; email/CPF optional) ---
@@ -55,6 +63,15 @@ class PublicCreateDeliveryBody(BaseModel):
     def _require_one_store_target(self) -> PublicCreateDeliveryBody:
         if self.merchant_external_ref is None and self.merchant_id is None:
             raise ValueError("Informe merchant_external_ref ou merchant_id.")
+        if (
+            self.dropoff_neighborhood_id is None
+            and not (self.dropoff_neighborhood_name or "").strip()
+        ):
+            raise ValueError("Informe dropoff_neighborhood_id ou dropoff_neighborhood_name.")
+        if (self.pickup_lat is None) != (self.pickup_lng is None) or (self.dropoff_lat is None) != (
+            self.dropoff_lng is None
+        ):
+            raise ValueError("Coordenadas vão em par (lat e lng).")
         return self
 
 
@@ -63,7 +80,81 @@ class PublicDeliveryResponse(BaseModel):
 
     delivery_id: int
     public_token: str
+    # Link público de acompanhamento (None sem PUBLIC_WEB_BASE_URL). Default None: um replay
+    # de snapshot gravado antes deste campo continua válido.
+    tracking_url: str | None = None
     state: str
     price_cents: int | None = None
     fee_cents: int
     no_couriers_warning: bool
+
+
+# ---------------------------------------------------------------------------
+# Vínculo da loja, cotação, consulta e cancelamento (integração Menu Certo).
+# ---------------------------------------------------------------------------
+class ResolveMerchantBody(BaseModel):
+    """Acha a loja da ÁREA da chave pelo CNPJ/CPF (só dígitos são considerados)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    document: str = Field(min_length=11, max_length=20)
+
+
+class PublicMerchantOut(BaseModel):
+    merchant_id: int
+    trade_name: str
+    status: str
+    external_ref: str | None = None
+
+
+class PublicQuoteOut(BaseModel):
+    dropoff_neighborhood_id: int
+    zona_name: str | None = None
+    courier_count: int
+    price_min_cents: int | None = None
+    price_max_cents: int | None = None
+
+
+class PublicPoint(BaseModel):
+    lat: float
+    lng: float
+
+
+class PublicCourierOut(BaseModel):
+    name: str
+    phone_e164: str | None = None
+    vehicle_type: str | None = None
+    vehicle_plate: str | None = None
+    rating: float | None = None
+
+
+class PublicTimelineItem(BaseModel):
+    state: str
+    at: str | None = None
+
+
+class PublicDeliveryDetail(BaseModel):
+    """Estado completo de uma entrega da área (sem dados do destinatário)."""
+
+    delivery_id: int
+    public_token: str
+    tracking_url: str | None = None
+    reference_number: str | None = None
+    state: str
+    price_cents: int | None = None
+    fee_cents: int
+    cancelable: bool
+    courier: PublicCourierOut | None = None
+    courier_position: PublicPoint | None = None
+    courier_position_at: str | None = None
+    pickup: PublicPoint | None = None
+    dropoff: PublicPoint | None = None
+    dropoff_neighborhood: str | None = None
+    timeline: list[PublicTimelineItem] = []
+    created_at: str | None = None
+
+
+class PublicCancelBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str | None = Field(default=None, max_length=255)
