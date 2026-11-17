@@ -128,8 +128,11 @@ class WorkerSettings:
         cron(reconcile_safe2pay, hour={7}, minute={0}),
         # Phase 12 — purge expired idempotency snapshots hourly (T-05, LGPD/cleanup).
         cron(purge_idempotency_keys, minute={23}),
-        # Phase 12 — sweep due webhook deliveries every minute (drives the 8× backoff).
-        cron(deliver_due_webhooks, minute=set(range(0, 60))),
+        # Phase 12 — sweep due webhook deliveries every 10 s (drives the 8× backoff).
+        # 17/11/2026: era a cada minuto — o integrador (Menu Certo) via aceite/coleta/entrega
+        # até 60 s depois.
+        # Repetição eventual entre varreduras é segura: o receptor deduplica por X-Jaxego-Event-Id.
+        cron(deliver_due_webhooks, second=set(range(0, 60, 10))),
         # Phase 13 — enforce appeal SLA every 5 min (auto-revert past-due undecided).
         cron(enforce_appeal_sla, minute=set(range(0, 60, 5))),
         # Re-dispatch CRIADA deliveries with no active offer every 5 min (fluxos.md E1).
