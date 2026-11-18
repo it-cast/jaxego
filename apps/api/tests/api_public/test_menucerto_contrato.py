@@ -57,13 +57,18 @@ class _Resultado:
 
 
 class _SessaoFalsa:
-    """Devolve sempre a mesma lista: o filtro por área/arquivado é do SQL, aqui só o casamento."""
+    """Devolve sempre a mesma lista: o filtro por área/arquivado é do SQL, aqui só o casamento.
+    A consulta da assinatura (acesso da loja) devolve `assinaturas`."""
 
-    def __init__(self, itens):
+    def __init__(self, itens, assinaturas=()):
         self.itens = itens
+        self.assinaturas = list(assinaturas)
 
-    async def execute(self, _stmt):
-        return _Resultado(self.itens)
+    async def execute(self, stmt):
+        from app.merchants.models import MerchantSubscription
+
+        entidade = stmt.column_descriptions[0].get("entity")
+        return _Resultado(self.assinaturas if entidade is MerchantSubscription else self.itens)
 
 
 def test_schema_aceita_o_corpo_do_painel():
@@ -125,6 +130,9 @@ async def test_loja_pelo_documento_so_digitos_e_status():
     assert (out.merchant_id, out.trade_name, out.external_ref) == (42, "Loja do Roger", "mc-809")
     out2 = await service.resolve_merchant_by_document(_SessaoFalsa(lojas), area_id=1, document="79280435051")
     assert out2.merchant_id == 6
+    assert out.access == "active"  # sem assinatura = acesso normal
+    cancelada = _SessaoFalsa(lojas, [SimpleNamespace(billing_status="cancelado")])
+    assert (await service.resolve_merchant_by_document(cancelada, area_id=1, document="18295941763")).access == "disabled"
     assert (await service.resolve_merchant_by_document(_SessaoFalsa(lojas), area_id=1, document="11.222.333/0001-81")).status == "inactive"
     with pytest.raises(AppError) as e:
         await service.resolve_merchant_by_document(_SessaoFalsa(lojas), area_id=1, document="00000000000")
@@ -171,6 +179,8 @@ def test_rotas_montadas_em_v1_public():
         ("GET", "/public/deliveries/{delivery_id}"),
         ("POST", "/public/deliveries/{delivery_id}/cancel"),
         ("POST", "/public/merchants/resolve"),
+        ("POST", "/public/merchants"),
+        ("POST", "/public/merchants/{merchant_id}/access"),
         ("GET", "/public/quote"),
     ]:
         assert esperado in rotas, esperado

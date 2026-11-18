@@ -30,6 +30,9 @@ from app.api_keys.models import ApiIdempotencyKey
 from app.api_public.schemas import (
     PublicCourierOut,
     PublicCreateDeliveryBody,
+    PublicCreateMerchantBody,
+    PublicCreateMerchantOut,
+    PublicMerchantAccessOut,
     PublicDeliveryDetail,
     PublicDeliveryResponse,
     PublicMerchantOut,
@@ -42,7 +45,7 @@ from app.deliveries import service as delivery_service
 from app.deliveries.models import Delivery, DeliveryStateTransition
 from app.deliveries.schemas import CreateDeliveryBody
 from app.deliveries.state_machine import DELIVERY_TRANSITIONS
-from app.merchants.models import Merchant
+from app.merchants.models import Merchant, MerchantSubscription
 from app.neighborhoods.models import Neighborhood
 
 # Idempotency snapshot lifetime (ADR-010 / D-04).
@@ -287,11 +290,185 @@ async def resolve_merchant_by_document(
     if merchant is None:
         raise StoreNotResolvableError()
     status = merchant.status if getattr(merchant, "is_active", True) else "inactive"
+    sub = await _assinatura(session, area_id=area_id, merchant_id=merchant.id)
     return PublicMerchantOut(
         merchant_id=merchant.id,
         trade_name=merchant.trade_name,
         status=status,
         external_ref=merchant.external_ref,
+        access=_acesso(sub),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cadastro da loja pelo integrador e acesso (escopo merchants:write).
+# O integrador (Menu Certo) cobra a loja na própria mensalidade: a assinatura nasce no
+# plano pedido, billing_status active e SEM forma de pagamento — os jobs de cobrança só
+# olham card/pix e a inadimplência só existe com cobrança aberta, então nada é cobrado
+# nem bloqueado aqui. Desligar = billing_status "cancelado" (a guarda de criação de
+# entrega barra; o sync de inadimplência não mexe em "cancelado"). Religar = "active".
+# ---------------------------------------------------------------------------
+class PlanNotFoundError(AppError):
+    status_code = 422
+    code = "plan_not_found"
+
+    def __init__(self) -> None:
+        super().__init__("Plano não encontrado no catálogo.")
+
+
+def _acesso(sub: MerchantSubscription | None) -> str:
+    return "disabled" if sub is not None and sub.billing_status in ("blocked", "cancelado") else "active"
+
+
+async def _assinatura(
+    session: AsyncSession, *, area_id: int, merchant_id: int
+) -> MerchantSubscription | None:
+    return (
+        await session.execute(
+            select(MerchantSubscription)
+            .where(
+                MerchantSubscription.area_id == area_id,
+                MerchantSubscription.merchant_id == merchant_id,
+            )
+            .order_by(MerchantSubscription.id.desc())
+        )
+    ).scalars().first()
+
+
+async def create_merchant_by_integrator(
+    session: AsyncSession,
+    *,
+    area_id: int,
+    body: PublicCreateMerchantBody,
+    receita: object,
+    geocoding: object,
+    ip: str | None,
+    api_key_id: int,
+) -> PublicCreateMerchantOut:
+    """Cria a loja na área da chave pelo MESMO cadastro da tela (validação, unicidade,
+    Receita, geocodificação), já ativa e no plano pago pelo integrador."""
+    from app.audit.service import write_audit
+    from app.merchants import service as merchant_service
+    from app.merchants.schemas import MerchantSignupBody
+    from app.plans import service as plans_service
+
+    plano = await plans_service.get_plan_by_code(session, body.plan_code)
+    if plano is None:
+        raise PlanNotFoundError()
+
+    resultado = await merchant_service.signup(
+        session,
+        body=MerchantSignupBody(
+            area_id=area_id,
+            account_type=body.account_type,
+            document=body.document,
+            trade_name=body.trade_name,
+            category=body.category,
+            phone_e164=body.phone_e164,
+            email=body.email,
+            password=body.password,
+            consent=True,
+            address=body.address,
+            address_number=body.address_number,
+            address_neighborhood=body.address_neighborhood,
+            address_zip=body.address_zip,
+            address_state=body.address_state,
+            lat=body.lat,
+            lng=body.lng,
+        ),
+        receita=receita,  # type: ignore[arg-type]
+        geocoding=geocoding,  # type: ignore[arg-type]
+        ip=ip,
+    )
+    merchant = await session.get(Merchant, resultado.merchant_id)
+    assert merchant is not None
+    # O integrador já conferiu a loja: sem Receita no ar ela não fica esperando revalidação
+    if merchant.status == "pending_validation":
+        merchant.status = "active"
+        merchant.next_revalidation_at = None
+    ref = (body.external_ref or "").strip() or None
+    if ref:
+        em_uso = (
+            await session.execute(
+                select(Merchant.id).where(Merchant.area_id == area_id, Merchant.external_ref == ref)
+            )
+        ).first()
+        if em_uso is None:
+            merchant.external_ref = ref
+
+    sub = await _assinatura(session, area_id=area_id, merchant_id=merchant.id)
+    if sub is None:
+        sub = MerchantSubscription(area_id=area_id, merchant_id=merchant.id, plan_id=plano.id)
+        session.add(sub)
+    sub.plan_id = plano.id
+    sub.status = "active"
+    sub.billing_status = "active"
+    sub.payment_method = None
+    sub.cycle = None
+    sub.amount_cents = 0
+    sub.due_at = None
+    await session.flush()
+
+    await write_audit(
+        session,
+        actor_id=None,
+        action="merchant.created_by_integrator",
+        area_id=area_id,
+        after={
+            "merchant_id": merchant.id,
+            "status": merchant.status,
+            "plan": plano.code,
+            "api_key_id": api_key_id,
+            "consent": True,
+        },
+        ip=ip,
+    )
+    return PublicCreateMerchantOut(
+        merchant_id=merchant.id,
+        trade_name=merchant.trade_name,
+        status=merchant.status,
+        plan_code=plano.code,
+        access="active",
+    )
+
+
+async def set_merchant_access(
+    session: AsyncSession,
+    *,
+    area_id: int,
+    merchant_id: int,
+    active: bool,
+    ip: str | None,
+    api_key_id: int,
+) -> PublicMerchantAccessOut:
+    """Liga/desliga a loja da área (fora da área = 404). Entregas em andamento seguem."""
+    from app.audit.service import write_audit
+
+    merchant = (
+        await session.execute(
+            select(Merchant).where(Merchant.id == merchant_id, Merchant.area_id == area_id)
+        )
+    ).scalar_one_or_none()
+    if merchant is None:
+        raise StoreNotResolvableError()
+    sub = await _assinatura(session, area_id=area_id, merchant_id=merchant.id)
+    if sub is None:
+        raise AppError("A loja não tem assinatura.", code="subscription_missing")
+    antes = sub.billing_status
+    sub.billing_status = "active" if active else "cancelado"
+    await session.flush()
+    if antes != sub.billing_status:
+        await write_audit(
+            session,
+            actor_id=None,
+            action="merchant.access_by_integrator",
+            area_id=area_id,
+            before={"merchant_id": merchant.id, "billing_status": antes},
+            after={"merchant_id": merchant.id, "billing_status": sub.billing_status, "api_key_id": api_key_id},
+            ip=ip,
+        )
+    return PublicMerchantAccessOut(
+        merchant_id=merchant.id, access=_acesso(sub), billing_status=sub.billing_status
     )
 
 

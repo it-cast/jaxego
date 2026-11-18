@@ -8,7 +8,9 @@ response mirrors the internal create response so a replay is byte-identical (D-0
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from app.deliveries.schemas import PaymentMethod, ProofMethod
 
@@ -105,6 +107,8 @@ class PublicMerchantOut(BaseModel):
     trade_name: str
     status: str
     external_ref: str | None = None
+    # Acesso da loja ao Jaxegô: "disabled" quando a assinatura está bloqueada/cancelada
+    access: str | None = None
 
 
 class PublicQuoteOut(BaseModel):
@@ -158,3 +162,57 @@ class PublicCancelBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reason: str | None = Field(default=None, max_length=255)
+
+
+# ---------------------------------------------------------------------------
+# Cadastro da loja pelo integrador (Menu Certo) e acesso da loja — escopo merchants:write.
+# A área vem da chave; o plano é pago pelo integrador (assinatura ativa, sem cobrança aqui).
+# ---------------------------------------------------------------------------
+class PublicCreateMerchantBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    account_type: Literal["cnpj", "cpf"]
+    document: str = Field(min_length=11, max_length=20)
+    trade_name: str = Field(min_length=2, max_length=120)
+    category: Literal["restaurante", "comercio", "farmacia", "mercado", "outro"] = "restaurante"
+    phone_e164: str = Field(min_length=12, max_length=20, pattern=r"^\+\d{11,15}$")
+    email: EmailStr
+    password: str = Field(min_length=10, max_length=128)
+    plan_code: str = Field(min_length=2, max_length=32)
+    # Consentimento LGPD colhido pelo integrador (a loja autorizou o cadastro)
+    consent: bool
+    external_ref: str | None = Field(default=None, max_length=64)
+    address: str | None = Field(default=None, max_length=255)
+    address_number: str | None = Field(default=None, max_length=20)
+    address_neighborhood: str | None = Field(default=None, max_length=120)
+    address_zip: str | None = Field(default=None, max_length=10)
+    address_state: str | None = Field(default=None, max_length=2)
+    lat: float | None = Field(default=None, ge=-90.0, le=90.0)
+    lng: float | None = Field(default=None, ge=-180.0, le=180.0)
+
+    @field_validator("consent")
+    @classmethod
+    def _consent_required(cls, v: bool) -> bool:
+        if v is not True:
+            raise ValueError("consent_required")
+        return v
+
+
+class PublicCreateMerchantOut(BaseModel):
+    merchant_id: int
+    trade_name: str
+    status: str
+    plan_code: str
+    access: Literal["active", "disabled"]
+
+
+class PublicMerchantAccessBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    active: bool
+
+
+class PublicMerchantAccessOut(BaseModel):
+    merchant_id: int
+    access: Literal["active", "disabled"]
+    billing_status: str

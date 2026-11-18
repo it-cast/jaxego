@@ -22,6 +22,10 @@ from app.api_public import service
 from app.api_public.schemas import (
     PublicCancelBody,
     PublicCreateDeliveryBody,
+    PublicCreateMerchantBody,
+    PublicCreateMerchantOut,
+    PublicMerchantAccessBody,
+    PublicMerchantAccessOut,
     PublicDeliveryDetail,
     PublicDeliveryResponse,
     PublicMerchantOut,
@@ -170,4 +174,60 @@ async def public_quote(
     )
 
 
-__all__ = ["router", "extras_router", "public_create_limiter", "public_read_limiter"]
+# Cadastro de loja pelo integrador: raro (ação da equipe Menu Certo) — 20/min por chave.
+public_merchant_limiter = SlidingWindowLimiter(limit=20, window=_WINDOW)
+
+
+@extras_router.post("/merchants", response_model=PublicCreateMerchantOut, status_code=201)
+async def create_public_merchant(
+    body: PublicCreateMerchantBody,
+    request: Request,
+    scope: Annotated[ApiKeyScopeDep, Depends(require_scope("merchants:write"))],
+    session: SessionDep,
+) -> PublicCreateMerchantOut:
+    """Cadastra a loja na área da chave, ativa e no plano pago pelo integrador."""
+    from app.integrations.factory import get_geocoding_adapter, get_receita_adapter
+
+    public_merchant_limiter.check(f"api_key:{scope.api_key_id}", retry_after=_RETRY_AFTER_SECONDS)
+    out = await service.create_merchant_by_integrator(
+        session,
+        area_id=scope.area_id,
+        body=body,
+        receita=get_receita_adapter(),
+        geocoding=get_geocoding_adapter(),
+        ip=_client_ip(request),
+        api_key_id=scope.api_key_id,
+    )
+    await session.commit()
+    return out
+
+
+@extras_router.post("/merchants/{merchant_id}/access", response_model=PublicMerchantAccessOut)
+async def set_public_merchant_access(
+    merchant_id: int,
+    body: PublicMerchantAccessBody,
+    request: Request,
+    scope: Annotated[ApiKeyScopeDep, Depends(require_scope("merchants:write"))],
+    session: SessionDep,
+) -> PublicMerchantAccessOut:
+    """Liga (active) ou desliga (cancelado) o acesso da loja da área. Fora da área = 404."""
+    public_merchant_limiter.check(f"api_key:{scope.api_key_id}", retry_after=_RETRY_AFTER_SECONDS)
+    out = await service.set_merchant_access(
+        session,
+        area_id=scope.area_id,
+        merchant_id=merchant_id,
+        active=body.active,
+        ip=_client_ip(request),
+        api_key_id=scope.api_key_id,
+    )
+    await session.commit()
+    return out
+
+
+__all__ = [
+    "router",
+    "extras_router",
+    "public_create_limiter",
+    "public_merchant_limiter",
+    "public_read_limiter",
+]

@@ -62,7 +62,7 @@ export interface WebhookDeliveryList {
 }
 
 /** Escopos aceitos pelo backend (ALLOWED_SCOPES). */
-export const API_KEY_SCOPES = ['deliveries:write', 'deliveries:read'] as const;
+export const API_KEY_SCOPES = ['deliveries:write', 'deliveries:read', 'merchants:write'] as const;
 export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];
 
 /** Eventos de webhook suportados (WEBHOOK_EVENTS — backend). */

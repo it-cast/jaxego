@@ -10,7 +10,8 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 # Allowed scopes (narrow by default — the public endpoint only needs write).
-ALLOWED_SCOPES = frozenset({"deliveries:write", "deliveries:read"})
+# merchants:write: o integrador (Menu Certo) cadastra lojas na área e liga/desliga o acesso.
+ALLOWED_SCOPES = frozenset({"deliveries:write", "deliveries:read", "merchants:write"})
 
 
 class CreateApiKeyBody(BaseModel):
