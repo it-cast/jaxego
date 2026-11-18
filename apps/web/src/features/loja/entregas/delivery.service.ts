@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import type { Trail } from '@jaxego/shared/components/trail-map/trail-map.component';
 import { ApiErrorEnvelope } from '@jaxego/core/auth/auth.models';
 import {
   CreateDeliveryRequest,
@@ -56,6 +57,15 @@ export class DeliveryService {
       return await firstValueFrom(
         this.http.get<DeliveryListItem>(`/v1/deliveries/${deliveryId}`),
       );
+    } catch {
+      return null;
+    }
+  }
+
+  /** Trajeto do entregador nesta entrega (do aceite ao fim). null = sem aceite ainda ou erro */
+  async getTrail(deliveryId: number): Promise<Trail | null> {
+    try {
+      return await firstValueFrom(this.http.get<Trail | null>(`/v1/deliveries/${deliveryId}/trail`));
     } catch {
       return null;
     }

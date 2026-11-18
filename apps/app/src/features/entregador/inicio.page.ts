@@ -84,6 +84,11 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
               [value]="onlineUntilTime()"
               (change)="onlineUntilTime.set($any($event.target).value)"
             />
+            <p class="jx-home-modal__privacy">
+              Enquanto estiver online, sua localização é registrada (a cada 5 min, e a cada 1 min durante uma
+              entrega) para distribuir as entregas e mostrar o trajeto à loja e ao admin. Os registros são apagados
+              em 7 dias.
+            </p>
             <button type="button" class="jx-home-modal__confirm" (click)="confirmOnline()">
               Confirmar
             </button>
@@ -351,6 +356,10 @@ type HomeState = 'offline' | 'waiting' | 'offer' | 'busy';
         animation: jx-home-slide 0.3s cubic-bezier(0.22,1,0.36,1) forwards;
       }
       @keyframes jx-home-slide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      .jx-home-modal__privacy {
+        margin: 0; font-size: var(--jx-text-xs); line-height: 1.45; text-align: center;
+        color: var(--text-muted);
+      }
       .jx-home-modal__title {
         margin: 0; font-size: var(--jx-text-lg); font-weight: 700; text-align: center;
       }

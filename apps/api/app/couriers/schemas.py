@@ -264,6 +264,17 @@ class CourierLocationBody(BaseModel):
 
     lat: float = Field(ge=-90, le=90)
     lng: float = Field(ge=-180, le=180)
+    # Precisão do GPS em metros (navigator.geolocation coords.accuracy). App antigo não manda.
+    accuracy: float | None = Field(default=None, ge=0, le=100_000)
+
+
+class CourierLocationResponse(BaseModel):
+    """Próximo intervalo de envio da posição (1 min com entrega ativa, 5 min sem)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    interval_seconds: int
+    recorded: bool
 
 
 class AvailabilityResponse(BaseModel):

@@ -15,11 +15,15 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Float, ForeignKey, Index, String
+from sqlalchemy import DateTime, Float, ForeignKey, Index, String
+from sqlalchemy.dialects.mysql import DATETIME as MYSQL_DATETIME
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 from app.db.mixins import BIG_ID, UTC_DATETIME, AreaScopedMixin
+
+# Rastro: horário sem fração de segundo no MySQL ("2026-11-18 14:56:39")
+UTC_DATETIME_SEGUNDOS = DateTime(timezone=True).with_variant(MYSQL_DATETIME(fsp=0), "mysql")
 
 
 class DeliveryLocation(Base, AreaScopedMixin):
@@ -51,3 +55,37 @@ class DeliveryLocation(Base, AreaScopedMixin):
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(UTC_DATETIME, nullable=False)
+
+
+class CourierLocation(Base, AreaScopedMixin):
+    """Rastro do entregador: uma posição a cada envio do app enquanto ele está online.
+
+    Diferente de `delivery_locations` (auditoria permanente, uma linha por AÇÃO), aqui
+    é a trilha periódica: a cada 5 min online, a cada 1 min com entrega ativa
+    (`delivery_id` preenchido). Dado pessoal de localização: só o admin da área e a
+    loja da entrega veem, e o job `purge_courier_locations` apaga o que passa de
+    `rastro_retencao_dias` (padrão 7). Sem TimestampMixin: a linha nunca é alterada.
+    """
+
+    __tablename__ = "courier_locations"
+    __table_args__ = (
+        Index("ix_courier_locations_courier_id_recorded_at", "courier_id", "recorded_at"),
+        Index("ix_courier_locations_delivery_id_recorded_at", "delivery_id", "recorded_at"),
+        Index("ix_courier_locations_recorded_at", "recorded_at"),
+        Base.__table_args__,
+    )
+
+    id: Mapped[int] = mapped_column(BIG_ID, primary_key=True, autoincrement=True)
+    courier_id: Mapped[int] = mapped_column(
+        BIG_ID,
+        ForeignKey("couriers.id", ondelete="CASCADE", onupdate="RESTRICT"),
+        nullable=False,
+    )
+    # Entrega ativa no momento do ponto (ACEITA/COLETADA). Sem FK dura: o ponto é
+    # efêmero (some em 7 dias) e não deve travar nada na entrega.
+    delivery_id: Mapped[int | None] = mapped_column(BIG_ID, nullable=True)
+    lat: Mapped[float] = mapped_column(Float, nullable=False)
+    lng: Mapped[float] = mapped_column(Float, nullable=False)
+    # Precisão informada pelo aparelho, em metros (nulo em app antigo)
+    accuracy_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    recorded_at: Mapped[datetime] = mapped_column(UTC_DATETIME_SEGUNDOS, nullable=False)

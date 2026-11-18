@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { AcceptResponse, OfferOut, OfferResult } from './offer.models';
+import { CourierLocationService } from '../courier-location.service';
 import { currentPosition } from '../geolocation.util';
 
 /**
@@ -14,6 +15,8 @@ import { currentPosition } from '../geolocation.util';
 @Injectable({ providedIn: 'root' })
 export class OfferService {
   private readonly http = inject(HttpClient);
+  /** Depois de aceitar, manda a posição na hora: o rastro da entrega começa já (e passa a 1 min) */
+  private readonly location = inject(CourierLocationService);
 
   /** Poll the active offer; null when there is none (204). */
   async active(): Promise<OfferOut | null> {
@@ -39,6 +42,7 @@ export class OfferService {
       await firstValueFrom(
         this.http.post<AcceptResponse>(`/v1/offers/${deliveryId}/accept`, pos),
       );
+      this.location.refresh();
       return 'won';
     } catch (err) {
       if (err instanceof HttpErrorResponse) {

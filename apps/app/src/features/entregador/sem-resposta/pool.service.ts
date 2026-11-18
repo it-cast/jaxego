@@ -2,6 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { PoolAcceptResponse, PoolAcceptResult, PoolItemOut } from './pool.models';
+import { CourierLocationService } from '../courier-location.service';
 import { currentPosition } from '../geolocation.util';
 
 /**
@@ -14,6 +15,8 @@ import { currentPosition } from '../geolocation.util';
 @Injectable({ providedIn: 'root' })
 export class PoolService {
   private readonly http = inject(HttpClient);
+  /** Depois de aceitar, manda a posição na hora: o rastro da entrega começa já (e passa a 1 min) */
+  private readonly location = inject(CourierLocationService);
 
   async list(): Promise<PoolItemOut[]> {
     try {
@@ -33,6 +36,7 @@ export class PoolService {
       await firstValueFrom(
         this.http.post<PoolAcceptResponse>(`/v1/offers/pool/${deliveryId}/accept`, pos),
       );
+      this.location.refresh();
       return 'won';
     } catch (err) {
       if (err instanceof HttpErrorResponse && err.status === 409) {

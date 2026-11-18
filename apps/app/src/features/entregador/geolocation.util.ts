@@ -15,6 +15,26 @@ export function haversineMeters(
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+/** Igual a `currentPosition`, mas com a precisão do GPS em metros (rastro do entregador). */
+export function currentFix(): Promise<{ lat: number; lng: number; accuracy: number | null } | null> {
+  return new Promise((resolve) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (p) =>
+        resolve({
+          lat: p.coords.latitude,
+          lng: p.coords.longitude,
+          accuracy: Number.isFinite(p.coords.accuracy) ? Math.round(p.coords.accuracy) : null,
+        }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 8000 },
+    );
+  });
+}
+
 /** One-shot device position (NOT watchPosition — GPS wakes on demand only). Null on
  * denial/timeout/unsupported — callers decide whether that blocks the action. */
 export function currentPosition(): Promise<{ lat: number; lng: number } | null> {

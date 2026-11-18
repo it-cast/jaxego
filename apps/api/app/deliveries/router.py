@@ -628,6 +628,22 @@ async def list_deliveries(
     return DeliveryListOut(items=items, total=page.total, limit=page.limit, offset=page.offset)
 
 
+@router.get("/{delivery_id}/trail")
+async def get_delivery_trail(
+    delivery_id: int,
+    scope: MerchantScopeDep,
+    session: SessionDep,
+):
+    """Trajeto do entregador nesta entrega (do aceite até o fim), para o mapa da loja.
+    Só a entrega da própria loja (404 se não for — TH-03); sem aceite ainda: `null`."""
+    from app.tracking.trail import rastro_da_entrega
+
+    delivery = await service.get_delivery(
+        session, area_id=scope.area_id, merchant_id=scope.merchant_id, delivery_id=delivery_id
+    )
+    return await rastro_da_entrega(session, delivery=delivery)
+
+
 @router.get("/{delivery_id}", response_model=DeliveryOut)
 async def get_delivery(
     delivery_id: int,

@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { StateBadgeComponent } from '@jaxego/shared/components/state-badge/state-badge.component';
 import { LiveMapComponent } from '@jaxego/shared/components/live-map/live-map.component';
+import { Trail, TrailMapComponent } from '@jaxego/shared/components/trail-map/trail-map.component';
 import {
   packageLabel as fmtPackage,
 } from '@jaxego/shared/util/delivery-format';
@@ -39,6 +40,7 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
     FormsModule,
     StateBadgeComponent,
     LiveMapComponent,
+    TrailMapComponent,
     FaIconComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -231,6 +233,16 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
                   [label]="d.dropoff_neighborhood_name ? 'Destino · ' + d.dropoff_neighborhood_name : 'Destino da entrega'"
                   ariaLabel="Mapa do destino da entrega"
                 />
+              </div>
+            }
+            <!-- Trajeto do entregador (courier_locations, 7 dias) -->
+            @if (trail(); as t) {
+              <div class="jx-detail__card jx-detail__trail" data-teste="entrega-trajeto">
+                <h2 class="jx-detail__card-title">Trajeto do entregador</h2>
+                <jx-trail-map [trail]="t" ariaLabel="Mapa do trajeto do entregador nesta entrega" />
+                <p class="jx-detail__trail-nota">
+                  Posições a cada 1 min durante a entrega{{ ativa(d) ? ', atualizando sozinho' : '' }}. Guardado por {{ t.retention_days }} dias.
+                </p>
               </div>
             }
           </section>
@@ -446,6 +458,8 @@ import { faStar, faBan, faCopy, faCheck } from '@fortawesome/free-solid-svg-icon
         flex-direction: column;
         gap: var(--jx-space-3);
       }
+      .jx-detail__trail { --jx-map-height: clamp(260px, 42vh, 420px); }
+      .jx-detail__trail-nota { margin: 0; font-size: var(--jx-text-xs); color: var(--text-muted); }
       .jx-detail__card-title {
         margin: 0;
         font-size: var(--jx-text-sm);
@@ -571,6 +585,7 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
   protected readonly pixCopied = signal(false);
 
   protected readonly delivery = signal<DeliveryListItem | null>(null);
+  protected readonly trail = signal<Trail | null>(null);
   protected readonly notFound = signal(false);
   protected readonly selectedStars = signal(0);
   protected readonly rated = signal(false);
@@ -584,16 +599,34 @@ export class EntregaDetalhePage implements OnInit, OnDestroy {
 
   private deliveryId = 0;
   private pollHandle: ReturnType<typeof setInterval> | null = null;
+  private trailHandle: ReturnType<typeof setInterval> | null = null;
 
   async ngOnInit(): Promise<void> {
     this.deliveryId = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     await this.load();
     // F4.1: while CRIADA (no courier yet), poll until a courier accepts.
     this.pollHandle = setInterval(() => void this.poll(), 5000);
+    // Trajeto: com entrega em andamento, relê a cada 1 min (mesmo ritmo do envio do app)
+    void this.loadTrail();
+    this.trailHandle = setInterval(() => {
+      const d = this.delivery();
+      if (d && this.ativa(d)) void this.load().then(() => this.loadTrail());
+    }, 60_000);
+  }
+
+  protected ativa(d: DeliveryListItem): boolean {
+    return d.state === 'ACEITA' || d.state === 'COLETADA';
+  }
+
+  private async loadTrail(): Promise<void> {
+    const d = this.delivery();
+    if (!d || !d.courier_id) return;
+    this.trail.set(await this.service.getTrail(d.id));
   }
 
   ngOnDestroy(): void {
     if (this.pollHandle) clearInterval(this.pollHandle);
+    if (this.trailHandle) clearInterval(this.trailHandle);
   }
 
   private async load(): Promise<void> {

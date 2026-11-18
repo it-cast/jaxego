@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     # Base pública do painel web (ex.: https://app.jaxego.com.br): monta o link de
     # acompanhamento `<base>/r/<public_token>` devolvido pela API pública. Vazio = sem link.
     public_web_base_url: str | None = Field(default=None)
+    # Rastro do entregador (courier_locations): dias que os pontos ficam guardados antes do
+    # job diário apagar. Dado pessoal de localização — manter curto (padrão 7).
+    rastro_retencao_dias: int = Field(default=7, ge=1, le=90)
+    # SÓ PARA TESTE LOCAL: força o intervalo de envio da posição (com e sem entrega). Vazio =
+    # padrão (60 s com entrega, 300 s sem). Nunca defina em produção.
+    rastro_intervalo_teste_s: int | None = Field(default=None, ge=5, le=300)
 
     # Datastores
     database_url: str = Field(

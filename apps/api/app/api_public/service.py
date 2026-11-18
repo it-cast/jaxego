@@ -675,7 +675,6 @@ async def delivery_detail(
 ) -> PublicDeliveryDetail:
     from app.couriers.models import Courier
     from app.ratings.models import CourierRating
-    from app.tracking.models import DeliveryLocation
 
     d = await _delivery_da_area(session, area_id=area_id, delivery_id=delivery_id)
     nbhd = (
@@ -718,22 +717,14 @@ async def delivery_detail(
                 rating=round(float(media), 1) if media is not None else None,
             )
         # Posição só enquanto o entregador está com a entrega (aceite até a entrega)
+        # (última ação com GPS ou último ponto do rastro, o mais novo — app manda a cada 1 min)
         if d.state in ("ACEITA", "COLETADA"):
-            loc = (
-                (
-                    await session.execute(
-                        select(DeliveryLocation)
-                        .where(DeliveryLocation.delivery_id == d.id)
-                        .order_by(DeliveryLocation.recorded_at.desc())
-                        .limit(1)
-                    )
-                )
-                .scalars()
-                .first()
-            )
+            from app.tracking.trail import ultima_posicao_na_entrega
+
+            loc = await ultima_posicao_na_entrega(session, delivery=d)
             if loc is not None:
                 posicao = _ponto(loc.lat, loc.lng)
-                posicao_em = _iso(loc.recorded_at)
+                posicao_em = _iso(loc.at)
 
     return PublicDeliveryDetail(
         delivery_id=d.id,

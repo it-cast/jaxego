@@ -20,6 +20,7 @@ from arq.connections import RedisSettings
 from app.core.config import settings
 from app.db.session import async_session_factory
 from app.notifications.tasks import notify_task
+from app.tracking.trail import purge_courier_locations
 from app.workers.appeals import enforce_appeal_sla
 from app.workers.dispatch import dispatch_offer_task, redispatch_stale_deliveries, send_push_task
 from app.workers.document_expiry import (
@@ -141,6 +142,8 @@ class WorkerSettings:
         # hard-delete ephemeral (30d) daily at 03:50 UTC. Idempotent, audited (D-01/D-02).
         cron(anonymize_inactive, hour={3}, minute={30}),
         cron(delete_ephemeral, hour={3}, minute={50}),
+        # Rastro do entregador: apaga pontos com mais de rastro_retencao_dias (padrão 7).
+        cron(purge_courier_locations, hour={4}, minute={10}),
         # Phase 15 — close last month's platform-fee invoices on the 1st at 02:00 UTC
         # (REQ-037, idempotent — 1/loja/competência).
         cron(close_platform_invoices, day={1}, hour={2}, minute={0}),

@@ -22,7 +22,6 @@ from app.core.ratelimit import SlidingWindowLimiter, _client_ip
 from app.couriers.models import Courier
 from app.db.session import get_session
 from app.deliveries.models import Delivery, DeliveryStateTransition
-from app.tracking.models import DeliveryLocation
 from app.tracking.serializer import serialize_public
 
 router = APIRouter(prefix="/public", tags=["public-tracking"])
@@ -53,16 +52,6 @@ async def _build_timeline(session: AsyncSession, delivery_id: int) -> list[dict[
     ]
 
 
-async def _last_location(session: AsyncSession, delivery_id: int) -> DeliveryLocation | None:
-    stmt = (
-        select(DeliveryLocation)
-        .where(DeliveryLocation.delivery_id == delivery_id)
-        .order_by(DeliveryLocation.recorded_at.desc())
-        .limit(1)
-    )
-    return (await session.execute(stmt)).scalars().first()
-
-
 @router.get(
     "/tracking/{public_token}",
     dependencies=[Depends(public_tracking_rate_limit)],
@@ -79,7 +68,10 @@ async def public_tracking(public_token: str, session: SessionDep) -> dict[str, o
         raise NotFoundError("Acompanhamento não encontrado.")
 
     timeline = await _build_timeline(session, delivery.id)
-    loc = await _last_location(session, delivery.id)
+    # Última posição: ação com GPS ou ponto do rastro (a cada 1 min na entrega), o mais novo
+    from app.tracking.trail import ultima_posicao_na_entrega
+
+    loc = await ultima_posicao_na_entrega(session, delivery=delivery)
 
     vehicle_type: str | None = None
     if delivery.courier_id is not None:

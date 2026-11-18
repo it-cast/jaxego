@@ -183,6 +183,11 @@ export const adminRoutes: Routes = [
           ),
       },
       {
+        path: 'rastro',
+        loadComponent: () =>
+          import('../features/admin/rastro/rastro.page').then((m) => m.AdminRastroPage),
+      },
+      {
         path: 'disputas',
         loadComponent: () =>
           import('../features/admin/governanca/disputas.page').then(

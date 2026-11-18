@@ -39,6 +39,7 @@ from app.couriers.schemas import (
     CourierDocumentAdminItem,
     CourierDocumentItem,
     CourierLocationBody,
+    CourierLocationResponse,
     CourierProfileOut,
     CourierSignupBody,
     CourierSignupResponse,
@@ -388,26 +389,35 @@ async def set_availability(
     return AvailabilityResponse(is_online=updated.is_online, busy=busy, online_until=updated.online_until)
 
 
-@router.patch("/{courier_id}/location", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.patch("/{courier_id}/location", response_model=CourierLocationResponse)
 async def update_location(
     courier_id: int,
     body: CourierLocationBody,
     user: CurrentUser,
     scope: AreaScopeDep,
     session: SessionDep,
-) -> Response:
-    """Record courier's current position while online (dispatch proximity ranking).
+) -> CourierLocationResponse:
+    """Record courier's current position while online (dispatch proximity ranking)
+    and append it to the courier trail (`courier_locations`, kept 7 days).
 
     Only accepted when the courier is online; silently ignored if offline to avoid
-    stale positions skewing the ranking after the courier goes idle.
+    stale positions skewing the ranking after the courier goes idle. The response
+    tells the app the next interval (60 s with an active delivery, 300 s without).
     """
+    from app.tracking.trail import registrar_ponto
+
     courier = await _own_courier(session, courier_id=courier_id, user=user, scope=scope)
     if courier.is_online:
         courier.lat = body.lat
         courier.lng = body.lng
         courier.location_at = datetime.now(UTC)
-        await session.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    resultado = await registrar_ponto(
+        session, courier=courier, lat=body.lat, lng=body.lng, accuracy_m=body.accuracy
+    )
+    await session.commit()
+    return CourierLocationResponse(
+        interval_seconds=resultado.interval_seconds, recorded=resultado.recorded
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -833,6 +843,75 @@ async def list_area_couriers(
     return CourierAdminListOut(
         items=items, total=total, limit=min(limit, 100), offset=max(offset, 0)
     )
+
+
+@admin_router.get("/{courier_id}/trail/deliveries")
+async def get_courier_trail_deliveries(
+    courier_id: int,
+    session: SessionDep,
+    admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
+    scope: AreaScopeDep,
+    start: datetime | None = None,
+    end: datetime | None = None,
+):
+    """Entregas do entregador com pontos no rastro (mais recente primeiro), para o filtro
+    "Entrega" da tela de rastro. Com `start`/`end`, só as do período. Área no WHERE (TH-09)."""
+    from app.tracking.trail import entregas_recentes
+
+    query = select(Courier).where(Courier.id == courier_id)
+    if scope is not None:
+        query = query.where(Courier.area_id == scope)
+    courier = (await session.execute(query)).scalar_one_or_none()
+    if courier is None:
+        raise NotFoundError("Entregador não encontrado.")
+    return await entregas_recentes(session, courier=courier, inicio=start, fim=end)
+
+
+@admin_router.get("/{courier_id}/trail")
+async def get_courier_trail(
+    courier_id: int,
+    session: SessionDep,
+    admin: Annotated[CurrentUser, Depends(require_role("admin_area"))],
+    scope: AreaScopeDep,
+    start: datetime | None = None,
+    end: datetime | None = None,
+    delivery_id: int | None = None,
+):
+    """Rastro do entregador no mapa (courier_locations + ações da entrega). Com `delivery_id`,
+    o trajeto daquela entrega; senão o período `start`–`end` (máx. 24 h, últimos 7 dias).
+    Área no WHERE (TH-09). Cada consulta vai para a auditoria (dado pessoal de localização)."""
+    from app.audit.service import write_audit
+    from app.deliveries.models import Delivery
+    from app.tracking.trail import TrailPeriodError, rastro_da_entrega, rastro_do_entregador
+
+    query = select(Courier).where(Courier.id == courier_id)
+    if scope is not None:
+        query = query.where(Courier.area_id == scope)
+    courier = (await session.execute(query)).scalar_one_or_none()
+    if courier is None:
+        raise NotFoundError("Entregador não encontrado.")
+    if delivery_id is not None:
+        d = await session.get(Delivery, delivery_id)
+        if d is None or d.area_id != courier.area_id or d.courier_id != courier.id:
+            raise NotFoundError("Entrega não encontrada para este entregador.")
+        out = await rastro_da_entrega(session, delivery=d)
+        if out is None:
+            raise NotFoundError("Esta entrega ainda não foi aceita.")
+    else:
+        agora = datetime.now(UTC)
+        if start is None or end is None:
+            raise TrailPeriodError("Informe o início e o fim do período.")
+        out = await rastro_do_entregador(session, courier=courier, inicio=start, fim=end, agora=agora)
+    await write_audit(
+        session,
+        actor_id=admin.id,
+        actor_type=admin.type,
+        action="courier.trail_viewed",
+        area_id=courier.area_id,
+        after={"courier_id": courier.id, "delivery_id": delivery_id, "start": out.start, "end": out.end},
+    )
+    await session.commit()
+    return out
 
 
 @admin_router.get("/{courier_id}", response_model=CourierAdminDetailOut)

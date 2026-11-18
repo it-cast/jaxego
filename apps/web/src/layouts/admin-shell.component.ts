@@ -9,6 +9,7 @@ import {
   faStore,
   faPeopleGroup,
   faMapPin,
+  faRoute,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { AppShellComponent, type ShellNavItem } from '@jaxego/shared/layout/app-shell.component';
@@ -42,6 +43,7 @@ export class AdminShellComponent {
     { path: 'zonas', label: 'Zonas', icon: faLayerGroup },
     { path: 'bairros', label: 'Bairros', icon: faMapPin },
     { path: 'lojas', label: 'Lojas', icon: faStore },
+    { path: 'rastro', label: 'Rastro', icon: faRoute },
     { path: 'disputas', label: 'Disputas', icon: faScaleBalanced },
     { path: 'api-keys', label: 'Chaves de API', icon: faKey },
   ];
