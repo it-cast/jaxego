@@ -279,8 +279,8 @@
           <label>
             <input type="checkbox" formControlName="consent" />
             Concordo com os
-            <a href="/termos" class="jx-link">Termos</a> e a
-            <a href="/privacidade" class="jx-link">Política de Privacidade</a>.
+            <a href="/termos" target="_blank" rel="noopener" class="jx-link">Termos de Uso</a> e a
+            <a href="/privacidade" target="_blank" rel="noopener" class="jx-link">Política de Privacidade</a>.
           </label>
           @if (form.controls.consent.touched && !form.controls.consent.value) {
             <p class="jx-cadastro__consent-error" role="alert">

@@ -13,6 +13,7 @@ import {
 import { provideIonicAngular } from '@ionic/angular/standalone';
 
 import { authInterceptor } from '@jaxego/core/auth/auth.interceptor';
+import { provideScrollToTop } from '@jaxego/core/router/scroll-to-top';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { API_BASE_URL, apiBaseUrlInterceptor } from '@jaxego/core/http/api-base-url.interceptor';
 
@@ -31,6 +32,7 @@ export function makeAppConfig(appRoutes: Routes, options: AppConfigOptions = {})
     providers: [
       provideZoneChangeDetection({ eventCoalescing: true }),
       provideRouter(appRoutes, withComponentInputBinding()),
+      provideScrollToTop(),
       { provide: API_BASE_URL, useValue: options.apiBaseUrl ?? '' },
       provideHttpClient(withFetch(), withInterceptors([apiBaseUrlInterceptor, authInterceptor])),
       provideIonicAngular({ mode: 'md' }),

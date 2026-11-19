@@ -32,6 +32,8 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { COURIER_ERROR, type KycLevel, type VehicleType } from './cadastro.models';
 import { CourierCadastroService } from './cadastro.service';
+import { LegalModalComponent } from '@jaxego/shared/features/legal/legal-modal.component';
+import type { LegalTipo } from '@jaxego/shared/features/legal/legal-content';
 
 const DRAFT_KEY = 'jx-courier-onboarding';
 
@@ -68,6 +70,7 @@ interface DocItem {
     DocCardComponent,
     ErrorStateComponent,
     WarnBannerComponent,
+    LegalModalComponent,
   ],
   templateUrl: './cadastro.page.html',
   styleUrl: './cadastro.page.scss',
@@ -88,6 +91,20 @@ export class CadastroEntregadorPage implements OnInit {
   protected readonly submitProgress = signal('');
 
   protected readonly showPassword = signal(false);
+  /** Termos/Privacidade abertos em modal (sair da tela perderia senha e fotos). */
+  protected readonly legalAberto = signal<LegalTipo | null>(null);
+  private legalOrigem: HTMLElement | null = null;
+
+  protected abrirLegal(e: Event, tipo: LegalTipo): void {
+    e.preventDefault(); // o botão fica dentro do <label>: não marca/desmarca o aceite
+    this.legalOrigem = e.currentTarget as HTMLElement;
+    this.legalAberto.set(tipo);
+  }
+
+  protected fecharLegal(): void {
+    this.legalAberto.set(null);
+    queueMicrotask(() => this.legalOrigem?.focus());
+  }
   protected readonly faEye = faEye;
   protected readonly faEyeSlash = faEyeSlash;
   protected readonly docs = signal<DocItem[]>([]);

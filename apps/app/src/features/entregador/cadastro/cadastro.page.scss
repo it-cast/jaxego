@@ -148,6 +148,18 @@
   }
 }
 
+.jx-cad__legal-link {
+  display: inline;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--brand);
+  font: inherit;
+  font-weight: var(--jx-weight-bold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .jx-cad__footer {
   flex-shrink: 0;
   display: flex;

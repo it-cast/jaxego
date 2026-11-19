@@ -298,6 +298,18 @@ export const plataformaRoutes: Routes = [
 /** Public tracking (token-only, no guard). */
 export const publicRoutes: Routes = [
   {
+    path: 'termos',
+    data: { tipo: 'termos' },
+    title: 'Termos de Uso · Jaxegô',
+    loadComponent: () => import('@jaxego/shared/features/legal/legal.page').then((m) => m.LegalPage),
+  },
+  {
+    path: 'privacidade',
+    data: { tipo: 'privacidade' },
+    title: 'Política de Privacidade · Jaxegô',
+    loadComponent: () => import('@jaxego/shared/features/legal/legal.page').then((m) => m.LegalPage),
+  },
+  {
     path: 'r/:token',
     loadComponent: () =>
       import('@jaxego/shared/features/public-tracking/public-tracking.page').then(

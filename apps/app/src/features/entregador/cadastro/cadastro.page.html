@@ -121,7 +121,13 @@
 
         <label class="jx-cad__consent">
           <input type="checkbox" formControlName="consent" />
-          <span>Concordo com o uso dos meus dados e documentos para validação.</span>
+          <span>
+            Concordo com os
+            <button type="button" class="jx-cad__legal-link" (click)="abrirLegal($event, 'termos')">Termos de Uso</button>
+            e a
+            <button type="button" class="jx-cad__legal-link" (click)="abrirLegal($event, 'privacidade')">Política de Privacidade</button>,
+            inclusive o uso dos meus dados e documentos para validação.
+          </span>
         </label>
         }
       </section>
@@ -377,3 +383,7 @@
     }
   </footer>
 </div>
+
+@if (legalAberto(); as tipo) {
+  <jx-legal-modal [tipo]="tipo" (fechar)="fecharLegal()" />
+}
