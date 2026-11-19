@@ -26,6 +26,28 @@ export const authRoutes: Routes = [
     loadComponent: () =>
       import('@jaxego/shared/features/auth/login.page').then((m) => m.LoginPage),
   },
+  // Esqueci minha senha — uma por perfil (o admin da plataforma usa TOTP e fica de fora).
+  {
+    path: 'esqueci-senha',
+    data: { profile: 'loja' },
+    title: 'Esqueci minha senha · Jaxegô',
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/esqueci-senha.page').then((m) => m.EsqueciSenhaPage),
+  },
+  {
+    path: 'equipe/esqueci-senha',
+    data: { profile: 'equipe' },
+    title: 'Esqueci minha senha · Jaxegô',
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/esqueci-senha.page').then((m) => m.EsqueciSenhaPage),
+  },
+  {
+    path: 'admin/esqueci-senha',
+    data: { profile: 'admin' },
+    title: 'Esqueci minha senha · Jaxegô',
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/esqueci-senha.page').then((m) => m.EsqueciSenhaPage),
+  },
   {
     path: 'plataforma/entrar',
     data: { profile: 'plataforma' },

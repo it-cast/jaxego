@@ -133,6 +133,25 @@
   padding-left: var(--jx-space-2);
 }
 
+.jx-login__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--jx-space-2);
+}
+
+.jx-login__forgot {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-right: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-bold);
+  color: var(--brand);
+  text-decoration: none;
+}
+
 .jx-login__remember input {
   min-width: 18px;
   min-height: 18px;

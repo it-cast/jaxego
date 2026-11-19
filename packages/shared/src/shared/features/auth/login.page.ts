@@ -80,6 +80,21 @@ export class LoginPage implements AfterViewInit {
     plataforma: 'Acesso restrito · verificação em duas etapas',
   }[this.profile];
 
+  /** Tela de "Esqueci minha senha" do perfil (o admin da plataforma usa TOTP: sem link). */
+  protected readonly resetPath = {
+    entregador: '/esqueci-senha',
+    loja: '/esqueci-senha',
+    equipe: '/equipe/esqueci-senha',
+    admin: '/admin/esqueci-senha',
+    plataforma: null,
+  }[this.profile];
+
+  /** Leva o e-mail já digitado para a tela de recuperação. */
+  protected resetQuery(): Record<string, string> {
+    const email = this.form.controls.email.value.trim();
+    return email ? { email } : {};
+  }
+
   private readonly REMEMBER_KEY = 'jx-remember-email';
 
   protected readonly form = this.fb.nonNullable.group({

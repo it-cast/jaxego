@@ -11,12 +11,14 @@ TOTP enrolment endpoints are added in T-09 alongside the dependencies.
 
 from __future__ import annotations
 
-from typing import Annotated
+from datetime import timedelta
+from typing import Annotated, Literal
 
+import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import service
+from app.auth import password_reset, service
 from app.auth.dependencies import CurrentUser
 from app.auth.models import (
     ACTOR_AREA_ADMIN,
@@ -26,15 +28,20 @@ from app.auth.models import (
     ACTOR_TEAM,
 )
 from app.auth.schemas import (
+    ForgotPasswordBody,
+    ForgotPasswordResponse,
     LoginBody,
     LogoutBody,
     MeResponse,
     RefreshBody,
+    ResetPasswordBody,
     TokenPair,
     TotpEnrollResponse,
     TotpVerifyBody,
 )
 from app.core.config import settings
+from app.core.ratelimit import SlidingWindowLimiter, _client_ip
+from app.core.redis import get_redis
 from app.core.security import (
     current_totp_window,
     generate_totp_secret,
@@ -46,6 +53,7 @@ from app.db.session import get_session
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+RedisDep = Annotated[aioredis.Redis, Depends(get_redis)]
 
 REFRESH_COOKIE = "refresh_token"
 
@@ -106,6 +114,76 @@ async def login_admin_area(body: LoginBody, response: Response, session: Session
 async def login_plataforma(body: LoginBody, response: Response, session: SessionDep) -> TokenPair:
     """Login do admin do sistema — autentica na tabela platform_admins (TOTP)."""
     return await _login(body, response, session, actor_type=ACTOR_PLATFORM_ADMIN)
+
+
+# ---------------------------------------------------------------------------
+# Esqueci minha senha (entregador, loja, equipe, admin da cidade). O admin da
+# plataforma fica de fora: conta com TOTP, a senha dele não se troca por aqui.
+# ---------------------------------------------------------------------------
+PerfilReset = Literal["entregador", "loja", "equipe", "admin"]
+_ACTOR_POR_PERFIL = {
+    "entregador": ACTOR_COURIER,
+    "loja": ACTOR_MERCHANT,
+    "equipe": ACTOR_TEAM,
+    "admin": ACTOR_AREA_ADMIN,
+}
+
+# Pedir código: 5 por IP e 3 por e-mail a cada 15 min. Confirmar: 10 por IP a cada 15 min
+# (o código ainda cai sozinho após 5 erros).
+forgot_ip_limiter = SlidingWindowLimiter(limit=5, window=timedelta(minutes=15))
+forgot_email_limiter = SlidingWindowLimiter(limit=3, window=timedelta(minutes=15))
+reset_ip_limiter = SlidingWindowLimiter(limit=10, window=timedelta(minutes=15))
+
+
+@router.post("/{perfil}/esqueci-senha", response_model=ForgotPasswordResponse)
+async def esqueci_senha(
+    perfil: PerfilReset,
+    body: ForgotPasswordBody,
+    request: Request,
+    session: SessionDep,
+    redis: RedisDep,
+) -> ForgotPasswordResponse:
+    """Gera o código de troca de senha. Mesma resposta exista ou não a conta."""
+    actor_type = _ACTOR_POR_PERFIL[perfil]
+    forgot_ip_limiter.check(_client_ip(request), retry_after=900)
+    forgot_email_limiter.check(f"{actor_type}:{body.email.lower()}", retry_after=900)
+    code = await password_reset.request_code(
+        session, redis, actor_type=actor_type, email=body.email
+    )
+    minutos = int(password_reset.CODE_TTL.total_seconds() // 60)
+    if settings.reset_senha_mostrar_codigo:
+        return ForgotPasswordResponse(
+            message="Use o código abaixo para criar uma nova senha.",
+            expires_in_minutes=minutos,
+            code=code,
+        )
+    # Futuro: enviar `code` por e-mail aqui (só quando a conta existir).
+    return ForgotPasswordResponse(
+        message="Se o e-mail estiver cadastrado, enviamos um código para ele.",
+        expires_in_minutes=minutos,
+    )
+
+
+@router.post("/{perfil}/redefinir-senha", status_code=204)
+async def redefinir_senha(
+    perfil: PerfilReset,
+    body: ResetPasswordBody,
+    request: Request,
+    session: SessionDep,
+    redis: RedisDep,
+) -> Response:
+    """Troca a senha com o código e encerra as sessões abertas da conta."""
+    reset_ip_limiter.check(_client_ip(request), retry_after=900)
+    await password_reset.reset_password(
+        session,
+        redis,
+        actor_type=_ACTOR_POR_PERFIL[perfil],
+        email=body.email,
+        code=body.code,
+        new_password=body.new_password,
+    )
+    await session.commit()
+    return Response(status_code=204)
 
 
 @router.post("/refresh", response_model=TokenPair)

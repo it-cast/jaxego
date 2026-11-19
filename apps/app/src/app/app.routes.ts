@@ -14,6 +14,12 @@ const authRoutes: Routes = [
     loadComponent: () =>
       import('../features/auth/login.page').then((m) => m.AppLoginPage),
   },
+  {
+    path: 'esqueci-senha',
+    data: { profile: 'entregador' },
+    loadComponent: () =>
+      import('@jaxego/shared/features/auth/esqueci-senha.page').then((m) => m.EsqueciSenhaPage),
+  },
 ];
 
 /** Entregador (mobile) + onboarding público do entregador. */

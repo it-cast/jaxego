@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # SÓ PARA TESTE LOCAL: força o intervalo de envio da posição (com e sem entrega). Vazio =
     # padrão (60 s com entrega, 300 s sem). Nunca defina em produção.
     rastro_intervalo_teste_s: int | None = Field(default=None, ge=5, le=300)
+    # Esqueci minha senha: PROVISÓRIO enquanto não há envio por e-mail, o código volta na
+    # resposta e a tela mostra. Quem souber o e-mail da conta consegue trocar a senha, então
+    # desligue (RESET_SENHA_MOSTRAR_CODIGO=false) assim que o e-mail estiver mandando o código.
+    reset_senha_mostrar_codigo: bool = Field(default=True)
 
     # Datastores
     database_url: str = Field(

@@ -69,6 +69,12 @@ export class AppLoginPage implements AfterViewInit {
     this.emailRef()?.nativeElement.focus();
   }
 
+  /** Leva o e-mail já digitado para a tela de recuperação. */
+  protected resetQuery(): Record<string, string> {
+    const email = this.form.controls.email.value.trim();
+    return email ? { email } : {};
+  }
+
   protected togglePassword(): void {
     this.showPassword.update((v) => !v);
   }

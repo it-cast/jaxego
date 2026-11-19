@@ -37,6 +37,16 @@ export interface LoginRequest {
  */
 export type LoginProfile = 'entregador' | 'loja' | 'equipe' | 'admin' | 'plataforma';
 
+/** Perfis com "Esqueci minha senha" (o admin da plataforma usa TOTP e fica de fora). */
+export type ResetProfile = Exclude<LoginProfile, 'plataforma'>;
+
+/** POST /v1/auth/<perfil>/esqueci-senha (200). `code` só vem enquanto é mostrado na tela. */
+export interface ForgotPasswordResponse {
+  message: string;
+  expires_in_minutes: number;
+  code: string | null;
+}
+
 /** Machine error codes the auth flow reacts to (app/auth/service.py + dependencies.py). */
 export const ERROR_CODE = {
   TOTP_REQUIRED: 'totp_required',

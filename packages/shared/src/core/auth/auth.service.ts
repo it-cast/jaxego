@@ -4,10 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import {
   ApiErrorEnvelope,
   ERROR_CODE,
+  ForgotPasswordResponse,
   LoginErrorKind,
   LoginProfile,
   LoginRequest,
   Me,
+  ResetProfile,
   Surface,
   TokenPair,
 } from './auth.models';
@@ -133,6 +135,21 @@ export class AuthService {
     } catch (err) {
       return this.mapError(err);
     }
+  }
+
+  /** Esqueci minha senha: pede o código (mesma resposta exista ou não a conta). */
+  requestPasswordCode(profile: ResetProfile, email: string): Promise<ForgotPasswordResponse> {
+    return firstValueFrom(
+      this.http.post<ForgotPasswordResponse>(`/v1/auth/${profile}/esqueci-senha`, { email })
+    );
+  }
+
+  /** Troca a senha com o código; o backend encerra as sessões abertas da conta. */
+  async resetPassword(
+    profile: ResetProfile,
+    body: { email: string; code: string; new_password: string }
+  ): Promise<void> {
+    await firstValueFrom(this.http.post(`/v1/auth/${profile}/redefinir-senha`, body));
   }
 
   async logout(): Promise<void> {

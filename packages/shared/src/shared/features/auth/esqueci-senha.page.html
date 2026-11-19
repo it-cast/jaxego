@@ -1,0 +1,186 @@
+<div class="jx-login-split" [class.jx-login-split--so-form]="profile === 'entregador'">
+  <main class="jx-login" [attr.aria-busy]="loading()">
+    <header class="jx-login__header">
+      <div class="jx-login__brandline">
+        <span class="jx-login__logo" aria-hidden="true">J</span>
+        <span class="jx-login__wordmark">Jaxegô</span>
+        <span class="jx-login__badge">{{ badge }}</span>
+      </div>
+      @switch (etapa()) {
+        @case ('email') {
+          <h1 class="jx-login__welcome">Esqueceu a senha?</h1>
+          <p class="jx-login__subtitle">Informe o e-mail da sua conta para receber um código.</p>
+        }
+        @case ('codigo') {
+          <h1 class="jx-login__welcome">Crie uma nova senha</h1>
+          <p class="jx-login__subtitle">
+            Código para <strong class="jx-reset__email">{{ email }}</strong>.
+            <button type="button" class="jx-reset__link" (click)="trocarEmail()">Trocar e-mail</button>
+          </p>
+        }
+        @case ('pronto') {
+          <h1 #prontoTitulo tabindex="-1" class="jx-login__welcome jx-reset__foco">Senha alterada</h1>
+          <p class="jx-login__subtitle">Agora é só entrar com a nova senha.</p>
+        }
+      }
+    </header>
+
+    @switch (etapa()) {
+      @case ('email') {
+        <form class="jx-login__form" [formGroup]="emailForm" (ngSubmit)="pedirCodigo()" novalidate>
+          <div class="jx-field">
+            <label class="jx-label" for="reset-email">E-mail</label>
+            <div class="jx-input-icon-wrap">
+              <fa-icon [icon]="i.email" class="jx-input-icon" aria-hidden="true" />
+              <input
+                #emailInput
+                id="reset-email"
+                type="email"
+                formControlName="email"
+                class="jx-input jx-input--icon"
+                inputmode="email"
+                autocomplete="email"
+                enterkeyhint="send"
+                placeholder="voce@exemplo.com.br"
+                [attr.aria-invalid]="invalido('email', 'email')"
+                [attr.aria-describedby]="invalido('email', 'email') ? 'reset-email-erro' : null"
+              />
+            </div>
+            @if (invalido('email', 'email')) {
+              <p id="reset-email-erro" class="jx-reset__campo-erro">Digite um e-mail válido.</p>
+            }
+          </div>
+
+          @if (erro()) {
+            <div #erroBloco tabindex="-1" class="jx-login__error">
+              <jx-error-state [message]="erro()!" />
+            </div>
+          }
+
+          <button type="submit" class="jx-login__submit" [disabled]="loading()">
+            {{ loading() ? 'Gerando código...' : 'Receber código' }}
+          </button>
+        </form>
+      }
+
+      @case ('codigo') {
+        @if (codigoNaTela(); as codigo) {
+          <div class="jx-reset__codigo" role="status">
+            <span class="jx-reset__codigo-rotulo">Seu código</span>
+            <strong class="jx-reset__codigo-valor">{{ codigo }}</strong>
+            <span class="jx-reset__codigo-dica">Vale por {{ validadeMin() }} minutos e só pode ser usado uma vez.</span>
+          </div>
+        } @else {
+          <p class="jx-reset__aviso" role="status">
+            {{ aviso() }} Ele vale por {{ validadeMin() }} minutos.
+          </p>
+        }
+
+        <form class="jx-login__form" [formGroup]="senhaForm" (ngSubmit)="salvar()" novalidate>
+          <div class="jx-field">
+            <label class="jx-label" for="reset-codigo">Código</label>
+            <div class="jx-input-icon-wrap">
+              <fa-icon [icon]="i.codigo" class="jx-input-icon" aria-hidden="true" />
+              <input
+                #codigoInput
+                id="reset-codigo"
+                type="text"
+                formControlName="code"
+                class="jx-input jx-input--icon jx-reset__codigo-input"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                placeholder="000000"
+                [attr.aria-invalid]="invalido('senha', 'code')"
+                [attr.aria-describedby]="invalido('senha', 'code') ? 'reset-codigo-erro' : null"
+              />
+            </div>
+            @if (invalido('senha', 'code')) {
+              <p id="reset-codigo-erro" class="jx-reset__campo-erro">O código tem 6 números.</p>
+            }
+          </div>
+
+          <div class="jx-field">
+            <label class="jx-label" for="reset-senha">Nova senha</label>
+            <div class="jx-input-icon-wrap">
+              <fa-icon [icon]="i.senha" class="jx-input-icon" aria-hidden="true" />
+              <input
+                id="reset-senha"
+                [type]="mostrarSenha() ? 'text' : 'password'"
+                formControlName="password"
+                class="jx-input jx-input--icon"
+                autocomplete="new-password"
+                [attr.aria-invalid]="invalido('senha', 'password')"
+                aria-describedby="reset-senha-dica"
+              />
+              <button
+                type="button"
+                class="jx-input-toggle"
+                [attr.aria-label]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+                (click)="mostrarSenha.set(!mostrarSenha())"
+              >
+                <fa-icon [icon]="mostrarSenha() ? i.olhoFechado : i.olho" aria-hidden="true" />
+              </button>
+            </div>
+            <p
+              id="reset-senha-dica"
+              class="jx-caption"
+              [class.jx-reset__campo-erro]="invalido('senha', 'password')"
+            >
+              Pelo menos {{ senhaMin }} caracteres.
+            </p>
+          </div>
+
+          <div class="jx-field">
+            <label class="jx-label" for="reset-confirma">Repita a nova senha</label>
+            <div class="jx-input-icon-wrap">
+              <fa-icon [icon]="i.senha" class="jx-input-icon" aria-hidden="true" />
+              <input
+                id="reset-confirma"
+                [type]="mostrarSenha() ? 'text' : 'password'"
+                formControlName="confirm"
+                class="jx-input jx-input--icon"
+                autocomplete="new-password"
+                enterkeyhint="send"
+                [attr.aria-invalid]="senhaForm.hasError('diferentes') && senhaForm.controls.confirm.touched"
+              />
+            </div>
+            @if (senhaForm.hasError('diferentes') && senhaForm.controls.confirm.touched) {
+              <p class="jx-reset__campo-erro">As senhas não são iguais.</p>
+            }
+          </div>
+
+          @if (erro()) {
+            <div #erroBloco tabindex="-1" class="jx-login__error">
+              <jx-error-state [message]="erro()!" />
+            </div>
+          }
+
+          <button type="submit" class="jx-login__submit" [disabled]="loading()">
+            {{ loading() ? 'Salvando...' : 'Salvar nova senha' }}
+          </button>
+          <button type="button" class="jx-reset__link jx-reset__link--centro" (click)="pedirCodigo()" [disabled]="loading()">
+            Gerar outro código
+          </button>
+        </form>
+      }
+
+      @case ('pronto') {
+        <p class="jx-reset__aviso">Por segurança, encerramos as sessões que estavam abertas com a senha antiga.</p>
+        <button type="button" class="jx-login__submit" (click)="irParaLogin()">Ir para o login</button>
+      }
+    }
+
+    @if (etapa() !== 'pronto') {
+      <section class="jx-login__cta-block">
+        <span>Lembrou a senha?</span> <a [routerLink]="loginPath">Voltar para o login</a>
+      </section>
+    }
+
+    <footer class="jx-login__footer">jaxego.com.br · Grupo Itcast</footer>
+  </main>
+
+  @if (profile !== 'entregador') {
+    <jx-login-brand-panel class="jx-login-visual-host" />
+  }
+</div>

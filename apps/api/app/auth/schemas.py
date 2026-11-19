@@ -68,6 +68,37 @@ class TotpVerifyBody(BaseModel):
     code: str = Field(min_length=6, max_length=10)
 
 
+class ForgotPasswordBody(BaseModel):
+    """Esqueci minha senha — pede o código pelo e-mail da conta."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    """Resposta igual exista ou não a conta (anti-enumeração).
+
+    `code` só vem enquanto o código é mostrado na tela (sem envio por e-mail ainda).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    message: str
+    expires_in_minutes: int
+    code: str | None = None
+
+
+class ResetPasswordBody(BaseModel):
+    """Troca a senha com o código recebido."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
+
+
 class MeResponse(BaseModel):
     """Resolved identity + surface for post-login routing (R0.4).
 
