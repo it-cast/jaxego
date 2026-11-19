@@ -42,35 +42,36 @@
           </ul>
         </div>
 
-        <div class="lp-hero__visual" aria-hidden="true">
-          <div class="lp-mapa">
-            <svg viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" class="lp-mapa__svg">
-              <g class="lp-ruas">
+        <div class="lp-hero__visual">
+          <div class="lp-heroimg">
+            <div class="lp-heroimg__fundo" aria-hidden="true">
+              <svg viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" class="lp-heroimg__ruas">
                 <path d="M0 60 H400 M0 160 H400 M0 260 H400 M70 0 V320 M180 0 V320 M290 0 V320 M360 0 V320" />
-                <path class="lp-ruas--menor" d="M0 110 H400 M0 210 H400 M125 0 V320 M235 0 V320 M325 0 V320" />
-              </g>
-              <rect class="lp-quadra" x="190" y="170" width="90" height="80" rx="10" />
-              <rect class="lp-quadra" x="80" y="70" width="90" height="80" rx="10" />
-              <rect class="lp-zona" x="200" y="20" width="180" height="130" rx="18" />
-              <path class="lp-rota" d="M70 260 H180 V160 H290 V60" />
-              <circle class="lp-loja" cx="70" cy="260" r="11" />
-              <g transform="translate(290 60)">
-                <circle class="lp-destino__pulso" r="12" />
-                <circle class="lp-destino" r="10" />
-              </g>
-              <circle class="lp-entregador" r="8" />
-            </svg>
+                <path class="lp-heroimg__rota" d="M30 290 H180 V160 H290 V40" />
+              </svg>
+            </div>
+            <picture>
+              <source srcset="landing-entregador.webp" type="image/webp" />
+              <img
+                class="lp-heroimg__foto"
+                src="landing-entregador.png"
+                width="741"
+                height="1120"
+                alt="Entregador do Jaxegô de capacete, com a bag de entregas nas costas"
+                fetchpriority="high"
+              />
+            </picture>
 
-            <div class="lp-card lp-card--entrega">
+            <div class="lp-card lp-card--entrega" aria-hidden="true">
               <span class="lp-card__badge">Aceita</span>
               <p class="lp-card__titulo">Entrega <span class="lp-mono">#138</span></p>
               <p class="lp-card__texto">João está indo coletar.</p>
             </div>
-            <div class="lp-card lp-card--eta">
+            <div class="lp-card lp-card--eta" aria-hidden="true">
               <span class="lp-card__ponto"></span>
               Chega em <strong class="lp-mono">8 min</strong>
             </div>
-            <div class="lp-card lp-card--prova">
+            <div class="lp-card lp-card--prova" aria-hidden="true">
               <fa-icon [icon]="i.camera" />
               Entregue · foto + GPS
             </div>

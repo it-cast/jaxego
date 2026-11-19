@@ -86,39 +86,32 @@
   .lp-mono { color: var(--text); font-weight: var(--jx-weight-semibold); }
 }
 
-// Mapa ilustrado
-.lp-mapa {
-  position: relative; aspect-ratio: 5 / 4;
-  border-radius: var(--jx-radius-2xl); overflow: hidden;
-  background: var(--hero-gradient); box-shadow: var(--shadow-lg);
+// Foto do entregador sobre o fundo da marca
+.lp-heroimg { position: relative; max-width: 520px; margin-left: auto; aspect-ratio: 520 / 560; }
+.lp-heroimg__fundo {
+  position: absolute; inset: 22% 0 0 0; overflow: hidden;
+  border-radius: var(--jx-radius-2xl); background: var(--hero-gradient); box-shadow: var(--shadow-lg);
 }
-.lp-mapa__svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.lp-ruas path { stroke: rgba(255, 255, 255, 0.14); stroke-width: 10; fill: none; }
-.lp-ruas--menor { stroke-width: 4 !important; stroke: rgba(255, 255, 255, 0.07) !important; }
-.lp-quadra { fill: rgba(255, 255, 255, 0.05); }
-.lp-zona { fill: rgba(242, 107, 29, 0.16); stroke: var(--jx-brand-500); stroke-width: 2; stroke-dasharray: 6 6; }
-.lp-rota {
-  fill: none; stroke: var(--jx-brand-500); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 520; stroke-dashoffset: 520; animation: lp-rota 4.5s var(--jx-motion-easing-out) infinite;
+.lp-heroimg__ruas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lp-heroimg__ruas path { stroke: rgba(255, 255, 255, 0.1); stroke-width: 8; fill: none; }
+.lp-heroimg__ruas .lp-heroimg__rota {
+  stroke: var(--jx-brand-500); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 2 12; opacity: 0.7;
 }
-.lp-loja { fill: var(--jx-neutral-0); stroke: var(--jx-neutral-900); stroke-width: 4; }
-.lp-destino { fill: var(--jx-brand-500); stroke: var(--jx-neutral-0); stroke-width: 3; }
-.lp-destino__pulso { fill: var(--jx-brand-500); opacity: 0.4; transform-box: fill-box; transform-origin: center; animation: lp-pulso 1.8s ease-out infinite; }
-.lp-entregador {
-  fill: var(--jx-neutral-0); stroke: var(--jx-brand-500); stroke-width: 4;
-  offset-path: path('M70 260 H180 V160 H290 V60'); animation: lp-andar 4.5s var(--jx-motion-easing-out) infinite;
+.lp-heroimg__foto {
+  position: absolute; bottom: 0; left: 50%; z-index: 1;
+  height: 100%; width: auto; transform: translateX(-46%);
+  filter: drop-shadow(-10px 0 24px rgba(10, 14, 28, 0.3));
+  border-bottom-left-radius: var(--jx-radius-2xl); border-bottom-right-radius: var(--jx-radius-2xl);
 }
-@keyframes lp-rota { 0% { stroke-dashoffset: 520; } 70%, 100% { stroke-dashoffset: 0; } }
-@keyframes lp-andar { 0% { offset-distance: 0%; } 70%, 100% { offset-distance: 100%; } }
-@keyframes lp-pulso { 0% { transform: scale(1); opacity: 0.45; } 100% { transform: scale(2.6); opacity: 0; } }
 
 .lp-card {
-  position: absolute; z-index: 1;
+  position: absolute; z-index: 2;
   background: var(--surface-elevated); color: var(--text);
   border-radius: var(--jx-radius-lg); box-shadow: var(--shadow-lg);
   font-size: var(--jx-text-sm);
 }
-.lp-card--entrega { left: 6%; top: 8%; padding: var(--jx-space-3) var(--jx-space-4); min-width: 190px; }
+.lp-card--entrega { left: -4%; top: 30%; padding: var(--jx-space-3) var(--jx-space-4); min-width: 190px; }
 .lp-card__badge {
   display: inline-block; padding: 2px 8px; border-radius: 999px;
   background: var(--info-bg); color: var(--info); font-size: var(--jx-text-xs); font-weight: var(--jx-weight-bold);
@@ -126,13 +119,13 @@
 .lp-card__titulo { margin: 6px 0 2px; font-weight: var(--jx-weight-bold); font-size: var(--jx-text-md); }
 .lp-card__texto { margin: 0; color: var(--text-muted); }
 .lp-card--eta {
-  right: 6%; bottom: 8%; display: inline-flex; align-items: center; gap: 8px;
+  right: -3%; top: 44%; display: inline-flex; align-items: center; gap: 8px;
   padding: 10px var(--jx-space-4); border-radius: 999px; font-size: var(--jx-text-base);
   strong { font-size: var(--jx-text-md); }
 }
 .lp-card__ponto { width: 10px; height: 10px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px var(--success-bg); }
 .lp-card--prova {
-  left: 6%; top: 42%; display: inline-flex; align-items: center; gap: 8px;
+  left: 2%; bottom: 7%; display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 12px; color: var(--success); font-weight: var(--jx-weight-semibold);
 }
 
@@ -251,6 +244,7 @@
   .lp-top__nav { display: none; }
   .lp-hero { padding: var(--jx-space-7) 0; }
   .lp-hero__grid, .lp-escuro__grid { grid-template-columns: 1fr; }
+  .lp-heroimg { margin: 0 auto; }
   .lp-passos, .lp-recursos { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 600px) {
@@ -261,12 +255,10 @@
   .lp-hero__ctas .lp-btn { width: 100%; }
   .lp-mc { flex-direction: column; align-items: flex-start; padding: var(--jx-space-5); }
   .lp-mc__icone { width: 64px; height: 64px; font-size: 26px; }
-  .lp-card--entrega { min-width: 0; }
-  .lp-card--prova { display: none; }
+  .lp-card--entrega { left: 0; min-width: 0; padding: var(--jx-space-2) var(--jx-space-3); }
+  .lp-card--eta { right: 0; }
+  .lp-card--prova { left: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .lp-rota { animation: none; stroke-dashoffset: 0; }
-  .lp-entregador { animation: none; offset-distance: 100%; }
-  .lp-destino__pulso { animation: none; }
   .lp-btn, .lp-recurso { transition: none; }
 }
