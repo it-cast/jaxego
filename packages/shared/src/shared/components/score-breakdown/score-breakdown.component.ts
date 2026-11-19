@@ -78,7 +78,7 @@ const COMPONENT_LABELS: Record<string, string> = {
         }
       </table>
       <p class="jx-score-breakdown__note">
-        O score é informativo no piloto — não altera ofertas nem valores.
+        A nota é informativa no piloto — não altera ofertas nem valores.
       </p>
     </div>
   `,
@@ -104,7 +104,7 @@ export class ScoreBreakdownComponent {
   }
 
   /** Accessible table caption (visually hidden). */
-  @Input() caption = 'Composição do score por componente';
+  @Input() caption = 'Composição da nota por componente';
 
   protected readonly rows = computed(() => this._components());
   protected readonly totalValue = computed(() => this._total());

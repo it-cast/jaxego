@@ -84,6 +84,6 @@ export class ScoreChipComponent {
   protected readonly ariaLabel = computed(() => {
     const v = this._value();
     const lvl = this.meta().label;
-    return v === null ? `Nível ${lvl}` : `Score ${this.valueLabel()}, nível ${lvl}`;
+    return v === null ? `Nível ${lvl}` : `Nota ${this.valueLabel()}, nível ${lvl}`;
   });
 }

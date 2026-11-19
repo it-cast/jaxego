@@ -14,6 +14,7 @@ import {
   type BillingCycle,
   type Plan,
 } from '@jaxego/shared/components';
+import { RouterLink } from '@angular/router';
 import { MerchantService } from '../cadastro/merchant.service';
 import {
   BillingService,
@@ -40,6 +41,7 @@ import { CardFormComponent } from './components/jx-card-form.component';
     ChargeHistoryComponent,
     CheckoutMethodToggleComponent,
     CardFormComponent,
+    RouterLink,
   ],
   template: `
     <main class="jx-plano">
@@ -73,7 +75,10 @@ import { CardFormComponent } from './components/jx-card-form.component';
 
       <section class="jx-plano__invoices" aria-label="Faturas de taxas">
         <h2 class="jx-h2">Faturas de taxas</h2>
-        <p class="jx-plano__placeholder">Disponível em breve.</p>
+        <p class="jx-plano__placeholder">
+          As taxas das entregas com pagamento direto são cobradas em uma fatura por mês.
+          <a routerLink="/loja/faturas" class="jx-plano__link">Ver minhas faturas</a>
+        </p>
       </section>
     </main>
 

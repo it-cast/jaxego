@@ -100,7 +100,7 @@ export class LandingPage {
   protected readonly recursosEntregador = [
     'Você vê o valor da corrida antes de aceitar',
     'Preço por zona definido por você',
-    'Score explicável: você sabe o que subiu e o que caiu',
+    'Nota explicável: você sabe o que subiu e o que caiu',
     'Ganhos e saques na palma da mão',
   ];
 }

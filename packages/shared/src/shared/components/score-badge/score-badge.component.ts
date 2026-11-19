@@ -96,6 +96,6 @@ export class ScoreBadgeComponent {
     const lvl = this.meta().label;
     return v === null
       ? `Nível ${lvl}`
-      : `Score ${this.valueLabel()}, nível ${lvl}`;
+      : `Nota ${this.valueLabel()}, nível ${lvl}`;
   });
 }
