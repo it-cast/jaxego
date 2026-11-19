@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
@@ -10,6 +10,7 @@ import { DeliveryRowComponent } from '@jaxego/shared/components/delivery-row/del
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faChevronLeft, faChevronRight, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { DeliveryService } from './delivery.service';
+import { AvisosEntregaService } from '../avisos/avisos-entrega.service';
 import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 
 const PAGE_SIZE = 20;
@@ -60,12 +61,24 @@ export class EntregasListPage implements OnInit {
 
   protected readonly trackById = (item: unknown) => (item as DeliveryListItem).id;
 
+  constructor() {
+    // Entregador aceitou/coletou/entregou (ou outra mudança): recarrega sem piscar.
+    const avisos = inject(AvisosEntregaService);
+    let vista = avisos.versao();
+    effect(() => {
+      const v = avisos.versao();
+      if (v === vista) return;
+      vista = v;
+      untracked(() => void this.load(true));
+    });
+  }
+
   ngOnInit(): void {
     void this.load();
   }
 
-  protected async load(): Promise<void> {
-    this.tableState.set('loading');
+  protected async load(silencioso = false): Promise<void> {
+    if (!silencioso) this.tableState.set('loading');
     try {
       const page = await this.service.list({
         state: this.stateFilter || undefined,

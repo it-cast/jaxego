@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, effect, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   faGauge,
@@ -11,13 +11,15 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { AppShellComponent, type ShellNavItem } from '@jaxego/shared/layout/app-shell.component';
+import { AvisosEntregaComponent } from '../features/loja/avisos/avisos-entrega.component';
+import { AvisosEntregaService } from '../features/loja/avisos/avisos-entrega.service';
 
 /** Shell da loja — wrapper do jx-app-shell (redesign v3 §6.1). */
 @Component({
   selector: 'jx-loja-shell',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AppShellComponent],
+  imports: [AppShellComponent, AvisosEntregaComponent],
   template: `
     <jx-app-shell
       surfaceLabel="Loja"
@@ -27,18 +29,28 @@ import { AppShellComponent, type ShellNavItem } from '@jaxego/shared/layout/app-
       [contextSubtitle]="neighborhood()"
       (logout)="logout()"
     />
+    <jx-avisos-entrega />
   `,
 })
-export class LojaShellComponent {
+export class LojaShellComponent implements OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  /** Som + aviso quando o entregador aceita, coleta ou entrega. */
+  private readonly avisos = inject(AvisosEntregaService);
 
   constructor() {
     effect(() => {
       if (!this.auth.isAuthenticated()) {
+        this.avisos.stop();
         void this.router.navigate(['/entrar']);
+      } else {
+        this.avisos.start();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.avisos.stop();
   }
 
   protected readonly tradeName = computed(() => this.auth.me()?.trade_name ?? '');

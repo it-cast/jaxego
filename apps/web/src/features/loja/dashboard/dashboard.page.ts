@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   DataTableColumn,
@@ -8,6 +8,7 @@ import {
 import { StateBadgeComponent } from '@jaxego/shared/components/state-badge/state-badge.component';
 import { WarnBannerComponent } from '@jaxego/shared/state';
 import { DeliveryService } from '../entregas/delivery.service';
+import { AvisosEntregaService } from '../avisos/avisos-entrega.service';
 import { DeliveryListItem } from '@jaxego/shared/models/delivery.models';
 import { formatBrl } from '@jaxego/shared/util/money';
 
@@ -49,12 +50,24 @@ export class LojaDashboardPage implements OnInit {
 
   protected readonly trackById = (item: unknown) => (item as DeliveryListItem).id;
 
+  constructor() {
+    // Entregador aceitou/coletou/entregou (ou outra mudança): recarrega sem piscar.
+    const avisos = inject(AvisosEntregaService);
+    let vista = avisos.versao();
+    effect(() => {
+      const v = avisos.versao();
+      if (v === vista) return;
+      vista = v;
+      untracked(() => void this.load(true));
+    });
+  }
+
   ngOnInit(): void {
     void this.load();
   }
 
-  protected async load(): Promise<void> {
-    this.tableState.set('loading');
+  protected async load(silencioso = false): Promise<void> {
+    if (!silencioso) this.tableState.set('loading');
     try {
       // "Em curso" = non-terminal states; in Phase 7 only CRIADA is produced.
       const page = await this.service.list({ state: 'CRIADA' });
