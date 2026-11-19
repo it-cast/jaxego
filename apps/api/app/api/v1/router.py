@@ -13,6 +13,7 @@ from app.areas.router import router as areas_router
 from app.auth.router import router as auth_router
 from app.couriers.router import admin_router as couriers_admin_router
 from app.couriers.router import router as couriers_router
+from app.deliveries.admin_router import router as deliveries_admin_router
 from app.deliveries.router import router as deliveries_router
 from app.dispatch.router import router as dispatch_router
 from app.merchants.favorites import router as merchants_dispatch_router
@@ -30,9 +31,11 @@ api_router.include_router(areas_router)
 api_router.include_router(area_admin_router)
 
 from app.teams.router import router as teams_admin_router  # noqa: E402
+
 api_router.include_router(teams_admin_router)
 
 from app.teams.team_admin_router import router as team_admin_router  # noqa: E402
+
 api_router.include_router(team_admin_router)
 
 # Phase 4 domain sub-routers (F-01).
@@ -50,6 +53,7 @@ api_router.include_router(neighborhoods_router)
 
 # Phase 7 domain sub-routers (F-03 — criação de entrega + máquina de estados).
 api_router.include_router(deliveries_router)
+api_router.include_router(deliveries_admin_router)  # lista de entregas da cidade (admin)
 
 # Phase 8 domain sub-routers (F-05 — despacho em cascata + oferta + aceite).
 api_router.include_router(dispatch_router)
@@ -77,8 +81,8 @@ api_router.include_router(payments_webhooks_router)
 # - api_public.router: POST /v1/deliveries (public, API-key auth, idempotent).
 # - api_keys.admin_router: /v1/admin/areas/{area_id}/api-keys + /webhook (area admin).
 from app.api_keys.admin_router import router as api_keys_admin_router  # noqa: E402
-from app.api_public.router import router as public_deliveries_router  # noqa: E402
 from app.api_public.router import extras_router as public_extras_router  # noqa: E402
+from app.api_public.router import router as public_deliveries_router  # noqa: E402
 
 api_router.include_router(public_deliveries_router, prefix="/public")
 api_router.include_router(public_extras_router, prefix="/public")

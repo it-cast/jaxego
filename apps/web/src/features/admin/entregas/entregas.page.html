@@ -1,0 +1,136 @@
+<section class="jx-ent">
+  <header class="jx-ent__cabeca">
+    <h1 class="jx-ent__titulo">Entregas da <em>cidade</em></h1>
+    <p class="jx-ent__sub">
+      @if (estado() === 'loading' && !linhas().length) {
+        Carregando…
+      } @else {
+        <span class="jx-mono">{{ total() }}</span> {{ total() === 1 ? 'entrega' : 'entregas' }}
+        {{ temFiltro() ? 'com estes filtros' : 'no total' }}
+      }
+    </p>
+  </header>
+
+  <div class="jx-ent__busca">
+    <fa-icon [icon]="i.busca" class="jx-ent__busca-icone" aria-hidden="true" />
+    <input
+      type="search"
+      class="jx-ent__busca-input"
+      placeholder="Nº (ex.: 138), referência, loja ou entregador"
+      aria-label="Buscar entrega"
+      [value]="busca()"
+      (input)="digitarBusca($any($event.target).value)"
+    />
+  </div>
+
+  <nav class="jx-ent__atalhos" aria-label="Filtrar por status">
+    @for (a of atalhos(); track a.chave) {
+      <button
+        type="button"
+        class="jx-ent__atalho"
+        [class.jx-ent__atalho--on]="a.chave === atalho()"
+        [attr.aria-pressed]="a.chave === atalho()"
+        (click)="escolherAtalho(a.chave)"
+      >
+        {{ a.rotulo }} <span class="jx-ent__atalho-n jx-mono">{{ a.total }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="jx-ent__filtros">
+    <label class="jx-ent__campo">
+      <span>Loja</span>
+      <select (change)="filtrar('loja', $any($event.target).value)">
+        <option value="" [selected]="!loja()">Todas</option>
+        @for (l of lojas(); track l.id) {
+          <option [value]="l.id" [selected]="l.id === loja()">{{ l.nome }}</option>
+        }
+      </select>
+    </label>
+    <label class="jx-ent__campo">
+      <span>Entregador</span>
+      <select (change)="filtrar('entregador', $any($event.target).value)">
+        <option value="" [selected]="!entregador()">Todos</option>
+        @for (e of entregadores(); track e.id) {
+          <option [value]="e.id" [selected]="e.id === entregador()">{{ e.nome }}</option>
+        }
+      </select>
+    </label>
+    <label class="jx-ent__campo">
+      <span>Pagamento</span>
+      <select (change)="filtrar('pagamento', $any($event.target).value)">
+        <option value="" [selected]="!pagamento()">Todos</option>
+        <option value="direct" [selected]="pagamento() === 'direct'">Direto</option>
+        <option value="pix" [selected]="pagamento() === 'pix'">PIX</option>
+        <option value="card" [selected]="pagamento() === 'card'">Cartão</option>
+      </select>
+    </label>
+    <label class="jx-ent__campo">
+      <span>De</span>
+      <input type="date" [value]="de()" [max]="ate() || null" (change)="filtrar('de', $any($event.target).value)" />
+    </label>
+    <label class="jx-ent__campo">
+      <span>Até</span>
+      <input type="date" [value]="ate()" [min]="de() || null" (change)="filtrar('ate', $any($event.target).value)" />
+    </label>
+    @if (temFiltro()) {
+      <button type="button" class="jx-ent__limpar" (click)="limpar()">
+        <fa-icon [icon]="i.limpar" aria-hidden="true" /> Limpar filtros
+      </button>
+    }
+  </div>
+
+  <div class="jx-ent__tabela">
+    <jx-data-table
+      [columns]="colunas"
+      [rows]="linhas()"
+      [state]="estado()"
+      [trackBy]="trackById"
+      [hasActions]="true"
+      caption="Entregas da cidade"
+      emptyIcon="◌"
+      [emptyTitle]="temFiltro() ? 'Nenhuma entrega com estes filtros' : 'Nenhuma entrega ainda'"
+      [emptyMessage]="temFiltro() ? 'Mude ou limpe os filtros para ver mais.' : 'As entregas da cidade aparecem aqui.'"
+      errorMessage="Não foi possível carregar as entregas."
+      (retry)="carregar()"
+    >
+      <ng-template #row let-d>
+        <td>
+          <button type="button" class="jx-ent__num jx-mono" (click)="abrir(d.id)" [attr.aria-label]="'Ver entrega ' + d.id">
+            #{{ d.id }}
+          </button>
+          @if (d.reference_number) {
+            <span class="jx-ent__ref">{{ d.reference_number }}</span>
+          }
+        </td>
+        <td class="jx-ent__mono-cel">{{ dataHora(d.created_at) }}</td>
+        <td>{{ d.merchant_name || '—' }}</td>
+        <td>{{ d.courier_name || '—' }}</td>
+        <td>
+          {{ d.dropoff_neighborhood || '—' }}
+          <span class="jx-ent__ref">{{ d.dropoff_address }}@if (d.dropoff_number) {, {{ d.dropoff_number }}}</span>
+        </td>
+        <td>{{ pagamentoRotulo[d.pagamento] || d.pagamento }}</td>
+        <td class="jx-ent__mono-cel jx-ent__num-cel">{{ brl(d.price_cents) }}</td>
+        <td><jx-state-badge [state]="d.state" /></td>
+        <td>
+          <button type="button" class="jx-ent__ver" (click)="abrir(d.id)">Ver</button>
+        </td>
+      </ng-template>
+    </jx-data-table>
+  </div>
+
+  @if (totalPaginas() > 1) {
+    <nav class="jx-ent__paginas" aria-label="Paginação">
+      <button type="button" (click)="irPara(0)" [disabled]="pagina() === 0" aria-label="Primeira página">«</button>
+      <button type="button" (click)="irPara(pagina() - 1)" [disabled]="pagina() === 0" aria-label="Página anterior">‹</button>
+      <span>Página <strong class="jx-mono">{{ pagina() + 1 }}</strong> de <span class="jx-mono">{{ totalPaginas() }}</span></span>
+      <button type="button" (click)="irPara(pagina() + 1)" [disabled]="pagina() >= totalPaginas() - 1" aria-label="Próxima página">›</button>
+      <button type="button" (click)="irPara(totalPaginas() - 1)" [disabled]="pagina() >= totalPaginas() - 1" aria-label="Última página">»</button>
+    </nav>
+  }
+</section>
+
+@if (aberta(); as id) {
+  <jx-entrega-drawer [entregaId]="id" (fechar)="fechar()" />
+}

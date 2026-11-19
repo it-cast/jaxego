@@ -1,0 +1,270 @@
+// Entregas da cidade (admin). Só tokens do design system.
+
+.jx-ent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jx-space-4);
+  min-width: 0;
+}
+
+.jx-ent__titulo {
+  margin: 0;
+  font-size: var(--jx-text-2xl);
+  font-weight: var(--jx-weight-extrabold);
+  letter-spacing: -0.02em;
+  color: var(--text);
+
+  em {
+    font-family: var(--jx-font-display, 'Fraunces', serif);
+    font-style: italic;
+    font-weight: 600;
+    color: var(--brand);
+  }
+}
+
+.jx-ent__sub {
+  margin: var(--jx-space-1) 0 0;
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+}
+
+.jx-mono {
+  font-family: var(--jx-font-mono);
+}
+
+// Busca
+.jx-ent__busca {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.jx-ent__busca-icone {
+  position: absolute;
+  left: 14px;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.jx-ent__busca-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px 0 42px;
+  background: var(--surface-elevated);
+  border: 1.5px solid var(--border);
+  border-radius: var(--jx-radius-lg);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--jx-text-md);
+
+  &:focus {
+    outline: none;
+    border-color: var(--brand);
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// Atalhos de status
+.jx-ent__atalhos {
+  display: flex;
+  gap: var(--jx-space-2);
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.jx-ent__atalho {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  flex-shrink: 0;
+  min-height: 38px;
+  padding: 0 var(--jx-space-3);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-full);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-ent__atalho--on {
+  background: var(--brand-wash);
+  border-color: var(--brand-wash-border);
+  color: var(--brand);
+}
+
+.jx-ent__atalho-n {
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+
+  .jx-ent__atalho--on & {
+    color: var(--brand);
+  }
+}
+
+// Filtros
+.jx-ent__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--jx-space-3);
+}
+
+.jx-ent__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+  flex: 1 1 150px;
+  font-size: var(--jx-text-xs);
+  font-weight: var(--jx-weight-semibold);
+  color: var(--text-muted);
+
+  select,
+  input {
+    min-height: 42px;
+    padding: 0 var(--jx-space-3);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--jx-radius-md);
+    color: var(--text);
+    font: inherit;
+    font-size: var(--jx-text-sm);
+    font-weight: var(--jx-weight-regular, 400);
+
+    &:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: var(--focus-ring);
+    }
+  }
+}
+
+.jx-ent__limpar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--jx-space-2);
+  min-height: 42px;
+  padding: 0 var(--jx-space-3);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--jx-text-sm);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+// Tabela
+.jx-ent__tabela {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.jx-ent__num {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--brand);
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-bold);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-radius: var(--jx-radius-sm);
+    box-shadow: var(--focus-ring);
+  }
+}
+
+.jx-ent__ref {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--jx-text-xs);
+  color: var(--text-muted);
+}
+
+.jx-ent__mono-cel {
+  font-family: var(--jx-font-mono);
+  font-size: var(--jx-text-sm);
+  white-space: nowrap;
+}
+
+.jx-ent__num-cel {
+  text-align: right;
+}
+
+.jx-ent__ver {
+  min-height: 36px;
+  padding: 0 var(--jx-space-3);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--jx-radius-md);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--jx-text-sm);
+  font-weight: var(--jx-weight-semibold);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
+}
+
+// Paginação
+.jx-ent__paginas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--jx-space-2);
+  font-size: var(--jx-text-sm);
+  color: var(--text-muted);
+
+  button {
+    min-width: 40px;
+    min-height: 40px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--jx-radius-md);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--surface-hover);
+    }
+  }
+}

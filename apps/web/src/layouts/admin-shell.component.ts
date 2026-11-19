@@ -10,6 +10,7 @@ import {
   faPeopleGroup,
   faMapPin,
   faRoute,
+  faTruckFast,
 } from '@fortawesome/free-solid-svg-icons';
 import { AuthService } from '@jaxego/core/auth/auth.service';
 import { AppShellComponent, type ShellNavItem } from '@jaxego/shared/layout/app-shell.component';
@@ -38,6 +39,7 @@ export class AdminShellComponent {
 
   protected readonly links: ShellNavItem[] = [
     { path: 'inicio', label: 'Painel', icon: faGaugeHigh },
+    { path: 'entregas', label: 'Entregas', icon: faTruckFast },
     { path: 'equipes', label: 'Equipes', icon: faPeopleGroup },
     { path: 'config', label: 'Configurações', icon: faGear },
     { path: 'zonas', label: 'Zonas', icon: faLayerGroup },

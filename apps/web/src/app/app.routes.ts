@@ -170,6 +170,12 @@ export const adminRoutes: Routes = [
           import('../features/admin/inicio.page').then((m) => m.AdminInicioPage),
       },
       {
+        path: 'entregas',
+        title: 'Entregas · Jaxegô',
+        loadComponent: () =>
+          import('../features/admin/entregas/entregas.page').then((m) => m.AdminEntregasPage),
+      },
+      {
         path: 'config',
         loadComponent: () =>
           import('../features/admin/area-config/area-config.page').then(
