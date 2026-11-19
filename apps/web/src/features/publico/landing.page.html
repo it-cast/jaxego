@@ -1,0 +1,202 @@
+<div class="lp">
+  <header class="lp-top">
+    <div class="lp-wrap lp-top__inner">
+      <a routerLink="/" class="lp-logo" aria-label="Jaxegô, página inicial">
+        <span class="lp-logo__mark" aria-hidden="true"><fa-icon [icon]="i.moto" /></span>
+        <span class="lp-logo__name">Jaxegô</span>
+      </a>
+      <nav class="lp-top__nav" aria-label="Seções">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#lojas">Para lojas</a>
+        <a href="#entregadores">Para entregadores</a>
+        <a href="#menu-certo">Menu Certo</a>
+      </nav>
+      <div class="lp-top__acoes">
+        <a routerLink="/entrar" class="lp-btn lp-btn--ghost">Entrar</a>
+        <a routerLink="/loja/cadastro" class="lp-btn lp-btn--primary lp-top__cta">Cadastrar loja</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="lp-hero">
+      <div class="lp-wrap lp-hero__grid">
+        <div class="lp-hero__texto">
+          <p class="lp-eyebrow">Entregas na sua cidade</p>
+          <h1 class="lp-hero__titulo">Entregador <em>rapidinho</em>, quando o motoboy não dá conta.</h1>
+          <p class="lp-hero__sub">
+            O Jaxegô liga a sua loja aos entregadores da sua cidade. Você cria a entrega, um entregador aceita
+            em segundos e o destinatário acompanha pelo link.
+          </p>
+          <div class="lp-hero__ctas">
+            <a routerLink="/loja/cadastro" class="lp-btn lp-btn--primary lp-btn--lg">
+              Cadastrar minha loja <fa-icon [icon]="i.seta" />
+            </a>
+            <a href="#como-funciona" class="lp-btn lp-btn--outline lp-btn--lg">Ver como funciona</a>
+          </div>
+          <ul class="lp-hero__provas">
+            <li><span class="lp-mono">&lt; 60s</span> para um entregador aceitar</li>
+            <li><span class="lp-mono">foto + GPS</span> em toda entrega</li>
+            <li><span class="lp-mono">PIX</span>, cartão ou pagamento direto</li>
+          </ul>
+        </div>
+
+        <div class="lp-hero__visual" aria-hidden="true">
+          <div class="lp-mapa">
+            <svg viewBox="0 0 400 320" preserveAspectRatio="xMidYMid slice" class="lp-mapa__svg">
+              <g class="lp-ruas">
+                <path d="M0 60 H400 M0 160 H400 M0 260 H400 M70 0 V320 M180 0 V320 M290 0 V320 M360 0 V320" />
+                <path class="lp-ruas--menor" d="M0 110 H400 M0 210 H400 M125 0 V320 M235 0 V320 M325 0 V320" />
+              </g>
+              <rect class="lp-quadra" x="190" y="170" width="90" height="80" rx="10" />
+              <rect class="lp-quadra" x="80" y="70" width="90" height="80" rx="10" />
+              <rect class="lp-zona" x="200" y="20" width="180" height="130" rx="18" />
+              <path class="lp-rota" d="M70 260 H180 V160 H290 V60" />
+              <circle class="lp-loja" cx="70" cy="260" r="11" />
+              <g transform="translate(290 60)">
+                <circle class="lp-destino__pulso" r="12" />
+                <circle class="lp-destino" r="10" />
+              </g>
+              <circle class="lp-entregador" r="8" />
+            </svg>
+
+            <div class="lp-card lp-card--entrega">
+              <span class="lp-card__badge">Aceita</span>
+              <p class="lp-card__titulo">Entrega <span class="lp-mono">#138</span></p>
+              <p class="lp-card__texto">João está indo coletar.</p>
+            </div>
+            <div class="lp-card lp-card--eta">
+              <span class="lp-card__ponto"></span>
+              Chega em <strong class="lp-mono">8 min</strong>
+            </div>
+            <div class="lp-card lp-card--prova">
+              <fa-icon [icon]="i.camera" />
+              Entregue · foto + GPS
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Como funciona -->
+    <section id="como-funciona" class="lp-secao">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow">Como funciona</p>
+        <h2 class="lp-titulo">Três passos e a entrega <em>saiu</em>.</h2>
+        <ol class="lp-passos">
+          @for (p of passos; track p.n) {
+            <li class="lp-passo">
+              <span class="lp-passo__n lp-mono">{{ p.n }}</span>
+              <h3>{{ p.titulo }}</h3>
+              <p>{{ p.texto }}</p>
+            </li>
+          }
+        </ol>
+      </div>
+    </section>
+
+    <!-- Para lojas -->
+    <section id="lojas" class="lp-secao lp-secao--sunken">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow"><fa-icon [icon]="i.loja" /> Para lojas</p>
+        <h2 class="lp-titulo">Backup <em>quando</em> o motoboy não dá conta.</h2>
+        <p class="lp-lead">
+          Restaurante, farmácia, mercado ou loja de bairro: chame um entregador só quando precisar, sem contratar
+          e sem depender de grupo de WhatsApp.
+        </p>
+        <div class="lp-recursos">
+          @for (r of recursosLoja; track r.titulo) {
+            <article class="lp-recurso">
+              <span class="lp-recurso__icone"><fa-icon [icon]="r.icone" /></span>
+              <h3>{{ r.titulo }}</h3>
+              <p>{{ r.texto }}</p>
+            </article>
+          }
+        </div>
+        <div class="lp-secao__cta">
+          <a routerLink="/loja/cadastro" class="lp-btn lp-btn--primary lp-btn--lg">Cadastrar minha loja</a>
+          <a routerLink="/entrar" class="lp-link">Já tenho conta <fa-icon [icon]="i.seta" /></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Para entregadores -->
+    <section id="entregadores" class="lp-secao lp-escuro">
+      <div class="lp-wrap lp-escuro__grid">
+        <div>
+          <p class="lp-eyebrow lp-eyebrow--claro"><fa-icon [icon]="i.moto" /> Para entregadores</p>
+          <h2 class="lp-titulo lp-titulo--claro">Corridas perto de você, ganho <em>claro</em>.</h2>
+          <p class="lp-lead lp-lead--claro">
+            Trabalhe com as lojas da sua cidade, na hora que quiser, com regras claras e direito de recorrer.
+          </p>
+          <ul class="lp-checks">
+            @for (r of recursosEntregador; track r) {
+              <li>{{ r }}</li>
+            }
+          </ul>
+          <p class="lp-escuro__nota">
+            Baixe o app Jaxegô no Android e faça seu cadastro. Tem uma equipe de entregadores?
+            <a routerLink="/equipe/entrar">Entre no painel da equipe</a>.
+          </p>
+        </div>
+        <div class="lp-ganhos" aria-hidden="true">
+          <p class="lp-ganhos__rotulo">Ganhos de hoje</p>
+          <p class="lp-ganhos__valor lp-mono">R$ 186,50</p>
+          <div class="lp-ganhos__linha">
+            <span>Corridas</span><strong class="lp-mono">14</strong>
+          </div>
+          <div class="lp-ganhos__linha">
+            <span>Distância</span><strong class="lp-mono">42,8 km</strong>
+          </div>
+          <div class="lp-ganhos__linha">
+            <span>Score</span><strong class="lp-mono">87,4</strong>
+          </div>
+          <p class="lp-ganhos__dica"><fa-icon [icon]="i.grafico" /> Subiu 1,2 pts: 9 entregas no prazo</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Menu Certo -->
+    <section id="menu-certo" class="lp-secao">
+      <div class="lp-wrap lp-mc">
+        <div class="lp-mc__icone" aria-hidden="true"><fa-icon [icon]="i.raio" /></div>
+        <div class="lp-mc__texto">
+          <p class="lp-eyebrow">Integração Menu Certo</p>
+          <h2 class="lp-titulo">Usa o Menu Certo? O pedido vira entrega com <em>1 clique</em>.</h2>
+          <p class="lp-lead">
+            O Jaxegô é integrado ao Menu Certo: o endereço e o valor do pedido já vão para a entrega, e o status
+            volta para o seu painel.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA final -->
+    <section class="lp-final">
+      <div class="lp-wrap lp-final__inner">
+        <h2 class="lp-final__titulo">Sua próxima entrega sai em <em>minutos</em>.</h2>
+        <p>Cadastre a loja, escolha o plano e chame o primeiro entregador hoje.</p>
+        <div class="lp-hero__ctas lp-final__ctas">
+          <a routerLink="/loja/cadastro" class="lp-btn lp-btn--primary lp-btn--lg">Cadastrar minha loja</a>
+          <a routerLink="/entrar" class="lp-btn lp-btn--claro lp-btn--lg">Entrar</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lp-rodape">
+    <div class="lp-wrap lp-rodape__inner">
+      <div>
+        <span class="lp-logo__name">Jaxegô</span>
+        <p>Entregas por área para o interior. Um produto do Grupo Itcast.</p>
+      </div>
+      <nav class="lp-rodape__links" aria-label="Acessos">
+        <a routerLink="/entrar">Entrar como loja</a>
+        <a routerLink="/equipe/entrar">Painel da equipe</a>
+        <a routerLink="/admin/entrar">Admin da cidade</a>
+      </nav>
+      <p class="lp-rodape__copy">© {{ ano }} Jaxegô</p>
+    </div>
+  </footer>
+</div>

@@ -335,9 +335,19 @@ export const notFoundRoute: Routes = [
 
 const redirectToLogin: Routes = [{ path: '', pathMatch: 'full', redirectTo: 'entrar' }];
 
+/** Landing pública na raiz ("/"): apresenta o Jaxegô e leva ao cadastro e ao login. */
+const landingRoute: Routes = [
+  {
+    path: '',
+    pathMatch: 'full',
+    title: 'Jaxegô · Entregador rapidinho na sua cidade',
+    loadComponent: () => import('../features/publico/landing.page').then((m) => m.LandingPage),
+  },
+];
+
 /** Combined web route map — o build `web` guarda-chuva (loja + admin + plataforma). */
 export const routes: Routes = [
-  ...redirectToLogin,
+  ...landingRoute,
   ...authRoutes,
   ...lojaRoutes,
   ...adminRoutes,
@@ -349,7 +359,7 @@ export const routes: Routes = [
 
 /** Per-app route maps (build físico separado por superfície web). */
 export const lojaAppRoutes: Routes = [
-  ...redirectToLogin,
+  ...landingRoute,
   ...authRoutes,
   ...lojaRoutes,
   ...publicRoutes,
